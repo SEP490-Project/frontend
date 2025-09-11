@@ -10,10 +10,17 @@ const Register: React.FC = () => {
           <Input type="text" placeholder="Username" />
           <Input type="email" placeholder="Email" />
           <Input type="password" placeholder="Password" />
-          <button type="submit" className="bg-green-600 text-white py-2 rounded hover:bg-green-700 transition w-full">Sign Up</button>
+          <button
+            type="submit"
+            className="bg-green-600 text-white py-2 rounded hover:bg-green-700 transition w-full"
+          >
+            Sign Up
+          </button>
         </form>
         <div className="mt-4 text-center">
-          <a href="/login" className="text-green-500 hover:underline">Already have an account? Login</a>
+          <a href="/login" className="text-green-500 hover:underline">
+            Already have an account? Login
+          </a>
         </div>
       </div>
     </div>

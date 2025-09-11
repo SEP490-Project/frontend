@@ -12,5 +12,5 @@ root.render(
     <ReduxProvider>
       <AppRoutes />
     </ReduxProvider>
-  </React.StrictMode>
+  </React.StrictMode>,
 );

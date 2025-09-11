@@ -9,10 +9,17 @@ const Login: React.FC = () => {
         <form className="flex flex-col gap-4">
           <Input type="email" placeholder="Email" />
           <Input type="password" placeholder="Password" />
-          <button type="submit" className="bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition w-full">Sign In</button>
+          <button
+            type="submit"
+            className="bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition w-full"
+          >
+            Sign In
+          </button>
         </form>
         <div className="mt-4 text-center">
-          <a href="/register" className="text-blue-500 hover:underline">Don't have an account? Register</a>
+          <a href="/register" className="text-blue-500 hover:underline">
+            Don't have an account? Register
+          </a>
         </div>
       </div>
     </div>

@@ -1,0 +1,64 @@
+// import js from '@eslint/js'
+// import globals from 'globals'
+// import reactHooks from 'eslint-plugin-react-hooks'
+// import reactRefresh from 'eslint-plugin-react-refresh'
+// import tseslint from 'typescript-eslint'
+// import { globalIgnores } from 'eslint/config'
+
+// export default tseslint.config([
+//   globalIgnores(['dist']),
+//   {
+//     files: ['**/*.{ts,tsx}'],
+//     extends: [
+//       js.configs.recommended,
+//       tseslint.configs.recommended,
+//       reactHooks.configs['recommended-latest'],
+//       reactRefresh.configs.vite,
+//     ],
+//     languageOptions: {
+//       ecmaVersion: 2020,
+//       globals: globals.browser,
+//     },
+//   },
+// ])
+
+import js from "@eslint/js";
+import globals from "globals";
+import reactHooks from "eslint-plugin-react-hooks";
+import reactRefresh from "eslint-plugin-react-refresh";
+import tseslint from "typescript-eslint";
+import { globalIgnores } from "eslint/config";
+
+export default tseslint.config([
+  globalIgnores(["dist", "node_modules", "vite.config.ts"]),
+  {
+    files: ["**/*.{ts,tsx}"],
+    extends: [
+      js.configs.recommended,
+      tseslint.configs.recommended,
+      tseslint.configs.stylistic,
+      reactHooks.configs["recommended-latest"],
+      reactRefresh.configs.vite,
+    ],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: globals.browser,
+      parserOptions: {
+        project: "./tsconfig.eslint.json", // ✅ cho phép type-aware linting
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: {
+      // React Hooks
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn",
+
+      // React Refresh
+      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+
+      // Style
+      semi: ["error", "always"],
+      quotes: ["error", "double"],
+    },
+  },
+]);

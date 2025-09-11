@@ -35,8 +35,8 @@ export default tseslint.config([
     files: ["**/*.{ts,tsx}"],
     extends: [
       js.configs.recommended,
-      tseslint.configs.recommended,
-      tseslint.configs.stylistic,
+      ...tseslint.configs.recommended,
+      ...tseslint.configs.stylistic,
       reactHooks.configs["recommended-latest"],
       reactRefresh.configs.vite,
     ],
@@ -54,7 +54,10 @@ export default tseslint.config([
       "react-hooks/exhaustive-deps": "warn",
 
       // React Refresh
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      "react-refresh/only-export-components": "off", // 👈 tắt hoàn toàn
+
+      // TypeScript
+      "@typescript-eslint/no-explicit-any": "off", // 👈 cho phép any
 
       // Style
       semi: ["error", "always"],

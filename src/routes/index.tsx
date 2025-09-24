@@ -4,6 +4,7 @@ import Login from "@/pages/authentication/Login";
 import Register from "@/pages/authentication/Register";
 import PrivateRoute from "./private-route";
 import PublicRoute from "./public-route";
+import ManageLayout from "@/layouts/ManageLayout";
 import { AuthenticationLayout } from "../layouts/AuthenticationLayout";
 import { ForgotPassword } from "@/pages/authentication/ForgotPassword";
 import { ResetPassword } from "@/pages/authentication/ResetPassword";
@@ -12,11 +13,12 @@ const AppRoutes = () => (
   <BrowserRouter>
     <Routes>
       <Route
-        element={
-          <PrivateRoute
-            allowedRoles={["Customer", "Admin", "Sale Staff", "Marketing Staff", "Content Staff"]}
-          />
-        }
+        // element={
+        //   <PrivateRoute
+        //     allowedRoles={["Customer", "Admin", "Sale Staff", "Marketing Staff", "Content Staff"]}
+        //   />
+        // }
+        element={<ManageLayout />}
       ></Route>
 
       <Route element={<AuthenticationLayout />}>

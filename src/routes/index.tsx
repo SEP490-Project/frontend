@@ -2,19 +2,21 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Homepage from "@/pages/Homepage";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
-import PrivateRoute from "./private-route";
+// import PrivateRoute from "./private-route";
 import PublicRoute from "./public-route";
+import ManageLayout from "@/layouts/ManageLayout";
 
 const AppRoutes = () => (
   <BrowserRouter>
     <Routes>
       {/* Private routes: chỉ cho phép các role đã đăng nhập */}
       <Route
-        element={
-          <PrivateRoute
-            allowedRoles={["Customer", "Admin", "Sale Staff", "Marketing Staff", "Content Staff"]}
-          />
-        }
+        // element={
+        //   <PrivateRoute
+        //     allowedRoles={["Customer", "Admin", "Sale Staff", "Marketing Staff", "Content Staff"]}
+        //   />
+        // }
+        element={<ManageLayout />}
       >
         <Route path="/" element={<Homepage />} />
         {/* Thêm các route riêng tư khác tại đây */}

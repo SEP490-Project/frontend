@@ -1,5 +1,6 @@
 import React from "react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 const Login: React.FC = () => {
   return (
@@ -9,12 +10,9 @@ const Login: React.FC = () => {
         <form className="flex flex-col gap-4">
           <Input type="email" placeholder="Email" />
           <Input type="password" placeholder="Password" />
-          <button
-            type="submit"
-            className="bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition w-full"
-          >
+          <Button type="submit" variant={"secondaryOutline"} className="w-full">
             Sign In
-          </button>
+          </Button>
         </form>
         <div className="mt-4 text-center">
           <a href="/register" className="text-blue-500 hover:underline">

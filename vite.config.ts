@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react-swc";
 import { VitePWA } from "vite-plugin-pwa";
 import tailwindcss from "@tailwindcss/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
-import { PWAConfig } from "./src/lib/config";
+import { PWAConfig } from "./src/libs/config";
 
 export default defineConfig({
   server: {
@@ -12,5 +12,12 @@ export default defineConfig({
   css: {
     devSourcemap: true,
   },
-  plugins: [react(), tsconfigPaths(), tailwindcss(), VitePWA(PWAConfig)],
+  plugins: [
+    react(),
+    tsconfigPaths({
+      projects: ["./tsconfig.app.json"],
+    }),
+    tailwindcss(),
+    VitePWA(PWAConfig),
+  ],
 });

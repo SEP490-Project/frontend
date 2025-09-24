@@ -1,15 +1,16 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Homepage from "@/pages/Homepage";
-import Login from "@/pages/Login";
-import Register from "@/pages/Register";
+import Dashboard from "@/pages/manager/shared/Dashboard";
+import ManageLayout from "@/layouts/ManageLayout";
+import Login from "@/pages/authentication/Login";
+import Register from "@/pages/authentication/Register";
 // import PrivateRoute from "./private-route";
 import PublicRoute from "./public-route";
-import ManageLayout from "@/layouts/ManageLayout";
+import { AuthenticationRoute } from "./authentication-route";
 
 const AppRoutes = () => (
   <BrowserRouter>
     <Routes>
-      {/* Private routes: chỉ cho phép các role đã đăng nhập */}
       <Route
         // element={
         //   <PrivateRoute
@@ -19,13 +20,19 @@ const AppRoutes = () => (
         element={<ManageLayout />}
       >
         <Route path="/" element={<Homepage />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         {/* Thêm các route riêng tư khác tại đây */}
       </Route>
 
-      {/* Public routes: chỉ cho phép người chưa đăng nhập */}
-      <Route element={<PublicRoute />}>
+      <Route element={<AuthenticationRoute />}>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<div>Forgot Password Page</div>} />
+        <Route path="/reset-password" element={<div>Reset Password Page</div>} />
+      </Route>
+
+      <Route element={<PublicRoute />}>
+        <Route path="/" element={<Homepage />} />
       </Route>
     </Routes>
   </BrowserRouter>

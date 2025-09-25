@@ -4,7 +4,7 @@ import Login from "@/pages/authentication/Login";
 import Register from "@/pages/authentication/Register";
 import PrivateRoute from "./private-route";
 import PublicRoute from "./public-route";
-import { AuthenticationRoute } from "./authentication-route";
+import { AuthenticationLayout } from "../components/layout/authentication/AuthenticationLayout";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -17,7 +17,7 @@ const AppRoutes = () => (
         }
       ></Route>
 
-      <Route element={<AuthenticationRoute />}>
+      <Route element={<AuthenticationLayout />}>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<div>Forgot Password Page</div>} />

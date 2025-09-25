@@ -1,7 +1,7 @@
 import { Outlet } from "react-router-dom";
 import LoginBanner from "@/assets/images/beauty-login-banner.jpg";
 
-export const AuthenticationRoute = () => {
+export const AuthenticationLayout = () => {
   return (
     <>
       <div className="bg-linear-[90deg,_#FFC7E2,_#FC9DEB] flex items-center justify-center min-h-screen">

@@ -9,6 +9,7 @@ import PublicRoute from "./public-route";
 import { AuthenticationLayout } from "../layouts/AuthenticationLayout";
 import { ForgotPassword } from "@/pages/authentication/ForgotPassword";
 import { ResetPassword } from "@/pages/authentication/ResetPassword";
+import CustomerLayout from "@/layouts/CustomerLayout";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -24,6 +25,17 @@ const AppRoutes = () => (
         <Route path="/" element={<Homepage />} />
         <Route path="/dashboard" element={<Dashboard />} />
         {/* Thêm các route riêng tư khác tại đây */}
+      </Route>
+
+      <Route
+        // element={
+        //   <PrivateRoute
+        //     allowedRoles={["Customer", "Admin", "Sale Staff", "Marketing Staff", "Content Staff"]}
+        //   />
+        // }
+        element={<CustomerLayout />}
+      >
+        <Route path="/customer" element={<Homepage />} />
       </Route>
 
       <Route element={<AuthenticationLayout />}>

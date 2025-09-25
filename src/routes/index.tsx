@@ -1,6 +1,9 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Homepage from "@/pages/Homepage";
 import Dashboard from "@/pages/manager/shared/Dashboard";
+import { Account } from "@/pages/manager/shared";
+import { User } from "@/pages/manager/admin";
+import { Contract } from "@/pages/manager/brand";
 import ManageLayout from "@/layouts/ManageLayout";
 import Login from "@/pages/authentication/Login";
 import Register from "@/pages/authentication/Register";
@@ -21,6 +24,9 @@ const AppRoutes = () => (
       >
         <Route path="/" element={<Homepage />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/account" element={<Account />} />
+        <Route path="/users" element={<User />} />
+        <Route path="/brand/contracts" element={<Contract />} />
         {/* Thêm các route riêng tư khác tại đây */}
       </Route>
 

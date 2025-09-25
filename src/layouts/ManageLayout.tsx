@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 
 const ManageLayout: React.FC = () => {
   const [hidden, setHidden] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,7 +32,7 @@ const ManageLayout: React.FC = () => {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar />
+      <Sidebar collapsed={collapsed} />
 
       <div className="flex-1 flex flex-col relative">
         <motion.div
@@ -40,7 +41,7 @@ const ManageLayout: React.FC = () => {
           transition={{ duration: 0.3, ease: "easeInOut" }}
           className="absolute top-0 left-0 right-0 z-50"
         >
-          <Header />
+          <Header collapsed={collapsed} onToggleCollapse={() => setCollapsed(!collapsed)} />
         </motion.div>
 
         <main ref={mainRef} className="flex-1 bg-gray-200 px-2 overflow-y-auto pt-16">

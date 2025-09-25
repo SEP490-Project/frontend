@@ -8,7 +8,7 @@ const ManageLayout: React.FC = () => {
       <Sidebar />
       <div className="flex-1 flex flex-col">
         <Header />
-        <main className="flex-1 bg-gradient-to-br from-blue-100 to-purple-100 px-2">
+        <main className="flex-1 bg-gray-200 px-2">
           <Outlet />
         </main>
       </div>

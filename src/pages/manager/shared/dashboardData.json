@@ -1,0 +1,77 @@
+{
+  "admin": {
+    "totalUsers": { "value": 1200, "status": "up", "statusText": "+5%" },
+    "totalRevenue": { "value": 500000000, "status": "down", "statusText": "-2%" },
+    "monthlyRevenue": [
+      { "month": "Jan", "value": 100 },
+      { "month": "Feb", "value": 200 },
+      { "month": "Mar", "value": 150 }
+    ],
+    "topChannels": [
+      { "channel": "Facebook", "ctr": 3.5, "reach": 20000 },
+      { "channel": "TikTok", "ctr": 4.1, "reach": 30000 },
+      { "channel": "Website", "ctr": 2.9, "reach": 12000 }
+    ]
+  },
+  "marketing": {
+    "activeBrands": { "value": 12, "status": "up", "statusText": "+2 so với tháng trước" },
+    "activeCampaigns": { "value": 8, "status": "down", "statusText": "-1 so với tuần trước" },
+    "finishedCampaigns": { "value": 5, "status": "up", "statusText": "+3 đã hoàn thành" },
+    "monthlyRevenue": { "value": 350000000, "status": "up", "statusText": "+10%" },
+    "brandRevenue": [
+      { "name": "L’Oreal", "value": 120000000 },
+      { "name": "Innisfree", "value": 80000000 },
+      { "name": "Maybelline", "value": 50000000 },
+      { "name": "The Face Shop", "value": 100000000 }
+    ],
+    "monthlyReach": [
+      { "month": "Jul", "reach": 20000, "engagement": 5000 },
+      { "month": "Aug", "reach": 25000, "engagement": 6000 },
+      { "month": "Sep", "reach": 30000, "engagement": 7500 }
+    ],
+    "collabRevenueShare": [
+      { "type": "Quảng cáo", "value": 40 },
+      { "type": "Affiliate", "value": 35 },
+      { "type": "Co-produce", "value": 25 }
+    ],
+    "campaignTimeline": [
+      { "campaign": "Summer Skincare", "brand": "Innisfree", "progress": "Đang chạy" },
+      { "campaign": "New Lipstick Launch", "brand": "L’Oreal", "progress": "Đang chạy" }
+    ],
+    "alerts": [
+      "⚠️ Hợp đồng với L’Oreal hết hạn sau 10 ngày.",
+      "⚠️ Campaign “New Lipstick Launch” còn 1 video chưa đăng."
+    ]
+  },
+  "content": {
+    "totalPosts": { "value": 23, "status": "up", "statusText": "+4 bài mới" },
+    "totalViews": { "value": 80000, "status": "up", "statusText": "+15% so với tháng trước" },
+    "totalEngagement": { "value": 10000, "status": "down", "statusText": "-5% tương tác" },
+    "avgCTR": { "value": 4.2, "status": "up", "statusText": "+0.3%" },
+    "channelPerformance": [
+      { "name": "Website", "value": 10 },
+      { "name": "Facebook", "value": 8 },
+      { "name": "TikTok", "value": 5 }
+    ]
+  },
+  "sales": {
+    "totalOrders": { "value": 300, "status": "up", "statusText": "+12 đơn hàng" },
+    "todayRevenue": { "value": 15000000, "status": "down", "statusText": "-8% so với hôm qua" },
+    "bestSeller": { "value": "Serum X", "status": "up", "statusText": "Bán chạy nhất tuần" },
+    "monthlySales": [
+      { "month": "Jul", "value": 100 },
+      { "month": "Aug", "value": 200 },
+      { "month": "Sep", "value": 300 }
+    ]
+  },
+  "brand": {
+    "campaigns": { "value": 4, "status": "up", "statusText": "+1 campaign mới" },
+    "pendingPayments": { "value": 2, "status": "down", "statusText": "Đã xử lý bớt 1" },
+    "lastInvoice": { "value": 50000000, "status": "up", "statusText": "Thanh toán đúng hạn" },
+    "kpis": [
+      { "metric": "Reach", "value": 25000 },
+      { "metric": "Engagement", "value": 5000 },
+      { "metric": "CTR", "value": "3.2%" }
+    ]
+  }
+}

@@ -6,8 +6,11 @@ import {
   FaChartPie,
   FaRegUser,
   FaRegCircleQuestion,
+  FaRegFileLines,
+  FaFolderOpen,
 } from "react-icons/fa6";
 import { AiOutlineMenuFold, AiOutlineMenuUnfold } from "react-icons/ai";
+import { NavLink, useLocation } from "react-router-dom";
 
 interface TabItem {
   href: string;
@@ -20,35 +23,36 @@ interface NavSectionProps {
   title: string;
   items: TabItem[];
   collapsed: boolean;
-  currentPath: string;
+  pathname: string;
+  roleParam: string | null;
 }
 
-const NavSection: React.FC<NavSectionProps> = ({ title, items, collapsed, currentPath }) => {
+const NavSection: React.FC<NavSectionProps> = ({
+  title,
+  items,
+  collapsed,
+  pathname,
+  roleParam,
+}) => {
   if (items.length === 0) return null;
-
-  // Lấy query param từ URL
-  const url = new URL(window.location.href);
-  const roleParam = url.searchParams.get("role");
 
   return (
     <div className="mb-4">
       {!collapsed && <div className="uppercase text-xs font-bold text-gray-400 mb-2">{title}</div>}
       <nav className="flex flex-col gap-2 relative">
         {items.map((item) => {
-          // Active chính: chỉ so path
           const isMainActive =
-            currentPath === item.href ||
-            (item.href === "/users" && currentPath.startsWith("/users"));
+            pathname === item.href ||
+            (item.href === "/manage/users" && pathname.startsWith("/manage/users"));
 
           return (
             <React.Fragment key={item.href}>
-              <a
-                href={item.href}
+              <NavLink
+                to={item.href}
                 className={`relative rounded py-2 flex items-center ${
                   collapsed ? "justify-center" : "gap-2 px-3"
                 }`}
               >
-                {/* Highlight: chỉ animate khi mount/unmount, không re-run khi đổi query */}
                 {isMainActive && (
                   <motion.span
                     layoutId="sidebar-active"
@@ -72,12 +76,10 @@ const NavSection: React.FC<NavSectionProps> = ({ title, items, collapsed, curren
                     {item.label}
                   </span>
                 )}
-              </a>
+              </NavLink>
 
-              {/* Sub-tabs */}
               {isMainActive && item.subTabs && !collapsed && (
                 <motion.div
-                  // Animate khi mount tab cha, nhưng không re-run khi chỉ đổi query
                   initial={false}
                   animate={{ opacity: 1, y: 0 }}
                   className="ml-8 mt-2 flex flex-col gap-1"
@@ -85,12 +87,13 @@ const NavSection: React.FC<NavSectionProps> = ({ title, items, collapsed, curren
                   {item.subTabs.map((sub) => {
                     const subUrl = new URL(sub.href, window.location.origin);
                     const subRole = subUrl.searchParams.get("role");
-                    const isSubActive = currentPath.startsWith("/users") && roleParam === subRole;
+                    const isSubActive =
+                      pathname.startsWith("/manage/users") && roleParam === subRole;
 
                     return (
-                      <a
+                      <NavLink
                         key={sub.href}
-                        href={sub.href}
+                        to={sub.href}
                         className={`rounded px-3 py-1 flex items-center gap-2 text-sm transition-colors duration-200 ${
                           isSubActive
                             ? "bg-primary/20 text-primary font-semibold"
@@ -99,7 +102,7 @@ const NavSection: React.FC<NavSectionProps> = ({ title, items, collapsed, curren
                       >
                         {sub.icon}
                         <span className="text-xs">{sub.label}</span>
-                      </a>
+                      </NavLink>
                     );
                   })}
                 </motion.div>
@@ -114,69 +117,65 @@ const NavSection: React.FC<NavSectionProps> = ({ title, items, collapsed, curren
 
 const Sidebar: React.FC<{ role?: string }> = ({ role = "brand" }) => {
   const [collapsed, setCollapsed] = useState(false);
-  const currentPath = window.location.pathname + window.location.search;
+
+  const location = useLocation();
+  const pathname = location.pathname;
+  const roleParam = new URLSearchParams(location.search).get("role");
 
   const dashboardTabs: TabItem[] = [
-    { href: "/dashboard", label: "Dashboard", icon: <FaChartLine size={18} /> },
+    { href: "/manage", label: "Dashboard", icon: <FaChartLine size={18} /> },
   ];
 
   const roleBasedTabs: Record<string, TabItem[]> = {
     brand: [
       {
-        href: "/brand/contracts",
-        label: "Contracts & Campaigns",
-        icon: <FaUserGear size={18} />,
+        href: "/manage/brand/contracts",
+        label: "Contracts",
+        icon: <FaRegFileLines size={18} />,
+      },
+      {
+        href: "/manage/brand/campaigns",
+        label: "Campaigns",
+        icon: <FaFolderOpen size={18} />,
       },
     ],
     marketing: [
-      { href: "/marketing/campaigns", label: "Partners", icon: <FaUserGear size={18} /> },
-      { href: "/marketing/contracts", label: "Contracts", icon: <FaUserGear size={18} /> },
-      { href: "/marketing/tasks", label: "Tasks", icon: <FaUserGear size={18} /> },
-      { href: "/marketing/requests", label: "Requests", icon: <FaUserGear size={18} /> },
-      {
-        href: "/marketing/finance",
-        label: "Finance & Reports",
-        icon: <FaChartPie size={20} />,
-      },
+      { href: "/manage/marketing/campaigns", label: "Partners", icon: <FaUserGear size={18} /> },
+      { href: "/manage/marketing/contracts", label: "Contracts", icon: <FaUserGear size={18} /> },
+      { href: "/manage/marketing/tasks", label: "Tasks", icon: <FaUserGear size={18} /> },
     ],
     sale: [
-      { href: "/sale/products", label: "Products", icon: <FaUserGear size={18} /> },
-      { href: "/sale/categories", label: "Categories", icon: <FaUserGear size={18} /> },
-      { href: "/sale/orders", label: "Orders", icon: <FaUserGear size={18} /> },
-      { href: "/sale/reviews", label: "Reviews", icon: <FaUserGear size={18} /> },
-      { href: "/sale/payment", label: "Payment", icon: <FaUserGear size={18} /> },
-      { href: "/sale/tasks", label: "Assigned Tasks", icon: <FaUserGear size={18} /> },
+      { href: "/manage/sale/products", label: "Products", icon: <FaUserGear size={18} /> },
+      { href: "/manage/sale/categories", label: "Categories", icon: <FaUserGear size={18} /> },
+      { href: "/manage/sale/orders", label: "Orders", icon: <FaUserGear size={18} /> },
+      { href: "/manage/sale/reviews", label: "Reviews", icon: <FaUserGear size={18} /> },
+      { href: "/manage/sale/payment", label: "Transactions", icon: <FaUserGear size={18} /> },
+      { href: "/manage/sale/tasks", label: "Assigned Tasks", icon: <FaUserGear size={18} /> },
     ],
     content: [
-      { href: "/content/blogs", label: "Blogs", icon: <FaUserGear size={18} /> },
-      { href: "/content/tasks", label: "Assigned Tasks", icon: <FaUserGear size={18} /> },
+      { href: "/manage/content/blogs", label: "Blogs", icon: <FaUserGear size={18} /> },
+      { href: "/manage/content/tasks", label: "Assigned Tasks", icon: <FaUserGear size={18} /> },
     ],
     admin: [
       {
-        href: "/users",
+        href: "/manage/users",
         label: "Users",
         icon: <FaUserGear size={18} />,
         subTabs: [
-          { href: "/users?role=customer", label: "Customer" },
-          {
-            href: "/users?role=marketing",
-            label: "Marketing Staff",
-          },
-          {
-            href: "/users?role=content",
-            label: "Content Staff",
-          },
-          { href: "/users?role=sale", label: "Sale Staff" },
-          { href: "/users?role=brand", label: "Brand Staff" },
+          { href: "/manage/users?role=customer", label: "Customer" },
+          { href: "/manage/users?role=marketing", label: "Marketing Staff" },
+          { href: "/manage/users?role=content", label: "Content Staff" },
+          { href: "/manage/users?role=sale", label: "Sale Staff" },
+          { href: "/manage/users?role=brand", label: "Brand Staff" },
         ],
       },
-      { href: "/reports", label: "KPI & Reports", icon: <FaChartPie size={18} /> },
+      { href: "/manage/reports", label: "KPI & Reports", icon: <FaChartPie size={18} /> },
     ],
   };
 
   const otherTabs: TabItem[] = [
-    { href: "/account", label: "Account", icon: <FaRegUser size={18} /> },
-    { href: "/help", label: "Help", icon: <FaRegCircleQuestion size={18} /> },
+    { href: "/manage/account", label: "Account", icon: <FaRegUser size={18} /> },
+    { href: "/manage/help", label: "Help", icon: <FaRegCircleQuestion size={18} /> },
   ];
 
   return (
@@ -193,28 +192,28 @@ const Sidebar: React.FC<{ role?: string }> = ({ role = "brand" }) => {
         {collapsed ? <AiOutlineMenuUnfold size={24} /> : <AiOutlineMenuFold size={24} />}
       </button>
 
-      {/* Dashboard */}
       <NavSection
         title="Dashboard"
         items={dashboardTabs}
         collapsed={collapsed}
-        currentPath={currentPath}
+        pathname={pathname}
+        roleParam={roleParam}
       />
 
-      {/* Management */}
       <NavSection
         title="Management"
         items={roleBasedTabs[role] || []}
         collapsed={collapsed}
-        currentPath={currentPath}
+        pathname={pathname}
+        roleParam={roleParam}
       />
 
-      {/* Others */}
       <NavSection
         title="Others"
         items={otherTabs}
         collapsed={collapsed}
-        currentPath={currentPath}
+        pathname={pathname}
+        roleParam={roleParam}
       />
     </aside>
   );

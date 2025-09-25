@@ -6,7 +6,6 @@ import Login from "@/pages/authentication/Login";
 import Register from "@/pages/authentication/Register";
 // import PrivateRoute from "./private-route";
 import PublicRoute from "./public-route";
-import ManageLayout from "@/layouts/ManageLayout";
 import { AuthenticationLayout } from "../layouts/AuthenticationLayout";
 import { ForgotPassword } from "@/pages/authentication/ForgotPassword";
 import { ResetPassword } from "@/pages/authentication/ResetPassword";

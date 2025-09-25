@@ -73,7 +73,7 @@ export function Header() {
                   href="#"
                   className="text-[#383838] hover:text-[#fec6d4] transition-colors font-medium text-lg"
                 >
-                  BESTSELLERS
+                  BEST SELLERS
                 </a>
                 <a
                   href="#"

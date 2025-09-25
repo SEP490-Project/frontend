@@ -7,6 +7,7 @@ import Register from "@/pages/authentication/Register";
 // import PrivateRoute from "./private-route";
 import PublicRoute from "./public-route";
 import { AuthenticationRoute } from "./authentication-route";
+import CustomerLayout from "@/layouts/CustomerLayout";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -22,6 +23,17 @@ const AppRoutes = () => (
         <Route path="/" element={<Homepage />} />
         <Route path="/dashboard" element={<Dashboard />} />
         {/* Thêm các route riêng tư khác tại đây */}
+      </Route>
+
+      <Route
+        // element={
+        //   <PrivateRoute
+        //     allowedRoles={["Customer", "Admin", "Sale Staff", "Marketing Staff", "Content Staff"]}
+        //   />
+        // }
+        element={<CustomerLayout />}
+      >
+        <Route path="/customer" element={<Homepage />} />
       </Route>
 
       <Route element={<AuthenticationRoute />}>

@@ -35,7 +35,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
 
   return (
     <div className="flex flex-col justify-center items-center gap-10 w-full">
-      <h2 className="text-2xl font-extrabold font-[Poppins] text-center">Sign In</h2>
+      <div>
+        <h2 className="text-2xl font-extrabold font-[Poppins] text-center">Sign In</h2>
+        <p className="text-gray-600 font-[Poppins] mt-2 text-sm">
+          Welcome back! Please enter your details.
+        </p>
+      </div>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 w-full">
         <div className="w-full">
           <h5 className="pb-1 font-[Poppins]">Email</h5>

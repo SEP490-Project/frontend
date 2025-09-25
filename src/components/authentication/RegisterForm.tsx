@@ -76,8 +76,12 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit }) => {
 
   return (
     <div className="flex flex-col justify-center items-center gap-8 w-full">
-      <h2 className="text-2xl font-extrabold font-[Poppins] text-center">Sign Up</h2>
-
+      <div>
+        <h2 className="text-2xl font-extrabold font-[Poppins] text-center">Sign Up</h2>
+        <p className="text-gray-600 font-[Poppins] mt-2 text-sm">
+          Create your account by filling in the details below.
+        </p>
+      </div>
       <form onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col gap-4 w-full">
         <div className="space-y-4">
           <div className="w-full">

@@ -4,7 +4,9 @@ import Login from "@/pages/authentication/Login";
 import Register from "@/pages/authentication/Register";
 import PrivateRoute from "./private-route";
 import PublicRoute from "./public-route";
-import { AuthenticationLayout } from "../components/layout/authentication/AuthenticationLayout";
+import { AuthenticationLayout } from "../layouts/AuthenticationLayout";
+import { ForgotPassword } from "@/pages/authentication/ForgotPassword";
+import { ResetPassword } from "@/pages/authentication/ResetPassword";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -20,8 +22,8 @@ const AppRoutes = () => (
       <Route element={<AuthenticationLayout />}>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/forgot-password" element={<div>Forgot Password Page</div>} />
-        <Route path="/reset-password" element={<div>Reset Password Page</div>} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
       </Route>
 
       <Route element={<PublicRoute />}>

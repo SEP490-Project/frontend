@@ -6,7 +6,10 @@ import Login from "@/pages/authentication/Login";
 import Register from "@/pages/authentication/Register";
 // import PrivateRoute from "./private-route";
 import PublicRoute from "./public-route";
-import { AuthenticationRoute } from "./authentication-route";
+import ManageLayout from "@/layouts/ManageLayout";
+import { AuthenticationLayout } from "../layouts/AuthenticationLayout";
+import { ForgotPassword } from "@/pages/authentication/ForgotPassword";
+import { ResetPassword } from "@/pages/authentication/ResetPassword";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -24,11 +27,11 @@ const AppRoutes = () => (
         {/* Thêm các route riêng tư khác tại đây */}
       </Route>
 
-      <Route element={<AuthenticationRoute />}>
+      <Route element={<AuthenticationLayout />}>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/forgot-password" element={<div>Forgot Password Page</div>} />
-        <Route path="/reset-password" element={<div>Reset Password Page</div>} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
       </Route>
 
       <Route element={<PublicRoute />}>

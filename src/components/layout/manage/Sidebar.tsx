@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { motion } from "framer-motion";
 import {
   FaChartLine,
@@ -8,8 +8,18 @@ import {
   FaRegCircleQuestion,
   FaRegFileLines,
   FaFolderOpen,
+  FaHashtag,
+  FaCalendarDays,
+  FaFilePen,
+  FaBoxOpen,
+  FaFolderTree,
+  FaCartShopping,
+  FaStar,
+  FaMoneyCheckDollar,
+  FaHandshake,
+  FaFileContract,
+  FaListCheck,
 } from "react-icons/fa6";
-import { AiOutlineMenuFold, AiOutlineMenuUnfold } from "react-icons/ai";
 import { NavLink, useLocation } from "react-router-dom";
 
 interface TabItem {
@@ -56,8 +66,8 @@ const NavSection: React.FC<NavSectionProps> = ({
                 {isMainActive && (
                   <motion.span
                     layoutId="sidebar-active"
-                    className="absolute inset-0 rounded bg-primary/10 border-l-4 border-primary shadow-md"
-                    transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                    className="absolute inset-0 rounded bg-primary/20 border-l-4 border-primary shadow-md"
+                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
                   />
                 )}
                 <span
@@ -88,7 +98,7 @@ const NavSection: React.FC<NavSectionProps> = ({
                     const subUrl = new URL(sub.href, window.location.origin);
                     const subRole = subUrl.searchParams.get("role");
                     const isSubActive =
-                      pathname.startsWith("/manage/users") && roleParam === subRole;
+                      pathname.startsWith("/manage/admin/users") && roleParam === subRole;
 
                     return (
                       <NavLink
@@ -115,9 +125,12 @@ const NavSection: React.FC<NavSectionProps> = ({
   );
 };
 
-const Sidebar: React.FC<{ role?: string }> = ({ role = "brand" }) => {
-  const [collapsed, setCollapsed] = useState(false);
+interface SidebarProps {
+  role?: string;
+  collapsed?: boolean;
+}
 
+const Sidebar: React.FC<SidebarProps> = ({ role = "marketing", collapsed = false }) => {
   const location = useLocation();
   const pathname = location.pathname;
   const roleParam = new URLSearchParams(location.search).get("role");
@@ -140,36 +153,57 @@ const Sidebar: React.FC<{ role?: string }> = ({ role = "brand" }) => {
       },
     ],
     marketing: [
-      { href: "/manage/marketing/campaigns", label: "Partners", icon: <FaUserGear size={18} /> },
-      { href: "/manage/marketing/contracts", label: "Contracts", icon: <FaUserGear size={18} /> },
-      { href: "/manage/marketing/tasks", label: "Tasks", icon: <FaUserGear size={18} /> },
+      { href: "/manage/marketing/partners", label: "Partners", icon: <FaHandshake size={18} /> },
+      {
+        href: "/manage/marketing/contracts",
+        label: "Contracts",
+        icon: <FaFileContract size={18} />,
+      },
+      {
+        href: "/manage/marketing/assignments",
+        label: "Assignments & Tasks",
+        icon: <FaListCheck size={18} />,
+      },
     ],
     sale: [
-      { href: "/manage/sale/products", label: "Products", icon: <FaUserGear size={18} /> },
-      { href: "/manage/sale/categories", label: "Categories", icon: <FaUserGear size={18} /> },
-      { href: "/manage/sale/orders", label: "Orders", icon: <FaUserGear size={18} /> },
-      { href: "/manage/sale/reviews", label: "Reviews", icon: <FaUserGear size={18} /> },
-      { href: "/manage/sale/payment", label: "Transactions", icon: <FaUserGear size={18} /> },
-      { href: "/manage/sale/tasks", label: "Assigned Tasks", icon: <FaUserGear size={18} /> },
+      { href: "/manage/sale/task", label: "Tasks & Schedule", icon: <FaCalendarDays size={18} /> },
+      { href: "/manage/sale/product", label: "Product Management", icon: <FaBoxOpen size={18} /> },
+      {
+        href: "/manage/sale/categorie",
+        label: "Category Management",
+        icon: <FaFolderTree size={18} />,
+      },
+      { href: "/manage/sale/order", label: "Order Management", icon: <FaCartShopping size={18} /> },
+      { href: "/manage/sale/review", label: "Review Management", icon: <FaStar size={18} /> },
+      {
+        href: "/manage/sale/transaction",
+        label: "Transaction Management",
+        icon: <FaMoneyCheckDollar size={18} />,
+      },
     ],
     content: [
-      { href: "/manage/content/blogs", label: "Blogs", icon: <FaUserGear size={18} /> },
-      { href: "/manage/content/tasks", label: "Assigned Tasks", icon: <FaUserGear size={18} /> },
+      {
+        href: "/manage/content/task",
+        label: "Tasks & Schedule",
+        icon: <FaCalendarDays size={18} />,
+      },
+      { href: "/manage/content/blog", label: "Blog Management", icon: <FaFilePen size={18} /> },
+      { href: "/manage/content/tag", label: "Tag Management", icon: <FaHashtag size={18} /> },
     ],
     admin: [
       {
-        href: "/manage/users",
+        href: "/manage/admin/users",
         label: "Users",
         icon: <FaUserGear size={18} />,
         subTabs: [
-          { href: "/manage/users?role=customer", label: "Customer" },
-          { href: "/manage/users?role=marketing", label: "Marketing Staff" },
-          { href: "/manage/users?role=content", label: "Content Staff" },
-          { href: "/manage/users?role=sale", label: "Sale Staff" },
-          { href: "/manage/users?role=brand", label: "Brand Staff" },
+          { href: "/manage/admin/users?role=customer", label: "Customer" },
+          { href: "/manage/admin/users?role=marketing", label: "Marketing Staff" },
+          { href: "/manage/admin/users?role=content", label: "Content Staff" },
+          { href: "/manage/admin/users?role=sale", label: "Sale Staff" },
+          { href: "/manage/admin/users?role=brand", label: "Brand Staff" },
         ],
       },
-      { href: "/manage/reports", label: "KPI & Reports", icon: <FaChartPie size={18} /> },
+      { href: "/manage/admin/reports", label: "KPI & Reports", icon: <FaChartPie size={18} /> },
     ],
   };
 
@@ -184,13 +218,15 @@ const Sidebar: React.FC<{ role?: string }> = ({ role = "brand" }) => {
         collapsed ? "w-16" : "w-64"
       }`}
     >
-      <button
-        onClick={() => setCollapsed((prev) => !prev)}
-        className="mb-4 rounded px-2 py-1 self-end"
-        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-      >
-        {collapsed ? <AiOutlineMenuUnfold size={24} /> : <AiOutlineMenuFold size={24} />}
-      </button>
+      <div className="flex items-center gap-4 justify-center">
+        <a href="/" className="flex items-center gap-2">
+          {collapsed ? (
+            <img src="/logo.svg" alt="Logo" className="w-8 h-8" />
+          ) : (
+            <img src="/pink.png" alt="Logo" className="w-full h-14" />
+          )}
+        </a>
+      </div>
 
       <NavSection
         title="Dashboard"

@@ -1,5 +1,6 @@
 import React from "react";
 import { AiOutlineBell, AiOutlineUser, AiOutlineSetting, AiOutlineLogout } from "react-icons/ai";
+import { AiOutlineMenuFold, AiOutlineMenuUnfold } from "react-icons/ai";
 import { FaAngleDown } from "react-icons/fa6";
 import {
   DropdownMenu,
@@ -10,7 +11,12 @@ import {
 
 import { useState } from "react";
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ collapsed = false, onToggleCollapse }) => {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   // Giả lập thông tin user
   const user = {
@@ -27,12 +33,19 @@ const Header: React.FC = () => {
 
   return (
     <header className="bg-white border-b border-gray-200 shadow-sm flex items-center justify-between px-6 py-3 sticky top-0 z-30">
-      {/* Logo */}
-      <div className="flex items-center gap-4">
-        <a href="/" className="flex items-center gap-2">
-          <img src="/vite.svg" alt="Logo" className="w-8 h-8" />
-          <span className="text-xl font-extrabold text-gray-800 tracking-tight">My App</span>
-        </a>
+      {/* Left section - Toggle button */}
+      <div className="flex items-center">
+        <button
+          onClick={onToggleCollapse}
+          className="p-2 rounded hover:bg-gray-100 transition focus:outline-none mr-4"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {collapsed ? (
+            <AiOutlineMenuUnfold size={24} className="text-gray-600" />
+          ) : (
+            <AiOutlineMenuFold size={24} className="text-gray-500" />
+          )}
+        </button>
       </div>
 
       {/* Right section */}

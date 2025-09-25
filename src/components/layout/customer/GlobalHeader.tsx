@@ -4,7 +4,7 @@ import { Search, User, ShoppingBag, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
-export function Header() {
+const GlobalHeader = () => {
   return (
     <header className="bg-white px-4 py-4 shadow-sm">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -117,4 +117,5 @@ export function Header() {
       </div>
     </header>
   );
-}
+};
+export default GlobalHeader;

@@ -2,7 +2,7 @@ import { Facebook, Instagram, Send, Twitter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-export default function Footer() {
+const GlobalFooter = () => {
   return (
     <footer className="bg-[#2a2a2a] text-white">
       {/* Social Media Icons */}
@@ -149,4 +149,5 @@ export default function Footer() {
       </div>
     </footer>
   );
-}
+};
+export default GlobalFooter;

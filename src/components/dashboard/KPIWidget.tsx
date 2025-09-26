@@ -1,5 +1,6 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ArrowUpRight, ArrowDownRight } from "lucide-react";
+import CountUp from "react-countup";
 
 interface KPIData {
   value: string | number;
@@ -31,6 +32,9 @@ export default function KPIWidget({
     return val;
   };
 
+  // Kiểm tra xem data và data.value có tồn tại không
+  const value = data?.value !== undefined ? data.value : 0;
+
   return (
     <Card className="rounded-2xl shadow-sm" id={id}>
       <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
@@ -45,7 +49,11 @@ export default function KPIWidget({
       </CardHeader>
       <CardContent>
         <div className="text-3xl font-bold text-gray-900">
-          {data?.value !== undefined ? formatValue(data.value) : "-"}
+          <CountUp
+            end={typeof value === "number" ? value : 0}
+            duration={3}
+            formattingFn={formatValue}
+          />
         </div>
         {data?.status && data?.statusText && (
           <p

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Homepage from "@/pages/Homepage";
+import NotFound from "@/pages/NotFound";
 import Dashboard from "@/pages/manager/shared/Dashboard";
 import { Account } from "@/pages/manager/shared";
 import { User } from "@/pages/manager/admin";
@@ -55,6 +56,8 @@ const AppRoutes = () => (
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
       </Route>
+
+      <Route path="*" element={<NotFound />} />
     </Routes>
   </BrowserRouter>
 );

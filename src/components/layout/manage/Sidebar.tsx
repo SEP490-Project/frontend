@@ -1,5 +1,6 @@
 import React from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { NavLink, useLocation } from "react-router-dom";
 import {
   FaChartLine,
   FaUserGear,
@@ -20,7 +21,6 @@ import {
   FaFileContract,
   FaListCheck,
 } from "react-icons/fa6";
-import { NavLink, useLocation } from "react-router-dom";
 
 interface TabItem {
   href: string;
@@ -88,6 +88,7 @@ const NavSection: React.FC<NavSectionProps> = ({
                 )}
               </NavLink>
 
+              {/* Sub tabs */}
               {isMainActive && item.subTabs && !collapsed && (
                 <motion.div
                   initial={false}
@@ -128,29 +129,31 @@ const NavSection: React.FC<NavSectionProps> = ({
 interface SidebarProps {
   role?: string;
   collapsed?: boolean;
+  isMobile?: boolean;
+  isMobileOpen?: boolean;
+  onCloseMobile?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ role = "marketing", collapsed = false }) => {
+const Sidebar: React.FC<SidebarProps> = ({
+  role = "marketing",
+  collapsed = false,
+  isMobile = false,
+  isMobileOpen = false,
+  onCloseMobile,
+}) => {
   const location = useLocation();
   const pathname = location.pathname;
   const roleParam = new URLSearchParams(location.search).get("role");
 
+  // Tabs
   const dashboardTabs: TabItem[] = [
     { href: "/manage", label: "Dashboard", icon: <FaChartLine size={18} /> },
   ];
 
   const roleBasedTabs: Record<string, TabItem[]> = {
     brand: [
-      {
-        href: "/manage/brand/contracts",
-        label: "Contracts",
-        icon: <FaRegFileLines size={18} />,
-      },
-      {
-        href: "/manage/brand/campaigns",
-        label: "Campaigns",
-        icon: <FaFolderOpen size={18} />,
-      },
+      { href: "/manage/brand/contracts", label: "Contracts", icon: <FaRegFileLines size={18} /> },
+      { href: "/manage/brand/campaigns", label: "Campaigns", icon: <FaFolderOpen size={18} /> },
     ],
     marketing: [
       { href: "/manage/marketing/partners", label: "Partners", icon: <FaHandshake size={18} /> },
@@ -213,45 +216,111 @@ const Sidebar: React.FC<SidebarProps> = ({ role = "marketing", collapsed = false
   ];
 
   return (
-    <aside
-      className={`bg-white text-primary min-h-screen p-4 flex flex-col gap-4 transition-all duration-300 ${
-        collapsed ? "w-16" : "w-64"
-      }`}
-    >
-      <div className="flex items-center gap-4 justify-center">
-        <a href="/" className="flex items-center gap-2">
-          {collapsed ? (
-            <img src="/logo.svg" alt="Logo" className="w-8 h-8" />
-          ) : (
-            <img src="/pink.png" alt="Logo" className="w-full h-14" />
-          )}
-        </a>
-      </div>
+    <>
+      {/* Desktop Sidebar */}
+      <aside
+        className={`hidden md:flex bg-white text-primary min-h-screen p-4 flex-col gap-4 transition-all duration-300 ${
+          collapsed ? "w-16" : "w-64"
+        }`}
+      >
+        <div className="flex items-center gap-4 justify-center">
+          <a href="/" className="flex items-center gap-2">
+            {collapsed ? (
+              <img src="/logo.svg" alt="Logo" className="w-8 h-8 object-contain" />
+            ) : (
+              <img src="/pink.png" alt="Logo" className="w-full h-14 object-contain" />
+            )}
+          </a>
+        </div>
 
-      <NavSection
-        title="Dashboard"
-        items={dashboardTabs}
-        collapsed={collapsed}
-        pathname={pathname}
-        roleParam={roleParam}
-      />
+        <NavSection
+          title="Dashboard"
+          items={dashboardTabs}
+          collapsed={collapsed}
+          pathname={pathname}
+          roleParam={roleParam}
+        />
 
-      <NavSection
-        title="Management"
-        items={roleBasedTabs[role] || []}
-        collapsed={collapsed}
-        pathname={pathname}
-        roleParam={roleParam}
-      />
+        <NavSection
+          title="Management"
+          items={roleBasedTabs[role] || []}
+          collapsed={collapsed}
+          pathname={pathname}
+          roleParam={roleParam}
+        />
 
-      <NavSection
-        title="Others"
-        items={otherTabs}
-        collapsed={collapsed}
-        pathname={pathname}
-        roleParam={roleParam}
-      />
-    </aside>
+        <NavSection
+          title="Others"
+          items={otherTabs}
+          collapsed={collapsed}
+          pathname={pathname}
+          roleParam={roleParam}
+        />
+      </aside>
+
+      {/* Mobile Sidebar with overlay */}
+      <AnimatePresence>
+        {isMobile && isMobileOpen && (
+          <>
+            {/* Overlay */}
+            <motion.div
+              key="overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              onClick={onCloseMobile}
+              className="fixed inset-0 bg-black z-20 md:hidden"
+            />
+
+            {/* Sidebar */}
+            <motion.aside
+              key="sidebar"
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="fixed top-0 left-0 bottom-0 w-64 bg-white z-30 p-4 flex flex-col gap-4 shadow-lg md:hidden"
+            >
+              <button
+                onClick={onCloseMobile}
+                className="self-end text-gray-500 hover:text-gray-700 mb-4"
+              >
+                ✕
+              </button>
+
+              <div className="flex items-center justify-center">
+                <img src="/pink.png" alt="Logo" className="w-full h-14 object-contain" />
+              </div>
+
+              <NavSection
+                title="Dashboard"
+                items={dashboardTabs}
+                collapsed={false}
+                pathname={pathname}
+                roleParam={roleParam}
+              />
+
+              <NavSection
+                title="Management"
+                items={roleBasedTabs[role] || []}
+                collapsed={false}
+                pathname={pathname}
+                roleParam={roleParam}
+              />
+
+              <NavSection
+                title="Others"
+                items={otherTabs}
+                collapsed={false}
+                pathname={pathname}
+                roleParam={roleParam}
+              />
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 

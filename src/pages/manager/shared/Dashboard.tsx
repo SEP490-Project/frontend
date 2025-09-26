@@ -23,7 +23,7 @@ export default function Dashboard() {
 
   return (
     <div className="p-2 sm:p-6 w-full flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Dashboard</h1>
+      <h1 className="text-xl sm:text-2xl font-semibold">Dashboard</h1>
       <>
         {/* KPI Section */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

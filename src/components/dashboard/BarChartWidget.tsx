@@ -11,7 +11,7 @@ export default function BarChartWidget({ title, data }: Props) {
     <div className="p-6 bg-white shadow-lg rounded-2xl h-[340px] flex flex-col">
       <h3 className="text-gray-700 text-base font-semibold mb-3">{title}</h3>
       <div className="flex-1">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer debounce={250} width="100%" height="100%">
           <BarChart data={data}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="name" />

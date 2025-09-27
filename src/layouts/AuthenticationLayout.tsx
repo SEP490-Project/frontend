@@ -25,7 +25,7 @@ export const AuthenticationLayout = () => {
                 <span className="ml-2 text-primary font-[Poppins] font-semibold">Home</span>
               </Button>
             </div>
-            <div className="flex flex-col items-center justify-center min-h-full px-10 lg:px-20">
+            <div className="flex flex-col items-center justify-center px-10 lg:px-20 min-h-[90vh]">
               <Outlet />
             </div>
           </div>

@@ -5,6 +5,7 @@ import { useNavigate } from "react-router";
 import * as yup from "yup";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
+import { PasswordInput } from "../password-input";
 
 interface RegisterRequest {
   email: string;
@@ -124,9 +125,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit }) => {
 
           <div className="w-full">
             <h5 className="pb-1 font-[Poppins]">Password</h5>
-            <Input
+            <PasswordInput
               {...register("password")}
-              type="password"
               placeholder="Enter your password"
               className="w-full"
             />
@@ -137,9 +137,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit }) => {
 
           <div className="w-full">
             <h5 className="pb-1 font-[Poppins]">Confirm Password</h5>
-            <Input
+            <PasswordInput
               {...register("confirmPassword")}
-              type="password"
               placeholder="Confirm your password"
               className="w-full"
             />

@@ -1,10 +1,10 @@
 import React from "react";
 import { useForm } from "react-hook-form";
-import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useNavigate } from "react-router";
+import { PasswordInput } from "../password-input";
 
 interface ResetPasswordRequest {
   password: string;
@@ -48,9 +48,8 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({ onSubmit }
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 w-full">
         <div className="w-full">
           <h5 className="pb-1 font-[Poppins]">New Password</h5>
-          <Input
+          <PasswordInput
             {...register("password")}
-            type="password"
             placeholder="Enter your new password"
             className="w-full"
           />
@@ -61,9 +60,8 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({ onSubmit }
 
         <div className="w-full">
           <h5 className="pb-1 font-[Poppins]">Confirm New Password</h5>
-          <Input
+          <PasswordInput
             {...register("confirmPassword")}
-            type="password"
             placeholder="Confirm your new password"
             className="w-full"
           />

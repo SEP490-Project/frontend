@@ -53,7 +53,8 @@ const NavSection: React.FC<NavSectionProps> = ({
         {items.map((item) => {
           const isMainActive =
             pathname === item.href ||
-            (item.href === "/manage/users" && pathname.startsWith("/manage/users"));
+            pathname.startsWith(item.href + "/") ||
+            (item.href === "/manage/admin/users" && pathname.startsWith("/manage/admin/users"));
 
           return (
             <React.Fragment key={item.href}>

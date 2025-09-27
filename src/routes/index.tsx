@@ -5,7 +5,7 @@ import Dashboard from "@/pages/manager/shared/Dashboard";
 import { Account } from "@/pages/manager/shared";
 import { User } from "@/pages/manager/admin";
 import { Contract, Campaign } from "@/pages/manager/brand";
-import { Partner, Assignment, Contracts } from "@/pages/manager/marketing";
+import { Partner, Assignment, Contracts, CreateContract } from "@/pages/manager/marketing";
 import ManageLayout from "@/layouts/ManageLayout";
 import Login from "@/pages/authentication/Login";
 import Register from "@/pages/authentication/Register";
@@ -36,6 +36,8 @@ const AppRoutes = () => (
         <Route path="marketing/partners" element={<Partner />} />
         <Route path="marketing/contracts" element={<Contracts />} />
         <Route path="marketing/assignments" element={<Assignment />} />
+
+        <Route path="marketing/contracts/create" element={<CreateContract />} />
         {/* Thêm các route riêng tư khác tại đây */}
       </Route>
 

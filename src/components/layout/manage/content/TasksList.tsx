@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { TaskDetail } from "./TaskDetail";
 
 export const beautyTasks = [
   {
@@ -202,6 +203,8 @@ interface TaskListProps {
 
 export function TaskList({ currentDate }: TaskListProps) {
   const [expandedTasks, setExpandedTasks] = useState<Set<number>>(new Set());
+  const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
+  const [showTaskDetail, setShowTaskDetail] = useState(false);
 
   // Auto-progress tasks based on current date
   const getAutoProgressStatus = (dueDate: Date, originalStatus: TaskStatus): TaskStatus => {
@@ -263,8 +266,13 @@ export function TaskList({ currentDate }: TaskListProps) {
   };
 
   const handleViewTaskDetail = (taskId: number) => {
-    console.log(`Viewing details for task ${taskId}`);
-    // Add your task detail viewing logic here
+    setSelectedTaskId(taskId);
+    setShowTaskDetail(true);
+  };
+
+  const handleCloseTaskDetail = () => {
+    setShowTaskDetail(false);
+    setSelectedTaskId(null);
   };
 
   const getStatusColor = (status: TaskStatus) => {
@@ -279,6 +287,17 @@ export function TaskList({ currentDate }: TaskListProps) {
   };
 
   const filteredTasks = getTasksForDateRange();
+
+  // If showing task detail, render the TaskDetail component instead of the task list
+  if (showTaskDetail && selectedTaskId) {
+    return (
+      <TaskDetail
+        taskId={selectedTaskId}
+        onClose={handleCloseTaskDetail}
+        isVisible={showTaskDetail}
+      />
+    );
+  }
 
   return (
     <div className="space-y-4">

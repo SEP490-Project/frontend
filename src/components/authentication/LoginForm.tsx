@@ -5,6 +5,7 @@ import { Button } from "../ui/button";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useNavigate } from "react-router";
+import { PasswordInput } from "../password-input";
 interface MockLogin {
   email: string;
   password: string;
@@ -48,17 +49,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
         </div>
         <div className="w-full">
           <h5 className="pb-1 font-[Poppins]">Password</h5>
-          <Input
-            {...register("password")}
-            type="password"
-            placeholder="Password"
-            className="w-full"
-          />
-          <div
-            className="text-right mt-2 text-sm text-primary hover:underline font-[Poppins] cursor-pointer"
-            onClick={() => navigate("/forgot-password")}
-          >
-            Forgot Password?
+          <PasswordInput {...register("password")} placeholder="Password" className="w-full" />
+          <div className="flex justify-end mt-2 text-sm ">
+            <p
+              className="text-right cursor-pointer font-[Poppins] hover:underline text-primary"
+              onClick={() => navigate("/forgot-password")}
+            >
+              Forgot Password?
+            </p>
           </div>
         </div>
         <Button type="submit" className="mt-4 text-white font-[Poppins]" size={"lg"}>

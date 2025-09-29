@@ -9,7 +9,9 @@ const GlobalHeader = () => {
     <header className="bg-white px-4 py-4 shadow-sm">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Logo */}
-        <div className="text-[#fec6d4] text-xl font-semibold">B-ShowSell</div>
+        <div className="flex items-center">
+          <img src="/pink.png" alt="B-ShowSell Logo" className="h-16 w-auto" />
+        </div>
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8">

@@ -5,23 +5,31 @@ import { motion } from "framer-motion";
 
 const ManageLayout: React.FC = () => {
   const [hidden, setHidden] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const mainRef = useRef<HTMLDivElement>(null);
 
+  // cập nhật isMobile khi resize
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // auto-hide header khi scroll
   useEffect(() => {
     const mainEl = mainRef.current;
     if (!mainEl) return;
 
     let lastScrollY = mainEl.scrollTop;
-
     const handleScroll = () => {
       const currentScrollY = mainEl.scrollTop;
-
       if (currentScrollY > lastScrollY && currentScrollY > 80) {
         setHidden(true);
       } else {
         setHidden(false);
       }
-
       lastScrollY = currentScrollY;
     };
 
@@ -31,7 +39,12 @@ const ManageLayout: React.FC = () => {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar />
+      <Sidebar
+        collapsed={collapsed}
+        isMobile={isMobile}
+        isMobileOpen={mobileOpen}
+        onCloseMobile={() => setMobileOpen(false)}
+      />
 
       <div className="flex-1 flex flex-col relative">
         <motion.div
@@ -40,7 +53,15 @@ const ManageLayout: React.FC = () => {
           transition={{ duration: 0.3, ease: "easeInOut" }}
           className="absolute top-0 left-0 right-0 z-50"
         >
-          <Header />
+          <Header
+            collapsed={collapsed}
+            onToggleCollapse={() => {
+              setCollapsed(!collapsed);
+            }}
+            onToggleMobileSidebar={() => {
+              setMobileOpen((prev) => !prev);
+            }}
+          />
         </motion.div>
 
         <main ref={mainRef} className="flex-1 bg-gray-200 px-2 overflow-y-auto pt-16">

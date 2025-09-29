@@ -37,6 +37,7 @@ const Product: React.FC = () => {
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
 
   const filteredproducts = useMemo(() => {
     return mockProducts.filter((product) => {
@@ -45,9 +46,11 @@ const Product: React.FC = () => {
         product.description.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === "ALL" || product.type === statusFilter;
 
-      return matchesSearch && matchesStatus;
+      const matchesCategory = categoryFilter === "ALL" || product.category === categoryFilter;
+
+      return matchesSearch && matchesStatus && matchesCategory;
     });
-  }, [searchTerm, statusFilter]);
+  }, [searchTerm, statusFilter, categoryFilter]);
 
   const totalPages = Math.ceil(filteredproducts.length / PAGE_SIZE);
   const paginatedproducts = filteredproducts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -144,14 +147,14 @@ const Product: React.FC = () => {
           </div>
 
           <div className="min-w-[150px]">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger>
-                <SelectValue placeholder="Type" />
+                <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">All Category</SelectItem>
-                <SelectItem value="STANDARD">Standard</SelectItem>
-                <SelectItem value="LIMITED">Limited</SelectItem>
+                <SelectItem value="Perfumes">Perfumes</SelectItem>
+                <SelectItem value="Skincare">Skincare</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -193,8 +196,17 @@ const Product: React.FC = () => {
                     index % 2 === 0 ? "bg-white" : "bg-gray-25"
                   }`}
                 >
-                  <TableCell className="py-4">
-                    <span className="font-medium text-gray-900">{product.name}</span>
+                  <TableCell className="py-4 max-w-xs">
+                    <div className="flex items-center">
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className="w-12 h-12 object-cover rounded mr-4 float-left"
+                      />
+                      <span className="font-medium text-gray-900 block text-nowrap overflow-hidden text-ellipsis">
+                        {product.name}
+                      </span>
+                    </div>
                   </TableCell>
 
                   <TableCell className="py-4">
@@ -209,7 +221,7 @@ const Product: React.FC = () => {
                     <Badge
                       className={
                         product.type === "STANDARD"
-                          ? "bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200"
+                          ? "bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200 "
                           : "bg-orange-100 text-orange-800 border border-orange-200 hover:bg-orange-200"
                       }
                     >

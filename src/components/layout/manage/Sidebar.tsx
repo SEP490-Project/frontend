@@ -135,7 +135,7 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
-  role = "marketing",
+  role = "sale",
   collapsed = false,
   isMobile = false,
   isMobileOpen = false,
@@ -170,17 +170,17 @@ const Sidebar: React.FC<SidebarProps> = ({
     ],
     sale: [
       { href: "/manage/sale/task", label: "Tasks & Schedule", icon: <FaCalendarDays size={18} /> },
-      { href: "/manage/sale/product", label: "Product Management", icon: <FaBoxOpen size={18} /> },
+      { href: "/manage/sale/product", label: "Product", icon: <FaBoxOpen size={18} /> },
       {
         href: "/manage/sale/categorie",
-        label: "Category Management",
+        label: "Category",
         icon: <FaFolderTree size={18} />,
       },
-      { href: "/manage/sale/order", label: "Order Management", icon: <FaCartShopping size={18} /> },
-      { href: "/manage/sale/review", label: "Review Management", icon: <FaStar size={18} /> },
+      { href: "/manage/sale/order", label: "Order", icon: <FaCartShopping size={18} /> },
+      { href: "/manage/sale/review", label: "Review", icon: <FaStar size={18} /> },
       {
         href: "/manage/sale/transaction",
-        label: "Transaction Management",
+        label: "Transaction",
         icon: <FaMoneyCheckDollar size={18} />,
       },
     ],
@@ -190,8 +190,8 @@ const Sidebar: React.FC<SidebarProps> = ({
         label: "Tasks & Schedule",
         icon: <FaCalendarDays size={18} />,
       },
-      { href: "/manage/content/blog", label: "Blog Management", icon: <FaFilePen size={18} /> },
-      { href: "/manage/content/tag", label: "Tag Management", icon: <FaHashtag size={18} /> },
+      { href: "/manage/content/blog", label: "Blog", icon: <FaFilePen size={18} /> },
+      { href: "/manage/content/tag", label: "Tag", icon: <FaHashtag size={18} /> },
     ],
     admin: [
       {

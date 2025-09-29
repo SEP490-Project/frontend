@@ -14,6 +14,7 @@ import { AuthenticationLayout } from "../layouts/AuthenticationLayout";
 import { ForgotPassword } from "@/pages/authentication/ForgotPassword";
 import { ResetPassword } from "@/pages/authentication/ResetPassword";
 import CustomerLayout from "@/layouts/CustomerLayout";
+import Product from "@/pages/manager/sale/Product";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -36,7 +37,8 @@ const AppRoutes = () => (
         <Route path="marketing/partners" element={<Partner />} />
         <Route path="marketing/contracts" element={<Contracts />} />
         <Route path="marketing/assignments" element={<Assignment />} />
-        {/* Thêm các route riêng tư khác tại đây */}
+
+        <Route path="sale/product" element={<Product />} />
       </Route>
 
       <Route

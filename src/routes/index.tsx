@@ -15,6 +15,7 @@ import { ForgotPassword } from "@/pages/authentication/ForgotPassword";
 import { ResetPassword } from "@/pages/authentication/ResetPassword";
 import CustomerLayout from "@/layouts/CustomerLayout";
 import Product from "@/pages/manager/sale/Product";
+import { AssignedTasks, ManageContent, ManageTags } from "@/pages/manager/content";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -39,6 +40,10 @@ const AppRoutes = () => (
         <Route path="marketing/assignments" element={<Assignment />} />
 
         <Route path="sale/product" element={<Product />} />
+
+        <Route path="content/task" element={<AssignedTasks />} />
+        <Route path="content/blog" element={<ManageContent />} />
+        <Route path="content/tag" element={<ManageTags />} />
       </Route>
 
       <Route

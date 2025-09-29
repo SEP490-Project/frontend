@@ -3,6 +3,7 @@
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
+import { beautyTasks } from "./TasksList";
 
 const daysOfWeek = ["S", "M", "T", "W", "T", "F", "S"];
 
@@ -23,6 +24,19 @@ export function Calendar({ currentDate, setCurrentDate }: CalendarProps) {
 
   const prevMonth = new Date(year, month - 1, 0);
   const daysInPrevMonth = prevMonth.getDate();
+
+  // Function to check if a date has tasks
+  const hasTasksOnDate = (date: Date): boolean => {
+    return beautyTasks.some((task) => {
+      const taskDate = new Date(task.date);
+      return (
+        taskDate.getFullYear() === date.getFullYear() &&
+        taskDate.getMonth() === date.getMonth() &&
+        taskDate.getDate() === date.getDate() &&
+        task.items.length > 0
+      );
+    });
+  };
 
   const calendarDays = [];
 
@@ -145,11 +159,12 @@ export function Calendar({ currentDate, setCurrentDate }: CalendarProps) {
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 1.05 }}
           transition={{ duration: 0.3 }}
-          className="grid grid-cols-7 gap-1"
+          className="grid grid-cols-7 gap-1 place-items-center"
         >
           {calendarDays.map((dayObj, index) => {
             const isTodayDate = isToday(dayObj.date);
             const isSelectedDate = isSelected(dayObj.date);
+            const hasTasks = hasTasksOnDate(dayObj.date);
 
             return (
               <motion.div
@@ -160,7 +175,8 @@ export function Calendar({ currentDate, setCurrentDate }: CalendarProps) {
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
                 className={`
-                  text-center py-2 text-sm cursor-pointer rounded transition-all duration-200
+                  text-center cursor-pointer rounded transition-all duration-200 relative h-10 w-10 mx-auto
+                  flex flex-col items-center justify-center
                   ${
                     isSelectedDate
                       ? "bg-[#6366f1] text-white font-medium shadow-md"
@@ -173,7 +189,19 @@ export function Calendar({ currentDate, setCurrentDate }: CalendarProps) {
                 `}
                 onClick={() => setCurrentDate(dayObj.date)}
               >
-                {dayObj.day}
+                <span className="text-sm leading-none relative">
+                  {dayObj.day}
+                  {hasTasks && (
+                    <motion.div
+                      initial={{ opacity: 0, scaleX: 0 }}
+                      animate={{ opacity: 1, scaleX: 1 }}
+                      transition={{ duration: 0.3, delay: 0.1 }}
+                      className={`absolute left-1/2 transform -translate-x-1/2 bottom-[-2px] h-0.5 w-4 ${
+                        isSelectedDate ? "bg-white" : isTodayDate ? "bg-[#6366f1]" : "bg-[#6366f1]"
+                      }`}
+                    />
+                  )}
+                </span>
               </motion.div>
             );
           })}

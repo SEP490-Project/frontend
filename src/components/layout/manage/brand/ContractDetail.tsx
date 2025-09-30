@@ -58,7 +58,11 @@ interface ContractData {
   updated_at: string;
 }
 
-export default function ContractDetail() {
+interface ContractDetailProps {
+  onBack?: () => void;
+}
+
+export default function ContractDetail({ onBack }: ContractDetailProps) {
   const [contractStatus, setContractStatus] = useState<
     "DRAFT" | "ACTIVE" | "COMPLETED" | "TERMINATED"
   >("DRAFT");
@@ -180,6 +184,7 @@ export default function ContractDetail() {
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
+              onClick={onBack}
               className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
             >
               <ArrowLeft className="h-4 w-4" />

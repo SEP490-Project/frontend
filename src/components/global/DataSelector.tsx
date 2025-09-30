@@ -15,7 +15,7 @@ import {
   CommandGroup,
 } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
-import { FaMagnifyingGlass, FaX } from "react-icons/fa6";
+import { FaMagnifyingGlass, FaXmark } from "react-icons/fa6";
 
 interface DataSelectorProps<T> {
   data: T[];
@@ -64,7 +64,7 @@ const DataSelector = <T extends { id: string }>({
                 onSelect(null);
               }}
             >
-              <FaX className="h-4 w-4 text-gray-400" />
+              <FaXmark className="h-4 w-4 text-gray-400" />
             </button>
           )}
         </div>

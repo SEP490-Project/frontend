@@ -20,6 +20,7 @@ import {
   FaHandshake,
   FaFileContract,
   FaListCheck,
+  FaXmark,
 } from "react-icons/fa6";
 
 interface TabItem {
@@ -51,10 +52,15 @@ const NavSection: React.FC<NavSectionProps> = ({
       {!collapsed && <div className="uppercase text-xs font-bold text-gray-400 mb-2">{title}</div>}
       <nav className="flex flex-col gap-2 relative">
         {items.map((item) => {
-          const isMainActive =
-            pathname === item.href ||
-            pathname.startsWith(item.href + "/") ||
-            (item.href === "/manage/admin/users" && pathname.startsWith("/manage/admin/users"));
+          let isMainActive = false;
+
+          if (item.href === "/manage") {
+            isMainActive = pathname === "/manage";
+          } else if (item.href === "/manage/admin/users") {
+            isMainActive = pathname.startsWith("/manage/admin/users");
+          } else {
+            isMainActive = pathname === item.href || pathname.startsWith(item.href + "/");
+          }
 
           return (
             <React.Fragment key={item.href}>
@@ -287,7 +293,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 onClick={onCloseMobile}
                 className="self-end text-gray-500 hover:text-gray-700 mb-4"
               >
-                ✕
+                <FaXmark size={24} />
               </button>
 
               <div className="flex items-center justify-center">

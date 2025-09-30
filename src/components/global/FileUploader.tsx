@@ -18,7 +18,7 @@ import {
   FaDownload,
   FaEye,
   FaCheck,
-  FaX,
+  FaXmark,
   FaChartColumn,
 } from "react-icons/fa6";
 
@@ -329,7 +329,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       {error && (
         <div className="p-3 bg-red-50 border border-red-200 rounded-md">
           <div className="flex items-center gap-2">
-            <FaX className="h-4 w-4 text-red-500" />
+            <FaXmark className="h-4 w-4 text-red-500" />
             <p className="text-sm text-red-700">{error}</p>
           </div>
         </div>
@@ -387,7 +387,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
                         className="text-xs"
                       >
                         {fileItem.status === "completed" && <FaCheck className="h-3 w-3 mr-1" />}
-                        {fileItem.status === "error" && <FaX className="h-3 w-3 mr-1" />}
+                        {fileItem.status === "error" && <FaXmark className="h-3 w-3 mr-1" />}
                         {fileItem.status}
                       </Badge>
                     </div>

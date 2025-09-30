@@ -5,7 +5,7 @@ import dashboardData from "./dashboardData.json";
 
 export default function Dashboard() {
   // TODO: lấy role từ context hoặc props
-  const role = "content"; // giả lập role, chọn một role hợp lệ từ dashboardConfig
+  const role = "brand"; // giả lập role, chọn một role hợp lệ từ dashboardConfig
   const widgets = dashboardConfig[role] || [];
 
   const [data, setData] = useState<any>({});

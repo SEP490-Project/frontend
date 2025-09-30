@@ -135,7 +135,7 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
-  role = "sale",
+  role = "brand",
   collapsed = false,
   isMobile = false,
   isMobileOpen = false,

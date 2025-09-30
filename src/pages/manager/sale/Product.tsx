@@ -26,10 +26,13 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { FaEye, FaPenToSquare, FaBan, FaFilter } from "react-icons/fa6";
+import { FaPenToSquare, FaFilter } from "react-icons/fa6";
 import { mockProducts } from "./sale-mock-data";
 import { Switch } from "@/components/ui/switch";
 import { Trash } from "lucide-react";
+import { DeleteModal } from "@/components/modal/DeleteModal";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { StatusModal } from "@/components/modal/StatusModal";
 
 const PAGE_SIZE = 5;
 
@@ -127,7 +130,7 @@ const Product: React.FC = () => {
     <div className="min-h-fit p-4 sm:p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-xl sm:text-2xl font-semibold">Products</h1>
-        <Button className="bg-primary hover:bg-pink-500 text-white">Add product</Button>
+        <Button className="bg-primary hover:bg-[#f794a8] text-white">Add product</Button>
       </div>
 
       <div className="bg-white rounded-lg shadow mb-4 p-4">
@@ -230,7 +233,15 @@ const Product: React.FC = () => {
                   </TableCell>
 
                   <TableCell className="py-4">
-                    <Switch checked={product.isActive} />
+                    <Dialog>
+                      <DialogTrigger>
+                        <Switch checked={product.isActive} />
+                      </DialogTrigger>
+                      <StatusModal
+                        name={product.name}
+                        status={product.isActive ? "Inactive" : "Active"}
+                      />
+                    </Dialog>
                   </TableCell>
 
                   <TableCell className="py-4">
@@ -243,14 +254,20 @@ const Product: React.FC = () => {
                       >
                         <FaPenToSquare className="text-yellow-600" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 hover:bg-red-50"
-                        title="Delete"
-                      >
-                        <Trash className="text-red-600" />
-                      </Button>
+
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-red-50"
+                            title="Delete"
+                          >
+                            <Trash className="text-red-600" />
+                          </Button>
+                        </DialogTrigger>
+                        <DeleteModal name={product.name} />
+                      </Dialog>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -276,42 +293,44 @@ const Product: React.FC = () => {
                   </Badge>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm text-gray-500">Price</div>
-                  <div className="font-semibold text-lg">${product.price.toFixed(2)}</div>
+                  <div className="text-sm text-gray-500">Stock</div>
+                  <div className="font-semibold text-lg">{product.current_stock} units</div>
                 </div>
               </div>
 
               <div className="space-y-2 text-sm text-gray-600">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium">Description:</span>
-                  <span>{product.description}</span>
+                  <span className="font-medium">Brand:</span>
+                  <span>{product.brand}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="font-medium">Stock:</span>
-                  <span
-                    className={`font-medium ${
-                      product.current_stock <= 10
-                        ? "text-red-600"
-                        : product.current_stock <= 50
-                          ? "text-yellow-600"
-                          : "text-green-600"
-                    }`}
-                  >
-                    {product.current_stock} units
-                  </span>
+                  <span className="font-medium">Category:</span>
+                  <span>{product.category}</span>
                 </div>
               </div>
 
               <div className="flex gap-1 pt-2">
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <FaEye className="text-blue-600" />
-                </Button>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 hover:bg-yellow-50"
+                  title="Edit"
+                >
                   <FaPenToSquare className="text-yellow-600" />
                 </Button>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <FaBan className="text-red-600" />
-                </Button>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 hover:bg-red-50"
+                      title="Delete"
+                    >
+                      <Trash className="text-red-600" />
+                    </Button>
+                  </DialogTrigger>
+                  <DeleteModal name={product.name} />
+                </Dialog>
               </div>
             </div>
           ))}

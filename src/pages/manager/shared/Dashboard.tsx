@@ -5,7 +5,7 @@ import dashboardData from "./dashboardData.json";
 
 const DashboardPage: React.FC = () => {
   // TODO: lấy role từ context hoặc props
-  const role = "marketing"; // giả lập role, chọn một role hợp lệ từ dashboardConfig
+  const role = "content"; // giả lập role, chọn một role hợp lệ từ dashboardConfig
   const widgets = dashboardConfig[role] || [];
 
   const [data, setData] = useState<any>({});

@@ -2,8 +2,3 @@
   font-family: "Montserrat";
   src: url("../assets/fonts/monsterrat/Montserrat-Regular.ttf") format("truetype");
 }
-
-@font-face {
-  font-family: "Poppins";
-  src: url("../assets/fonts/poppins/Poppins-Regular.ttf") format("truetype");
-}

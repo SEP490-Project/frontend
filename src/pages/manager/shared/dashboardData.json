@@ -1,0 +1,108 @@
+{
+  "admin": {
+    "totalUsers": { "value": 1200, "status": "up", "statusText": "+5%" },
+    "totalRevenue": { "value": 500000000, "status": "down", "statusText": "-2%" },
+    "monthlyRevenue": [
+      { "month": "Jan", "value": 100 },
+      { "month": "Feb", "value": 200 },
+      { "month": "Mar", "value": 150 },
+      { "month": "Apr", "value": 300 },
+      { "month": "May", "value": 250 },
+      { "month": "Jun", "value": 400 },
+      { "month": "Jul", "value": 350 },
+      { "month": "Aug", "value": 450 },
+      { "month": "Sep", "value": 500 },
+      { "month": "Oct", "value": 600 },
+      { "month": "Nov", "value": 550 },
+      { "month": "Dec", "value": 700 }
+    ],
+    "topChannels": [
+      { "channel": "Facebook", "ctr": 3.5, "reach": 20000 },
+      { "channel": "TikTok", "ctr": 4.1, "reach": 30000 },
+      { "channel": "Website", "ctr": 2.9, "reach": 12000 }
+    ]
+  },
+  "marketing": {
+    "activeBrands": { "value": 12, "status": "up", "statusText": "+2 compared to last month" },
+    "activeCampaigns": { "value": 8, "status": "down", "statusText": "-1 compared to last week" },
+    "finishedCampaigns": { "value": 5, "status": "up", "statusText": "+3 finished" },
+    "monthlyRevenue": { "value": 350000000, "status": "up", "statusText": "+10%" },
+    "brandRevenue": [
+      { "name": "L’Oreal", "value": 120000000 },
+      { "name": "Innisfree", "value": 80000000 },
+      { "name": "Maybelline", "value": 50000000 },
+      { "name": "The Face Shop", "value": 100000000 }
+    ],
+    "monthlyReach": [
+      { "month": "Jan", "reach": 5000, "engagement": 1000 },
+      { "month": "Feb", "reach": 8000, "engagement": 1500 },
+      { "month": "Mar", "reach": 12000, "engagement": 2000 },
+      { "month": "Apr", "reach": 15000, "engagement": 2500 },
+      { "month": "May", "reach": 18000, "engagement": 3000 },
+      { "month": "Jun", "reach": 22000, "engagement": 4000 },
+      { "month": "Jul", "reach": 20000, "engagement": 5000 },
+      { "month": "Aug", "reach": 25000, "engagement": 6000 },
+      { "month": "Sep", "reach": 30000, "engagement": 7500 },
+      { "month": "Oct", "reach": 35000, "engagement": 8000 },
+      { "month": "Nov", "reach": 40000, "engagement": 9000 },
+      { "month": "Dec", "reach": 45000, "engagement": 10000 }
+    ],
+    "collabRevenueShare": [
+      { "type": "Advertisement", "value": 40 },
+      { "type": "Affiliate", "value": 35 },
+      { "type": "Co-produce", "value": 25 }
+    ],
+    "campaignTimeline": [
+      { "campaign": "Summer Skincare", "brand": "Innisfree", "progress": "In Progress" },
+      { "campaign": "New Lipstick Launch", "brand": "L’Oreal", "progress": "In Progress" }
+    ],
+    "alerts": [
+      "⚠️ Contract with L’Oreal expires in 10 days.",
+      "⚠️ Campaign “New Lipstick Launch” has 1 video not yet posted."
+    ]
+  },
+  "content": {
+    "totalPosts": { "value": 23, "status": "up", "statusText": "+4 new posts" },
+    "totalViews": { "value": 80000, "status": "up", "statusText": "+15% compared to last month" },
+    "totalEngagement": { "value": 10000, "status": "down", "statusText": "-5% engagement" },
+    "avgCTR": { "value": 4.2, "status": "up", "statusText": "+0.3%" },
+    "channelPerformance": [
+      { "name": "Website", "value": 10 },
+      { "name": "Facebook", "value": 8 },
+      { "name": "TikTok", "value": 5 }
+    ]
+  },
+  "sales": {
+    "totalOrders": { "value": 300, "status": "up", "statusText": "+12 new orders" },
+    "todayRevenue": {
+      "value": 15000000,
+      "status": "down",
+      "statusText": "-8% compared to yesterday"
+    },
+    "bestSeller": { "value": "Serum X", "status": "up", "statusText": "Best seller of the week" },
+    "monthlySales": [
+      { "month": "Jan", "value": 50 },
+      { "month": "Feb", "value": 80 },
+      { "month": "Mar", "value": 60 },
+      { "month": "Apr", "value": 120 },
+      { "month": "May", "value": 150 },
+      { "month": "Jun", "value": 250 },
+      { "month": "Jul", "value": 100 },
+      { "month": "Aug", "value": 200 },
+      { "month": "Sep", "value": 300 },
+      { "month": "Oct", "value": 350 },
+      { "month": "Nov", "value": 400 },
+      { "month": "Dec", "value": 450 }
+    ]
+  },
+  "brand": {
+    "campaigns": { "value": 4, "status": "up", "statusText": "+1 new campaign" },
+    "pendingPayments": { "value": 2, "status": "down", "statusText": "Processed 1 less" },
+    "lastInvoice": { "value": 50000000, "status": "up", "statusText": "On-time payment" },
+    "kpis": [
+      { "metric": "Reach", "value": 25000 },
+      { "metric": "Engagement", "value": 5000 },
+      { "metric": "CTR", "value": "3.2%" }
+    ]
+  }
+}

@@ -1,14 +1,21 @@
-import React from "react";
-import { Button } from "@/components/ui/button";
+import BestSeller from "@/components/layout/global/BestSeller";
+import Blogs from "@/components/layout/global/Blogs";
+import BloomBeautyGallery from "@/components/layout/global/BloomBeautyGallery";
+import Combo from "@/components/layout/global/Combo";
+import { HeroSection } from "@/components/layout/global/HeroSection";
+import NewArrivals from "@/components/layout/global/NewArrivals";
 
-const Homepage: React.FC = () => {
+const Homepage = () => {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-100 to-purple-100 px-2">
-      <h1 className="text-4xl font-bold mb-4 text-purple-700 text-center">Welcome to Homepage</h1>
-      <p className="text-lg text-gray-600 mb-8 text-center">
-        This is a modern homepage using Tailwind CSS & ShadcnUI.
-      </p>
-      <Button className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto">Get Started</Button>
+    <div className="min-h-screen">
+      <main>
+        <HeroSection />
+        <NewArrivals />
+        <BestSeller />
+        <Combo />
+        <Blogs />
+        <BloomBeautyGallery />
+      </main>
     </div>
   );
 };

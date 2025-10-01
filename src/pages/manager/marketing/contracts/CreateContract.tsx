@@ -16,217 +16,211 @@ interface TabConfig {
   isRequired: boolean;
 }
 
+// Constants
+const CONTRACT_TYPE_OPTIONS = [
+  { value: "ADVERTISING", label: "Advertising Contract" },
+  { value: "AFFILIATE", label: "Affiliate Marketing" },
+  { value: "BRAND_AMBASSADOR", label: "Brand Ambassador" },
+  { value: "CO_PRODUCING", label: "Co-Production" },
+];
+
+const CONTRACT_TYPE_COLORS = {
+  ADVERTISING: { bg: "bg-orange-100", text: "text-orange-800", border: "border-orange-200" },
+  AFFILIATE: { bg: "bg-blue-100", text: "text-blue-800", border: "border-blue-200" },
+  BRAND_AMBASSADOR: {
+    bg: "bg-emerald-100",
+    text: "text-emerald-800",
+    border: "border-emerald-200",
+  },
+  CO_PRODUCING: { bg: "bg-violet-100", text: "text-violet-800", border: "border-violet-200" },
+} as const;
+
+const INITIAL_TABS: TabConfig[] = [
+  { id: "contract-info", label: "Contract Information", isCompleted: false, isRequired: true },
+  { id: "brand-selection", label: "Brand Selection", isCompleted: false, isRequired: true },
+  { id: "representative", label: "Representative Info", isCompleted: false, isRequired: true },
+  { id: "financial-terms", label: "Financial Terms", isCompleted: false, isRequired: true },
+  { id: "contract-actions", label: "Documents & Actions", isCompleted: false, isRequired: true },
+];
+
+const INITIAL_FORM_DATA = {
+  brandId: "",
+  parentContractId: "",
+  contractNumber: "",
+  type: "",
+  signedDate: "",
+  signedLocation: "",
+  startDate: "",
+  endDate: "",
+  brandRepresentativeName: "",
+  brandRepresentativePosition: "",
+  brandRepresentativePhone: "",
+  brandRepresentativeEmail: "",
+  brandTaxNumber: "",
+  brandBankName: "",
+  brandBankAccountNumber: "",
+  brandBankAccountHolder: "",
+  webRepresentativeStaffId: "",
+  webRepresentativeName: "",
+  webRepresentativePosition: "",
+  webRepresentativePhone: "",
+  webRepresentativeEmail: "",
+  webRepresentativeTaxNumber: "",
+  currency: "VND",
+  financialTerms: {},
+  scopeOfWork: {},
+  legalTerms: {},
+  contractFiles: [],
+  proposalFiles: [],
+};
+
+// Helper functions
+const getContractTypeColor = (type: string) => {
+  return (
+    CONTRACT_TYPE_COLORS[type as keyof typeof CONTRACT_TYPE_COLORS] || {
+      bg: "bg-gray-100",
+      text: "text-gray-800",
+      border: "border-gray-200",
+    }
+  );
+};
+
+const getDefaultFinancialTerms = (type: string) => {
+  const baseTerms = { paymentMethod: "Chuyển khoản", schedule: [] };
+
+  switch (type) {
+    case "ADVERTISING":
+    case "BRAND_AMBASSADOR":
+      return {
+        ...baseTerms,
+        model: "fixed",
+        totalCost: 0,
+        costBreakdown: { serviceFee: 0, otherFees: 0 },
+      };
+
+    case "AFFILIATE":
+      return {
+        ...baseTerms,
+        model: "levels",
+        basePerClick: 0,
+        levels: [],
+        paymentCycle: "",
+        paymentDate: "",
+        taxWithholding: { threshold: 2000000, ratePercent: 10 },
+      };
+
+    case "CO_PRODUCING":
+      return {
+        ...baseTerms,
+        model: "share",
+        capitalContribution: {
+          company: { description: "", value: 0 },
+          kol: { description: "", value: 0 },
+        },
+        profitSplitCompanyPercent: 0,
+        profitSplitKolPercent: 0,
+        profitDistributionCycle: "",
+        profitDistributionDate: "",
+      };
+
+    default:
+      return baseTerms;
+  }
+};
+
+const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
+  switch (tabId) {
+    case "contract-info":
+      return !!(
+        formData.type &&
+        formData.contractNumber &&
+        formData.signedDate &&
+        formData.startDate &&
+        formData.endDate &&
+        formData.signedLocation &&
+        formData.scopeOfWork?.description
+      );
+
+    case "brand-selection":
+      return !!formData.brandId;
+
+    case "representative":
+      return !!(
+        formData.brandRepresentativeName &&
+        formData.brandRepresentativeEmail &&
+        formData.webRepresentativeName &&
+        formData.webRepresentativeEmail
+      );
+
+    case "financial-terms": {
+      if (!formData.type) return false;
+
+      const hasSchedule =
+        formData.financialTerms?.schedule?.length > 0 &&
+        formData.financialTerms.schedule.every((item: any) => item.milestone && item.amount > 0);
+
+      if (formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR") {
+        const totalCost = formData.financialTerms?.totalCost || 0;
+        const scheduleTotal = (formData.financialTerms?.schedule || []).reduce(
+          (sum: number, item: any) => sum + (item.amount || 0),
+          0,
+        );
+        return totalCost > 0 && hasSchedule && Math.abs(totalCost - scheduleTotal) < 0.01;
+      }
+
+      if (formData.type === "AFFILIATE") {
+        return !!(
+          formData.financialTerms?.basePerClick > 0 &&
+          formData.financialTerms?.paymentCycle &&
+          formData.financialTerms?.levels?.length > 0 &&
+          hasSchedule
+        );
+      }
+
+      if (formData.type === "CO_PRODUCING") {
+        const validProfitSplit =
+          formData.financialTerms?.profitSplitCompanyPercent > 0 &&
+          formData.financialTerms?.profitSplitKolPercent > 0 &&
+          formData.financialTerms.profitSplitCompanyPercent +
+            formData.financialTerms.profitSplitKolPercent ===
+            100;
+        const validCapital =
+          formData.financialTerms?.capitalContribution?.company?.value > 0 &&
+          formData.financialTerms?.capitalContribution?.kol?.value > 0;
+        return validProfitSplit && validCapital && hasSchedule;
+      }
+      return false;
+    }
+
+    case "contract-actions":
+      return formData.contractFiles?.length > 0 && formData.proposalFiles?.length > 0;
+
+    default:
+      return false;
+  }
+};
+
 const CreateContractPage: React.FC = () => {
-  const [formData, setFormData] = useState<any>({
-    // Basic contract info
-    brandId: "",
-    parentContractId: "",
-    contractNumber: "",
-    type: "",
-
-    // Dates
-    signedDate: "",
-    signedLocation: "",
-    startDate: "",
-    endDate: "",
-
-    // Brand Representative details
-    brandRepresentativeName: "",
-    brandRepresentativePosition: "",
-    brandRepresentativePhone: "",
-    brandRepresentativeEmail: "",
-    brandTaxNumber: "",
-    brandBankName: "",
-    brandBankAccountNumber: "",
-    brandBankAccountHolder: "",
-
-    // Web Representative details (KOL/Blogger side)
-    webRepresentativeStaffId: "",
-    webRepresentativeName: "",
-    webRepresentativePosition: "",
-    webRepresentativePhone: "",
-    webRepresentativeEmail: "",
-    webRepresentativeTaxNumber: "",
-
-    // Currency
-    currency: "VND",
-
-    // JSONB fields
-    financialTerms: {},
-    scopeOfWork: {
-      description: "",
-      products: [],
-      technicalRequirements: "",
-      deliverables: [],
-      brandingRestrictions: [],
-      coProductionRoles: {},
-    },
-    legalTerms: {},
-
-    // UI helper fields
-    contractFiles: [],
-    proposalFiles: [],
-  });
-
+  const [formData, setFormData] = useState<any>(INITIAL_FORM_DATA);
   const [selectedBrand, setSelectedBrand] = useState<any>(null);
   const [isExtension, setIsExtension] = useState(false);
   const [errors, setErrors] = useState<any>({});
   const [activeTab, setActiveTab] = useState("contract-info");
-
-  const contractTypeOptions = [
-    { value: "ADVERTISING", label: "Advertising Contract" },
-    { value: "AFFILIATE", label: "Affiliate Marketing" },
-    { value: "BRAND_AMBASSADOR", label: "Brand Ambassador" },
-    { value: "CO_PRODUCING", label: "Co-Production" },
-  ];
-
-  // Contract type color mapping
-  type ContractType = "ADVERTISING" | "AFFILIATE" | "BRAND_AMBASSADOR" | "CO_PRODUCING";
-
-  const getContractTypeColor = (type: string) => {
-    const colorMap: Record<ContractType, { bg: string; text: string; border: string }> = {
-      ADVERTISING: {
-        bg: "bg-orange-100",
-        text: "text-orange-800",
-        border: "border-orange-200",
-      },
-
-      // Affiliate -> xanh dương (mạng lưới, tin cậy)
-      AFFILIATE: {
-        bg: "bg-blue-100",
-        text: "text-blue-800",
-        border: "border-blue-200",
-      },
-
-      // Đại sứ -> xanh lá (tin tưởng, bền vững)
-      BRAND_AMBASSADOR: {
-        bg: "bg-emerald-100",
-        text: "text-emerald-800",
-        border: "border-emerald-200",
-      },
-
-      // Đồng sản xuất -> tím (sáng tạo, hợp tác)
-      CO_PRODUCING: {
-        bg: "bg-violet-100",
-        text: "text-violet-800",
-        border: "border-violet-200",
-      },
-    };
-
-    if (type in colorMap) {
-      return colorMap[type as ContractType];
-    }
-    return {
-      bg: "bg-gray-100",
-      text: "text-gray-800",
-      border: "border-gray-200",
-    };
-  };
-
-  // Tab configuration
-  const [tabs, setTabs] = useState<TabConfig[]>([
-    { id: "contract-info", label: "Contract Information", isCompleted: false, isRequired: true },
-    { id: "brand-selection", label: "Brand Selection", isCompleted: false, isRequired: true },
-    { id: "representative", label: "Representative Info", isCompleted: false, isRequired: true },
-    { id: "financial-terms", label: "Financial Terms", isCompleted: false, isRequired: true },
-    { id: "contract-actions", label: "Documents & Actions", isCompleted: false, isRequired: true },
-  ]);
+  const [tabs, setTabs] = useState<TabConfig[]>(INITIAL_TABS);
 
   // Check completion status for each tab
   const checkTabCompletion = useCallback(() => {
-    const newTabs = tabs.map((tab) => {
-      let isCompleted = false;
-
-      switch (tab.id) {
-        case "contract-info": {
-          isCompleted = !!(
-            formData.type &&
-            formData.contractNumber &&
-            formData.signedDate &&
-            formData.startDate &&
-            formData.endDate &&
-            formData.signedLocation &&
-            formData.scopeOfWork?.description
-          );
-          break;
-        }
-        case "brand-selection": {
-          isCompleted = !!formData.brandId;
-          break;
-        }
-        case "representative": {
-          isCompleted = !!(
-            formData.brandRepresentativeName &&
-            formData.brandRepresentativeEmail &&
-            formData.webRepresentativeName &&
-            formData.webRepresentativeEmail
-          );
-          break;
-        }
-        case "financial-terms": {
-          if (!formData.type) {
-            isCompleted = false;
-          } else {
-            // Common requirement: must have at least one schedule item
-            const hasSchedule =
-              formData.financialTerms?.schedule &&
-              formData.financialTerms.schedule.length > 0 &&
-              formData.financialTerms.schedule.every(
-                (item: any) => item.milestone && item.amount > 0,
-              );
-
-            if (formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR") {
-              // Must have total cost and schedule total must match
-              const totalCost = formData.financialTerms?.totalCost || 0;
-              const scheduleTotal = (formData.financialTerms?.schedule || []).reduce(
-                (sum: number, item: any) => sum + (item.amount || 0),
-                0,
-              );
-
-              isCompleted =
-                totalCost > 0 && hasSchedule && Math.abs(totalCost - scheduleTotal) < 0.01;
-            } else if (formData.type === "AFFILIATE") {
-              isCompleted = !!(
-                formData.financialTerms?.basePerClick > 0 &&
-                formData.financialTerms?.paymentCycle &&
-                formData.financialTerms?.levels &&
-                formData.financialTerms.levels.length > 0 &&
-                hasSchedule
-              );
-            } else if (formData.type === "CO_PRODUCING") {
-              const validProfitSplit =
-                formData.financialTerms?.profitSplitCompanyPercent > 0 &&
-                formData.financialTerms?.profitSplitKolPercent > 0 &&
-                formData.financialTerms.profitSplitCompanyPercent +
-                  formData.financialTerms.profitSplitKolPercent ===
-                  100;
-
-              const validCapital =
-                formData.financialTerms?.capitalContribution?.company?.value > 0 &&
-                formData.financialTerms?.capitalContribution?.kol?.value > 0;
-
-              isCompleted = validProfitSplit && validCapital && hasSchedule;
-            }
-          }
-          break;
-        }
-        case "contract-actions": {
-          const hasContractFiles = formData.contractFiles && formData.contractFiles.length > 0;
-          const hasProposalFiles = formData.proposalFiles && formData.proposalFiles.length > 0;
-          isCompleted = hasContractFiles && hasProposalFiles;
-          break;
-        }
-      }
-
-      return { ...tab, isCompleted };
-    });
-
-    setTabs(newTabs);
-  }, [formData, tabs]);
+    setTabs((currentTabs) =>
+      currentTabs.map((tab) => ({
+        ...tab,
+        isCompleted: checkTabCompletionLogic(tab.id, formData),
+      })),
+    );
+  }, [formData]);
 
   useEffect(() => {
     checkTabCompletion();
-  }, [formData, checkTabCompletion]);
+  }, [checkTabCompletion]);
 
   // Calculate progress
   const requiredTabs = tabs.filter((tab) => tab.isRequired);
@@ -234,12 +228,11 @@ const CreateContractPage: React.FC = () => {
   const progressPercentage = (completedRequiredTabs.length / requiredTabs.length) * 100;
   const canSubmit = progressPercentage === 100;
 
-  // Real-time field validation
+  // Handlers
   const handleFieldValidation = (fieldPath: string, error: string | null) => {
     setErrors((prev: any) => {
       const newErrors = { ...prev };
 
-      // Handle nested paths
       if (fieldPath.includes(".")) {
         const [parent, child] = fieldPath.split(".");
         if (!newErrors[parent]) newErrors[parent] = {};
@@ -248,9 +241,7 @@ const CreateContractPage: React.FC = () => {
           newErrors[parent][child] = error;
         } else {
           delete newErrors[parent][child];
-          if (Object.keys(newErrors[parent]).length === 0) {
-            delete newErrors[parent];
-          }
+          if (Object.keys(newErrors[parent]).length === 0) delete newErrors[parent];
         }
       } else {
         if (error) {
@@ -268,10 +259,9 @@ const CreateContractPage: React.FC = () => {
     setFormData((prev: any) => ({ ...prev, [field]: value }));
   };
 
-  // Handle nested JSONB field updates
   const updateFinancialTerms = async (updates: any) => {
     const newFinancialTerms = { ...formData.financialTerms, ...updates };
-    setFormData((prev: any) => ({
+    setFormData((prev: typeof INITIAL_FORM_DATA) => ({
       ...prev,
       financialTerms: newFinancialTerms,
     }));
@@ -287,7 +277,7 @@ const CreateContractPage: React.FC = () => {
   };
 
   const updateScopeOfWork = (updates: any) => {
-    setFormData((prev: any) => ({
+    setFormData((prev: typeof INITIAL_FORM_DATA) => ({
       ...prev,
       scopeOfWork: { ...prev.scopeOfWork, ...updates },
     }));
@@ -298,7 +288,6 @@ const CreateContractPage: React.FC = () => {
     const brand = brands.find((b) => b.id === id) || null;
     setSelectedBrand(brand);
 
-    // Auto-fill brand representative info if available
     if (brand) {
       handleInputChange("brandRepresentativeName", brand.representative);
       handleInputChange("brandRepresentativeEmail", brand.representative_email);
@@ -311,75 +300,20 @@ const CreateContractPage: React.FC = () => {
     if (!checked) handleInputChange("parentContractId", "");
   };
 
-  // Initialize financial terms based on contract type
   const handleContractTypeChange = async (type: string) => {
     handleInputChange("type", type);
 
-    // Validate contract type
     const validation = await validateField("type", type, { ...formData, type });
     handleFieldValidation("type", validation.isValid ? null : validation.error);
 
-    let defaultFinancialTerms = {};
+    const defaultFinancialTerms = getDefaultFinancialTerms(type);
     const defaultScopeOfWork = { ...formData.scopeOfWork };
 
-    // Set empty defaults for all types - user must fill in
-    switch (type) {
-      case "ADVERTISING":
-      case "BRAND_AMBASSADOR": {
-        defaultFinancialTerms = {
-          model: "fixed",
-          paymentMethod: "Chuyển khoản",
-          totalCost: 0,
-          costBreakdown: {
-            serviceFee: 0,
-            otherFees: 0,
-          },
-          schedule: [],
-        };
-        break;
-      }
-
-      case "AFFILIATE": {
-        defaultFinancialTerms = {
-          model: "levels",
-          paymentMethod: "Chuyển khoản",
-          basePerClick: 0,
-          levels: [],
-          paymentCycle: "",
-          paymentDate: "",
-          taxWithholding: {
-            threshold: 2000000,
-            ratePercent: 10,
-          },
-          schedule: [],
-        };
-        break;
-      }
-
-      case "CO_PRODUCING": {
-        defaultFinancialTerms = {
-          model: "share",
-          paymentMethod: "Chuyển khoản",
-          capitalContribution: {
-            company: { description: "", value: 0 },
-            kol: { description: "", value: 0 },
-          },
-          profitSplitCompanyPercent: 0,
-          profitSplitKolPercent: 0,
-          profitDistributionCycle: "",
-          profitDistributionDate: "",
-          schedule: [],
-        };
-
-        defaultScopeOfWork.coProductionRoles = {
-          company: "",
-          kol: "",
-        };
-        break;
-      }
+    if (type === "CO_PRODUCING") {
+      defaultScopeOfWork.coProductionRoles = { company: "", kol: "" };
     }
 
-    setFormData((prev: any) => ({
+    setFormData((prev: typeof INITIAL_FORM_DATA) => ({
       ...prev,
       type,
       financialTerms: defaultFinancialTerms,
@@ -387,14 +321,9 @@ const CreateContractPage: React.FC = () => {
     }));
   };
 
-  // File handlers
-  const handleContractFilesChange = (files: File[]) => {
-    handleInputChange("contractFiles", files);
-  };
-
-  const handleProposalFilesChange = (files: File[]) => {
-    handleInputChange("proposalFiles", files);
-  };
+  // File handlers (simplified)
+  const handleContractFilesChange = (files: File[]) => handleInputChange("contractFiles", files);
+  const handleProposalFilesChange = (files: File[]) => handleInputChange("proposalFiles", files);
 
   const handleContractUpload = async (files: File[]) => {
     try {
@@ -433,30 +362,18 @@ const CreateContractPage: React.FC = () => {
     }
 
     try {
-      // Final validation
       const validation = await validateContract(formData);
 
       if (!validation.isValid) {
         setErrors(validation.errors);
-
-        // Scroll to first error
-        const firstErrorElement = document.querySelector(".border-red-500");
-        if (firstErrorElement) {
-          firstErrorElement.scrollIntoView({
-            behavior: "smooth",
-            block: "center",
-          });
-        }
+        document.querySelector(".border-red-500")?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
         return;
       }
 
-      // Submit form data
       console.log("Final form data:", formData);
-
-      // Here you would typically make an API call
-      // await submitContract(formData);
-
-      // Show success message or redirect
       alert("Contract submitted successfully!");
     } catch (error) {
       console.error("Submission failed:", error);
@@ -465,53 +382,55 @@ const CreateContractPage: React.FC = () => {
   };
 
   const getSelectedContractTypeLabel = () => {
-    const selectedType = contractTypeOptions.find((option) => option.value === formData.type);
-    return selectedType ? selectedType.label : "Not Selected";
+    return (
+      CONTRACT_TYPE_OPTIONS.find((option) => option.value === formData.type)?.label ||
+      "Not Selected"
+    );
   };
 
   const renderTabContent = () => {
+    const componentProps = {
+      formData,
+      onInputChange: handleInputChange,
+      errors,
+    };
+
     switch (activeTab) {
       case "contract-info":
         return (
           <ContractTypeTemplate
-            formData={formData}
+            {...componentProps}
             onContractTypeChange={handleContractTypeChange}
-            onInputChange={handleInputChange}
             onUpdateScopeOfWork={updateScopeOfWork}
             onFieldValidation={handleFieldValidation}
-            errors={errors}
           />
         );
       case "brand-selection":
         return (
           <BrandSelection
-            formData={formData}
+            {...componentProps}
             selectedBrand={selectedBrand}
             isExtension={isExtension}
-            contractTypeOptions={contractTypeOptions}
+            contractTypeOptions={CONTRACT_TYPE_OPTIONS}
             onBrandChange={handleBrandChange}
             onExtensionChange={handleExtensionChange}
-            onInputChange={handleInputChange}
           />
         );
       case "representative":
-        return (
-          <Representative formData={formData} onInputChange={handleInputChange} errors={errors} />
-        );
+        return <Representative {...componentProps} />;
       case "financial-terms":
         return (
           <FinancialTerms
-            formData={formData}
-            contractTypeOptions={contractTypeOptions}
+            {...componentProps}
+            contractTypeOptions={CONTRACT_TYPE_OPTIONS}
             onContractTypeChange={handleContractTypeChange}
             onUpdateFinancialTerms={updateFinancialTerms}
-            errors={errors}
           />
         );
       case "contract-actions":
         return (
           <ContractActions
-            formData={formData}
+            {...componentProps}
             onContractFilesChange={handleContractFilesChange}
             onProposalFilesChange={handleProposalFilesChange}
             onContractUpload={handleContractUpload}
@@ -524,29 +443,27 @@ const CreateContractPage: React.FC = () => {
     }
   };
 
+  const contractTypeColor = getContractTypeColor(formData.type);
+
   return (
     <div className="min-h-screen p-4 lg:p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header with Contract Type Display */}
+      <div className="max-w-7xl mx-auto pb-28">
+        {" "}
+        {/* Thêm pb-28 ở đây */}
+        {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold">Add New Contract</h1>
             {formData.type && (
               <div className="mt-2">
                 <span
-                  className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${
-                    getContractTypeColor(formData.type).bg
-                  } ${getContractTypeColor(formData.type).text} ${
-                    getContractTypeColor(formData.type).border
-                  }`}
+                  className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${contractTypeColor.bg} ${contractTypeColor.text} ${contractTypeColor.border}`}
                 >
                   {getSelectedContractTypeLabel()}
                 </span>
               </div>
             )}
           </div>
-
-          {/* Save Draft Button */}
           <button
             type="button"
             onClick={handleSaveDraft}
@@ -555,7 +472,6 @@ const CreateContractPage: React.FC = () => {
             Save Draft
           </button>
         </div>
-
         {/* Progress Bar */}
         <div className="mb-6">
           <div className="flex justify-between text-sm text-gray-600 mb-2">
@@ -566,10 +482,9 @@ const CreateContractPage: React.FC = () => {
             <div
               className="bg-primary h-2 rounded-full transition-all duration-300"
               style={{ width: `${progressPercentage}%` }}
-            ></div>
+            />
           </div>
         </div>
-
         {/* Tabs Navigation */}
         <div className="border-b border-gray-200 mb-8">
           <nav className="-mb-px flex space-x-8">
@@ -604,43 +519,37 @@ const CreateContractPage: React.FC = () => {
             ))}
           </nav>
         </div>
-
         {errors.general && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
             <p className="text-red-600">{errors.general}</p>
           </div>
         )}
-
         {/* Tab Content */}
         <form onSubmit={handleSubmit} className="space-y-8">
           {renderTabContent()}
-
-          {/* Submit Button - Only show in the last tab or when all required tabs are complete */}
-          {(activeTab === "contract-actions" || canSubmit) && (
-            <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
-              <button
-                type="button"
-                onClick={handleSaveDraft}
-                className="px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Save Draft
-              </button>
-              <button
-                type="submit"
-                disabled={!canSubmit}
-                className={`px-6 py-2 text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                  canSubmit
-                    ? "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500"
-                    : "bg-gray-400 cursor-not-allowed"
-                }`}
-              >
-                {canSubmit
-                  ? "Submit Contract"
-                  : `Complete Required Sections (${Math.round(progressPercentage)}%)`}
-              </button>
-            </div>
-          )}
         </form>
+        {/* Fixed Action Bar */}
+        <div className="fixed bottom-0 left-0 w-full bg-white/90 border-t border-gray-200 z-50 px-4 py-3 flex justify-end gap-4 shadow-lg">
+          <button
+            type="button"
+            onClick={handleSaveDraft}
+            className="px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            Save Draft
+          </button>
+          <button
+            type="button"
+            disabled={!canSubmit}
+            onClick={handleSubmit}
+            className={`px-6 py-2 text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+              canSubmit
+                ? "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500"
+                : "bg-gray-400 cursor-not-allowed"
+            }`}
+          >
+            Request Contract Approval
+          </button>
+        </div>
       </div>
     </div>
   );

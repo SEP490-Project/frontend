@@ -1,4 +1,5 @@
-import React, { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback } from "react";
+import type { ReactElement } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -20,32 +21,41 @@ import {
   FaCheck,
   FaXmark,
   FaChartColumn,
+  FaFileZipper,
 } from "react-icons/fa6";
+const FILE_ICONS: Record<string, ReactElement> = {
+  pdf: <FaFilePdf className="h-8 w-8 text-red-500" />,
+  doc: <FaFileWord className="h-8 w-8 text-blue-500" />,
+  docx: <FaFileWord className="h-8 w-8 text-blue-500" />,
+  xls: <FaFileExcel className="h-8 w-8 text-green-500" />,
+  xlsx: <FaFileExcel className="h-8 w-8 text-green-500" />,
+  jpg: <FaFileImage className="h-8 w-8 text-purple-500" />,
+  jpeg: <FaFileImage className="h-8 w-8 text-purple-500" />,
+  png: <FaFileImage className="h-8 w-8 text-purple-500" />,
+  gif: <FaFileImage className="h-8 w-8 text-purple-500" />,
+  webp: <FaFileImage className="h-8 w-8 text-purple-500" />,
+  mp4: <FaFileVideo className="h-8 w-8 text-orange-500" />,
+  avi: <FaFileVideo className="h-8 w-8 text-orange-500" />,
+  mov: <FaFileVideo className="h-8 w-8 text-orange-500" />,
+  wmv: <FaFileVideo className="h-8 w-8 text-orange-500" />,
+  mp3: <FaFileAudio className="h-8 w-8 text-pink-500" />,
+  wav: <FaFileAudio className="h-8 w-8 text-pink-500" />,
+  flac: <FaFileAudio className="h-8 w-8 text-pink-500" />,
+  zip: <FaFileZipper className="h-8 w-8 text-yellow-600" />,
+  rar: <FaFileZipper className="h-8 w-8 text-yellow-600" />,
+};
 
-interface FileItem {
-  id: string;
-  file: File;
-  progress: number;
-  status: "uploading" | "completed" | "error";
-  preview?: string;
-}
+const getFileIcon = (fileName: string) => {
+  const ext = fileName.split(".").pop()?.toLowerCase() || "";
+  return FILE_ICONS[ext] || <FaFile className="h-8 w-8 text-slate-500" />;
+};
 
-interface FileUploaderProps {
-  accept?: string;
-  multiple?: boolean;
-  maxSize?: number; // in MB
-  maxFiles?: number;
-  onFilesChange?: (files: File[]) => void;
-  onUpload?: (files: File[]) => Promise<void>;
-  className?: string;
-  disabled?: boolean;
-  showPreview?: boolean;
-  allowedTypes?: string[];
-  title?: string;
-  showSummary?: boolean;
-}
+const formatFileSize = (bytes: number) =>
+  bytes === 0
+    ? "0 Bytes"
+    : `${(bytes / 1024 ** Math.floor(Math.log(bytes) / Math.log(1024))).toFixed(2)} ${["Bytes", "KB", "MB", "GB"][Math.floor(Math.log(bytes) / Math.log(1024))]}`;
 
-const FileUploader: React.FC<FileUploaderProps> = ({
+const FileUploader = ({
   accept = "*/*",
   multiple = true,
   maxSize = 10,
@@ -58,207 +68,103 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   allowedTypes = [],
   title,
   showSummary = true,
-}) => {
-  const [files, setFiles] = useState<FileItem[]>([]);
+}: any) => {
+  const [files, setFiles] = useState<any[]>([]);
   const [isDragActive, setIsDragActive] = useState(false);
   const [error, setError] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const getFileIcon = (fileName: string) => {
-    const extension = fileName.split(".").pop()?.toLowerCase();
-
-    switch (extension) {
-      case "pdf":
-        return <FaFilePdf className="h-8 w-8 text-red-500" />;
-      case "doc":
-      case "docx":
-        return <FaFileWord className="h-8 w-8 text-blue-500" />;
-      case "xls":
-      case "xlsx":
-        return <FaFileExcel className="h-8 w-8 text-green-500" />;
-      case "jpg":
-      case "jpeg":
-      case "png":
-      case "gif":
-      case "webp":
-        return <FaFileImage className="h-8 w-8 text-purple-500" />;
-      case "mp4":
-      case "avi":
-      case "mov":
-      case "wmv":
-        return <FaFileVideo className="h-8 w-8 text-orange-500" />;
-      case "mp3":
-      case "wav":
-      case "flac":
-        return <FaFileAudio className="h-8 w-8 text-pink-500" />;
-      default:
-        return <FaFile className="h-8 w-8 text-slate-500" />;
-    }
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-  };
-
-  const getTotalSize = () => {
-    return files.reduce((acc, fileItem) => acc + fileItem.file.size, 0);
-  };
+  // Allow zip/rar by default if allowedTypes is empty
+  const allowed =
+    allowedTypes.length > 0
+      ? allowedTypes
+      : [
+          "pdf",
+          "doc",
+          "docx",
+          "xls",
+          "xlsx",
+          "jpg",
+          "jpeg",
+          "png",
+          "gif",
+          "webp",
+          "mp4",
+          "avi",
+          "mov",
+          "wmv",
+          "mp3",
+          "wav",
+          "flac",
+          "zip",
+          "rar",
+        ];
 
   const validateFile = (file: File) => {
-    // Check file size
-    if (file.size > maxSize * 1024 * 1024) {
-      return `File size exceeds ${maxSize}MB limit`;
-    }
-
-    // Check file type
-    if (allowedTypes.length > 0) {
-      const fileExtension = file.name.split(".").pop()?.toLowerCase();
-      if (!allowedTypes.includes(fileExtension || "")) {
-        return `File type not allowed. Allowed types: ${allowedTypes.join(", ")}`;
-      }
-    }
-
+    if (file.size > maxSize * 1024 * 1024) return `File size exceeds ${maxSize}MB limit`;
+    const ext = file.name.split(".").pop()?.toLowerCase() || "";
+    if (allowed.length && !allowed.includes(ext))
+      return `File type not allowed. Allowed: ${allowed.join(", ")}`;
     return null;
   };
 
   const processFiles = useCallback(
     (fileList: FileList) => {
-      const newFiles: FileItem[] = [];
       let errorMessage = "";
-
-      // Check max files limit
       if (files.length + fileList.length > maxFiles) {
-        errorMessage = `Maximum ${maxFiles} files allowed`;
-        setError(errorMessage);
+        setError(`Maximum ${maxFiles} files allowed`);
         return;
       }
-
-      Array.from(fileList).forEach((file) => {
-        const validationError = validateFile(file);
-        if (validationError) {
-          errorMessage = validationError;
-          return;
+      const newFiles = Array.from(fileList).reduce<any[]>((arr, file) => {
+        const err = validateFile(file);
+        if (err) {
+          errorMessage = err;
+          return arr;
         }
-
-        const fileItem: FileItem = {
-          id: Math.random().toString(36).substr(2, 9),
-          file,
-          progress: 0,
-          status: "uploading",
-        };
-
-        // Create preview for images
+        const id = Math.random().toString(36).substr(2, 9);
+        const fileItem: any = { id, file, progress: 0, status: "uploading" };
         if (file.type.startsWith("image/") && showPreview) {
           const reader = new FileReader();
-          reader.onload = (e) => {
-            fileItem.preview = e.target?.result as string;
-            setFiles((prev) => prev.map((f) => (f.id === fileItem.id ? fileItem : f)));
-          };
+          reader.onload = (e) =>
+            setFiles((prev) =>
+              prev.map((f) => (f.id === id ? { ...f, preview: e.target?.result } : f)),
+            );
           reader.readAsDataURL(file);
         }
-
-        newFiles.push(fileItem);
-      });
-
-      if (errorMessage) {
-        setError(errorMessage);
-        return;
-      }
-
+        arr.push(fileItem);
+        return arr;
+      }, []);
+      if (errorMessage) return setError(errorMessage);
       setError("");
       setFiles((prev) => [...prev, ...newFiles]);
-
-      // Simulate upload progress
-      newFiles.forEach((fileItem) => {
-        simulateUploadProgress(fileItem.id);
-      });
-
-      // Call onFilesChange callback
-      const allFiles = [...files.map((f) => f.file), ...newFiles.map((f) => f.file)];
-      onFilesChange?.(allFiles);
+      newFiles.forEach((f) => simulateUploadProgress(f.id));
+      onFilesChange?.([...files.map((f) => f.file), ...newFiles.map((f) => f.file)]);
     },
-    [files, maxFiles, maxSize, allowedTypes, onFilesChange, showPreview],
+    [files, maxFiles, maxSize, allowed, onFilesChange, showPreview, validateFile],
   );
 
   const simulateUploadProgress = (fileId: string) => {
     let progress = 0;
     const interval = setInterval(() => {
       progress += Math.random() * 30;
-      if (progress >= 100) {
-        progress = 100;
-        clearInterval(interval);
-        setFiles((prev) =>
-          prev.map((f) => (f.id === fileId ? { ...f, progress: 100, status: "completed" } : f)),
-        );
-      } else {
-        setFiles((prev) =>
-          prev.map((f) => (f.id === fileId ? { ...f, progress: Math.round(progress) } : f)),
-        );
-      }
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.id === fileId
+            ? {
+                ...f,
+                progress: progress >= 100 ? 100 : Math.round(progress),
+                status: progress >= 100 ? "completed" : "uploading",
+              }
+            : f,
+        ),
+      );
+      if (progress >= 100) clearInterval(interval);
     }, 200);
-  };
-
-  const handleDragEnter = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragActive(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragActive(false);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragActive(false);
-
-    if (disabled) return;
-
-    const { files: droppedFiles } = e.dataTransfer;
-    if (droppedFiles) {
-      processFiles(droppedFiles);
-    }
-  };
-
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      processFiles(e.target.files);
-    }
   };
 
   const removeFile = (fileId: string) => {
     setFiles((prev) => prev.filter((f) => f.id !== fileId));
-    const remainingFiles = files.filter((f) => f.id !== fileId).map((f) => f.file);
-    onFilesChange?.(remainingFiles);
-  };
-
-  const openFileDialog = () => {
-    if (disabled) return;
-    fileInputRef.current?.click();
-  };
-
-  const handleUpload = async () => {
-    if (onUpload) {
-      const filesToUpload = files.map((f) => f.file);
-      try {
-        await onUpload(filesToUpload);
-      } catch (error) {
-        console.error("Upload failed:", error);
-        setError("Upload failed. Please try again.");
-      }
-    }
+    onFilesChange?.(files.filter((f) => f.id !== fileId).map((f) => f.file));
   };
 
   return (
@@ -275,11 +181,21 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       >
         <CardContent
           className="p-6 text-center"
-          onDragEnter={handleDragEnter}
-          onDragLeave={handleDragLeave}
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-          onClick={openFileDialog}
+          onDragEnter={(e) => {
+            e.preventDefault();
+            setIsDragActive(true);
+          }}
+          onDragLeave={(e) => {
+            e.preventDefault();
+            setIsDragActive(false);
+          }}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsDragActive(false);
+            if (!disabled && e.dataTransfer.files) processFiles(e.dataTransfer.files);
+          }}
+          onClick={() => !disabled && fileInputRef.current?.click()}
         >
           <div className="flex flex-col items-center space-y-3">
             <div
@@ -295,7 +211,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({
                 )}
               />
             </div>
-
             <div className="space-y-1">
               <h4 className="text-sm font-semibold text-slate-700">
                 {isDragActive ? "Drop files here" : "Upload Files"}
@@ -303,12 +218,9 @@ const FileUploader: React.FC<FileUploaderProps> = ({
               <p className="text-xs text-slate-500">Drag & drop files here, or click to browse</p>
               <p className="text-xs text-slate-400">
                 Max {maxFiles} files, up to {maxSize}MB each
-                {allowedTypes.length > 0 && (
-                  <span className="block mt-1">Allowed: {allowedTypes.join(", ")}</span>
-                )}
+                <span className="block mt-1">Allowed: {allowed.join(", ")}</span>
               </p>
             </div>
-
             <Button
               type="button"
               variant="outline"
@@ -316,7 +228,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
               disabled={disabled}
               onClick={(e) => {
                 e.stopPropagation();
-                openFileDialog();
+                fileInputRef.current?.click();
               }}
             >
               Choose Files
@@ -327,11 +239,9 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
       {/* Error Message */}
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-          <div className="flex items-center gap-2">
-            <FaXmark className="h-4 w-4 text-red-500" />
-            <p className="text-sm text-red-700">{error}</p>
-          </div>
+        <div className="p-3 bg-red-50 border border-red-200 rounded-md flex items-center gap-2">
+          <FaXmark className="h-4 w-4 text-red-500" />
+          <p className="text-sm text-red-700">{error}</p>
         </div>
       )}
 
@@ -345,19 +255,23 @@ const FileUploader: React.FC<FileUploaderProps> = ({
             {onUpload && (
               <Button
                 size="sm"
-                onClick={handleUpload}
+                onClick={async () => {
+                  try {
+                    await onUpload(files.map((f) => f.file));
+                  } catch {
+                    setError("Upload failed. Please try again.");
+                  }
+                }}
                 disabled={files.some((f) => f.status === "uploading")}
               >
                 Upload All
               </Button>
             )}
           </div>
-
           <div className="space-y-2">
             {files.map((fileItem) => (
               <Card key={fileItem.id} className="p-3">
                 <div className="flex items-center gap-3">
-                  {/* File Icon/Preview */}
                   <div className="flex-shrink-0">
                     {fileItem.preview ? (
                       <img
@@ -369,8 +283,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({
                       <div className="scale-75">{getFileIcon(fileItem.file.name)}</div>
                     )}
                   </div>
-
-                  {/* File Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <p className="text-sm font-medium text-slate-900 truncate">
@@ -391,18 +303,13 @@ const FileUploader: React.FC<FileUploaderProps> = ({
                         {fileItem.status}
                       </Badge>
                     </div>
-
                     <p className="text-xs text-slate-500 mb-1">
                       {formatFileSize(fileItem.file.size)}
                     </p>
-
-                    {/* Progress Bar */}
                     {fileItem.status === "uploading" && (
                       <Progress value={fileItem.progress} className="h-1.5" />
                     )}
                   </div>
-
-                  {/* Actions */}
                   <div className="flex items-center gap-1">
                     {fileItem.status === "completed" && (
                       <>
@@ -427,9 +334,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
               </Card>
             ))}
           </div>
-
-          {/* File Summary */}
-          {showSummary && files.length > 0 && (
+          {showSummary && (
             <>
               <Separator />
               <Card className="bg-slate-50/50">
@@ -445,7 +350,9 @@ const FileUploader: React.FC<FileUploaderProps> = ({
                     </div>
                     <div>
                       <p className="text-slate-600">Total Size</p>
-                      <p className="font-medium text-slate-900">{formatFileSize(getTotalSize())}</p>
+                      <p className="font-medium text-slate-900">
+                        {formatFileSize(files.reduce((acc, f) => acc + f.file.size, 0))}
+                      </p>
                     </div>
                     <div>
                       <p className="text-slate-600">Completed</p>
@@ -466,14 +373,12 @@ const FileUploader: React.FC<FileUploaderProps> = ({
           )}
         </div>
       )}
-
-      {/* Hidden File Input */}
       <input
         ref={fileInputRef}
         type="file"
         accept={accept}
         multiple={multiple}
-        onChange={handleFileInput}
+        onChange={(e) => e.target.files && processFiles(e.target.files)}
         className="hidden"
         disabled={disabled}
       />

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,275 @@ interface FinancialTermsProps {
   errors?: any;
 }
 
+// Constants
+const PAYMENT_CYCLE_OPTIONS = [
+  { value: "MONTHLY", label: "Monthly" },
+  { value: "QUARTERLY", label: "Quarterly" },
+  { value: "SEMI_ANNUALLY", label: "Semi-Annually" },
+  { value: "ANNUALLY", label: "Annually" },
+];
+
+const PAYMENT_DATE_OPTIONS = {
+  MONTHLY: [
+    { value: "1st", label: "1st of month" },
+    { value: "5th", label: "5th of month" },
+    { value: "15th", label: "15th of month" },
+    { value: "last", label: "Last day of month" },
+  ],
+  QUARTERLY: [
+    { value: "end_of_quarter", label: "End of Quarter" },
+    { value: "15th_last_month", label: "15th of Last Month" },
+  ],
+  SEMI_ANNUALLY: [
+    { value: "june_30", label: "June 30th" },
+    { value: "december_31", label: "December 31st" },
+  ],
+  ANNUALLY: [
+    { value: "december_31", label: "December 31st" },
+    { value: "march_31", label: "March 31st (Fiscal Year)" },
+  ],
+};
+
+// Helper Functions
+const formatNumber = (value: number | string): string => {
+  if (!value) return "";
+  const numValue = typeof value === "string" ? parseFloat(value) : value;
+  return isNaN(numValue) ? "" : numValue.toLocaleString("vi-VN");
+};
+
+const parseNumber = (formattedValue: string): number => {
+  if (!formattedValue) return 0;
+  return parseFloat(formattedValue.replace(/\./g, "")) || 0;
+};
+
+const parseDate = (dateString: string): Date | undefined => {
+  if (!dateString) return undefined;
+  const date = new Date(dateString);
+  return isNaN(date.getTime()) ? undefined : date;
+};
+
+// Validation Functions
+const validateSchedulePercentage = (schedule: any[]) => {
+  if (!schedule?.length) return null;
+  const totalPercent = schedule.reduce((sum: number, item: any) => sum + (item.percent || 0), 0);
+  return totalPercent > 100 ? `Total percentage is ${totalPercent}% which exceeds 100%` : null;
+};
+
+const validateScheduleDates = (schedule: any[]) => {
+  if (!schedule || schedule.length < 2) return null;
+  for (let i = 1; i < schedule.length; i++) {
+    const current = schedule[i].dueDate;
+    const previous = schedule[i - 1].dueDate;
+    if (current && previous && new Date(current) <= new Date(previous)) {
+      return `Schedule ${i + 1} date must be after Schedule ${i} date`;
+    }
+  }
+  return null;
+};
+
+// Components
+const NumberInput = ({ label, value, onChange, placeholder, error, disabled = false }: any) => (
+  <div className="space-y-2">
+    <Label className="text-sm font-medium">{label}</Label>
+    <Input
+      type="text"
+      value={formatNumber(value || "")}
+      onChange={(e) => onChange(parseNumber(e.target.value))}
+      placeholder={placeholder}
+      className={`h-11 ${error ? "border-red-500" : ""} ${disabled ? "bg-gray-100 text-gray-700 cursor-not-allowed" : ""}`}
+      disabled={disabled}
+    />
+    {error && <p className="text-sm text-red-500">{error}</p>}
+  </div>
+);
+
+const SelectField = ({
+  label,
+  value,
+  onChange,
+  options,
+  placeholder,
+  error,
+  disabled = false,
+}: any) => (
+  <div className="space-y-2">
+    <Label className="text-sm font-medium">{label}</Label>
+    <Select value={value} onValueChange={onChange} disabled={disabled}>
+      <SelectTrigger className={`h-11 ${error ? "border-red-500" : ""}`}>
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map((option: any) => (
+          <SelectItem key={option.value} value={option.value}>
+            {option.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+    {error && <p className="text-sm text-red-500">{error}</p>}
+  </div>
+);
+
+const ScheduleItem = ({ item, index, onUpdate, onRemove, type, hasError, hasDateError }: any) => {
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+
+  return (
+    <Card className="p-4 bg-slate-50 border-slate-200">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="space-y-2">
+          <Label className="text-xs text-slate-600">Milestone</Label>
+          <Input
+            value={item.milestone}
+            onChange={(e) => onUpdate(index, "milestone", e.target.value)}
+            placeholder="Upon Signing"
+            className="h-10"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-xs text-slate-600">Percent (%)</Label>
+          <Input
+            type="text"
+            value={item.percent || ""}
+            onChange={(e) => {
+              const cleanValue = e.target.value.replace(/[^\d.]/g, "");
+              const numValue = Math.min(100, Math.max(0, parseFloat(cleanValue) || 0));
+              onUpdate(index, "percent", numValue);
+            }}
+            placeholder="50"
+            className={`h-10 ${hasError ? "border-red-300" : ""}`}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-xs text-slate-600">Amount (VND)</Label>
+          <Input
+            type="text"
+            value={formatNumber(item.amount)}
+            onChange={(e) => onUpdate(index, "amount", parseNumber(e.target.value))}
+            placeholder="0"
+            className={`h-10 ${
+              type === "ADVERTISING" || type === "BRAND_AMBASSADOR"
+                ? "bg-gray-100 text-gray-700 cursor-not-allowed"
+                : ""
+            }`}
+            readOnly={type === "ADVERTISING" || type === "BRAND_AMBASSADOR"}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-xs text-slate-600">Due Date</Label>
+          <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline2"
+                className={`h-10 w-full justify-start text-left font-normal ${
+                  !item.dueDate ? "text-muted-foreground" : ""
+                } ${hasDateError ? "border-red-500" : ""}`}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {item.dueDate ? format(parseDate(item.dueDate)!, "dd/MM/yyyy") : "Pick a date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={parseDate(item.dueDate)}
+                onSelect={(date) => {
+                  onUpdate(index, "dueDate", date ? format(date, "yyyy-MM-dd") : "");
+                  setIsCalendarOpen(false); // Đóng calendar sau khi chọn
+                }}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        <div className="flex items-end">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => onRemove(index)}
+            className="h-10 w-full gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+          >
+            <Trash2 className="h-4 w-4" />
+            Remove
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+};
+
+const AffiliateLevel = ({ level, index, onUpdate, onRemove }: any) => (
+  <Card className="p-4 bg-slate-50 border-slate-200">
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="space-y-2">
+        <Label className="text-xs text-slate-600">Level</Label>
+        <Input
+          type="number"
+          value={level.level}
+          onChange={(e) => onUpdate(index, "level", parseInt(e.target.value) || 0)}
+          className="h-10"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label className="text-xs text-slate-600">Min Clicks</Label>
+        <Input
+          type="number"
+          value={level.minClicks}
+          onChange={(e) => onUpdate(index, "minClicks", parseInt(e.target.value) || 0)}
+          className="h-10"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label className="text-xs text-slate-600">Multiplier</Label>
+        <Input
+          type="number"
+          step="0.01"
+          value={level.multiplier}
+          onChange={(e) => onUpdate(index, "multiplier", parseFloat(e.target.value) || 0)}
+          className="h-10"
+        />
+      </div>
+      <div className="flex items-end">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => onRemove(index)}
+          className="h-10 w-full gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+        >
+          <Trash2 className="h-4 w-4" />
+          Remove
+        </Button>
+      </div>
+    </div>
+  </Card>
+);
+
+const CapitalContribution = ({ title, data, onChange }: any) => (
+  <div className="space-y-4">
+    <Label className="text-lg font-medium">{title}</Label>
+    <div className="space-y-2">
+      <Input
+        value={data?.description || ""}
+        onChange={(e) => onChange("description", e.target.value)}
+        placeholder="Description"
+        className="h-11"
+      />
+      <Input
+        type="text"
+        value={formatNumber(data?.value || "")}
+        onChange={(e) => onChange("value", parseNumber(e.target.value))}
+        placeholder="Value (VND)"
+        className="h-11"
+      />
+    </div>
+  </div>
+);
+
 const FinancialTerms: React.FC<FinancialTermsProps> = ({
   formData,
   contractTypeOptions,
@@ -30,270 +299,100 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({
   onUpdateFinancialTerms,
   errors = {},
 }) => {
-  // Format number with thousand separators
-  const formatNumber = (value: number | string): string => {
-    if (!value) return "";
-    const numValue = typeof value === "string" ? parseFloat(value) : value;
-    if (isNaN(numValue)) return "";
-    return numValue.toLocaleString("vi-VN");
-  };
+  const financialTerms = formData.financialTerms || {};
+  const schedule = financialTerms.schedule || [];
 
-  // Parse formatted number back to number
-  const parseNumber = (formattedValue: string): number => {
-    if (!formattedValue) return 0;
-    // Remove dots and convert to number
-    const cleanValue = formattedValue.replace(/\./g, "");
-    return parseFloat(cleanValue) || 0;
-  };
+  const calculateScheduleTotal = () =>
+    schedule.reduce((total: number, item: any) => total + (item.amount || 0), 0);
 
-  // Handle formatted number input
-  const handleNumberInput = (value: string, callback: (num: number) => void) => {
-    const numValue = parseNumber(value);
-    callback(numValue);
-  };
-
-  // Payment cycle options
-  const paymentCycleOptions = [
-    { value: "MONTHLY", label: "Monthly" },
-    { value: "QUARTERLY", label: "Quarterly" },
-    { value: "SEMI_ANNUALLY", label: "Semi-Annually" },
-    { value: "ANNUALLY", label: "Annually" },
-  ];
-
-  // Payment date options for different cycles
-  const getPaymentDateOptions = (cycle: string) => {
-    switch (cycle) {
-      case "MONTHLY":
-        return [
-          { value: "1st", label: "1st of month" },
-          { value: "5th", label: "5th of month" },
-          { value: "10th", label: "10th of month" },
-          { value: "15th", label: "15th of month" },
-          { value: "last", label: "Last day of month" },
-        ];
-      case "QUARTERLY":
-        return [
-          { value: "end_of_quarter", label: "End of Quarter" },
-          { value: "15th_last_month", label: "15th of Last Month" },
-        ];
-      case "SEMI_ANNUALLY":
-        return [
-          { value: "june_30", label: "June 30th" },
-          { value: "december_31", label: "December 31st" },
-        ];
-      case "ANNUALLY":
-        return [
-          { value: "december_31", label: "December 31st" },
-          { value: "march_31", label: "March 31st (Fiscal Year)" },
-        ];
-      default:
-        return [];
-    }
-  };
-
-  // Calculate total from schedule
-  const calculateScheduleTotal = () => {
-    const schedule = formData.financialTerms?.schedule || [];
-    return schedule.reduce((total: number, item: any) => total + (item.amount || 0), 0);
-  };
-
-  // Check if schedule total matches total cost
   const isScheduleTotalValid = () => {
-    const totalCost = formData.financialTerms?.totalCost || 0;
+    const totalCost = financialTerms.totalCost || 0;
     const scheduleTotal = calculateScheduleTotal();
-    return Math.abs(totalCost - scheduleTotal) < 0.01; // Allow small floating point differences
+    return Math.abs(totalCost - scheduleTotal) < 0.01;
   };
 
-  // Add payment schedule item
-  const addScheduleItem = () => {
-    const schedule = formData.financialTerms?.schedule || [];
-    const newItem = {
-      milestone: "",
-      percent: 0,
-      amount: 0,
-      dueDate: "",
-      requiredDocs: [],
-    };
-    onUpdateFinancialTerms({ schedule: [...schedule, newItem] });
-  };
-
-  // Validate schedule dates chronologically
-  const validateScheduleDates = (schedule: any[]) => {
-    if (!schedule || schedule.length < 2) return null;
-
-    for (let i = 1; i < schedule.length; i++) {
-      const currentDate = schedule[i].dueDate;
-      const previousDate = schedule[i - 1].dueDate;
-
-      if (currentDate && previousDate) {
-        const current = new Date(currentDate);
-        const previous = new Date(previousDate);
-
-        if (current <= previous) {
-          return `Schedule ${i + 1} date must be after Schedule ${i} date`;
-        }
-      }
-    }
-    return null;
-  };
-
-  // Validate total percentage doesn't exceed 100%
-  const validateSchedulePercentage = (schedule: any[]) => {
-    if (!schedule || schedule.length === 0) return null;
-
-    const totalPercent = schedule.reduce((sum: number, item: any) => sum + (item.percent || 0), 0);
-
-    if (totalPercent > 100) {
-      return `Total percentage is ${totalPercent}% which exceeds 100%`;
-    }
-
-    return null;
-  };
-
-  // Update payment schedule item with validations
   const updateScheduleItem = (index: number, field: string, value: any) => {
-    const schedule = [...(formData.financialTerms?.schedule || [])];
-    schedule[index] = { ...schedule[index], [field]: value };
+    const newSchedule = [...schedule];
+    newSchedule[index] = { ...newSchedule[index], [field]: value };
 
-    const updateData: any = { schedule };
+    const updateData: any = { schedule: newSchedule };
 
-    // Validate percentage total
     if (field === "percent") {
-      const percentError = validateSchedulePercentage(schedule);
-      if (percentError) {
-        updateData.scheduleError = percentError;
-      } else {
-        updateData.scheduleError = null;
-      }
-
-      // Auto-calculate amount from percent for fixed payment models
+      updateData.scheduleError = validateSchedulePercentage(newSchedule);
       if (formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR") {
-        const totalCost = formData.financialTerms?.totalCost || 0;
-        updateData.schedule[index].amount = Math.round((totalCost * value) / 100);
+        const totalCost = financialTerms.totalCost || 0;
+        newSchedule[index].amount = Math.round((totalCost * value) / 100);
+        updateData.schedule = newSchedule;
       }
     }
 
-    // Validate schedule dates
     if (field === "dueDate") {
-      const dateError = validateScheduleDates(updateData.schedule);
-      if (dateError) {
-        updateData.scheduleDateError = dateError;
-      } else {
-        updateData.scheduleDateError = null;
-      }
+      updateData.scheduleDateError = validateScheduleDates(newSchedule);
     }
 
     onUpdateFinancialTerms(updateData);
   };
 
-  // Remove payment schedule item
-  const removeScheduleItem = (index: number) => {
-    const schedule = (formData.financialTerms?.schedule || []).filter(
-      (_: any, i: number) => i !== index,
-    );
-    onUpdateFinancialTerms({ schedule });
+  const addScheduleItem = () => {
+    const newItem = { milestone: "", percent: 0, amount: 0, dueDate: "", requiredDocs: [] };
+    onUpdateFinancialTerms({ schedule: [...schedule, newItem] });
   };
 
-  // Update total cost and recalculate schedule amounts
+  const removeScheduleItem = (index: number) => {
+    const newSchedule = schedule.filter((_: any, i: number) => i !== index);
+    onUpdateFinancialTerms({ schedule: newSchedule });
+  };
+
   const updateTotalCost = (totalCost: number) => {
     const updates: any = { totalCost };
-
-    // Recalculate amounts for fixed payment models
     if (formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR") {
-      const schedule = formData.financialTerms?.schedule || [];
       const updatedSchedule = schedule.map((item: any) => ({
         ...item,
         amount: Math.round((totalCost * (item.percent || 0)) / 100),
       }));
       updates.schedule = updatedSchedule;
     }
-
     onUpdateFinancialTerms(updates);
   };
 
-  // Add affiliate level
+  // Array handlers
   const addAffiliateLevel = () => {
-    const levels = formData.financialTerms?.levels || [];
-    const newLevel = {
-      level: levels.length + 1,
-      minClicks: 0,
-      multiplier: 0.1,
-    };
+    const levels = financialTerms.levels || [];
+    const newLevel = { level: levels.length + 1, minClicks: 0, multiplier: 0.1 };
     onUpdateFinancialTerms({ levels: [...levels, newLevel] });
   };
 
-  // Update affiliate level
   const updateAffiliateLevel = (index: number, field: string, value: any) => {
-    const levels = [...(formData.financialTerms?.levels || [])];
+    const levels = [...(financialTerms.levels || [])];
     levels[index] = { ...levels[index], [field]: value };
     onUpdateFinancialTerms({ levels });
   };
 
-  // Remove affiliate level
   const removeAffiliateLevel = (index: number) => {
-    const levels = (formData.financialTerms?.levels || []).filter(
-      (_: any, i: number) => i !== index,
-    );
+    const levels = (financialTerms.levels || []).filter((_: any, i: number) => i !== index);
     onUpdateFinancialTerms({ levels });
   };
 
-  // Handle date selection for schedule items
-  const handleDateSelect = (index: number, date: Date | undefined) => {
-    if (date) {
-      updateScheduleItem(index, "dueDate", format(date, "yyyy-MM-dd"));
-    } else {
-      updateScheduleItem(index, "dueDate", "");
-    }
-  };
+  const getPaymentDateOptions = (cycle: string) =>
+    PAYMENT_DATE_OPTIONS[cycle as keyof typeof PAYMENT_DATE_OPTIONS] || [];
 
-  // Parse date string to Date object
-  const parseDate = (dateString: string): Date | undefined => {
-    if (!dateString) return undefined;
-    const date = new Date(dateString);
-    return isNaN(date.getTime()) ? undefined : date;
-  };
-
-  // Handle percentage input to prevent leading zeros
-  const handlePercentageInput = (index: number, value: string) => {
-    // Remove any non-digit characters except decimal point
-    const cleanValue = value.replace(/[^\d.]/g, "");
-
-    // Convert to number and back to string to remove leading zeros
-    const numValue = parseFloat(cleanValue) || 0;
-
-    // Ensure it doesn't exceed 100
-    const finalValue = Math.min(100, Math.max(0, numValue));
-
-    updateScheduleItem(index, "percent", finalValue);
-  };
+  const totalPercent = schedule.reduce((sum: number, item: any) => sum + (item.percent || 0), 0);
 
   return (
     <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
       <CardHeader className="pb-4">
-        <div className="flex items-center gap-2">
-          <CardTitle className="text-xl">Financial Terms</CardTitle>
-        </div>
+        <CardTitle className="text-xl">Financial Terms</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Contract Type Selection */}
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Contract Type *</Label>
-          <Select value={formData.type} onValueChange={onContractTypeChange}>
-            <SelectTrigger className={`h-11 ${errors.type ? "border-red-500" : ""}`}>
-              <SelectValue placeholder="Select contract type" />
-            </SelectTrigger>
-            <SelectContent>
-              {contractTypeOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  <div className="flex items-center gap-2">
-                    <span>{option.label}</span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.type && <p className="text-sm text-red-500">{errors.type}</p>}
-        </div>
+        {/* Contract Type */}
+        <SelectField
+          label="Contract Type *"
+          value={formData.type}
+          onChange={onContractTypeChange}
+          options={contractTypeOptions}
+          placeholder="Select contract type"
+          error={errors.type}
+        />
 
         {/* Common Payment Settings */}
         {formData.type && (
@@ -317,35 +416,26 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({
           </div>
         )}
 
-        {/* Fixed Payment Model (ADVERTISING, BRAND_AMBASSADOR) */}
+        {/* Fixed Payment Model */}
         {(formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR") && (
           <div className="space-y-6">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Total Cost (VND) *</Label>
-              <Input
-                type="text"
-                value={formatNumber(formData.financialTerms?.totalCost || "")}
-                onChange={(e) => handleNumberInput(e.target.value, updateTotalCost)}
-                placeholder="0"
-                className={`h-11 ${errors.financialTerms?.totalCost ? "border-red-500" : ""}`}
-              />
-              {errors.financialTerms?.totalCost && (
-                <p className="text-sm text-red-500">{errors.financialTerms.totalCost}</p>
-              )}
-            </div>
+            <NumberInput
+              label="Total Cost (VND) *"
+              value={financialTerms.totalCost}
+              onChange={updateTotalCost}
+              placeholder="0"
+              error={errors.financialTerms?.totalCost}
+            />
 
-            {/* Total Validation Warning */}
-            {formData.financialTerms?.schedule &&
-              formData.financialTerms.schedule.length > 0 &&
-              !isScheduleTotalValid() && (
-                <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                  <AlertCircle className="h-4 w-4 text-yellow-600" />
-                  <p className="text-sm text-yellow-700">
-                    Schedule total ({formatNumber(calculateScheduleTotal())} VND) doesn't match
-                    total cost ({formatNumber(formData.financialTerms?.totalCost || 0)} VND)
-                  </p>
-                </div>
-              )}
+            {schedule.length > 0 && !isScheduleTotalValid() && (
+              <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                <AlertCircle className="h-4 w-4 text-yellow-600" />
+                <p className="text-sm text-yellow-700">
+                  Schedule total ({formatNumber(calculateScheduleTotal())} VND) doesn't match total
+                  cost ({formatNumber(financialTerms.totalCost || 0)} VND)
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -353,98 +443,51 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({
         {formData.type === "AFFILIATE" && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Base Per Click (VND) *</Label>
-                <Input
-                  type="text"
-                  value={formatNumber(formData.financialTerms?.basePerClick || "")}
-                  onChange={(e) =>
-                    handleNumberInput(e.target.value, (value) =>
-                      onUpdateFinancialTerms({ basePerClick: value }),
-                    )
-                  }
-                  placeholder="5.000"
-                  className={`h-11 ${errors.financialTerms?.basePerClick ? "border-red-500" : ""}`}
-                />
-                {errors.financialTerms?.basePerClick && (
-                  <p className="text-sm text-red-500">{errors.financialTerms.basePerClick}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Payment Cycle *</Label>
-                <Select
-                  value={formData.financialTerms?.paymentCycle || ""}
-                  onValueChange={(value) => onUpdateFinancialTerms({ paymentCycle: value })}
-                >
-                  <SelectTrigger
-                    className={`h-11 ${errors.financialTerms?.paymentCycle ? "border-red-500" : ""}`}
-                  >
-                    <SelectValue placeholder="Select cycle" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {paymentCycleOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.financialTerms?.paymentCycle && (
-                  <p className="text-sm text-red-500">{errors.financialTerms.paymentCycle}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Payment Date</Label>
-                <Select
-                  value={formData.financialTerms?.paymentDate || ""}
-                  onValueChange={(value) => onUpdateFinancialTerms({ paymentDate: value })}
-                  disabled={!formData.financialTerms?.paymentCycle}
-                >
-                  <SelectTrigger className="h-11">
-                    <SelectValue placeholder="Select date" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {getPaymentDateOptions(formData.financialTerms?.paymentCycle || "").map(
-                      (option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ),
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
+              <NumberInput
+                label="Base Per Click (VND) *"
+                value={financialTerms.basePerClick}
+                onChange={(value: number) => onUpdateFinancialTerms({ basePerClick: value })}
+                placeholder="5.000"
+                error={errors.financialTerms?.basePerClick}
+              />
+              <SelectField
+                label="Payment Cycle *"
+                value={financialTerms.paymentCycle || ""}
+                onChange={(value: string) => onUpdateFinancialTerms({ paymentCycle: value })}
+                options={PAYMENT_CYCLE_OPTIONS}
+                placeholder="Select cycle"
+                error={errors.financialTerms?.paymentCycle}
+              />
+              <SelectField
+                label="Payment Date"
+                value={financialTerms.paymentDate || ""}
+                onChange={(value: string) => onUpdateFinancialTerms({ paymentDate: value })}
+                options={getPaymentDateOptions(financialTerms.paymentCycle || "")}
+                placeholder="Select date"
+                disabled={!financialTerms.paymentCycle}
+              />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Tax Withholding Threshold (VND)</Label>
-                <Input
-                  type="text"
-                  value={formatNumber(formData.financialTerms?.taxWithholding?.threshold || "")}
-                  onChange={(e) =>
-                    handleNumberInput(e.target.value, (value) =>
-                      onUpdateFinancialTerms({
-                        taxWithholding: {
-                          ...formData.financialTerms?.taxWithholding,
-                          threshold: value,
-                        },
-                      }),
-                    )
-                  }
-                  placeholder="2.000.000"
-                  className="h-11"
-                />
-              </div>
+              <NumberInput
+                label="Tax Withholding Threshold (VND)"
+                value={financialTerms.taxWithholding?.threshold}
+                onChange={(value: number) =>
+                  onUpdateFinancialTerms({
+                    taxWithholding: { ...financialTerms.taxWithholding, threshold: value },
+                  })
+                }
+                placeholder="2.000.000"
+              />
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Tax Withholding Rate (%)</Label>
                 <Input
                   type="number"
-                  value={formData.financialTerms?.taxWithholding?.ratePercent || ""}
+                  value={financialTerms.taxWithholding?.ratePercent || ""}
                   onChange={(e) =>
                     onUpdateFinancialTerms({
                       taxWithholding: {
-                        ...formData.financialTerms?.taxWithholding,
+                        ...financialTerms.taxWithholding,
                         ratePercent: parseFloat(e.target.value) || 0,
                       },
                     })
@@ -455,7 +498,7 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({
               </div>
             </div>
 
-            {/* Affiliate Levels */}
+            {/* Commission Levels */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label className="text-lg font-medium">Commission Levels</Label>
@@ -464,66 +507,15 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({
                   Add Level
                 </Button>
               </div>
-
               <div className="space-y-3">
-                {(formData.financialTerms?.levels || []).map((level: any, index: number) => (
-                  <Card key={index} className="p-4 bg-slate-50 border-slate-200">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div className="space-y-2">
-                        <Label className="text-xs text-slate-600">Level</Label>
-                        <Input
-                          type="number"
-                          value={level.level}
-                          onChange={(e) =>
-                            updateAffiliateLevel(index, "level", parseInt(e.target.value) || 0)
-                          }
-                          placeholder="1"
-                          className="h-10"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs text-slate-600">Min Clicks</Label>
-                        <Input
-                          type="number"
-                          value={level.minClicks}
-                          onChange={(e) =>
-                            updateAffiliateLevel(index, "minClicks", parseInt(e.target.value) || 0)
-                          }
-                          placeholder="0"
-                          className="h-10"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs text-slate-600">Multiplier</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={level.multiplier}
-                          onChange={(e) =>
-                            updateAffiliateLevel(
-                              index,
-                              "multiplier",
-                              parseFloat(e.target.value) || 0,
-                            )
-                          }
-                          placeholder="0.1"
-                          className="h-10"
-                        />
-                      </div>
-                      <div className="flex items-end">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeAffiliateLevel(index)}
-                          className="h-10 w-full gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          Remove
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
+                {(financialTerms.levels || []).map((level: any, index: number) => (
+                  <AffiliateLevel
+                    key={index}
+                    level={level}
+                    index={index}
+                    onUpdate={updateAffiliateLevel}
+                    onRemove={removeAffiliateLevel}
+                  />
                 ))}
               </div>
             </div>
@@ -534,91 +526,30 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({
         {formData.type === "CO_PRODUCING" && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <Label className="text-lg font-medium">Company Capital Contribution</Label>
-                <div className="space-y-2">
-                  <Input
-                    value={formData.financialTerms?.capitalContribution?.company?.description || ""}
-                    onChange={(e) =>
-                      onUpdateFinancialTerms({
-                        capitalContribution: {
-                          ...formData.financialTerms?.capitalContribution,
-                          company: {
-                            ...formData.financialTerms?.capitalContribution?.company,
-                            description: e.target.value,
-                          },
-                        },
-                      })
-                    }
-                    placeholder="Description"
-                    className="h-11"
-                  />
-                  <Input
-                    type="text"
-                    value={formatNumber(
-                      formData.financialTerms?.capitalContribution?.company?.value || "",
-                    )}
-                    onChange={(e) =>
-                      handleNumberInput(e.target.value, (value) =>
-                        onUpdateFinancialTerms({
-                          capitalContribution: {
-                            ...formData.financialTerms?.capitalContribution,
-                            company: {
-                              ...formData.financialTerms?.capitalContribution?.company,
-                              value: value,
-                            },
-                          },
-                        }),
-                      )
-                    }
-                    placeholder="Value (VND)"
-                    className="h-11"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <Label className="text-lg font-medium">KOL Capital Contribution</Label>
-                <div className="space-y-2">
-                  <Input
-                    value={formData.financialTerms?.capitalContribution?.kol?.description || ""}
-                    onChange={(e) =>
-                      onUpdateFinancialTerms({
-                        capitalContribution: {
-                          ...formData.financialTerms?.capitalContribution,
-                          kol: {
-                            ...formData.financialTerms?.capitalContribution?.kol,
-                            description: e.target.value,
-                          },
-                        },
-                      })
-                    }
-                    placeholder="Description"
-                    className="h-11"
-                  />
-                  <Input
-                    type="text"
-                    value={formatNumber(
-                      formData.financialTerms?.capitalContribution?.kol?.value || "",
-                    )}
-                    onChange={(e) =>
-                      handleNumberInput(e.target.value, (value) =>
-                        onUpdateFinancialTerms({
-                          capitalContribution: {
-                            ...formData.financialTerms?.capitalContribution,
-                            kol: {
-                              ...formData.financialTerms?.capitalContribution?.kol,
-                              value: value,
-                            },
-                          },
-                        }),
-                      )
-                    }
-                    placeholder="Value (VND)"
-                    className="h-11"
-                  />
-                </div>
-              </div>
+              <CapitalContribution
+                title="Company Capital Contribution"
+                data={financialTerms.capitalContribution?.company}
+                onChange={(field: string, value: any) =>
+                  onUpdateFinancialTerms({
+                    capitalContribution: {
+                      ...financialTerms.capitalContribution,
+                      company: { ...financialTerms.capitalContribution?.company, [field]: value },
+                    },
+                  })
+                }
+              />
+              <CapitalContribution
+                title="KOL Capital Contribution"
+                data={financialTerms.capitalContribution?.kol}
+                onChange={(field: string, value: any) =>
+                  onUpdateFinancialTerms({
+                    capitalContribution: {
+                      ...financialTerms.capitalContribution,
+                      kol: { ...financialTerms.capitalContribution?.kol, [field]: value },
+                    },
+                  })
+                }
+              />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -626,7 +557,7 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({
                 <Label className="text-sm font-medium">Company Profit Share (%) *</Label>
                 <Input
                   type="number"
-                  value={formData.financialTerms?.profitSplitCompanyPercent || ""}
+                  value={financialTerms.profitSplitCompanyPercent || ""}
                   onChange={(e) =>
                     onUpdateFinancialTerms({
                       profitSplitCompanyPercent: parseFloat(e.target.value) || 0,
@@ -635,17 +566,12 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({
                   placeholder="70"
                   className={`h-11 ${errors.financialTerms?.profitSplitCompanyPercent ? "border-red-500" : ""}`}
                 />
-                {errors.financialTerms?.profitSplitCompanyPercent && (
-                  <p className="text-sm text-red-500">
-                    {errors.financialTerms.profitSplitCompanyPercent}
-                  </p>
-                )}
               </div>
               <div className="space-y-2">
                 <Label className="text-sm font-medium">KOL Profit Share (%) *</Label>
                 <Input
                   type="number"
-                  value={formData.financialTerms?.profitSplitKolPercent || ""}
+                  value={financialTerms.profitSplitKolPercent || ""}
                   onChange={(e) =>
                     onUpdateFinancialTerms({
                       profitSplitKolPercent: parseFloat(e.target.value) || 0,
@@ -654,63 +580,34 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({
                   placeholder="30"
                   className={`h-11 ${errors.financialTerms?.profitSplitKolPercent ? "border-red-500" : ""}`}
                 />
-                {errors.financialTerms?.profitSplitKolPercent && (
-                  <p className="text-sm text-red-500">
-                    {errors.financialTerms.profitSplitKolPercent}
-                  </p>
-                )}
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Profit Distribution Cycle</Label>
-                <Select
-                  value={formData.financialTerms?.profitDistributionCycle || ""}
-                  onValueChange={(value) =>
-                    onUpdateFinancialTerms({ profitDistributionCycle: value })
-                  }
-                >
-                  <SelectTrigger className="h-11">
-                    <SelectValue placeholder="Select cycle" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {paymentCycleOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Profit Distribution Date</Label>
-                <Select
-                  value={formData.financialTerms?.profitDistributionDate || ""}
-                  onValueChange={(value) =>
-                    onUpdateFinancialTerms({ profitDistributionDate: value })
-                  }
-                  disabled={!formData.financialTerms?.profitDistributionCycle}
-                >
-                  <SelectTrigger className="h-11">
-                    <SelectValue placeholder="Select date" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {getPaymentDateOptions(
-                      formData.financialTerms?.profitDistributionCycle || "",
-                    ).map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <SelectField
+                label="Profit Distribution Cycle"
+                value={financialTerms.profitDistributionCycle || ""}
+                onChange={(value: string) =>
+                  onUpdateFinancialTerms({ profitDistributionCycle: value })
+                }
+                options={PAYMENT_CYCLE_OPTIONS}
+                placeholder="Select cycle"
+              />
+              <SelectField
+                label="Profit Distribution Date"
+                value={financialTerms.profitDistributionDate || ""}
+                onChange={(value: string) =>
+                  onUpdateFinancialTerms({ profitDistributionDate: value })
+                }
+                options={getPaymentDateOptions(financialTerms.profitDistributionCycle || "")}
+                placeholder="Select date"
+                disabled={!financialTerms.profitDistributionCycle}
+              />
             </div>
           </div>
         )}
 
-        {/* Payment Schedule - Common for all contract types */}
+        {/* Payment Schedule */}
         {formData.type && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -726,117 +623,39 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({
               </Button>
             </div>
 
-            {/* Schedule Percentage Error */}
-            {formData.financialTerms?.scheduleError && (
+            {/* Errors */}
+            {financialTerms.scheduleError && (
               <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
                 <AlertCircle className="h-4 w-4 text-red-600" />
-                <p className="text-sm text-red-700">{formData.financialTerms.scheduleError}</p>
+                <p className="text-sm text-red-700">{financialTerms.scheduleError}</p>
               </div>
             )}
 
-            {/* Schedule Date Error */}
-            {formData.financialTerms?.scheduleDateError && (
+            {financialTerms.scheduleDateError && (
               <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
                 <AlertCircle className="h-4 w-4 text-red-600" />
-                <p className="text-sm text-red-700">{formData.financialTerms.scheduleDateError}</p>
+                <p className="text-sm text-red-700">{financialTerms.scheduleDateError}</p>
               </div>
             )}
 
+            {/* Schedule Items */}
             <div className="space-y-3">
-              {(formData.financialTerms?.schedule || []).map((item: any, index: number) => (
-                <Card key={index} className="p-4 bg-slate-50 border-slate-200">
-                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-xs text-slate-600">Milestone</Label>
-                      <Input
-                        value={item.milestone}
-                        onChange={(e) => updateScheduleItem(index, "milestone", e.target.value)}
-                        placeholder="Upon Signing"
-                        className="h-10"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs text-slate-600">Percent (%)</Label>
-                      <Input
-                        type="text"
-                        value={item.percent || ""}
-                        onChange={(e) => handlePercentageInput(index, e.target.value)}
-                        placeholder="50"
-                        className={`h-10 ${
-                          formData.financialTerms?.scheduleError ? "border-red-300" : ""
-                        }`}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs text-slate-600">Amount (VND)</Label>
-                      <Input
-                        type="text"
-                        value={formatNumber(item.amount)}
-                        onChange={(e) =>
-                          handleNumberInput(e.target.value, (value) =>
-                            updateScheduleItem(index, "amount", value),
-                          )
-                        }
-                        placeholder="0"
-                        className={`h-10 ${
-                          formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR"
-                            ? "bg-gray-100 text-gray-700 cursor-not-allowed"
-                            : ""
-                        }`}
-                        readOnly={
-                          formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR"
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs text-slate-600">Due Date</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={`h-10 w-full justify-start text-left font-normal ${
-                              !item.dueDate ? "text-muted-foreground" : ""
-                            } ${
-                              formData.financialTerms?.scheduleDateError ? "border-red-500" : ""
-                            }`}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {item.dueDate ? (
-                              format(parseDate(item.dueDate)!, "dd/MM/yyyy")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={parseDate(item.dueDate)}
-                            onSelect={(date) => handleDateSelect(index, date)}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                    <div className="flex items-end">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeScheduleItem(index)}
-                        className="h-10 w-full gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Remove
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
+              {schedule.map((item: any, index: number) => (
+                <ScheduleItem
+                  key={index}
+                  item={item}
+                  index={index}
+                  onUpdate={updateScheduleItem}
+                  onRemove={removeScheduleItem}
+                  type={formData.type}
+                  hasError={!!financialTerms.scheduleError}
+                  hasDateError={!!financialTerms.scheduleDateError}
+                />
               ))}
             </div>
 
             {/* Schedule Summary */}
-            {formData.financialTerms?.schedule && formData.financialTerms.schedule.length > 0 && (
+            {schedule.length > 0 && (
               <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
                 <div className="flex justify-between items-center">
                   <span className="font-medium text-blue-900">Schedule Total:</span>
@@ -844,74 +663,42 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({
                     {formatNumber(calculateScheduleTotal())} VND
                   </span>
                 </div>
+
                 {(formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR") &&
-                  formData.financialTerms?.totalCost && (
+                  financialTerms.totalCost && (
                     <div className="flex justify-between items-center mt-2">
                       <span className="font-medium text-blue-900">Total Cost:</span>
                       <span className="font-bold text-blue-900">
-                        {formatNumber(formData.financialTerms.totalCost || 0)} VND
+                        {formatNumber(financialTerms.totalCost || 0)} VND
                       </span>
                     </div>
                   )}
-                {/* Progress bar for percentage total */}
-                {formData.financialTerms?.schedule &&
-                  formData.financialTerms.schedule.length > 0 && (
-                    <div className="mt-3">
-                      <div className="flex justify-between items-center text-xs text-blue-700 mb-1">
-                        <span>Percentage Total:</span>
-                        <span>
-                          {(formData.financialTerms.schedule || []).reduce(
-                            (sum: number, item: any) => sum + (item.percent || 0),
-                            0,
-                          )}
-                          %
-                        </span>
-                      </div>
-                      <div className="w-full bg-blue-200 rounded-full h-2">
-                        <div
-                          className={`h-2 rounded-full transition-all duration-300 ${
-                            (formData.financialTerms.schedule || []).reduce(
-                              (sum: number, item: any) => sum + (item.percent || 0),
-                              0,
-                            ) === 100
-                              ? "bg-green-500"
-                              : (formData.financialTerms.schedule || []).reduce(
-                                    (sum: number, item: any) => sum + (item.percent || 0),
-                                    0,
-                                  ) > 100
-                                ? "bg-red-500"
-                                : "bg-blue-500"
-                          }`}
-                          style={{
-                            width: `${Math.min(
-                              100,
-                              (formData.financialTerms.schedule || []).reduce(
-                                (sum: number, item: any) => sum + (item.percent || 0),
-                                0,
-                              ),
-                            )}%`,
-                          }}
-                        ></div>
-                      </div>
-                      {(formData.financialTerms.schedule || []).reduce(
-                        (sum: number, item: any) => sum + (item.percent || 0),
-                        0,
-                      ) !== 100 && (
-                        <p
-                          className={`text-xs mt-1 ${
-                            (formData.financialTerms.schedule || []).reduce(
-                              (sum: number, item: any) => sum + (item.percent || 0),
-                              0,
-                            ) > 100
-                              ? "text-red-700"
-                              : "text-yellow-700"
-                          }`}
-                        >
-                          Total percentage should equal 100%
-                        </p>
-                      )}
-                    </div>
+
+                <div className="mt-3">
+                  <div className="flex justify-between items-center text-xs text-blue-700 mb-1">
+                    <span>Percentage Total:</span>
+                    <span>{totalPercent}%</span>
+                  </div>
+                  <div className="w-full bg-blue-200 rounded-full h-2">
+                    <div
+                      className={`h-2 rounded-full transition-all duration-300 ${
+                        totalPercent === 100
+                          ? "bg-green-500"
+                          : totalPercent > 100
+                            ? "bg-red-500"
+                            : "bg-blue-500"
+                      }`}
+                      style={{ width: `${Math.min(100, totalPercent)}%` }}
+                    />
+                  </div>
+                  {totalPercent !== 100 && (
+                    <p
+                      className={`text-xs mt-1 ${totalPercent > 100 ? "text-red-700" : "text-yellow-700"}`}
+                    >
+                      Total percentage should equal 100%
+                    </p>
                   )}
+                </div>
               </div>
             )}
           </div>

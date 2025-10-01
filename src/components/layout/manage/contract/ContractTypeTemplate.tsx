@@ -15,7 +15,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { validateField } from "@/libs/validation/contractValidation";
 import { CalendarIcon, Plus, Trash2 } from "lucide-react";
-import {} from "react-icons/fa6";
 import { format } from "date-fns";
 
 interface ContractTypeTemplateProps {
@@ -27,6 +26,77 @@ interface ContractTypeTemplateProps {
   onFieldValidation?: (field: string, error: string | null) => void;
 }
 
+// Constants
+const CONTRACT_TYPE_OPTIONS = [
+  { value: "ADVERTISING", label: "Advertising Contract" },
+  { value: "AFFILIATE", label: "Affiliate Marketing" },
+  { value: "BRAND_AMBASSADOR", label: "Brand Ambassador" },
+  { value: "CO_PRODUCING", label: "Co-Production" },
+];
+
+const CHANNEL_OPTIONS = [
+  { value: "web", label: "Website" },
+  { value: "tiktok", label: "TikTok" },
+  { value: "facebook", label: "Facebook" },
+];
+
+// Helper Components
+const DatePicker = ({
+  field,
+  value,
+  placeholder,
+  onChange,
+  error,
+  openPopovers,
+  setOpenPopovers,
+}: any) => {
+  const parseDate = (dateString: string): Date | undefined => {
+    if (!dateString) return undefined;
+    const [year, month, day] = dateString.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  };
+
+  const formatDateForInput = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  return (
+    <div>
+      <Popover
+        open={openPopovers[field]}
+        onOpenChange={(open) => setOpenPopovers((prev: any) => ({ ...prev, [field]: open }))}
+      >
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline2"
+            className={`h-11 w-full justify-start text-left font-normal ${
+              !value ? "text-muted-foreground" : ""
+            } ${error ? "border-red-500" : ""}`}
+          >
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {value ? format(parseDate(value) || new Date(), "dd/MM/yyyy") : placeholder}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="single"
+            selected={parseDate(value)}
+            onSelect={(date) => {
+              const dateValue = date ? formatDateForInput(date) : "";
+              onChange(dateValue);
+              setOpenPopovers((prev: any) => ({ ...prev, [field]: false }));
+            }}
+          />
+        </PopoverContent>
+      </Popover>
+      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+    </div>
+  );
+};
+
 const ContractTypeTemplate: React.FC<ContractTypeTemplateProps> = ({
   formData,
   onContractTypeChange,
@@ -35,25 +105,15 @@ const ContractTypeTemplate: React.FC<ContractTypeTemplateProps> = ({
   errors = {},
   onFieldValidation,
 }) => {
-  // Contract type options
-  const contractTypeOptions = [
-    { value: "ADVERTISING", label: "Advertising Contract" },
-    { value: "AFFILIATE", label: "Affiliate Marketing" },
-    { value: "BRAND_AMBASSADOR", label: "Brand Ambassador" },
-    { value: "CO_PRODUCING", label: "Co-Production" },
-  ];
-
-  // State for controlling popover open/close
   const [openPopovers, setOpenPopovers] = useState({
     startDate: false,
     endDate: false,
     signedDate: false,
   });
 
-  // Real-time validation helper
+  // Field change handlers with validation
   const handleFieldChange = async (field: string, value: any) => {
     onInputChange(field, value);
-
     if (onFieldValidation) {
       const validation = await validateField(field, value, { ...formData, [field]: value });
       onFieldValidation(field, validation.isValid ? null : validation.error);
@@ -63,7 +123,6 @@ const ContractTypeTemplate: React.FC<ContractTypeTemplateProps> = ({
   const handleScopeFieldChange = async (field: string, value: any) => {
     const updates = { [field]: value };
     onUpdateScopeOfWork(updates);
-
     if (onFieldValidation) {
       const newScopeOfWork = { ...formData.scopeOfWork, ...updates };
       const validation = await validateField(`scopeOfWork.${field}`, value, {
@@ -72,104 +131,6 @@ const ContractTypeTemplate: React.FC<ContractTypeTemplateProps> = ({
       });
       onFieldValidation(`scopeOfWork.${field}`, validation.isValid ? null : validation.error);
     }
-  };
-
-  // Date validation helper
-  const validateDateRange = async () => {
-    if (formData.startDate && formData.endDate && onFieldValidation) {
-      const endValidation = await validateField("endDate", formData.endDate, formData);
-      onFieldValidation("endDate", endValidation.isValid ? null : endValidation.error);
-    }
-
-    if (formData.signedDate && formData.startDate && formData.endDate && onFieldValidation) {
-      const signedValidation = await validateField("signedDate", formData.signedDate, formData);
-      onFieldValidation("signedDate", signedValidation.isValid ? null : signedValidation.error);
-    }
-  };
-
-  // Fixed date formatting to avoid timezone issues
-  const formatDateForInput = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  };
-
-  // Parse date string safely
-  const parseDate = (dateString: string): Date | undefined => {
-    if (!dateString) return undefined;
-    // Create date from YYYY-MM-DD string without timezone issues
-    const [year, month, day] = dateString.split("-").map(Number);
-    return new Date(year, month - 1, day);
-  };
-
-  // Deliverable type options
-  const deliverableTypeOptions = [
-    { value: "Video Review", label: "Video Review" },
-    { value: "Photo Post", label: "Photo Post" },
-    { value: "Story Post", label: "Story Post" },
-    { value: "Live Stream", label: "Live Stream" },
-  ];
-
-  // Add deliverable
-  const addDeliverable = () => {
-    const newDeliverable = {
-      type: "",
-      channelId: "",
-      channelName: "",
-      channelLink: "",
-      quantity: 1,
-      deadline: "",
-    };
-
-    const updatedDeliverables = [...(formData.scopeOfWork.deliverables || []), newDeliverable];
-    onUpdateScopeOfWork({ deliverables: updatedDeliverables });
-  };
-
-  // Update deliverable
-  const updateDeliverable = (index: number, field: string, value: any) => {
-    const updatedDeliverables = [...(formData.scopeOfWork.deliverables || [])];
-    updatedDeliverables[index] = { ...updatedDeliverables[index], [field]: value };
-    onUpdateScopeOfWork({ deliverables: updatedDeliverables });
-  };
-
-  // Remove deliverable
-  const removeDeliverable = (index: number) => {
-    const updatedDeliverables = (formData.scopeOfWork.deliverables || []).filter(
-      (_: any, i: number) => i !== index,
-    );
-    onUpdateScopeOfWork({ deliverables: updatedDeliverables });
-  };
-
-  // Add branding restriction
-  const addBrandingRestriction = () => {
-    const updatedRestrictions = [...(formData.scopeOfWork.brandingRestrictions || []), ""];
-    onUpdateScopeOfWork({ brandingRestrictions: updatedRestrictions });
-  };
-
-  // Update branding restriction
-  const updateBrandingRestriction = (index: number, value: string) => {
-    const updatedRestrictions = [...(formData.scopeOfWork.brandingRestrictions || [])];
-    updatedRestrictions[index] = value;
-    onUpdateScopeOfWork({ brandingRestrictions: updatedRestrictions });
-  };
-
-  // Remove branding restriction
-  const removeBrandingRestriction = (index: number) => {
-    const updatedRestrictions = (formData.scopeOfWork.brandingRestrictions || []).filter(
-      (_: any, i: number) => i !== index,
-    );
-    onUpdateScopeOfWork({ brandingRestrictions: updatedRestrictions });
-  };
-
-  // Helper to close popover
-  const closePopover = (field: "startDate" | "endDate" | "signedDate") => {
-    setOpenPopovers((prev) => ({ ...prev, [field]: false }));
-  };
-
-  // Helper to toggle popover
-  const togglePopover = (field: "startDate" | "endDate" | "signedDate") => {
-    setOpenPopovers((prev) => ({ ...prev, [field]: !prev[field] }));
   };
 
   return (
@@ -202,7 +163,7 @@ const ContractTypeTemplate: React.FC<ContractTypeTemplateProps> = ({
                 <SelectValue placeholder="Select contract type to get started..." />
               </SelectTrigger>
               <SelectContent>
-                {contractTypeOptions.map((option) => (
+                {CONTRACT_TYPE_OPTIONS.map((option) => (
                   <SelectItem key={option.value} value={option.value} className="text-base py-3">
                     {option.label}
                   </SelectItem>
@@ -225,11 +186,8 @@ const ContractTypeTemplate: React.FC<ContractTypeTemplateProps> = ({
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="contractNumber" className="text-sm font-medium">
-                  Contract Number *
-                </Label>
+                <Label className="text-sm font-medium">Contract Number *</Label>
                 <Input
-                  id="contractNumber"
                   value={formData.contractNumber}
                   onChange={(e) => handleFieldChange("contractNumber", e.target.value)}
                   placeholder="Contract number from the signed document"
@@ -263,125 +221,40 @@ const ContractTypeTemplate: React.FC<ContractTypeTemplateProps> = ({
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center gap-2">
-                  Contract Duration *
-                </Label>
+                <Label className="text-sm font-medium">Contract Duration *</Label>
                 <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Popover
-                      open={openPopovers.startDate}
-                      onOpenChange={(open) =>
-                        setOpenPopovers((prev) => ({ ...prev, startDate: open }))
-                      }
-                    >
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline2"
-                          className={`h-11 justify-start text-left font-normal w-full ${
-                            !formData.startDate ? "text-muted-foreground" : ""
-                          } ${errors.startDate ? "border-red-500" : ""}`}
-                          onClick={() => togglePopover("startDate")}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {formData.startDate
-                            ? format(parseDate(formData.startDate) || new Date(), "dd/MM/yyyy")
-                            : "Start"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={parseDate(formData.startDate)}
-                          onSelect={async (date) => {
-                            const value = date ? formatDateForInput(date) : "";
-                            await handleFieldChange("startDate", value);
-                            validateDateRange();
-                            closePopover("startDate"); // Close popup after selection
-                          }}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    {errors.startDate && (
-                      <p className="text-xs text-red-500 mt-1">{errors.startDate}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Popover
-                      open={openPopovers.endDate}
-                      onOpenChange={(open) =>
-                        setOpenPopovers((prev) => ({ ...prev, endDate: open }))
-                      }
-                    >
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline2"
-                          className={`h-11 justify-start text-left font-normal w-full ${
-                            !formData.endDate ? "text-muted-foreground" : ""
-                          } ${errors.endDate ? "border-red-500" : ""}`}
-                          onClick={() => togglePopover("endDate")}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {formData.endDate
-                            ? format(parseDate(formData.endDate) || new Date(), "dd/MM/yyyy")
-                            : "End"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={parseDate(formData.endDate)}
-                          onSelect={async (date) => {
-                            const value = date ? formatDateForInput(date) : "";
-                            await handleFieldChange("endDate", value);
-                            validateDateRange();
-                            closePopover("endDate"); // Close popup after selection
-                          }}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    {errors.endDate && (
-                      <p className="text-xs text-red-500 mt-1">{errors.endDate}</p>
-                    )}
-                  </div>
+                  <DatePicker
+                    field="startDate"
+                    value={formData.startDate}
+                    placeholder="Start"
+                    onChange={(value: string) => handleFieldChange("startDate", value)}
+                    error={errors.startDate}
+                    openPopovers={openPopovers}
+                    setOpenPopovers={setOpenPopovers}
+                  />
+                  <DatePicker
+                    field="endDate"
+                    value={formData.endDate}
+                    placeholder="End"
+                    onChange={(value: string) => handleFieldChange("endDate", value)}
+                    error={errors.endDate}
+                    openPopovers={openPopovers}
+                    setOpenPopovers={setOpenPopovers}
+                  />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Signed Date</Label>
-                <Popover
-                  open={openPopovers.signedDate}
-                  onOpenChange={(open) =>
-                    setOpenPopovers((prev) => ({ ...prev, signedDate: open }))
-                  }
-                >
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline2"
-                      className={`h-11 w-full justify-start text-left font-normal px-3 ${
-                        !formData.signedDate ? "text-muted-foreground" : ""
-                      } ${errors.signedDate ? "border-red-500" : ""}`}
-                      onClick={() => togglePopover("signedDate")}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.signedDate
-                        ? format(parseDate(formData.signedDate) || new Date(), "dd/MM/yyyy")
-                        : "Select date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={parseDate(formData.signedDate)}
-                      onSelect={async (date) => {
-                        const value = date ? formatDateForInput(date) : "";
-                        await handleFieldChange("signedDate", value);
-                        closePopover("signedDate"); // Close popup after selection
-                      }}
-                    />
-                  </PopoverContent>
-                </Popover>
-                {errors.signedDate && <p className="text-sm text-red-500">{errors.signedDate}</p>}
+                <DatePicker
+                  field="signedDate"
+                  value={formData.signedDate}
+                  placeholder="Select date"
+                  onChange={(value: string) => handleFieldChange("signedDate", value)}
+                  error={errors.signedDate}
+                  openPopovers={openPopovers}
+                  setOpenPopovers={setOpenPopovers}
+                />
               </div>
             </div>
           </CardContent>
@@ -410,16 +283,138 @@ const ContractTypeTemplate: React.FC<ContractTypeTemplateProps> = ({
               )}
             </div>
 
-            {/* Technical Requirements */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Technical Requirements</Label>
-              <Textarea
-                value={formData.scopeOfWork.technicalRequirements || ""}
-                onChange={(e) => onUpdateScopeOfWork({ technicalRequirements: e.target.value })}
-                placeholder="Specify technical requirements, quality standards, etc..."
-                rows={3}
-              />
-            </div>
+            {/* Technical Requirements (only for Advertising) */}
+            {formData.type === "ADVERTISING" && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Technical Requirements</Label>
+                <Textarea
+                  value={formData.scopeOfWork.technical_requirements || ""}
+                  onChange={(e) => onUpdateScopeOfWork({ technical_requirements: e.target.value })}
+                  placeholder="Specify technical requirements, quality standards, etc..."
+                  rows={3}
+                />
+              </div>
+            )}
+
+            {/* Co-Production Roles (only for Co-Producing) */}
+            {formData.type === "CO_PRODUCING" && (
+              <div className="space-y-4">
+                <Label className="text-sm font-medium">Co-Production Roles</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs text-slate-600">Company Role</Label>
+                    <Textarea
+                      value={formData.scopeOfWork.co_production_roles?.company || ""}
+                      onChange={(e) =>
+                        onUpdateScopeOfWork({
+                          co_production_roles: {
+                            ...formData.scopeOfWork.co_production_roles,
+                            company: e.target.value,
+                          },
+                        })
+                      }
+                      placeholder="Describe the company's responsibilities..."
+                      rows={3}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs text-slate-600">KOL Role</Label>
+                    <Textarea
+                      value={formData.scopeOfWork.co_production_roles?.kol || ""}
+                      onChange={(e) =>
+                        onUpdateScopeOfWork({
+                          co_production_roles: {
+                            ...formData.scopeOfWork.co_production_roles,
+                            kol: e.target.value,
+                          },
+                        })
+                      }
+                      placeholder="Describe the KOL's responsibilities..."
+                      rows={3}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Event Participation (only for Brand Ambassador) */}
+            {formData.type === "BRAND_AMBASSADOR" && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">Event Participation</Label>
+                  <Button
+                    type="button"
+                    onClick={() =>
+                      onUpdateScopeOfWork({
+                        event_participation: [
+                          ...(formData.scopeOfWork.event_participation || []),
+                          { event_name: "", note: "" },
+                        ],
+                      })
+                    }
+                    size="sm"
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Event
+                  </Button>
+                </div>
+                <div className="space-y-3">
+                  {(formData.scopeOfWork.event_participation || []).map(
+                    (event: any, index: number) => (
+                      <Card key={index} className="p-4 bg-slate-50/50 border-slate-200">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="space-y-2">
+                            <Label className="text-xs text-slate-600">Event Name</Label>
+                            <Input
+                              value={event.event_name}
+                              onChange={(e) => {
+                                const updated = [...formData.scopeOfWork.event_participation];
+                                updated[index].event_name = e.target.value;
+                                onUpdateScopeOfWork({ event_participation: updated });
+                              }}
+                              placeholder="Event name"
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-xs text-slate-600">Note</Label>
+                            <Input
+                              value={event.note}
+                              onChange={(e) => {
+                                const updated = [...formData.scopeOfWork.event_participation];
+                                updated[index].note = e.target.value;
+                                onUpdateScopeOfWork({ event_participation: updated });
+                              }}
+                              placeholder="Note"
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="flex items-end">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const updated = formData.scopeOfWork.event_participation.filter(
+                                  (_: any, i: number) => i !== index,
+                                );
+                                onUpdateScopeOfWork({ event_participation: updated });
+                              }}
+                              className="h-10 w-full gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Remove
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    ),
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Deliverables */}
             <div className="space-y-4">
@@ -427,7 +422,28 @@ const ContractTypeTemplate: React.FC<ContractTypeTemplateProps> = ({
                 <Label className="text-sm font-medium">Deliverables</Label>
                 <Button
                   type="button"
-                  onClick={addDeliverable}
+                  onClick={() =>
+                    onUpdateScopeOfWork({
+                      deliverables: [
+                        ...(formData.scopeOfWork.deliverables || []),
+                        formData.type === "AFFILIATE"
+                          ? {
+                              type: "",
+                              channel: "",
+                              tracking_link: "",
+                              coupon_code: "",
+                              quantity: 1,
+                              deadline: "",
+                            }
+                          : {
+                              type: "",
+                              channel: "",
+                              quantity: 1,
+                              deadline: "",
+                            },
+                      ],
+                    })
+                  }
                   size="sm"
                   variant="outline"
                   className="gap-2"
@@ -436,7 +452,6 @@ const ContractTypeTemplate: React.FC<ContractTypeTemplateProps> = ({
                   Add Deliverable
                 </Button>
               </div>
-
               <div className="space-y-3">
                 {(formData.scopeOfWork.deliverables || []).map(
                   (deliverable: any, index: number) => (
@@ -444,15 +459,32 @@ const ContractTypeTemplate: React.FC<ContractTypeTemplateProps> = ({
                       <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
                         <div className="space-y-2">
                           <Label className="text-xs text-slate-600">Type</Label>
-                          <Select
+                          <Input
                             value={deliverable.type}
-                            onValueChange={(value) => updateDeliverable(index, "type", value)}
+                            onChange={(e) => {
+                              const updated = [...formData.scopeOfWork.deliverables];
+                              updated[index].type = e.target.value;
+                              onUpdateScopeOfWork({ deliverables: updated });
+                            }}
+                            placeholder="Deliverable type"
+                            className="h-10"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs text-slate-600">Channel</Label>
+                          <Select
+                            value={deliverable.channel}
+                            onValueChange={(value) => {
+                              const updated = [...formData.scopeOfWork.deliverables];
+                              updated[index].channel = value;
+                              onUpdateScopeOfWork({ deliverables: updated });
+                            }}
                           >
                             <SelectTrigger className="h-10">
-                              <SelectValue placeholder="Select type" />
+                              <SelectValue placeholder="Select channel" />
                             </SelectTrigger>
                             <SelectContent>
-                              {deliverableTypeOptions.map((option) => (
+                              {CHANNEL_OPTIONS.map((option) => (
                                 <SelectItem key={option.value} value={option.value}>
                                   {option.label}
                                 </SelectItem>
@@ -460,60 +492,78 @@ const ContractTypeTemplate: React.FC<ContractTypeTemplateProps> = ({
                             </SelectContent>
                           </Select>
                         </div>
-
-                        <div className="space-y-2">
-                          <Label className="text-xs text-slate-600">Channel Name</Label>
-                          <Input
-                            placeholder="Channel name"
-                            value={deliverable.channelName}
-                            onChange={(e) =>
-                              updateDeliverable(index, "channelName", e.target.value)
-                            }
-                            className="h-10"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label className="text-xs text-slate-600">Channel Link</Label>
-                          <Input
-                            placeholder="https://..."
-                            value={deliverable.channelLink}
-                            onChange={(e) =>
-                              updateDeliverable(index, "channelLink", e.target.value)
-                            }
-                            className="h-10"
-                          />
-                        </div>
-
+                        {/* Affiliate-specific fields */}
+                        {formData.type === "AFFILIATE" && (
+                          <>
+                            <div className="space-y-2">
+                              <Label className="text-xs text-slate-600">Tracking Link</Label>
+                              <Input
+                                value={deliverable.tracking_link || ""}
+                                onChange={(e) => {
+                                  const updated = [...formData.scopeOfWork.deliverables];
+                                  updated[index].tracking_link = e.target.value;
+                                  onUpdateScopeOfWork({ deliverables: updated });
+                                }}
+                                placeholder="Tracking link"
+                                className="h-10"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-xs text-slate-600">Coupon Code</Label>
+                              <Input
+                                value={deliverable.coupon_code || ""}
+                                onChange={(e) => {
+                                  const updated = [...formData.scopeOfWork.deliverables];
+                                  updated[index].coupon_code = e.target.value;
+                                  onUpdateScopeOfWork({ deliverables: updated });
+                                }}
+                                placeholder="Coupon code"
+                                className="h-10"
+                              />
+                            </div>
+                          </>
+                        )}
                         <div className="space-y-2">
                           <Label className="text-xs text-slate-600">Quantity</Label>
                           <Input
                             type="number"
                             min="1"
                             value={deliverable.quantity}
-                            onChange={(e) =>
-                              updateDeliverable(index, "quantity", parseInt(e.target.value))
-                            }
+                            onChange={(e) => {
+                              const updated = [...formData.scopeOfWork.deliverables];
+                              updated[index].quantity = parseInt(e.target.value);
+                              onUpdateScopeOfWork({ deliverables: updated });
+                            }}
                             className="h-10"
                           />
                         </div>
-
                         <div className="space-y-2">
                           <Label className="text-xs text-slate-600">Deadline</Label>
-                          <Input
-                            type="date"
+                          <DatePicker
+                            field={`deliverable-deadline-${index}`}
                             value={deliverable.deadline}
-                            onChange={(e) => updateDeliverable(index, "deadline", e.target.value)}
-                            className="h-10"
+                            placeholder="Select date"
+                            onChange={(value: string) => {
+                              const updated = [...formData.scopeOfWork.deliverables];
+                              updated[index].deadline = value;
+                              onUpdateScopeOfWork({ deliverables: updated });
+                            }}
+                            error={undefined}
+                            openPopovers={openPopovers}
+                            setOpenPopovers={setOpenPopovers}
                           />
                         </div>
-
                         <div className="flex items-end">
                           <Button
                             type="button"
                             variant="outline"
                             size="sm"
-                            onClick={() => removeDeliverable(index)}
+                            onClick={() => {
+                              const updated = formData.scopeOfWork.deliverables.filter(
+                                (_: any, i: number) => i !== index,
+                              );
+                              onUpdateScopeOfWork({ deliverables: updated });
+                            }}
                             className="h-10 w-full gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -527,90 +577,155 @@ const ContractTypeTemplate: React.FC<ContractTypeTemplateProps> = ({
               </div>
             </div>
 
-            {/* Branding Restrictions */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm font-medium">Branding Restrictions</Label>
-                <Button
-                  type="button"
-                  onClick={addBrandingRestriction}
-                  size="sm"
-                  variant="outline"
-                  className="gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Restriction
-                </Button>
-              </div>
-
-              <div className="space-y-3">
-                {(formData.scopeOfWork.brandingRestrictions || []).map(
-                  (restriction: string, index: number) => (
-                    <div key={index} className="flex gap-2">
-                      <Input
-                        value={restriction}
-                        onChange={(e) => updateBrandingRestriction(index, e.target.value)}
-                        placeholder="Enter branding restriction..."
-                        className="flex-1"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeBrandingRestriction(index)}
-                        className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ),
-                )}
-              </div>
-            </div>
-
-            {/* Co-Production Roles */}
-            {formData.type === "CO_PRODUCING" && (
+            {/* Branding Restrictions (not for Co-Producing) */}
+            {formData.type !== "CO_PRODUCING" && (
               <div className="space-y-4">
-                <Label className="text-sm font-medium">Co-Production Roles</Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-xs text-slate-600">Company Role</Label>
-                    <Textarea
-                      value={formData.scopeOfWork.coProductionRoles?.company || ""}
-                      onChange={(e) =>
-                        onUpdateScopeOfWork({
-                          coProductionRoles: {
-                            ...formData.scopeOfWork.coProductionRoles,
-                            company: e.target.value,
-                          },
-                        })
-                      }
-                      placeholder="Company responsibilities..."
-                      rows={3}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs text-slate-600">KOL Role</Label>
-                    <Textarea
-                      value={formData.scopeOfWork.coProductionRoles?.kol || ""}
-                      onChange={(e) =>
-                        onUpdateScopeOfWork({
-                          coProductionRoles: {
-                            ...formData.scopeOfWork.coProductionRoles,
-                            kol: e.target.value,
-                          },
-                        })
-                      }
-                      placeholder="KOL responsibilities..."
-                      rows={3}
-                    />
-                  </div>
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">Branding Restrictions</Label>
+                  <Button
+                    type="button"
+                    onClick={() =>
+                      onUpdateScopeOfWork({
+                        branding_restrictions: [
+                          ...(formData.scopeOfWork.branding_restrictions || []),
+                          "",
+                        ],
+                      })
+                    }
+                    size="sm"
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Restriction
+                  </Button>
+                </div>
+                <div className="space-y-3">
+                  {(formData.scopeOfWork.branding_restrictions || []).map(
+                    (restriction: string, index: number) => (
+                      <Card key={index} className="p-4 bg-slate-50/50 border-slate-200">
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                          <div className="md:col-span-4 space-y-2">
+                            <Label className="text-xs text-slate-600">Restriction</Label>
+                            <Input
+                              value={restriction}
+                              onChange={(e) => {
+                                const updated = [...formData.scopeOfWork.branding_restrictions];
+                                updated[index] = e.target.value;
+                                onUpdateScopeOfWork({ branding_restrictions: updated });
+                              }}
+                              placeholder="Enter branding restriction..."
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="flex items-end">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const updated = formData.scopeOfWork.branding_restrictions.filter(
+                                  (_: any, i: number) => i !== index,
+                                );
+                                onUpdateScopeOfWork({ branding_restrictions: updated });
+                              }}
+                              className="h-10 w-full gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Remove
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    ),
+                  )}
                 </div>
               </div>
             )}
           </CardContent>
         </Card>
       )}
+
+      {/* Legal Terms */}
+      <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-xl">Legal Terms</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Breach of Contract */}
+          <div className="space-y-4">
+            <Label className="text-sm font-semibold text-primary">Breach of Contract</Label>
+            <ul className="space-y-2 text-sm text-gray-700 list-disc pl-5">
+              <li>
+                <span className="font-semibold text-gray-900">
+                  If Party A (the Brand) breaches the contract:
+                </span>
+                <ul className="list-disc pl-5">
+                  <li>The contract shall be terminated immediately.</li>
+                  <li>Party A forfeits the entire deposit paid.</li>
+                </ul>
+              </li>
+              <li>
+                <span className="font-semibold text-gray-900">
+                  If Party B (the Service Provider) breaches the contract:
+                </span>
+                <ul className="list-disc pl-5">
+                  <li>The contract shall be terminated immediately.</li>
+                  <li className="flex items-center gap-2">
+                    Party B must refund the entire deposit to Party A and compensate an additional
+                    <div className="relative flex items-center">
+                      <Input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={formData.legalTerms?.compensationPercent ?? ""}
+                        onChange={(e) =>
+                          onInputChange("legalTerms", {
+                            ...formData.legalTerms,
+                            compensationPercent: e.target.value,
+                          })
+                        }
+                        className="w-20 h-8 pr-7"
+                        placeholder="0"
+                      />
+                      <span className="absolute right-2 text-gray-500 text-sm">%</span>
+                    </div>
+                    of the deposit amount to Party A.
+                  </li>
+                </ul>
+              </li>
+              <li>
+                <span className="font-semibold text-gray-900">
+                  If both parties mutually agree to terminate the contract:
+                </span>
+                <ul className="list-disc pl-5">
+                  <li>Neither party shall bear any liability or compensation obligations.</li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+
+          {/* Additional Standard Terms */}
+          <div className="space-y-2 text-sm text-gray-700">
+            <div className="border-l-4 border-primary pl-4 py-2 bg-primary/5 rounded">
+              <span className="font-semibold">Confidentiality:</span> Both parties agree to keep all
+              information related to this contract strictly confidential and not disclose it to any
+              third party without prior written consent from the other party.
+            </div>
+            <div className="border-l-4 border-primary pl-4 py-2 bg-primary/5 rounded">
+              <span className="font-semibold">Dispute Resolution:</span> Any disputes arising from
+              or relating to this contract shall be resolved amicably through negotiation. If no
+              agreement is reached, the dispute shall be settled at a competent court as prescribed
+              by law.
+            </div>
+            <div className="border-l-4 border-primary pl-4 py-2 bg-primary/5 rounded">
+              <span className="font-semibold">Contract Effectiveness:</span> This contract becomes
+              effective from the date of signing and shall terminate upon full completion of
+              obligations by both parties.
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

@@ -1,10 +1,14 @@
-export const formatDate = (date: Date | string): string => {
-  return new Date(date).toLocaleDateString("en-US", {
+export const formatDate = (date: Date | string, type: "display" | "input" = "display"): string => {
+  const d = new Date(date);
+
+  if (type === "input") {
+    return d.toLocaleDateString("en-CA"); // format yyyy-MM-dd
+  }
+
+  return d.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
     year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "numeric",
-    minute: "numeric",
   });
 };
 

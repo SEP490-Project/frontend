@@ -1,0 +1,389 @@
+import { useState, useRef, useCallback } from "react";
+import type { ReactElement } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/libs/utils";
+import {
+  FaCloudArrowUp,
+  FaFile,
+  FaFilePdf,
+  FaFileWord,
+  FaFileExcel,
+  FaFileImage,
+  FaFileVideo,
+  FaFileAudio,
+  FaTrash,
+  FaDownload,
+  FaEye,
+  FaCheck,
+  FaXmark,
+  FaChartColumn,
+  FaFileZipper,
+} from "react-icons/fa6";
+const FILE_ICONS: Record<string, ReactElement> = {
+  pdf: <FaFilePdf className="h-8 w-8 text-red-500" />,
+  doc: <FaFileWord className="h-8 w-8 text-blue-500" />,
+  docx: <FaFileWord className="h-8 w-8 text-blue-500" />,
+  xls: <FaFileExcel className="h-8 w-8 text-green-500" />,
+  xlsx: <FaFileExcel className="h-8 w-8 text-green-500" />,
+  jpg: <FaFileImage className="h-8 w-8 text-purple-500" />,
+  jpeg: <FaFileImage className="h-8 w-8 text-purple-500" />,
+  png: <FaFileImage className="h-8 w-8 text-purple-500" />,
+  gif: <FaFileImage className="h-8 w-8 text-purple-500" />,
+  webp: <FaFileImage className="h-8 w-8 text-purple-500" />,
+  mp4: <FaFileVideo className="h-8 w-8 text-orange-500" />,
+  avi: <FaFileVideo className="h-8 w-8 text-orange-500" />,
+  mov: <FaFileVideo className="h-8 w-8 text-orange-500" />,
+  wmv: <FaFileVideo className="h-8 w-8 text-orange-500" />,
+  mp3: <FaFileAudio className="h-8 w-8 text-pink-500" />,
+  wav: <FaFileAudio className="h-8 w-8 text-pink-500" />,
+  flac: <FaFileAudio className="h-8 w-8 text-pink-500" />,
+  zip: <FaFileZipper className="h-8 w-8 text-yellow-600" />,
+  rar: <FaFileZipper className="h-8 w-8 text-yellow-600" />,
+};
+
+const getFileIcon = (fileName: string) => {
+  const ext = fileName.split(".").pop()?.toLowerCase() || "";
+  return FILE_ICONS[ext] || <FaFile className="h-8 w-8 text-slate-500" />;
+};
+
+const formatFileSize = (bytes: number) =>
+  bytes === 0
+    ? "0 Bytes"
+    : `${(bytes / 1024 ** Math.floor(Math.log(bytes) / Math.log(1024))).toFixed(2)} ${["Bytes", "KB", "MB", "GB"][Math.floor(Math.log(bytes) / Math.log(1024))]}`;
+
+const FileUploader = ({
+  accept = "*/*",
+  multiple = true,
+  maxSize = 10,
+  maxFiles = 5,
+  onFilesChange,
+  onUpload,
+  className,
+  disabled = false,
+  showPreview = true,
+  allowedTypes = [],
+  title,
+  showSummary = true,
+}: any) => {
+  const [files, setFiles] = useState<any[]>([]);
+  const [isDragActive, setIsDragActive] = useState(false);
+  const [error, setError] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Allow zip/rar by default if allowedTypes is empty
+  const allowed =
+    allowedTypes.length > 0
+      ? allowedTypes
+      : [
+          "pdf",
+          "doc",
+          "docx",
+          "xls",
+          "xlsx",
+          "jpg",
+          "jpeg",
+          "png",
+          "gif",
+          "webp",
+          "mp4",
+          "avi",
+          "mov",
+          "wmv",
+          "mp3",
+          "wav",
+          "flac",
+          "zip",
+          "rar",
+        ];
+
+  const validateFile = (file: File) => {
+    if (file.size > maxSize * 1024 * 1024) return `File size exceeds ${maxSize}MB limit`;
+    const ext = file.name.split(".").pop()?.toLowerCase() || "";
+    if (allowed.length && !allowed.includes(ext))
+      return `File type not allowed. Allowed: ${allowed.join(", ")}`;
+    return null;
+  };
+
+  const processFiles = useCallback(
+    (fileList: FileList) => {
+      let errorMessage = "";
+      if (files.length + fileList.length > maxFiles) {
+        setError(`Maximum ${maxFiles} files allowed`);
+        return;
+      }
+      const newFiles = Array.from(fileList).reduce<any[]>((arr, file) => {
+        const err = validateFile(file);
+        if (err) {
+          errorMessage = err;
+          return arr;
+        }
+        const id = Math.random().toString(36).substr(2, 9);
+        const fileItem: any = { id, file, progress: 0, status: "uploading" };
+        if (file.type.startsWith("image/") && showPreview) {
+          const reader = new FileReader();
+          reader.onload = (e) =>
+            setFiles((prev) =>
+              prev.map((f) => (f.id === id ? { ...f, preview: e.target?.result } : f)),
+            );
+          reader.readAsDataURL(file);
+        }
+        arr.push(fileItem);
+        return arr;
+      }, []);
+      if (errorMessage) return setError(errorMessage);
+      setError("");
+      setFiles((prev) => [...prev, ...newFiles]);
+      newFiles.forEach((f) => simulateUploadProgress(f.id));
+      onFilesChange?.([...files.map((f) => f.file), ...newFiles.map((f) => f.file)]);
+    },
+    [files, maxFiles, maxSize, allowed, onFilesChange, showPreview, validateFile],
+  );
+
+  const simulateUploadProgress = (fileId: string) => {
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += Math.random() * 30;
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.id === fileId
+            ? {
+                ...f,
+                progress: progress >= 100 ? 100 : Math.round(progress),
+                status: progress >= 100 ? "completed" : "uploading",
+              }
+            : f,
+        ),
+      );
+      if (progress >= 100) clearInterval(interval);
+    }, 200);
+  };
+
+  const removeFile = (fileId: string) => {
+    setFiles((prev) => prev.filter((f) => f.id !== fileId));
+    onFilesChange?.(files.filter((f) => f.id !== fileId).map((f) => f.file));
+  };
+
+  return (
+    <div className={cn("space-y-4", className)}>
+      {/* Upload Area */}
+      <Card
+        className={cn(
+          "border-2 border-dashed transition-all duration-200 cursor-pointer",
+          isDragActive
+            ? "border-blue-500 bg-blue-50/50"
+            : "border-slate-300 hover:border-slate-400",
+          disabled && "opacity-50 cursor-not-allowed",
+        )}
+      >
+        <CardContent
+          className="p-6 text-center"
+          onDragEnter={(e) => {
+            e.preventDefault();
+            setIsDragActive(true);
+          }}
+          onDragLeave={(e) => {
+            e.preventDefault();
+            setIsDragActive(false);
+          }}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsDragActive(false);
+            if (!disabled && e.dataTransfer.files) processFiles(e.dataTransfer.files);
+          }}
+          onClick={() => !disabled && fileInputRef.current?.click()}
+        >
+          <div className="flex flex-col items-center space-y-3">
+            <div
+              className={cn(
+                "p-3 rounded-full transition-colors",
+                isDragActive ? "bg-blue-100" : "bg-slate-100",
+              )}
+            >
+              <FaCloudArrowUp
+                className={cn(
+                  "h-8 w-8 transition-colors",
+                  isDragActive ? "text-blue-600" : "text-slate-500",
+                )}
+              />
+            </div>
+            <div className="space-y-1">
+              <h4 className="text-sm font-semibold text-slate-700">
+                {isDragActive ? "Drop files here" : "Upload Files"}
+              </h4>
+              <p className="text-xs text-slate-500">Drag & drop files here, or click to browse</p>
+              <p className="text-xs text-slate-400">
+                Max {maxFiles} files, up to {maxSize}MB each
+                <span className="block mt-1">Allowed: {allowed.join(", ")}</span>
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={disabled}
+              onClick={(e) => {
+                e.stopPropagation();
+                fileInputRef.current?.click();
+              }}
+            >
+              Choose Files
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Error Message */}
+      {error && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-md flex items-center gap-2">
+          <FaXmark className="h-4 w-4 text-red-500" />
+          <p className="text-sm text-red-700">{error}</p>
+        </div>
+      )}
+
+      {/* File List */}
+      {files.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-medium text-slate-700">
+              {title ? `${title} (${files.length})` : `Uploaded Files (${files.length})`}
+            </h4>
+            {onUpload && (
+              <Button
+                size="sm"
+                onClick={async () => {
+                  try {
+                    await onUpload(files.map((f) => f.file));
+                  } catch {
+                    setError("Upload failed. Please try again.");
+                  }
+                }}
+                disabled={files.some((f) => f.status === "uploading")}
+              >
+                Upload All
+              </Button>
+            )}
+          </div>
+          <div className="space-y-2">
+            {files.map((fileItem) => (
+              <Card key={fileItem.id} className="p-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0">
+                    {fileItem.preview ? (
+                      <img
+                        src={fileItem.preview}
+                        alt={fileItem.file.name}
+                        className="h-10 w-10 object-cover rounded-lg border"
+                      />
+                    ) : (
+                      <div className="scale-75">{getFileIcon(fileItem.file.name)}</div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-sm font-medium text-slate-900 truncate">
+                        {fileItem.file.name}
+                      </p>
+                      <Badge
+                        variant={
+                          fileItem.status === "completed"
+                            ? "default"
+                            : fileItem.status === "error"
+                              ? "destructive"
+                              : "secondary"
+                        }
+                        className="text-xs"
+                      >
+                        {fileItem.status === "completed" && <FaCheck className="h-3 w-3 mr-1" />}
+                        {fileItem.status === "error" && <FaXmark className="h-3 w-3 mr-1" />}
+                        {fileItem.status}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-slate-500 mb-1">
+                      {formatFileSize(fileItem.file.size)}
+                    </p>
+                    {fileItem.status === "uploading" && (
+                      <Progress value={fileItem.progress} className="h-1.5" />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {fileItem.status === "completed" && (
+                      <>
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
+                          <FaEye className="h-3 w-3" />
+                        </Button>
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
+                          <FaDownload className="h-3 w-3" />
+                        </Button>
+                      </>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => removeFile(fileItem.id)}
+                    >
+                      <FaTrash className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+          {showSummary && (
+            <>
+              <Separator />
+              <Card className="bg-slate-50/50">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <FaChartColumn className="h-4 w-4 text-slate-600" />
+                    <h5 className="text-sm font-semibold text-slate-700">Summary</h5>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-slate-600">Total Files</p>
+                      <p className="font-medium text-slate-900">{files.length}</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-600">Total Size</p>
+                      <p className="font-medium text-slate-900">
+                        {formatFileSize(files.reduce((acc, f) => acc + f.file.size, 0))}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-slate-600">Completed</p>
+                      <p className="font-medium text-green-600">
+                        {files.filter((f) => f.status === "completed").length}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-slate-600">Uploading</p>
+                      <p className="font-medium text-blue-600">
+                        {files.filter((f) => f.status === "uploading").length}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </div>
+      )}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={accept}
+        multiple={multiple}
+        onChange={(e) => e.target.files && processFiles(e.target.files)}
+        className="hidden"
+        disabled={disabled}
+      />
+    </div>
+  );
+};
+
+export default FileUploader;

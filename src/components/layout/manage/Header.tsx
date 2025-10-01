@@ -1,13 +1,12 @@
 import React, { useState } from "react";
 import {
-  AiOutlineBell,
-  AiOutlineUser,
-  AiOutlineSetting,
-  AiOutlineLogout,
-  AiOutlineMenuFold,
-  AiOutlineMenuUnfold,
-} from "react-icons/ai";
-import { FaAngleDown } from "react-icons/fa6";
+  FaAngleDown,
+  FaRegBell,
+  FaRegUser,
+  FaArrowRightToBracket,
+  FaIndent,
+  FaOutdent,
+} from "react-icons/fa6";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -15,7 +14,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-
+import { NavLink } from "react-router-dom";
 interface HeaderProps {
   collapsed?: boolean;
   onToggleCollapse?: () => void;
@@ -55,9 +54,9 @@ const Header: React.FC<HeaderProps> = ({
                   aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
                 >
                   {collapsed ? (
-                    <AiOutlineMenuUnfold size={24} className="text-gray-600" />
+                    <FaIndent size={24} className="text-gray-600" />
                   ) : (
-                    <AiOutlineMenuFold size={24} className="text-gray-500" />
+                    <FaOutdent size={24} className="text-gray-500" />
                   )}
                 </button>
               </TooltipTrigger>
@@ -72,7 +71,7 @@ const Header: React.FC<HeaderProps> = ({
               className="p-2 rounded hover:bg-gray-100 transition"
               aria-label="Open sidebar"
             >
-              <AiOutlineMenuUnfold size={24} className="text-gray-600" />
+              <FaIndent size={24} className="text-gray-600" />
             </button>
           </div>
         </div>
@@ -112,27 +111,18 @@ const Header: React.FC<HeaderProps> = ({
                 </div>
               </div>
               <DropdownMenuItem asChild>
-                <a
-                  href="/account"
+                <NavLink
+                  to="/manage/account"
                   className="flex items-center gap-2 w-full px-4 py-2 text-gray-700 hover:bg-gray-50"
                 >
-                  <AiOutlineUser size={18} className="text-primary" />
+                  <FaRegUser size={18} className="text-primary" />
                   <span>Account</span>
-                </a>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <a
-                  href="/settings"
-                  className="flex items-center gap-2 w-full px-4 py-2 text-gray-700 hover:bg-gray-50"
-                >
-                  <AiOutlineSetting size={18} className="text-primary" />
-                  <span>Settings</span>
-                </a>
+                </NavLink>
               </DropdownMenuItem>
               <div className="border-t mx-4 my-2" />
               <DropdownMenuItem asChild>
                 <button className="flex items-center gap-2 w-full px-4 py-2 text-red-500 hover:bg-red-50">
-                  <AiOutlineLogout size={18} />
+                  <FaArrowRightToBracket size={18} />
                   <span>Logout</span>
                 </button>
               </DropdownMenuItem>
@@ -148,7 +138,7 @@ const Header: React.FC<HeaderProps> = ({
                     className="relative p-2 rounded hover:bg-gray-100 transition focus:outline-none"
                     aria-label="Notifications"
                   >
-                    <AiOutlineBell size={22} className="text-gray-500" />
+                    <FaRegBell size={22} className="text-gray-500" />
                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full px-1 border border-white shadow">
                       {notifications.length}
                     </span>
@@ -163,12 +153,12 @@ const Header: React.FC<HeaderProps> = ({
               className="w-80 max-h-96 overflow-y-auto animate-in slide-in-from-top-5 fade-in-0 duration-200 rounded-xl shadow-lg border border-gray-100 bg-white"
             >
               <div className="px-5 py-3 text-base font-bold text-gray-800 border-b flex items-center gap-2">
-                <AiOutlineBell size={18} className="text-primary" />
+                <FaRegBell size={18} className="text-primary" />
                 Thông báo
               </div>
               {notifications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-gray-400">
-                  <AiOutlineBell size={32} className="mb-2" />
+                  <FaRegBell size={32} className="mb-2" />
                   <span className="text-base">Không có thông báo mới</span>
                 </div>
               ) : (
@@ -184,12 +174,12 @@ const Header: React.FC<HeaderProps> = ({
               )}
               <div className="border-t mt-2" />
               <DropdownMenuItem asChild>
-                <a
-                  href="/notifications"
+                <NavLink
+                  to="/manage/notification"
                   className="block w-full text-center text-primary font-semibold py-3 hover:underline"
                 >
                   Xem tất cả thông báo
-                </a>
+                </NavLink>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

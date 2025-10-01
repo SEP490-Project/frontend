@@ -3,7 +3,7 @@ import { dashboardConfig } from "@/libs/dashboardConfig";
 import WidgetFactory from "@/components/dashboard/WidgetFactory";
 import dashboardData from "./dashboardData.json";
 
-export default function Dashboard() {
+const DashboardPage: React.FC = () => {
   // TODO: lấy role từ context hoặc props
   const role = "content"; // giả lập role, chọn một role hợp lệ từ dashboardConfig
   const widgets = dashboardConfig[role] || [];
@@ -54,4 +54,6 @@ export default function Dashboard() {
       </>
     </div>
   );
-}
+};
+
+export default DashboardPage;

@@ -94,26 +94,47 @@ const contractSchema = yup.object({
 
   // Representative fields
   brandRepresentativeName: yup.string().required("Please enter the brand representative's name"),
+  brandRepresentativeEmail: yup
+    .string()
+    .email("Please enter a valid email address")
+    .required("Please enter the brand representative's email"),
   webRepresentativeName: yup.string().required("Please enter the web representative's name"),
+  webRepresentativeEmail: yup
+    .string()
+    .email("Please enter a valid email address")
+    .required("Please enter the web representative's email"),
 
   // Scope of work
   scopeOfWork: yup.object({
     description: yup.string().required("Please provide a project description"),
   }),
 
-  // Financial terms based on contract type
+  // Financial terms based on contract type - Updated to match new structure
   financialTerms: yup
     .object()
     .when("type", {
       is: (type: string) => ["ADVERTISING", "BRAND_AMBASSADOR"].includes(type),
       then: (schema) =>
         schema.shape({
-          paymentMethod: yup.string().required("Please select a payment method"),
           totalCost: yup
             .number()
             .typeError("Please enter a valid amount")
-            .min(1, "Total cost must be greater than $0")
+            .min(1, "Total cost must be greater than 0")
             .required("Please enter the total cost"),
+          schedule: yup
+            .array()
+            .min(1, "Please add at least one payment schedule item")
+            .test("schedule-total-match", "Schedule total must match total cost", function (value) {
+              const parentData = this.parent || {};
+              const totalCost = parentData.totalCost || 0;
+              if (!value || value.length === 0) return true;
+
+              const scheduleTotal = value.reduce(
+                (sum: number, item: any) => sum + (item.amount || 0),
+                0,
+              );
+              return Math.abs(totalCost - scheduleTotal) < 0.01;
+            }),
         }),
     })
     .when("type", {
@@ -123,15 +144,43 @@ const contractSchema = yup.object({
           basePerClick: yup
             .number()
             .typeError("Please enter a valid amount")
-            .min(0.01, "Base per click must be at least $0.01")
+            .min(0.01, "Base per click must be at least 0.01")
             .required("Please enter the base per click amount"),
           paymentCycle: yup.string().required("Please select a payment cycle"),
+          levels: yup
+            .array()
+            .min(1, "Please add at least one commission level")
+            .test("valid-levels", "All levels must have valid values", function (value) {
+              if (!value || value.length === 0) return true;
+              return value.every(
+                (level: any) => level.level > 0 && level.minClicks >= 0 && level.multiplier > 0,
+              );
+            }),
+          schedule: yup.array().min(1, "Please add at least one payment schedule item"),
         }),
     })
     .when("type", {
       is: "CO_PRODUCING",
       then: (schema) =>
         schema.shape({
+          capitalContribution: yup.object({
+            company: yup.object({
+              description: yup.string().required("Please enter company contribution description"),
+              value: yup
+                .number()
+                .typeError("Please enter a valid amount")
+                .min(1, "Company contribution must be greater than 0")
+                .required("Please enter company contribution value"),
+            }),
+            kol: yup.object({
+              description: yup.string().required("Please enter KOL contribution description"),
+              value: yup
+                .number()
+                .typeError("Please enter a valid amount")
+                .min(1, "KOL contribution must be greater than 0")
+                .required("Please enter KOL contribution value"),
+            }),
+          }),
           profitSplitCompanyPercent: yup
             .number()
             .typeError("Please enter a valid percentage")
@@ -153,21 +202,49 @@ const contractSchema = yup.object({
                 return companyPercent + (value || 0) === 100;
               },
             ),
+          schedule: yup.array().min(1, "Please add at least one payment schedule item"),
         }),
     }),
+
+  // File upload validation
+  contractFiles: yup
+    .array()
+    .min(1, "Please upload at least one contract file")
+    .required("Contract files are required"),
+  proposalFiles: yup
+    .array()
+    .min(1, "Please upload at least one proposal file")
+    .required("Proposal files are required"),
 });
 
 // Real-time field validation
 export const validateField = async (fieldPath: string, value: any, formData: any) => {
   try {
-    const fieldSchema = yup.reach(contractSchema, fieldPath);
-    if ("validate" in fieldSchema && typeof fieldSchema.validate === "function") {
-      // Pass formData as context to make it available in validation tests
-      await fieldSchema.validate(value, { context: formData });
-    } else {
-      // If it's a Reference, skip validation or handle as needed
-      return { isValid: true, error: null };
+    // Handle nested paths properly
+    const pathParts = fieldPath.split(".");
+    let schema: yup.AnySchema = contractSchema;
+
+    // Navigate to the nested schema
+    for (const part of pathParts) {
+      if ((schema as any).fields && ((schema as any).fields as Record<string, any>)[part]) {
+        schema = ((schema as any).fields as Record<string, any>)[part];
+      } else {
+        // If we can't find the field, try to reach it using yup.reach
+        try {
+          schema = yup.reach(contractSchema, fieldPath) as yup.AnySchema;
+          break;
+        } catch {
+          // Field doesn't exist in schema, skip validation
+          return { isValid: true, error: null };
+        }
+      }
     }
+
+    if (schema && typeof schema.validate === "function") {
+      // Pass formData as context to make it available in validation tests
+      await schema.validate(value, { context: formData });
+    }
+
     return { isValid: true, error: null };
   } catch (error: any) {
     return { isValid: false, error: error.message };
@@ -187,9 +264,14 @@ export const validateContract = async (formData: any) => {
         const pathParts = err.path.split(".");
         if (pathParts.length === 1) {
           errors[pathParts[0]] = err.message;
-        } else {
+        } else if (pathParts.length === 2) {
           if (!errors[pathParts[0]]) errors[pathParts[0]] = {};
           errors[pathParts[0]][pathParts[1]] = err.message;
+        } else if (pathParts.length === 3) {
+          // Handle deeper nesting like 'financialTerms.capitalContribution.company'
+          if (!errors[pathParts[0]]) errors[pathParts[0]] = {};
+          if (!errors[pathParts[0]][pathParts[1]]) errors[pathParts[0]][pathParts[1]] = {};
+          errors[pathParts[0]][pathParts[1]][pathParts[2]] = err.message;
         }
       }
     });

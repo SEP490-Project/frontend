@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -33,6 +33,13 @@ const ContractTypeTemplate: React.FC<ContractTypeTemplateProps> = ({
   errors = {},
   onFieldValidation,
 }) => {
+  // State for controlling popover open/close
+  const [openPopovers, setOpenPopovers] = useState({
+    startDate: false,
+    endDate: false,
+    signedDate: false,
+  });
+
   // Real-time validation helper
   const handleFieldChange = async (field: string, value: any) => {
     onInputChange(field, value);
@@ -145,6 +152,16 @@ const ContractTypeTemplate: React.FC<ContractTypeTemplateProps> = ({
     onUpdateScopeOfWork({ brandingRestrictions: updatedRestrictions });
   };
 
+  // Helper to close popover
+  const closePopover = (field: "startDate" | "endDate" | "signedDate") => {
+    setOpenPopovers((prev) => ({ ...prev, [field]: false }));
+  };
+
+  // Helper to toggle popover
+  const togglePopover = (field: "startDate" | "endDate" | "signedDate") => {
+    setOpenPopovers((prev) => ({ ...prev, [field]: !prev[field] }));
+  };
+
   return (
     <div className="space-y-8">
       {/* Basic Information */}
@@ -200,13 +217,19 @@ const ContractTypeTemplate: React.FC<ContractTypeTemplateProps> = ({
               </Label>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <Popover>
+                  <Popover
+                    open={openPopovers.startDate}
+                    onOpenChange={(open) =>
+                      setOpenPopovers((prev) => ({ ...prev, startDate: open }))
+                    }
+                  >
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline2"
                         className={`h-11 justify-start text-left font-normal w-full ${
                           !formData.startDate ? "text-muted-foreground" : ""
                         } ${errors.startDate ? "border-red-500" : ""}`}
+                        onClick={() => togglePopover("startDate")}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {formData.startDate
@@ -222,6 +245,7 @@ const ContractTypeTemplate: React.FC<ContractTypeTemplateProps> = ({
                           const value = date ? formatDateForInput(date) : "";
                           await handleFieldChange("startDate", value);
                           validateDateRange();
+                          closePopover("startDate"); // Close popup after selection
                         }}
                       />
                     </PopoverContent>
@@ -232,13 +256,17 @@ const ContractTypeTemplate: React.FC<ContractTypeTemplateProps> = ({
                 </div>
 
                 <div>
-                  <Popover>
+                  <Popover
+                    open={openPopovers.endDate}
+                    onOpenChange={(open) => setOpenPopovers((prev) => ({ ...prev, endDate: open }))}
+                  >
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline2"
                         className={`h-11 justify-start text-left font-normal w-full ${
                           !formData.endDate ? "text-muted-foreground" : ""
                         } ${errors.endDate ? "border-red-500" : ""}`}
+                        onClick={() => togglePopover("endDate")}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {formData.endDate
@@ -254,6 +282,7 @@ const ContractTypeTemplate: React.FC<ContractTypeTemplateProps> = ({
                           const value = date ? formatDateForInput(date) : "";
                           await handleFieldChange("endDate", value);
                           validateDateRange();
+                          closePopover("endDate"); // Close popup after selection
                         }}
                       />
                     </PopoverContent>
@@ -265,13 +294,17 @@ const ContractTypeTemplate: React.FC<ContractTypeTemplateProps> = ({
 
             <div className="space-y-2">
               <Label className="text-sm font-medium">Signed Date</Label>
-              <Popover>
+              <Popover
+                open={openPopovers.signedDate}
+                onOpenChange={(open) => setOpenPopovers((prev) => ({ ...prev, signedDate: open }))}
+              >
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline2"
                     className={`h-11 w-full justify-start text-left font-normal px-3 ${
                       !formData.signedDate ? "text-muted-foreground" : ""
                     } ${errors.signedDate ? "border-red-500" : ""}`}
+                    onClick={() => togglePopover("signedDate")}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {formData.signedDate
@@ -286,6 +319,7 @@ const ContractTypeTemplate: React.FC<ContractTypeTemplateProps> = ({
                     onSelect={async (date) => {
                       const value = date ? formatDateForInput(date) : "";
                       await handleFieldChange("signedDate", value);
+                      closePopover("signedDate"); // Close popup after selection
                     }}
                   />
                 </PopoverContent>

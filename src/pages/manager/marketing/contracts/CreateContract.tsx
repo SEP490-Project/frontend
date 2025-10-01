@@ -40,9 +40,6 @@ const CreateContractPage: React.FC = () => {
     webRepresentativePhone: "",
     webRepresentativeEmail: "",
     webRepresentativeTaxNumber: "",
-    webRepresentativeBankName: "",
-    webRepresentativeBankAccountNumber: "",
-    webRepresentativeBankAccountHolder: "",
 
     // Currency
     currency: "VND",

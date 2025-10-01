@@ -183,40 +183,6 @@ const Representative: React.FC<RepresentativeProps> = ({
                 className="h-11"
               />
             </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Bank Name</Label>
-              <Input
-                value={formData.webRepresentativeBankName}
-                onChange={(e) => onInputChange("webRepresentativeBankName", e.target.value)}
-                placeholder="Bank name"
-                className="h-11"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Account Number</Label>
-              <Input
-                value={formData.webRepresentativeBankAccountNumber}
-                onChange={(e) =>
-                  onInputChange("webRepresentativeBankAccountNumber", e.target.value)
-                }
-                placeholder="Bank account number"
-                className="h-11"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Account Holder Name</Label>
-              <Input
-                value={formData.webRepresentativeBankAccountHolder}
-                onChange={(e) =>
-                  onInputChange("webRepresentativeBankAccountHolder", e.target.value)
-                }
-                placeholder="Account holder full name"
-                className="h-11"
-              />
-            </div>
           </div>
         </div>
       </CardContent>

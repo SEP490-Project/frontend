@@ -27,12 +27,13 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { FaPenToSquare, FaFilter } from "react-icons/fa6";
-import { mockProducts } from "./sale-mock-data";
+import { mockProducts, mockTasks } from "../mock-data/sale-mock-data";
 import { Switch } from "@/components/ui/switch";
 import { Trash } from "lucide-react";
 import { DeleteModal } from "@/components/modal/DeleteModal";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { StatusModal } from "@/components/modal/StatusModal";
+import TodayTaskDisplay from "../../shared/TodayTaskDisplay";
 
 const PAGE_SIZE = 5;
 
@@ -130,7 +131,12 @@ const Product: React.FC = () => {
     <div className="min-h-fit p-4 sm:p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-xl sm:text-2xl font-semibold">Products</h1>
-        <Button className="bg-primary hover:bg-[#f794a8] text-white">Add product</Button>
+        <Dialog>
+          <DialogTrigger>
+            <Button className="bg-primary hover:bg-[#f794a8] text-white">Add product</Button>
+          </DialogTrigger>
+          <TodayTaskDisplay tasks={mockTasks} />
+        </Dialog>
       </div>
 
       <div className="bg-white rounded-lg shadow mb-4 p-4">

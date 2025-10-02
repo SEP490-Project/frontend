@@ -34,6 +34,8 @@ import { DeleteModal } from "@/components/modal/DeleteModal";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { StatusModal } from "@/components/modal/StatusModal";
 import TodayTaskDisplay from "../../shared/TodayTaskDisplay";
+import { useNavigate } from "react-router";
+import { ProductFormMode } from "@/enums/product";
 
 const PAGE_SIZE = 5;
 
@@ -42,6 +44,8 @@ const Product: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
+
+  const navigate = useNavigate();
 
   const filteredproducts = useMemo(() => {
     return mockProducts.filter((product) => {
@@ -257,6 +261,11 @@ const Product: React.FC = () => {
                         size="sm"
                         className="h-8 w-8 p-0 hover:bg-yellow-50"
                         title="Edit"
+                        onClick={() => {
+                          navigate(`/manage/sale/product/${product.id}/edit`, {
+                            state: { type: ProductFormMode.EDIT, data: product },
+                          });
+                        }}
                       >
                         <FaPenToSquare className="text-yellow-600" />
                       </Button>

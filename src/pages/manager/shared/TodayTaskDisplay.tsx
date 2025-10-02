@@ -11,10 +11,14 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Button } from "@/components/ui/button";
 import { Download, Eye } from "lucide-react";
 import React from "react";
+import { useNavigate } from "react-router";
+import { ProductFormMode } from "@/enums/product";
 
 const TodayTaskDisplay = ({ tasks }: { tasks: Task[] }) => {
   const [selectedTask, setSelectedTask] = React.useState<Task | null>(null);
+  const navigate = useNavigate();
 
+  console.log("Tasks:", selectedTask);
   if (tasks.length === 0) {
     return <div>No tasks available</div>;
   }
@@ -59,6 +63,13 @@ const TodayTaskDisplay = ({ tasks }: { tasks: Task[] }) => {
         <Button
           className="bg-primary hover:bg-[#f794a8] text-white px-4 py-2 rounded"
           disabled={!selectedTask}
+          onClick={() => {
+            if (selectedTask) {
+              navigate("/manage/sale/product/create", {
+                state: { task: selectedTask, type: ProductFormMode.CREATE },
+              });
+            }
+          }}
         >
           Next
         </Button>

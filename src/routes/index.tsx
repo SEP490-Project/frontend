@@ -8,8 +8,9 @@ import {
   Partner,
   Assignment,
   Contracts,
-  CreateContract,
+  AddContract,
   ContractDetail,
+  AddCampaign,
 } from "@/pages/manager/marketing";
 import ManageLayout from "@/layouts/ManageLayout";
 import Login from "@/pages/authentication/Login";
@@ -45,8 +46,10 @@ const AppRoutes = () => (
         <Route path="marketing/contracts" element={<Contracts />} />
         <Route path="marketing/assignments" element={<Assignment />} />
 
-        <Route path="marketing/contracts/add" element={<CreateContract />} />
+        <Route path="marketing/contracts/add" element={<AddContract />} />
         <Route path="marketing/contracts/:id" element={<ContractDetail />} />
+
+        <Route path="marketing/campaigns/add" element={<AddCampaign />} />
         {/* Thêm các route riêng tư khác tại đây */}
         <Route path="sale/product" element={<Product />} />
 

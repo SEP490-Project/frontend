@@ -64,7 +64,7 @@ const ManageLayout: React.FC = () => {
           />
         </motion.div>
 
-        <main ref={mainRef} className="flex-1 bg-slate-100 px-2 overflow-y-auto pt-16">
+        <main ref={mainRef} className="flex-1 bg-gray-200 px-2 overflow-y-auto pt-16">
           <Outlet />
         </main>
       </div>

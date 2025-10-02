@@ -188,7 +188,7 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
   }
 };
 
-const CreateContractPage: React.FC = () => {
+const AddContractPage: React.FC = () => {
   const [formData, setFormData] = useState<any>(INITIAL_FORM_DATA);
   const [selectedBrand, setSelectedBrand] = useState<any>(null);
   const [isExtension, setIsExtension] = useState(false);
@@ -444,4 +444,4 @@ const CreateContractPage: React.FC = () => {
   );
 };
 
-export default CreateContractPage;
+export default AddContractPage;

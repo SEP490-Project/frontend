@@ -300,7 +300,6 @@ const Product: React.FC = () => {
             totalItems={filteredproducts.length}
             pageSize={PAGE_SIZE}
             onPageChange={handlePageChange}
-            entityName="products"
           />
         )}
       </div>

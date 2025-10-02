@@ -431,7 +431,6 @@ const PartnerPage: React.FC = () => {
             totalItems={filteredPartners.length}
             pageSize={PAGE_SIZE}
             onPageChange={handlePageChange}
-            entityName="partners"
           />
         )}
       </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
   BrandSelection,
   ContractActions,
@@ -9,15 +9,10 @@ import {
 import { FaCheck } from "react-icons/fa6";
 import { validateContract, validateField } from "@/libs/validation/contractValidation";
 import brands from "./brands.json";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
-interface TabConfig {
-  id: string;
-  label: string;
-  isCompleted: boolean;
-  isRequired: boolean;
-}
-
-// Constants
 const CONTRACT_TYPE_OPTIONS = [
   { value: "ADVERTISING", label: "Advertising Contract" },
   { value: "AFFILIATE", label: "Affiliate Marketing" },
@@ -36,12 +31,12 @@ const CONTRACT_TYPE_COLORS = {
   CO_PRODUCING: { bg: "bg-violet-100", text: "text-violet-800", border: "border-violet-200" },
 } as const;
 
-const INITIAL_TABS: TabConfig[] = [
-  { id: "contract-info", label: "Contract Information", isCompleted: false, isRequired: true },
-  { id: "brand-selection", label: "Brand Selection", isCompleted: false, isRequired: true },
-  { id: "representative", label: "Representative Info", isCompleted: false, isRequired: true },
-  { id: "financial-terms", label: "Financial Terms", isCompleted: false, isRequired: true },
-  { id: "contract-actions", label: "Documents & Actions", isCompleted: false, isRequired: true },
+const INITIAL_TABS = [
+  { id: "contract-info", label: "Contract Information", isRequired: true },
+  { id: "brand-selection", label: "Brand Selection", isRequired: true },
+  { id: "representative", label: "Representative Info", isRequired: true },
+  { id: "financial-terms", label: "Financial Terms", isRequired: true },
+  { id: "contract-actions", label: "Documents & Actions", isRequired: true },
 ];
 
 const INITIAL_FORM_DATA = {
@@ -76,19 +71,15 @@ const INITIAL_FORM_DATA = {
 };
 
 // Helper functions
-const getContractTypeColor = (type: string) => {
-  return (
-    CONTRACT_TYPE_COLORS[type as keyof typeof CONTRACT_TYPE_COLORS] || {
-      bg: "bg-gray-100",
-      text: "text-gray-800",
-      border: "border-gray-200",
-    }
-  );
-};
+const getContractTypeColor = (type: string) =>
+  CONTRACT_TYPE_COLORS[type as keyof typeof CONTRACT_TYPE_COLORS] || {
+    bg: "bg-gray-100",
+    text: "text-gray-800",
+    border: "border-gray-200",
+  };
 
 const getDefaultFinancialTerms = (type: string) => {
   const baseTerms = { paymentMethod: "Chuyển khoản", schedule: [] };
-
   switch (type) {
     case "ADVERTISING":
     case "BRAND_AMBASSADOR":
@@ -98,7 +89,6 @@ const getDefaultFinancialTerms = (type: string) => {
         totalCost: 0,
         costBreakdown: { serviceFee: 0, otherFees: 0 },
       };
-
     case "AFFILIATE":
       return {
         ...baseTerms,
@@ -109,7 +99,6 @@ const getDefaultFinancialTerms = (type: string) => {
         paymentDate: "",
         taxWithholding: { threshold: 2000000, ratePercent: 10 },
       };
-
     case "CO_PRODUCING":
       return {
         ...baseTerms,
@@ -123,10 +112,17 @@ const getDefaultFinancialTerms = (type: string) => {
         profitDistributionCycle: "",
         profitDistributionDate: "",
       };
-
     default:
       return baseTerms;
   }
+};
+
+const TAB_COMPONENTS: Record<string, React.FC<any>> = {
+  "contract-info": ContractTypeTemplate,
+  "brand-selection": BrandSelection,
+  representative: Representative,
+  "financial-terms": FinancialTerms,
+  "contract-actions": ContractActions,
 };
 
 const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
@@ -141,10 +137,8 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
         formData.signedLocation &&
         formData.scopeOfWork?.description
       );
-
     case "brand-selection":
       return !!formData.brandId;
-
     case "representative":
       return !!(
         formData.brandRepresentativeName &&
@@ -152,14 +146,11 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
         formData.webRepresentativeName &&
         formData.webRepresentativeEmail
       );
-
     case "financial-terms": {
       if (!formData.type) return false;
-
       const hasSchedule =
         formData.financialTerms?.schedule?.length > 0 &&
         formData.financialTerms.schedule.every((item: any) => item.milestone && item.amount > 0);
-
       if (formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR") {
         const totalCost = formData.financialTerms?.totalCost || 0;
         const scheduleTotal = (formData.financialTerms?.schedule || []).reduce(
@@ -168,7 +159,6 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
         );
         return totalCost > 0 && hasSchedule && Math.abs(totalCost - scheduleTotal) < 0.01;
       }
-
       if (formData.type === "AFFILIATE") {
         return !!(
           formData.financialTerms?.basePerClick > 0 &&
@@ -177,7 +167,6 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
           hasSchedule
         );
       }
-
       if (formData.type === "CO_PRODUCING") {
         const validProfitSplit =
           formData.financialTerms?.profitSplitCompanyPercent > 0 &&
@@ -192,10 +181,8 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
       }
       return false;
     }
-
     case "contract-actions":
       return formData.contractFiles?.length > 0 && formData.proposalFiles?.length > 0;
-
     default:
       return false;
   }
@@ -206,11 +193,11 @@ const CreateContractPage: React.FC = () => {
   const [selectedBrand, setSelectedBrand] = useState<any>(null);
   const [isExtension, setIsExtension] = useState(false);
   const [errors, setErrors] = useState<any>({});
-  const [activeTab, setActiveTab] = useState("contract-info");
-  const [tabs, setTabs] = useState<TabConfig[]>(INITIAL_TABS);
+  const [activeTab, setActiveTab] = useState(INITIAL_TABS[0].id);
+  const [tabs, setTabs] = useState(INITIAL_TABS.map((tab) => ({ ...tab, isCompleted: false })));
 
   // Check completion status for each tab
-  const checkTabCompletion = useCallback(() => {
+  useEffect(() => {
     setTabs((currentTabs) =>
       currentTabs.map((tab) => ({
         ...tab,
@@ -218,10 +205,6 @@ const CreateContractPage: React.FC = () => {
       })),
     );
   }, [formData]);
-
-  useEffect(() => {
-    checkTabCompletion();
-  }, [checkTabCompletion]);
 
   // Calculate progress
   const requiredTabs = tabs.filter((tab) => tab.isRequired);
@@ -233,11 +216,9 @@ const CreateContractPage: React.FC = () => {
   const handleFieldValidation = (fieldPath: string, error: string | null) => {
     setErrors((prev: any) => {
       const newErrors = { ...prev };
-
       if (fieldPath.includes(".")) {
         const [parent, child] = fieldPath.split(".");
         if (!newErrors[parent]) newErrors[parent] = {};
-
         if (error) {
           newErrors[parent][child] = error;
         } else {
@@ -251,7 +232,6 @@ const CreateContractPage: React.FC = () => {
           delete newErrors[fieldPath];
         }
       }
-
       return newErrors;
     });
   };
@@ -266,8 +246,6 @@ const CreateContractPage: React.FC = () => {
       ...prev,
       financialTerms: newFinancialTerms,
     }));
-
-    // Validate financial terms fields
     for (const [key, value] of Object.entries(updates)) {
       const validation = await validateField(`financialTerms.${key}`, value, {
         ...formData,
@@ -288,7 +266,6 @@ const CreateContractPage: React.FC = () => {
     handleInputChange("brandId", id || "");
     const brand = brands.find((b) => b.id === id) || null;
     setSelectedBrand(brand);
-
     if (brand) {
       handleInputChange("brandRepresentativeName", brand.representative);
       handleInputChange("brandRepresentativeEmail", brand.representative_email);
@@ -303,17 +280,13 @@ const CreateContractPage: React.FC = () => {
 
   const handleContractTypeChange = async (type: string) => {
     handleInputChange("type", type);
-
     const validation = await validateField("type", type, { ...formData, type });
     handleFieldValidation("type", validation.isValid ? null : validation.error);
-
     const defaultFinancialTerms = getDefaultFinancialTerms(type);
     const defaultScopeOfWork = { ...formData.scopeOfWork };
-
     if (type === "CO_PRODUCING") {
       defaultScopeOfWork.coProductionRoles = { company: "", kol: "" };
     }
-
     setFormData((prev: typeof INITIAL_FORM_DATA) => ({
       ...prev,
       type,
@@ -356,15 +329,12 @@ const CreateContractPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!canSubmit) {
       alert("Please complete all required sections before submitting.");
       return;
     }
-
     try {
       const validation = await validateContract(formData);
-
       if (!validation.isValid) {
         setErrors(validation.errors);
         document.querySelector(".border-red-500")?.scrollIntoView({
@@ -373,8 +343,8 @@ const CreateContractPage: React.FC = () => {
         });
         return;
       }
-
-      console.log("Final form data:", formData);
+      // Log JSON gửi backend
+      console.log("JSON gửi backend:", JSON.stringify(formData, null, 2));
       alert("Contract submitted successfully!");
     } catch (error) {
       console.error("Submission failed:", error);
@@ -382,66 +352,29 @@ const CreateContractPage: React.FC = () => {
     }
   };
 
-  const getSelectedContractTypeLabel = () => {
-    return (
-      CONTRACT_TYPE_OPTIONS.find((option) => option.value === formData.type)?.label ||
-      "Not Selected"
-    );
-  };
-
-  const renderTabContent = () => {
+  // Render tab content dynamically
+  const renderTabContent = (tabId: string) => {
     const componentProps = {
       formData,
       onInputChange: handleInputChange,
       errors,
+      onContractTypeChange: handleContractTypeChange,
+      onUpdateScopeOfWork: updateScopeOfWork,
+      onFieldValidation: handleFieldValidation,
+      selectedBrand,
+      isExtension,
+      contractTypeOptions: CONTRACT_TYPE_OPTIONS,
+      onBrandChange: handleBrandChange,
+      onExtensionChange: handleExtensionChange,
+      onUpdateFinancialTerms: updateFinancialTerms,
+      onContractFilesChange: handleContractFilesChange,
+      onProposalFilesChange: handleProposalFilesChange,
+      onContractUpload: handleContractUpload,
+      onProposalUpload: handleProposalUpload,
+      onSubmit: handleSubmit,
     };
-
-    switch (activeTab) {
-      case "contract-info":
-        return (
-          <ContractTypeTemplate
-            {...componentProps}
-            onContractTypeChange={handleContractTypeChange}
-            onUpdateScopeOfWork={updateScopeOfWork}
-            onFieldValidation={handleFieldValidation}
-          />
-        );
-      case "brand-selection":
-        return (
-          <BrandSelection
-            {...componentProps}
-            selectedBrand={selectedBrand}
-            isExtension={isExtension}
-            contractTypeOptions={CONTRACT_TYPE_OPTIONS}
-            onBrandChange={handleBrandChange}
-            onExtensionChange={handleExtensionChange}
-          />
-        );
-      case "representative":
-        return <Representative {...componentProps} />;
-      case "financial-terms":
-        return (
-          <FinancialTerms
-            {...componentProps}
-            contractTypeOptions={CONTRACT_TYPE_OPTIONS}
-            onContractTypeChange={handleContractTypeChange}
-            onUpdateFinancialTerms={updateFinancialTerms}
-          />
-        );
-      case "contract-actions":
-        return (
-          <ContractActions
-            {...componentProps}
-            onContractFilesChange={handleContractFilesChange}
-            onProposalFilesChange={handleProposalFilesChange}
-            onContractUpload={handleContractUpload}
-            onProposalUpload={handleProposalUpload}
-            onSubmit={handleSubmit}
-          />
-        );
-      default:
-        return null;
-    }
+    const TabComponent = TAB_COMPONENTS[tabId];
+    return TabComponent ? <TabComponent {...componentProps} /> : null;
   };
 
   const contractTypeColor = getContractTypeColor(formData.type);
@@ -453,13 +386,12 @@ const CreateContractPage: React.FC = () => {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-xl sm:text-2xl font-semibold">Add New Contract</h1>
           {formData.type && (
-            <div className="mt-2">
-              <span
-                className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${contractTypeColor.bg} ${contractTypeColor.text} ${contractTypeColor.border}`}
-              >
-                {getSelectedContractTypeLabel()}
-              </span>
-            </div>
+            <span
+              className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${contractTypeColor.bg} ${contractTypeColor.text} ${contractTypeColor.border}`}
+            >
+              {CONTRACT_TYPE_OPTIONS.find((option) => option.value === formData.type)?.label ||
+                "Not Selected"}
+            </span>
           )}
         </div>
         {/* Progress Bar */}
@@ -468,66 +400,44 @@ const CreateContractPage: React.FC = () => {
             <span>Progress</span>
             <span>{Math.round(progressPercentage)}% Complete</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-primary h-2 rounded-full transition-all duration-300"
-              style={{ width: `${progressPercentage}%` }}
-            />
-          </div>
+          <Progress value={progressPercentage} className="h-2" />
         </div>
         {/* Tabs Navigation */}
         <div className="border-b border-gray-200 mb-8">
-          <nav className="-mb-px flex space-x-8">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList>
+              {tabs.map((tab) => (
+                <TabsTrigger key={tab.id} value={tab.id}>
+                  {tab.label}
+                  {tab.isCompleted && <FaCheck className="ml-2 h-3 w-3 text-green-500" />}
+                  {tab.isRequired && !tab.isCompleted && (
+                    <span className="ml-1 text-red-500">*</span>
+                  )}
+                </TabsTrigger>
+              ))}
+            </TabsList>
             {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap flex items-center ${
-                  activeTab === tab.id
-                    ? "border-primary/90 text-primary"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
-              >
-                {tab.label}
-                {tab.isCompleted && <FaCheck className="ml-2 h-3 w-3 text-green-500" />}
-                {tab.isRequired && !tab.isCompleted && <span className="ml-1 text-red-500">*</span>}
-              </button>
+              <TabsContent key={tab.id} value={tab.id}>
+                {activeTab === tab.id && renderTabContent(tab.id)}
+              </TabsContent>
             ))}
-          </nav>
+          </Tabs>
         </div>
         {errors.general && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
             <p className="text-red-600">{errors.general}</p>
           </div>
         )}
-        {/* Tab Content */}
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {renderTabContent()}
-        </form>
       </div>
-
-      {/* Fixed Action Bar - Bên ngoài container, không bị ảnh hưởng padding */}
-      <div className="sticky bottom-0 -mx-2 bg-white/90 border-t rounded-xl border-gray-200 shadow-lg z-40">
+      {/* Fixed Action Bar */}
+      <div className="sticky bottom-0 -mx-2 bg-white/80 border-t rounded-xl border-gray-200 shadow-lg z-40">
         <div className="flex justify-end gap-4 px-4 py-3">
-          <button
-            type="button"
-            onClick={handleSaveDraft}
-            className="px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2"
-          >
+          <Button type="button" onClick={handleSaveDraft} variant="outline">
             Save Draft
-          </button>
-          <button
-            type="button"
-            disabled={!canSubmit}
-            onClick={handleSubmit}
-            className={`px-6 py-2 text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-              canSubmit
-                ? "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500"
-                : "bg-gray-400 cursor-not-allowed"
-            }`}
-          >
+          </Button>
+          <Button type="button" disabled={!canSubmit} onClick={handleSubmit}>
             Request Contract Approval
-          </button>
+          </Button>
         </div>
       </div>
     </div>

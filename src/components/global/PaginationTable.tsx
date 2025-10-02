@@ -13,7 +13,6 @@ interface ListPaginationProps {
   totalItems: number;
   pageSize: number;
   onPageChange: (page: number) => void;
-  entityName?: string; // "products", "partners", ...
 }
 
 const PaginationTable: React.FC<ListPaginationProps> = ({
@@ -21,7 +20,6 @@ const PaginationTable: React.FC<ListPaginationProps> = ({
   totalItems,
   pageSize,
   onPageChange,
-  entityName = "items",
 }) => {
   const totalPages = Math.ceil(totalItems / pageSize);
   const startIndex = (page - 1) * pageSize + 1;
@@ -85,7 +83,7 @@ const PaginationTable: React.FC<ListPaginationProps> = ({
   return (
     <div className="flex justify-between items-center p-4 border-t bg-gray-50">
       <div className="text-sm text-gray-500 md:text-nowrap">
-        Showing {startIndex}-{endIndex} of {totalItems} {entityName}
+        Showing {startIndex}-{endIndex} of {totalItems}
       </div>
       <Pagination>
         <PaginationContent>

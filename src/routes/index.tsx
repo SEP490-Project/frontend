@@ -1,11 +1,10 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Homepage from "@/pages/Homepage";
 import NotFound from "@/pages/NotFound";
-import Dashboard from "@/pages/manager/shared/Dashboard";
-import { Account } from "@/pages/manager/shared";
+import { Account, Notification, Dashboard } from "@/pages/manager/shared";
 import { User } from "@/pages/manager/admin";
 import { Contract, Campaign } from "@/pages/manager/brand";
-import { Partner, Assignment, Contracts } from "@/pages/manager/marketing";
+import { Partner, Assignment, Contracts, CreateContract } from "@/pages/manager/marketing";
 import ManageLayout from "@/layouts/ManageLayout";
 import Login from "@/pages/authentication/Login";
 import Register from "@/pages/authentication/Register";
@@ -31,6 +30,7 @@ const AppRoutes = () => (
       >
         <Route path="" element={<Dashboard />} />
         <Route path="account" element={<Account />} />
+        <Route path="notification" element={<Notification />} />
         <Route path="admin/users" element={<User />} />
         <Route path="brand/contracts" element={<Contract />} />
         <Route path="brand/campaigns" element={<Campaign />} />
@@ -39,6 +39,8 @@ const AppRoutes = () => (
         <Route path="marketing/contracts" element={<Contracts />} />
         <Route path="marketing/assignments" element={<Assignment />} />
 
+        <Route path="marketing/contracts/add" element={<CreateContract />} />
+        {/* Thêm các route riêng tư khác tại đây */}
         <Route path="sale/product" element={<Product />} />
 
         <Route path="content/task" element={<AssignedTasks />} />

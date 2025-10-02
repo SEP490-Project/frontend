@@ -6,6 +6,7 @@ import {
   FinancialTerms,
   Representative,
 } from "@/components/layout/manage/contract";
+import { FaCheck } from "react-icons/fa6";
 import { validateContract, validateField } from "@/libs/validation/contractValidation";
 import brands from "./brands.json";
 
@@ -446,31 +447,20 @@ const CreateContractPage: React.FC = () => {
   const contractTypeColor = getContractTypeColor(formData.type);
 
   return (
-    <div className="min-h-screen p-4 lg:p-8">
-      <div className="max-w-7xl mx-auto pb-28">
-        {" "}
-        {/* Thêm pb-28 ở đây */}
+    <div className="min-h-fit p-4 sm:p-6">
+      <div className="max-w-7xl mx-auto pb-10">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-semibold">Add New Contract</h1>
-            {formData.type && (
-              <div className="mt-2">
-                <span
-                  className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${contractTypeColor.bg} ${contractTypeColor.text} ${contractTypeColor.border}`}
-                >
-                  {getSelectedContractTypeLabel()}
-                </span>
-              </div>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={handleSaveDraft}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            Save Draft
-          </button>
+          <h1 className="text-xl sm:text-2xl font-semibold">Add New Contract</h1>
+          {formData.type && (
+            <div className="mt-2">
+              <span
+                className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${contractTypeColor.bg} ${contractTypeColor.text} ${contractTypeColor.border}`}
+              >
+                {getSelectedContractTypeLabel()}
+              </span>
+            </div>
+          )}
         </div>
         {/* Progress Bar */}
         <div className="mb-6">
@@ -499,21 +489,7 @@ const CreateContractPage: React.FC = () => {
                 }`}
               >
                 {tab.label}
-                {tab.isCompleted && (
-                  <svg
-                    className="ml-2 h-4 w-4 text-green-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                )}
+                {tab.isCompleted && <FaCheck className="ml-2 h-3 w-3 text-green-500" />}
                 {tab.isRequired && !tab.isCompleted && <span className="ml-1 text-red-500">*</span>}
               </button>
             ))}
@@ -528,12 +504,15 @@ const CreateContractPage: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-8">
           {renderTabContent()}
         </form>
-        {/* Fixed Action Bar */}
-        <div className="fixed bottom-0 left-0 w-full bg-white/90 border-t border-gray-200 z-50 px-4 py-3 flex justify-end gap-4 shadow-lg">
+      </div>
+
+      {/* Fixed Action Bar - Bên ngoài container, không bị ảnh hưởng padding */}
+      <div className="sticky bottom-0 -mx-2 bg-white/90 border-t rounded-xl border-gray-200 shadow-lg z-40">
+        <div className="flex justify-end gap-4 px-4 py-3">
           <button
             type="button"
             onClick={handleSaveDraft}
-            className="px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2"
           >
             Save Draft
           </button>

@@ -10,9 +10,19 @@ import {
   FileText,
   CreditCard,
   Scale,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useState } from "react";
+import { toast } from "react-toastify";
 
 interface ContractData {
   id: string;
@@ -67,6 +77,8 @@ export default function ContractDetail({ onBack }: ContractDetailProps) {
     "DRAFT" | "ACTIVE" | "COMPLETED" | "TERMINATED"
   >("DRAFT");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showApproveDialog, setShowApproveDialog] = useState(false);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
 
   // Mock contract data based on the SQL entity structure
   const contractData: ContractData = {
@@ -134,24 +146,74 @@ export default function ContractDetail({ onBack }: ContractDetailProps) {
     updated_at: "2024-01-15T14:30:00Z",
   };
 
-  const handleApprove = async () => {
-    setIsProcessing(true);
-    // Simulate API call
-    setTimeout(() => {
-      setContractStatus("ACTIVE");
-      setIsProcessing(false);
-      alert("Contract approved successfully!");
-    }, 1500);
+  const handleApprove = () => {
+    setShowApproveDialog(true);
   };
 
-  const handleReject = async () => {
+  const handleReject = () => {
+    setShowRejectDialog(true);
+  };
+
+  const confirmApprove = async () => {
     setIsProcessing(true);
-    // Simulate API call
-    setTimeout(() => {
-      setContractStatus("TERMINATED");
+    setShowApproveDialog(false);
+
+    try {
+      // Simulate API call
+      setTimeout(() => {
+        setContractStatus("ACTIVE");
+        setIsProcessing(false);
+        toast.success("Contract approved successfully!", {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+      }, 1500);
+    } catch {
       setIsProcessing(false);
-      alert("Contract rejected successfully!");
-    }, 1500);
+      toast.error("Failed to approve contract. Please try again.", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+    }
+  };
+
+  const confirmReject = async () => {
+    setIsProcessing(true);
+    setShowRejectDialog(false);
+
+    try {
+      // Simulate API call
+      setTimeout(() => {
+        setContractStatus("TERMINATED");
+        setIsProcessing(false);
+        toast.success("Contract rejected successfully!", {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+      }, 1500);
+    } catch {
+      setIsProcessing(false);
+      toast.error("Failed to reject contract. Please try again.", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+    }
   };
 
   const getStatusStyles = (status: string) => {
@@ -504,6 +566,94 @@ export default function ContractDetail({ onBack }: ContractDetailProps) {
           </div>
         </div>
       </div>
+
+      {/* Approve Confirmation Dialog */}
+      <Dialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100">
+                <AlertTriangle className="h-5 w-5 text-orange-600" />
+              </div>
+              <div>
+                <DialogTitle className="text-left">Confirm Status Change</DialogTitle>
+              </div>
+            </div>
+          </DialogHeader>
+          <div className="py-4">
+            <DialogDescription className="text-gray-600">
+              This action will change the status to Active.
+            </DialogDescription>
+            <DialogDescription className="mt-2 text-gray-600">
+              Are you sure you want to change the status of this{" "}
+              <span className="font-medium text-gray-900">
+                {contractData.brand.name} - {contractData.type.replace("_", " ")} Contract
+              </span>
+              ?
+            </DialogDescription>
+          </div>
+          <DialogFooter className="flex flex-row justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowApproveDialog(false)}
+              className="text-gray-600"
+            >
+              No
+            </Button>
+            <Button
+              onClick={confirmApprove}
+              disabled={isProcessing}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              {isProcessing ? "Processing..." : "Yes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject Confirmation Dialog */}
+      <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100">
+                <AlertTriangle className="h-5 w-5 text-orange-600" />
+              </div>
+              <div>
+                <DialogTitle className="text-left">Confirm Status Change</DialogTitle>
+              </div>
+            </div>
+          </DialogHeader>
+          <div className="py-4">
+            <DialogDescription className="text-gray-600">
+              This action will change the status to Terminated.
+            </DialogDescription>
+            <DialogDescription className="mt-2 text-gray-600">
+              Are you sure you want to reject this{" "}
+              <span className="font-medium text-gray-900">
+                {contractData.brand.name} - {contractData.type.replace("_", " ")} Contract
+              </span>
+              ?
+            </DialogDescription>
+          </div>
+          <DialogFooter className="flex flex-row justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowRejectDialog(false)}
+              className="text-gray-600"
+            >
+              No
+            </Button>
+            <Button
+              onClick={confirmReject}
+              disabled={isProcessing}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              {isProcessing ? "Processing..." : "Yes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

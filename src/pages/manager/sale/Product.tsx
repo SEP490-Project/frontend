@@ -17,15 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 import { FaPenToSquare, FaFilter } from "react-icons/fa6";
 import { mockProducts } from "./sale-mock-data";
 import { Switch } from "@/components/ui/switch";
@@ -33,6 +24,8 @@ import { Trash } from "lucide-react";
 import { DeleteModal } from "@/components/modal/DeleteModal";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { StatusModal } from "@/components/modal/StatusModal";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { PaginationTable } from "@/components/global";
 
 const PAGE_SIZE = 5;
 
@@ -58,10 +51,6 @@ const Product: React.FC = () => {
   const totalPages = Math.ceil(filteredproducts.length / PAGE_SIZE);
   const paginatedproducts = filteredproducts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const startIndex = (page - 1) * PAGE_SIZE + 1;
-  const endIndex = Math.min(page * PAGE_SIZE, filteredproducts.length);
-  const totalItems = filteredproducts.length;
-
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
       setPage(newPage);
@@ -71,60 +60,6 @@ const Product: React.FC = () => {
   React.useEffect(() => {
     setPage(1);
   }, [searchTerm, statusFilter]);
-
-  const renderPaginationItems = () => {
-    const items = [];
-    const maxVisiblePages = 5;
-
-    let startPage = Math.max(1, page - Math.floor(maxVisiblePages / 2));
-    const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-    if (endPage - startPage < maxVisiblePages - 1) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-
-    if (startPage > 1) {
-      items.push(
-        <PaginationItem key="1">
-          <PaginationLink onClick={() => handlePageChange(1)}>1</PaginationLink>
-        </PaginationItem>,
-      );
-      if (startPage > 2) {
-        items.push(
-          <PaginationItem key="ellipsis-start">
-            <PaginationEllipsis />
-          </PaginationItem>,
-        );
-      }
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      items.push(
-        <PaginationItem key={i}>
-          <PaginationLink onClick={() => handlePageChange(i)} isActive={page === i}>
-            {i}
-          </PaginationLink>
-        </PaginationItem>,
-      );
-    }
-
-    if (endPage < totalPages) {
-      if (endPage < totalPages - 1) {
-        items.push(
-          <PaginationItem key="ellipsis-end">
-            <PaginationEllipsis />
-          </PaginationItem>,
-        );
-      }
-      items.push(
-        <PaginationItem key={totalPages}>
-          <PaginationLink onClick={() => handlePageChange(totalPages)}>{totalPages}</PaginationLink>
-        </PaginationItem>,
-      );
-    }
-
-    return items;
-  };
 
   return (
     <div className="min-h-fit p-4 sm:p-6">
@@ -246,26 +181,38 @@ const Product: React.FC = () => {
 
                   <TableCell className="py-4">
                     <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 hover:bg-yellow-50"
-                        title="Edit"
-                      >
-                        <FaPenToSquare className="text-yellow-600" />
-                      </Button>
-
-                      <Dialog>
-                        <DialogTrigger asChild>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 w-8 p-0 hover:bg-red-50"
-                            title="Delete"
+                            className="h-8 w-8 p-0 hover:bg-yellow-50"
                           >
-                            <Trash className="text-red-600" />
+                            <FaPenToSquare className="text-yellow-600" />
                           </Button>
-                        </DialogTrigger>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Edit product</p>
+                        </TooltipContent>
+                      </Tooltip>
+
+                      <Dialog>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 hover:bg-red-50"
+                              >
+                                <Trash className="text-red-600" />
+                              </Button>
+                            </DialogTrigger>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Delete product</p>
+                          </TooltipContent>
+                        </Tooltip>
                         <DeleteModal name={product.name} />
                       </Dialog>
                     </div>
@@ -310,25 +257,30 @@ const Product: React.FC = () => {
               </div>
 
               <div className="flex gap-1 pt-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0 hover:bg-yellow-50"
-                  title="Edit"
-                >
-                  <FaPenToSquare className="text-yellow-600" />
-                </Button>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 hover:bg-red-50"
-                      title="Delete"
-                    >
-                      <Trash className="text-red-600" />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-yellow-50">
+                      <FaPenToSquare className="text-yellow-600" />
                     </Button>
-                  </DialogTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Edit product</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Dialog>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <DialogTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-red-50">
+                          <Trash className="text-red-600" />
+                        </Button>
+                      </DialogTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Delete product</p>
+                    </TooltipContent>
+                  </Tooltip>
                   <DeleteModal name={product.name} />
                 </Dialog>
               </div>
@@ -343,30 +295,12 @@ const Product: React.FC = () => {
         )}
 
         {filteredproducts.length > 0 && (
-          <div className="flex justify-between items-center p-4 border-t bg-gray-50">
-            <div className="text-sm text-gray-500 md:text-nowrap">
-              Showing {startIndex}-{endIndex} of {totalItems} products
-            </div>
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    onClick={() => handlePageChange(page - 1)}
-                    className={page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                  />
-                </PaginationItem>
-                {renderPaginationItems()}
-                <PaginationItem>
-                  <PaginationNext
-                    onClick={() => handlePageChange(page + 1)}
-                    className={
-                      page === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"
-                    }
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </div>
+          <PaginationTable
+            page={page}
+            totalItems={filteredproducts.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={handlePageChange}
+          />
         )}
       </div>
     </div>

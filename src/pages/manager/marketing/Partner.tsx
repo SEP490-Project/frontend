@@ -17,16 +17,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-import { FaEye, FaPenToSquare, FaBan, FaCheck, FaGlobe, FaFilter } from "react-icons/fa6";
+import { FaEye, FaPenToSquare, FaGlobe, FaFilter } from "react-icons/fa6";
+import { Switch } from "@/components/ui/switch";
+import { Trash } from "lucide-react";
+import { DeleteModal } from "@/components/modal/DeleteModal";
+import { StatusModal } from "@/components/modal/StatusModal";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import PaginationTable from "@/components/global/PaginationTable";
 
 interface Partner {
   id: string;
@@ -38,6 +36,7 @@ interface Partner {
   status: "ACTIVE" | "INACTIVE";
   total_contracts: number;
   created_at: string;
+  isActive: boolean; // Thêm field này để tương thích với Switch
 }
 
 const mockPartners: Partner[] = [
@@ -49,6 +48,7 @@ const mockPartners: Partner[] = [
     website: "https://abc.com",
     logo_url: "https://via.placeholder.com/40x40/3B82F6/FFFFFF?text=A",
     status: "ACTIVE",
+    isActive: true,
     total_contracts: 12,
     created_at: "2025-01-15T12:00:00Z",
   },
@@ -60,6 +60,7 @@ const mockPartners: Partner[] = [
     website: "",
     logo_url: "https://via.placeholder.com/40x40/EF4444/FFFFFF?text=X",
     status: "INACTIVE",
+    isActive: false,
     total_contracts: 3,
     created_at: "2025-02-10T12:00:00Z",
   },
@@ -71,6 +72,7 @@ const mockPartners: Partner[] = [
     website: "https://brand123.vn",
     logo_url: "https://via.placeholder.com/40x40/10B981/FFFFFF?text=B",
     status: "ACTIVE",
+    isActive: true,
     total_contracts: 7,
     created_at: "2025-03-05T12:00:00Z",
   },
@@ -82,6 +84,7 @@ const mockPartners: Partner[] = [
     website: "https://loreal.com",
     logo_url: "https://via.placeholder.com/40x40/FF6B6B/FFFFFF?text=L",
     status: "ACTIVE",
+    isActive: true,
     total_contracts: 15,
     created_at: "2025-01-15T12:00:00Z",
   },
@@ -92,7 +95,8 @@ const mockPartners: Partner[] = [
     contact_phone: "0123456788",
     website: "https://chanel.com",
     logo_url: "https://via.placeholder.com/40x40/000000/FFFFFF?text=C",
-    status: "ACTIVE",
+    status: "INACTIVE",
+    isActive: false,
     total_contracts: 8,
     created_at: "2025-02-10T12:00:00Z",
   },
@@ -120,10 +124,6 @@ const PartnerPage: React.FC = () => {
   const totalPages = Math.ceil(filteredPartners.length / PAGE_SIZE);
   const paginatedPartners = filteredPartners.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const startIndex = (page - 1) * PAGE_SIZE + 1;
-  const endIndex = Math.min(page * PAGE_SIZE, filteredPartners.length);
-  const totalItems = filteredPartners.length;
-
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
       setPage(newPage);
@@ -135,65 +135,11 @@ const PartnerPage: React.FC = () => {
     setPage(1);
   }, [searchTerm, statusFilter]);
 
-  const renderPaginationItems = () => {
-    const items = [];
-    const maxVisiblePages = 5;
-
-    let startPage = Math.max(1, page - Math.floor(maxVisiblePages / 2));
-    const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-    if (endPage - startPage < maxVisiblePages - 1) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-
-    if (startPage > 1) {
-      items.push(
-        <PaginationItem key="1">
-          <PaginationLink onClick={() => handlePageChange(1)}>1</PaginationLink>
-        </PaginationItem>,
-      );
-      if (startPage > 2) {
-        items.push(
-          <PaginationItem key="ellipsis-start">
-            <PaginationEllipsis />
-          </PaginationItem>,
-        );
-      }
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      items.push(
-        <PaginationItem key={i}>
-          <PaginationLink onClick={() => handlePageChange(i)} isActive={page === i}>
-            {i}
-          </PaginationLink>
-        </PaginationItem>,
-      );
-    }
-
-    if (endPage < totalPages) {
-      if (endPage < totalPages - 1) {
-        items.push(
-          <PaginationItem key="ellipsis-end">
-            <PaginationEllipsis />
-          </PaginationItem>,
-        );
-      }
-      items.push(
-        <PaginationItem key={totalPages}>
-          <PaginationLink onClick={() => handlePageChange(totalPages)}>{totalPages}</PaginationLink>
-        </PaginationItem>,
-      );
-    }
-
-    return items;
-  };
-
   return (
-    <div className="min-h-screen p-4 sm:p-6">
+    <div className="min-h-fit p-4 sm:p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-xl sm:text-2xl font-semibold">Partners</h1>
-        <Button className="bg-primary hover:bg-pink-500 text-white">Add Partner</Button>
+        <Button className="bg-primary hover:bg-[#f794a8] text-white">Add Partner</Button>
       </div>
 
       {/* Filters */}
@@ -228,20 +174,19 @@ const PartnerPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow">
+      <div className="bg-white rounded-lg overflow-hidden shadow">
         {/* Desktop Table */}
         <div className="hidden md:block">
           <Table>
             <TableHeader>
               <TableRow className="border-b bg-gray-50">
-                <TableHead className="font-semibold">Logo</TableHead>
                 <TableHead className="font-semibold">Partner</TableHead>
                 <TableHead className="font-semibold">Email</TableHead>
-                <TableHead className="font-semibold">Phone Number</TableHead>
+                <TableHead className="font-semibold">Phone</TableHead>
                 <TableHead className="font-semibold">Website</TableHead>
+                <TableHead className="font-semibold">Contracts</TableHead>
                 <TableHead className="font-semibold">Status</TableHead>
-                <TableHead className="font-semibold text-center">Contract</TableHead>
-                <TableHead className="font-semibold text-center">Actions</TableHead>
+                <TableHead className="font-semibold">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -252,34 +197,30 @@ const PartnerPage: React.FC = () => {
                     index % 2 === 0 ? "bg-white" : "bg-gray-25"
                   }`}
                 >
-                  {/* Logo */}
-                  <TableCell className="py-4">
-                    <div className="flex justify-center">
+                  {/* Partner Name + Logo */}
+                  <TableCell className="py-4 max-w-xs">
+                    <div className="flex items-center">
                       <img
                         src={partner.logo_url}
                         alt={partner.name}
-                        className="w-10 h-10 rounded border-2 border-gray-200 object-cover"
+                        className="w-12 h-12 rounded border-2 border-gray-200 object-cover mr-4"
                       />
+                      <span className="font-medium text-gray-900 block text-nowrap overflow-hidden text-ellipsis">
+                        {partner.name}
+                      </span>
                     </div>
-                  </TableCell>
-
-                  {/* Partner Name */}
-                  <TableCell className="py-4">
-                    <span className="font-medium text-gray-900">{partner.name}</span>
                   </TableCell>
 
                   {/* Email */}
                   <TableCell className="py-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <span>{partner.contact_email}</span>
+                    <div className="text-sm text-gray-600 max-w-xs truncate">
+                      {partner.contact_email}
                     </div>
                   </TableCell>
 
                   {/* Phone */}
                   <TableCell className="py-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <span>{partner.contact_phone}</span>
-                    </div>
+                    <div className="text-sm text-gray-600">{partner.contact_phone}</div>
                   </TableCell>
 
                   {/* Website */}
@@ -301,59 +242,78 @@ const PartnerPage: React.FC = () => {
                     )}
                   </TableCell>
 
-                  {/* Status */}
-                  <TableCell className="py-4">
-                    <Badge
-                      className={
-                        partner.status === "ACTIVE"
-                          ? "bg-green-100 text-green-800 border border-green-200 hover:bg-green-200"
-                          : "bg-red-100 text-red-800 border border-red-200 hover:bg-red-200"
-                      }
-                    >
-                      {partner.status}
-                    </Badge>
-                  </TableCell>
-
                   {/* Contracts */}
-                  <TableCell className="py-4 text-center">
+                  <TableCell className="py-4">
                     <span className="font-semibold text-lg text-gray-900">
                       {partner.total_contracts}
                     </span>
                   </TableCell>
 
+                  {/* Status Switch */}
+                  <TableCell className="py-4">
+                    <Dialog>
+                      <DialogTrigger>
+                        <Switch checked={partner.isActive} />
+                      </DialogTrigger>
+                      <StatusModal
+                        name={partner.name}
+                        status={partner.isActive ? "Inactive" : "Active"}
+                      />
+                    </Dialog>
+                  </TableCell>
+
                   {/* Actions */}
                   <TableCell className="py-4">
-                    <div className="flex justify-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 hover:bg-blue-50"
-                        title="View"
-                      >
-                        <FaEye className="text-blue-600" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 hover:bg-yellow-50"
-                        title="Edit"
-                      >
-                        <FaPenToSquare className="text-yellow-600" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={`h-8 w-8 p-0 transition-colors ${
-                          partner.status === "ACTIVE" ? "hover:bg-red-50" : "hover:bg-green-50"
-                        }`}
-                        title={partner.status === "ACTIVE" ? "Deactivate" : "Activate"}
-                      >
-                        {partner.status === "ACTIVE" ? (
-                          <FaBan className="text-red-600" />
-                        ) : (
-                          <FaCheck className="text-green-600" />
-                        )}
-                      </Button>
+                    <div className="flex gap-1">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-blue-50"
+                          >
+                            <FaEye className="text-blue-600" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>View partner</p>
+                        </TooltipContent>
+                      </Tooltip>
+
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-yellow-50"
+                          >
+                            <FaPenToSquare className="text-yellow-600" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Edit partner</p>
+                        </TooltipContent>
+                      </Tooltip>
+
+                      <Dialog>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 hover:bg-red-50"
+                              >
+                                <Trash className="text-red-600" />
+                              </Button>
+                            </DialogTrigger>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Delete partner</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        <DeleteModal name={partner.name} />
+                      </Dialog>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -392,9 +352,11 @@ const PartnerPage: React.FC = () => {
 
               <div className="space-y-2 text-sm text-gray-600">
                 <div className="flex items-center gap-2">
+                  <span className="font-medium">Email:</span>
                   <span>{partner.contact_email}</span>
                 </div>
                 <div className="flex items-center gap-2">
+                  <span className="font-medium">Phone:</span>
                   <span>{partner.contact_phone}</span>
                 </div>
                 {partner.website && (
@@ -413,19 +375,43 @@ const PartnerPage: React.FC = () => {
               </div>
 
               <div className="flex gap-1 pt-2">
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <FaEye className="text-blue-600" />
-                </Button>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <FaPenToSquare className="text-yellow-600" />
-                </Button>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  {partner.status === "ACTIVE" ? (
-                    <FaBan className="text-red-600" />
-                  ) : (
-                    <FaCheck className="text-green-600" />
-                  )}
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-blue-50">
+                      <FaEye className="text-blue-600" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>View partner</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-yellow-50">
+                      <FaPenToSquare className="text-yellow-600" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Edit partner</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Dialog>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <DialogTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-red-50">
+                          <Trash className="text-red-600" />
+                        </Button>
+                      </DialogTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Delete partner</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <DeleteModal name={partner.name} />
+                </Dialog>
               </div>
             </div>
           ))}
@@ -440,30 +426,12 @@ const PartnerPage: React.FC = () => {
 
         {/* Pagination */}
         {filteredPartners.length > 0 && (
-          <div className="flex justify-between items-center p-4 border-t bg-gray-50">
-            <div className="text-sm text-gray-500">
-              Showing {startIndex}-{endIndex} of {totalItems} partners
-            </div>
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    onClick={() => handlePageChange(page - 1)}
-                    className={page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                  />
-                </PaginationItem>
-                {renderPaginationItems()}
-                <PaginationItem>
-                  <PaginationNext
-                    onClick={() => handlePageChange(page + 1)}
-                    className={
-                      page === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"
-                    }
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </div>
+          <PaginationTable
+            page={page}
+            totalItems={filteredPartners.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={handlePageChange}
+          />
         )}
       </div>
     </div>

@@ -58,6 +58,7 @@ export default tseslint.config([
 
       // TypeScript
       "@typescript-eslint/no-explicit-any": "off", // 👈 cho phép any
+      // "@typescript-eslint/no-explicit-any": "error", // 👈 không cho phép any
 
       // Style
       semi: ["error", "always"],

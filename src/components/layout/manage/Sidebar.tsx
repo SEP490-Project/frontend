@@ -20,6 +20,8 @@ import {
   FaHandshake,
   FaFileContract,
   FaListCheck,
+  FaXmark,
+  FaPowerOff,
 } from "react-icons/fa6";
 
 interface TabItem {
@@ -51,9 +53,15 @@ const NavSection: React.FC<NavSectionProps> = ({
       {!collapsed && <div className="uppercase text-xs font-bold text-gray-400 mb-2">{title}</div>}
       <nav className="flex flex-col gap-2 relative">
         {items.map((item) => {
-          const isMainActive =
-            pathname === item.href ||
-            (item.href === "/manage/users" && pathname.startsWith("/manage/users"));
+          let isMainActive = false;
+
+          if (item.href === "/manage") {
+            isMainActive = pathname === "/manage";
+          } else if (item.href === "/manage/admin/users") {
+            isMainActive = pathname.startsWith("/manage/admin/users");
+          } else {
+            isMainActive = pathname === item.href || pathname.startsWith(item.href + "/");
+          }
 
           return (
             <React.Fragment key={item.href}>
@@ -145,6 +153,14 @@ const Sidebar: React.FC<SidebarProps> = ({
   const pathname = location.pathname;
   const roleParam = new URLSearchParams(location.search).get("role");
 
+  // Handle logout
+  const handleLogout = () => {
+    // Implement your logout logic here
+    // e.g., clear localStorage, redirect to login, etc.
+    localStorage.removeItem("token");
+    window.location.href = "/login";
+  };
+
   // Tabs
   const dashboardTabs: TabItem[] = [
     { href: "/manage", label: "Dashboard", icon: <FaChartLine size={18} /> },
@@ -233,29 +249,45 @@ const Sidebar: React.FC<SidebarProps> = ({
           </a>
         </div>
 
-        <NavSection
-          title="Dashboard"
-          items={dashboardTabs}
-          collapsed={collapsed}
-          pathname={pathname}
-          roleParam={roleParam}
-        />
+        {/* Navigation sections - với flex-1 để đẩy logout xuống cuối */}
+        <div className="flex-1 flex flex-col">
+          <NavSection
+            title="Dashboard"
+            items={dashboardTabs}
+            collapsed={collapsed}
+            pathname={pathname}
+            roleParam={roleParam}
+          />
 
-        <NavSection
-          title="Management"
-          items={roleBasedTabs[role] || []}
-          collapsed={collapsed}
-          pathname={pathname}
-          roleParam={roleParam}
-        />
+          <NavSection
+            title="Management"
+            items={roleBasedTabs[role] || []}
+            collapsed={collapsed}
+            pathname={pathname}
+            roleParam={roleParam}
+          />
 
-        <NavSection
-          title="Others"
-          items={otherTabs}
-          collapsed={collapsed}
-          pathname={pathname}
-          roleParam={roleParam}
-        />
+          <NavSection
+            title="Others"
+            items={otherTabs}
+            collapsed={collapsed}
+            pathname={pathname}
+            roleParam={roleParam}
+          />
+        </div>
+
+        {/* Logout Button - luôn ở cuối */}
+        <div className="mt-auto pt-4 border-t border-gray-200">
+          <button
+            onClick={handleLogout}
+            className={`w-full rounded py-2 flex items-center transition-colors duration-200 text-red-500 hover:bg-red-50 ${
+              collapsed ? "justify-center" : "gap-2 px-3"
+            }`}
+          >
+            <FaPowerOff size={18} />
+            {!collapsed && <span className="text-sm">Logout</span>}
+          </button>
+        </div>
       </aside>
 
       {/* Mobile Sidebar with overlay */}
@@ -286,36 +318,50 @@ const Sidebar: React.FC<SidebarProps> = ({
                 onClick={onCloseMobile}
                 className="self-end text-gray-500 hover:text-gray-700 mb-4"
               >
-                ✕
+                <FaXmark size={24} />
               </button>
 
               <div className="flex items-center justify-center">
                 <img src="/pink.png" alt="Logo" className="w-full h-14 object-contain" />
               </div>
 
-              <NavSection
-                title="Dashboard"
-                items={dashboardTabs}
-                collapsed={false}
-                pathname={pathname}
-                roleParam={roleParam}
-              />
+              {/* Navigation sections - với flex-1 để đẩy logout xuống cuối */}
+              <div className="flex-1 flex flex-col">
+                <NavSection
+                  title="Dashboard"
+                  items={dashboardTabs}
+                  collapsed={false}
+                  pathname={pathname}
+                  roleParam={roleParam}
+                />
 
-              <NavSection
-                title="Management"
-                items={roleBasedTabs[role] || []}
-                collapsed={false}
-                pathname={pathname}
-                roleParam={roleParam}
-              />
+                <NavSection
+                  title="Management"
+                  items={roleBasedTabs[role] || []}
+                  collapsed={false}
+                  pathname={pathname}
+                  roleParam={roleParam}
+                />
 
-              <NavSection
-                title="Others"
-                items={otherTabs}
-                collapsed={false}
-                pathname={pathname}
-                roleParam={roleParam}
-              />
+                <NavSection
+                  title="Others"
+                  items={otherTabs}
+                  collapsed={false}
+                  pathname={pathname}
+                  roleParam={roleParam}
+                />
+              </div>
+
+              {/* Logout Button - luôn ở cuối mobile sidebar */}
+              <div className="mt-auto pt-4 border-t border-gray-200">
+                <button
+                  onClick={handleLogout}
+                  className="w-full rounded py-2 px-3 flex items-center gap-2 transition-colors duration-200 text-red-500 hover:bg-red-50"
+                >
+                  <FaPowerOff size={18} />
+                  <span className="text-sm">Logout</span>
+                </button>
+              </div>
             </motion.aside>
           </>
         )}

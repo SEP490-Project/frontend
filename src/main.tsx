@@ -12,7 +12,7 @@ const root = createRoot(container);
 root.render(
   <React.StrictMode>
     <ReduxProvider>
-      <TooltipProvider>
+      <TooltipProvider delayDuration={200}>
         <AppRoutes />
       </TooltipProvider>
     </ReduxProvider>

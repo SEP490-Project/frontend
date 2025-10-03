@@ -18,7 +18,6 @@ const TodayTaskDisplay = ({ tasks }: { tasks: Task[] }) => {
   const [selectedTask, setSelectedTask] = React.useState<Task | null>(null);
   const navigate = useNavigate();
 
-  console.log("Tasks:", selectedTask);
   if (tasks.length === 0) {
     return <div>No tasks available</div>;
   }
@@ -33,10 +32,12 @@ const TodayTaskDisplay = ({ tasks }: { tasks: Task[] }) => {
     deadlineDate.setHours(0, 0, 0, 0);
     today.setHours(0, 0, 0, 0);
 
-    const currentDateTask = new Date(deadlineDate);
+    const currentDateTask = new Date(today);
     const taskDate = new Date(currentDateTask.setDate(currentDateTask.getDate() - 1));
 
-    return taskDate.getTime() === today.getTime() || deadlineDate.getTime() === today.getTime();
+    return (
+      deadlineDate.getTime() === today.getTime() || deadlineDate.getTime() === taskDate.getTime()
+    );
   });
 
   const handleTaskSelect = (task: Task) => {
@@ -51,14 +52,16 @@ const TodayTaskDisplay = ({ tasks }: { tasks: Task[] }) => {
         </DialogTitle>
         <DialogDescription>Choose a Task from the list below to Add Product</DialogDescription>
       </DialogHeader>
-      {todayTasks.map((task) => (
-        <CardTask
-          key={task.id}
-          task={task}
-          selectedTask={selectedTask}
-          onSelect={handleTaskSelect}
-        />
-      ))}
+      <div className="max-h-[70vh] overflow-y-auto mt-4">
+        {todayTasks.map((task) => (
+          <CardTask
+            key={task.id}
+            task={task}
+            selectedTask={selectedTask}
+            onSelect={handleTaskSelect}
+          />
+        ))}
+      </div>
       <DialogFooter>
         <Button
           className="bg-primary hover:bg-[#f794a8] text-white px-4 py-2 rounded"

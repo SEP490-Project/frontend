@@ -143,7 +143,7 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
-  role = "marketing",
+  role = "content",
   collapsed = false,
   isMobile = false,
   isMobileOpen = false,

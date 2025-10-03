@@ -11,6 +11,7 @@ import {
   AddContract,
   ContractDetail,
   AddCampaign,
+  AddPartner,
 } from "@/pages/manager/marketing";
 import ManageLayout from "@/layouts/ManageLayout";
 import Login from "@/pages/authentication/Login";
@@ -43,6 +44,8 @@ const AppRoutes = () => (
         <Route path="brand/campaigns" element={<Campaign />} />
 
         <Route path="marketing/partners" element={<Partner />} />
+        <Route path="marketing/partners/add" element={<AddPartner />} />
+
         <Route path="marketing/contracts" element={<Contracts />} />
         <Route path="marketing/assignments" element={<Assignment />} />
 

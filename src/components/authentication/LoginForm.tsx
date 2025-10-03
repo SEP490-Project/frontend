@@ -7,7 +7,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { useNavigate } from "react-router";
 import { PasswordInput } from "@/components/password-input";
 interface MockLogin {
-  email: string;
+  login_identifier: string;
   password: string;
 }
 
@@ -16,7 +16,7 @@ interface LoginFormProps {
 }
 
 const LoginSchema = yup.object().shape({
-  email: yup.string().email("Invalid email").required("Email is required"),
+  login_identifier: yup.string().email("Invalid email").required("Email is required"),
   password: yup
     .string()
     .min(6, "Password must be at least 6 characters")
@@ -45,7 +45,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 w-full">
         <div className="w-full">
           <h5 className="pb-1 font-[Poppins]">Email</h5>
-          <Input {...register("email")} placeholder="Email" className="w-full" />
+          <Input {...register("login_identifier")} placeholder="Email" className="w-full" />
         </div>
         <div className="w-full">
           <h5 className="pb-1 font-[Poppins]">Password</h5>

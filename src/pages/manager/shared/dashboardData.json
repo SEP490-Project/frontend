@@ -1,5 +1,5 @@
 {
-  "admin": {
+  "ADMIN": {
     "totalUsers": { "value": 1200, "status": "up", "statusText": "+5%" },
     "totalRevenue": { "value": 500000000, "status": "down", "statusText": "-2%" },
     "monthlyRevenue": [
@@ -22,7 +22,7 @@
       { "channel": "Website", "ctr": 2.9, "reach": 12000 }
     ]
   },
-  "marketing": {
+  "MARKETING_STAFF": {
     "activeBrands": { "value": 12, "status": "up", "statusText": "+2 compared to last month" },
     "activeCampaigns": { "value": 8, "status": "down", "statusText": "-1 compared to last week" },
     "finishedCampaigns": { "value": 5, "status": "up", "statusText": "+3 finished" },
@@ -61,7 +61,7 @@
       "⚠️ Campaign “New Lipstick Launch” has 1 video not yet posted."
     ]
   },
-  "content": {
+  "CONTENT_STAFF": {
     "totalPosts": { "value": 23, "status": "up", "statusText": "+4 new posts" },
     "totalViews": { "value": 80000, "status": "up", "statusText": "+15% compared to last month" },
     "totalEngagement": { "value": 10000, "status": "down", "statusText": "-5% engagement" },
@@ -72,7 +72,7 @@
       { "name": "TikTok", "value": 5 }
     ]
   },
-  "sales": {
+  "SALES_STAFF": {
     "totalOrders": { "value": 300, "status": "up", "statusText": "+12 new orders" },
     "todayRevenue": {
       "value": 15000000,
@@ -95,7 +95,7 @@
       { "month": "Dec", "value": 450 }
     ]
   },
-  "brand": {
+  "BRAND_PARTNER": {
     "campaigns": { "value": 4, "status": "up", "statusText": "+1 new campaign" },
     "pendingPayments": { "value": 2, "status": "down", "statusText": "Processed 1 less" },
     "lastInvoice": { "value": 50000000, "status": "up", "statusText": "On-time payment" },

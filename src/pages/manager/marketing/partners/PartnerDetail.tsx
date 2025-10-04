@@ -1,11 +1,11 @@
 import React from "react";
 
-const CreateCampaignPage: React.FC = () => {
+const PartnerDetailPage: React.FC = () => {
   return (
     <div className="min-h-screen pt-6 flex flex-col items-center">
-      <h1>Create Campaign Page</h1>
+      <h1>Partner Detail Page</h1>
     </div>
   );
 };
 
-export default CreateCampaignPage;
+export default PartnerDetailPage;

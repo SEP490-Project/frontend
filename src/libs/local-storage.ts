@@ -22,4 +22,8 @@ const setRaw = (key: string, value: string) => {
   window.localStorage.setItem(key, value);
 };
 
-export { getItem, setItem, getRaw, setRaw };
+const removeItem = (key: string) => {
+  window.localStorage.removeItem(key);
+};
+
+export { getItem, setItem, getRaw, setRaw, removeItem };

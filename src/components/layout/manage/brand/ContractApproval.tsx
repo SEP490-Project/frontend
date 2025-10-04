@@ -8,12 +8,7 @@ import {
   Menu,
   X,
   Check,
-  Calendar,
-  User,
-  Building,
   FileText,
-  CreditCard,
-  Scale,
   AlertTriangle,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -28,197 +23,68 @@ import {
 } from "@/components/ui/dialog";
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
+import { useDispatch } from "react-redux";
+import { useContract } from "@/libs/hooks/useContract";
+import {
+  getContractsByBrand,
+  approveContract,
+  rejectContract,
+} from "@/libs/stores/contractManager/thunk";
+import type { AppDispatch } from "@/libs/stores";
+import type { Contract } from "@/libs/types/contract";
 
-interface ContractData {
-  id: string;
-  contract_number: string;
-  type: "ADVERTISING" | "AFFILIATE" | "BRAND_AMBASSADOR" | "CO_PRODUCING";
-  status: "DRAFT" | "ACTIVE" | "COMPLETED" | "TERMINATED";
-  signed_date?: string;
-  signed_location?: string;
-  start_date: string;
-  end_date: string;
-  brand: {
-    id: string;
-    name: string;
-    contact_email: string;
-    contact_phone: string;
-    address: string;
-  };
-  representative_name: string;
-  representative_role: string;
-  representative_phone: string;
-  representative_email: string;
-  representative_tax_number?: string;
-  representative_bank_name?: string;
-  representative_bank_account_number?: string;
-  representative_bank_account_holder?: string;
-  currency: string;
-  financial_terms: {
-    total_value: number;
-    payment_schedule: string;
-    payment_method: string;
-  };
-  scope_of_work: {
-    deliverables: string[];
-    requirements: string[];
-    responsibilities: string[];
-  };
-  legal_terms: {
-    penalties: string[];
-    warranty: string;
-    dispute_resolution: string;
-  };
-  created_at: string;
-  updated_at: string;
+interface ContractApprovalProps {
+  brandId?: string;
 }
 
-export default function ContractApproval() {
+export default function ContractApproval({ brandId: propBrandId }: ContractApprovalProps = {}) {
+  const dispatch = useDispatch<AppDispatch>();
+  const { loading, contracts, pagination, actionLoading } = useContract();
+
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedContract, setSelectedContract] = useState<ContractData | null>(null);
+  const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
   const [contractStatus, setContractStatus] = useState<
     "DRAFT" | "ACTIVE" | "COMPLETED" | "TERMINATED"
   >("DRAFT");
-  const [isProcessing, setIsProcessing] = useState(false);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [brandId] = useState(propBrandId || "brand-001"); // Use prop or default
 
-  const contractData: ContractData[] = [
-    {
-      id: "550e8400-e29b-41d4-a716-446655440001",
-      contract_number: "CTR-2024-001",
-      type: "BRAND_AMBASSADOR",
-      status: "ACTIVE",
-      signed_date: "2024-01-15",
-      signed_location: "Ho Chi Minh City, Vietnam",
-      start_date: "2024-02-01",
-      end_date: "2024-12-31",
-      brand: {
-        id: "brand-001",
-        name: "Innisfree Vietnam",
-        contact_email: "contact@innisfree.vn",
-        contact_phone: "+84 28 1234 5678",
-        address: "123 Nguyen Hue Street, District 1, Ho Chi Minh City",
-      },
-      representative_name: "Nguyen Thi Minh Anh",
-      representative_role: "Brand Ambassador Manager",
-      representative_phone: "+84 901 234 567",
-      representative_email: "minh.anh@innisfree.vn",
-      representative_tax_number: "0123456789",
-      representative_bank_name: "Vietcombank",
-      representative_bank_account_number: "1234567890",
-      representative_bank_account_holder: "Nguyen Thi Minh Anh",
-      currency: "VND",
-      financial_terms: {
-        total_value: 50000000,
-        payment_schedule: "Monthly payments of 5,000,000 VND",
-        payment_method: "Bank Transfer",
-      },
-      scope_of_work: {
-        deliverables: [
-          "4 Instagram posts per month featuring Innisfree products",
-          "2 Instagram stories per week showcasing product usage",
-          "1 monthly blog post about skincare routine",
-          "Attendance at 2 brand events per quarter",
-        ],
-        requirements: [
-          "Minimum 100K followers on Instagram",
-          "Engagement rate above 3%",
-          "Content must align with brand aesthetic",
-          "All posts require brand approval before publishing",
-        ],
-        responsibilities: [
-          "Create authentic and engaging content",
-          "Respond to comments and engage with audience",
-          "Provide monthly performance reports",
-          "Maintain professional brand image",
-        ],
-      },
-      legal_terms: {
-        penalties: [
-          "Late delivery penalty: 100,000 VND per day",
-          "Contract breach penalty: 20% of total contract value",
-          "Unauthorized content penalty: 500,000 VND per violation",
-        ],
-        warranty:
-          "Representative warrants that all content is original and does not infringe on third-party rights",
-        dispute_resolution:
-          "Any disputes shall be resolved through arbitration in Ho Chi Minh City under Vietnamese law",
-      },
-      created_at: "2024-01-10T09:00:00Z",
-      updated_at: "2024-01-15T14:30:00Z",
-    },
-    {
-      id: "550e8400-e29b-41d4-a716-446655440002",
-      contract_number: "CTR-2024-002",
-      type: "ADVERTISING",
-      status: "DRAFT",
-      start_date: "2024-03-01",
-      end_date: "2024-12-31",
-      brand: {
-        id: "brand-002",
-        name: "The Ordinary",
-        contact_email: "partnerships@theordinary.com",
-        contact_phone: "+84 28 9876 5432",
-        address: "456 Le Loi Street, District 3, Ho Chi Minh City",
-      },
-      representative_name: "Tran Van Duc",
-      representative_role: "Content Creator",
-      representative_phone: "+84 912 345 678",
-      representative_email: "duc.tran@email.com",
-      currency: "USD",
-      financial_terms: {
-        total_value: 2500,
-        payment_schedule: "50% upfront, 50% upon completion",
-        payment_method: "PayPal",
-      },
-      scope_of_work: {
-        deliverables: [
-          "3 YouTube videos showcasing skincare routine",
-          "5 Instagram posts with product reviews",
-          "1 detailed blog post about ingredient benefits",
-        ],
-        requirements: [
-          "Minimum 50K YouTube subscribers",
-          "Focus on skincare and beauty content",
-          "Must disclose sponsored content",
-        ],
-        responsibilities: [
-          "Create educational content about skincare",
-          "Engage with audience questions",
-          "Provide usage analytics",
-        ],
-      },
-      legal_terms: {
-        penalties: ["Late delivery penalty: $50 per day", "Content quality issues: $200 penalty"],
-        warranty: "Content must be original and comply with advertising standards",
-        dispute_resolution: "Disputes resolved under Singapore arbitration",
-      },
-      created_at: "2024-02-20T10:30:00Z",
-      updated_at: "2024-02-25T16:45:00Z",
-    },
-  ];
+  // Fetch contracts when component mounts or brand changes
+  useEffect(() => {
+    if (brandId) {
+      dispatch(
+        getContractsByBrand({
+          brand_id: brandId,
+          page: 1,
+          limit: 10,
+          status: selectedStatus || undefined,
+        }),
+      );
+    }
+  }, [dispatch, brandId, selectedStatus]);
 
   // Get unique statuses for dropdown
-  const uniqueStatuses = [...new Set(contractData.map((item) => item.status))];
+  const uniqueStatuses = [...new Set(contracts.map((item) => item.status))];
 
   // Filter the data based on search and filters
-  const filteredData = contractData.filter((item) => {
+  const filteredData = contracts.filter((item) => {
     const matchesSearch =
-      item.brand.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.brand_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.contract_number.toLowerCase().includes(searchTerm.toLowerCase());
+      item.contract_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.title.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = selectedStatus === "" || item.status === selectedStatus;
 
     return matchesSearch && matchesStatus;
   });
 
   // Handle contract view
-  const handleViewContract = (contract: ContractData) => {
+  const handleViewContract = (contract: Contract) => {
     setSelectedContract(contract);
     setContractStatus(contract.status);
     setIsModalOpen(true);
@@ -234,26 +100,20 @@ export default function ContractApproval() {
 
   const confirmApprove = async () => {
     if (!selectedContract) return;
-    setIsProcessing(true);
     setShowApproveDialog(false);
 
     try {
-      // Simulate API call
-      setTimeout(() => {
-        setContractStatus("ACTIVE");
-        setIsProcessing(false);
-        // In real app, this would update the backend and refresh the data
-        toast.success("Contract approved successfully!", {
-          position: "top-right",
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-        });
-      }, 1500);
+      await dispatch(approveContract(selectedContract.id)).unwrap();
+      setContractStatus("ACTIVE");
+      toast.success("Contract approved successfully!", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
     } catch {
-      setIsProcessing(false);
       toast.error("Failed to approve contract. Please try again.", {
         position: "top-right",
         autoClose: 5000,
@@ -267,25 +127,20 @@ export default function ContractApproval() {
 
   const confirmReject = async () => {
     if (!selectedContract) return;
-    setIsProcessing(true);
     setShowRejectDialog(false);
 
     try {
-      // Simulate API call
-      setTimeout(() => {
-        setContractStatus("TERMINATED");
-        setIsProcessing(false);
-        toast.success("Contract rejected successfully!", {
-          position: "top-right",
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-        });
-      }, 1500);
+      await dispatch(rejectContract(selectedContract.id)).unwrap();
+      setContractStatus("TERMINATED");
+      toast.success("Contract rejected successfully!", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
     } catch {
-      setIsProcessing(false);
       toast.error("Failed to reject contract. Please try again.", {
         position: "top-right",
         autoClose: 5000,
@@ -310,13 +165,6 @@ export default function ContractApproval() {
       default:
         return "bg-gray-100 text-gray-800";
     }
-  };
-
-  const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: currency,
-    }).format(amount);
   };
 
   // Close dropdowns when clicking outside
@@ -464,20 +312,20 @@ export default function ContractApproval() {
             <table className="w-full min-w-[700px] table-fixed">
               <thead className="border-b border-gray-200">
                 <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[25%]">
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[20%]">
                     Contract Number
                   </th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[20%]">
-                    Brand
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[25%]">
+                    Title
                   </th>
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%]">
+                    Brand
+                  </th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
                     Type
                   </th>
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
                     Start Date
-                  </th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
-                    End Date
                   </th>
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
                     Status
@@ -488,72 +336,92 @@ export default function ContractApproval() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredData.map((item, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 w-[25%]">
-                      <div className="flex items-center">
-                        <div className="h-8 w-8 flex-shrink-0 mr-2">
-                          <div className="h-8 w-8 rounded-lg bg-gray-100 flex items-center justify-center">
-                            <svg
-                              className="h-4 w-4 text-gray-400"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                              />
-                            </svg>
-                          </div>
-                        </div>
-                        <div
-                          className="text-sm font-medium text-gray-900 truncate"
-                          title={item.contract_number}
-                        >
-                          {item.contract_number}
-                        </div>
+                {loading ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-8 text-center">
+                      <div className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                        <span className="ml-2 text-gray-500">Loading contracts...</span>
                       </div>
                     </td>
-                    <td
-                      className="px-4 py-3 w-[20%] text-sm text-gray-500 truncate"
-                      title={item.brand.name}
-                    >
-                      {item.brand.name}
-                    </td>
-                    <td
-                      className="px-4 py-3 w-[15%] text-sm text-gray-500 truncate"
-                      title={item.type.replace("_", " ")}
-                    >
-                      {item.type.replace("_", " ")}
-                    </td>
-                    <td className="px-4 py-3 w-[10%] text-sm text-gray-500 truncate">
-                      {new Date(item.start_date).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-3 w-[10%] text-sm text-gray-500 truncate">
-                      {new Date(item.end_date).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-3 w-[10%]">
-                      <span
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusStyles(
-                          item.status,
-                        )}`}
-                      >
-                        {item.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 w-[10%] text-sm font-medium">
-                      <button
-                        onClick={() => handleViewContract(item)}
-                        className="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-50"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
+                  </tr>
+                ) : filteredData.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                      No contracts found
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredData.map((item, index) => (
+                    <tr key={index} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 w-[20%]">
+                        <div className="flex items-center">
+                          <div className="h-8 w-8 flex-shrink-0 mr-2">
+                            <div className="h-8 w-8 rounded-lg bg-gray-100 flex items-center justify-center">
+                              <svg
+                                className="h-4 w-4 text-gray-400"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                />
+                              </svg>
+                            </div>
+                          </div>
+                          <div
+                            className="text-sm font-medium text-gray-900 truncate"
+                            title={item.contract_number}
+                          >
+                            {item.contract_number}
+                          </div>
+                        </div>
+                      </td>
+                      <td
+                        className="px-4 py-3 w-[25%] text-sm text-gray-900 truncate font-medium"
+                        title={item.title}
+                      >
+                        {item.title}
+                      </td>
+                      <td
+                        className="px-4 py-3 w-[15%] text-sm text-gray-500 truncate"
+                        title={item.brand_name}
+                      >
+                        {item.brand_name}
+                      </td>
+                      <td
+                        className="px-4 py-3 w-[10%] text-sm text-gray-500 truncate"
+                        title={item.type.replace("_", " ")}
+                      >
+                        {item.type.replace("_", " ")}
+                      </td>
+                      <td className="px-4 py-3 w-[10%] text-sm text-gray-500 truncate">
+                        {new Date(item.start_date).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-3 w-[10%]">
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusStyles(
+                            item.status,
+                          )}`}
+                        >
+                          {item.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 w-[10%] text-sm font-medium">
+                        <button
+                          onClick={() => handleViewContract(item)}
+                          className="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-50"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -573,7 +441,7 @@ export default function ContractApproval() {
                 <p className="text-sm text-gray-700">
                   Showing <span className="font-medium">1</span> to{" "}
                   <span className="font-medium">{filteredData.length}</span> of{" "}
-                  <span className="font-medium">{filteredData.length}</span> results
+                  <span className="font-medium">{pagination?.total || 0}</span> results
                 </p>
               </div>
               <div>
@@ -611,350 +479,93 @@ export default function ContractApproval() {
                   <div className="flex gap-3 justify-end border-b pb-4">
                     <Button
                       onClick={handleReject}
-                      disabled={isProcessing}
+                      disabled={actionLoading}
                       variant="outline"
                       className="flex items-center gap-2 border-red-300 text-red-600 hover:bg-red-50"
                     >
                       <X className="h-4 w-4" />
-                      {isProcessing ? "Processing..." : "Reject"}
+                      {actionLoading ? "Processing..." : "Reject"}
                     </Button>
                     <Button
                       onClick={handleApprove}
-                      disabled={isProcessing}
+                      disabled={actionLoading}
                       className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
                     >
                       <Check className="h-4 w-4" />
-                      {isProcessing ? "Processing..." : "Approve"}
+                      {actionLoading ? "Processing..." : "Approve"}
                     </Button>
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Main Content */}
-                  <div className="lg:col-span-2 space-y-6">
-                    {/* Contract Overview */}
-                    <div className="bg-gray-50 rounded-lg border border-gray-200 p-6">
-                      <div className="flex items-center gap-3 mb-4">
-                        <FileText className="h-5 w-5 text-gray-400" />
-                        <h2 className="text-lg font-semibold text-gray-900">Contract Overview</h2>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Contract Type</label>
-                          <p className="text-sm text-gray-900 mt-1">
-                            {selectedContract.type.replace("_", " ")}
-                          </p>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Status</label>
-                          <div className="mt-1">
-                            <span
-                              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusStyles(contractStatus)}`}
-                            >
-                              {contractStatus}
-                            </span>
-                          </div>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Start Date</label>
-                          <p className="text-sm text-gray-900 mt-1">
-                            {new Date(selectedContract.start_date).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">End Date</label>
-                          <p className="text-sm text-gray-900 mt-1">
-                            {new Date(selectedContract.end_date).toLocaleDateString()}
-                          </p>
-                        </div>
-                        {selectedContract.signed_date && (
-                          <>
-                            <div>
-                              <label className="text-sm font-medium text-gray-500">
-                                Signed Date
-                              </label>
-                              <p className="text-sm text-gray-900 mt-1">
-                                {new Date(selectedContract.signed_date).toLocaleDateString()}
-                              </p>
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium text-gray-500">
-                                Signed Location
-                              </label>
-                              <p className="text-sm text-gray-900 mt-1">
-                                {selectedContract.signed_location}
-                              </p>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Brand Information */}
-                    <div className="bg-gray-50 rounded-lg border border-gray-200 p-6">
-                      <div className="flex items-center gap-3 mb-4">
-                        <Building className="h-5 w-5 text-gray-400" />
-                        <h2 className="text-lg font-semibold text-gray-900">Brand Information</h2>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Brand Name</label>
-                          <p className="text-sm text-gray-900 mt-1">
-                            {selectedContract.brand.name}
-                          </p>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Contact Email</label>
-                          <p className="text-sm text-gray-900 mt-1">
-                            {selectedContract.brand.contact_email}
-                          </p>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Contact Phone</label>
-                          <p className="text-sm text-gray-900 mt-1">
-                            {selectedContract.brand.contact_phone}
-                          </p>
-                        </div>
-                        <div className="md:col-span-2">
-                          <label className="text-sm font-medium text-gray-500">Address</label>
-                          <p className="text-sm text-gray-900 mt-1">
-                            {selectedContract.brand.address}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Representative Information */}
-                    <div className="bg-gray-50 rounded-lg border border-gray-200 p-6">
-                      <div className="flex items-center gap-3 mb-4">
-                        <User className="h-5 w-5 text-gray-400" />
-                        <h2 className="text-lg font-semibold text-gray-900">
-                          Representative Information
-                        </h2>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Name</label>
-                          <p className="text-sm text-gray-900 mt-1">
-                            {selectedContract.representative_name}
-                          </p>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Role</label>
-                          <p className="text-sm text-gray-900 mt-1">
-                            {selectedContract.representative_role}
-                          </p>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Phone</label>
-                          <p className="text-sm text-gray-900 mt-1">
-                            {selectedContract.representative_phone}
-                          </p>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Email</label>
-                          <p className="text-sm text-gray-900 mt-1">
-                            {selectedContract.representative_email}
-                          </p>
-                        </div>
-                        {selectedContract.representative_tax_number && (
-                          <div>
-                            <label className="text-sm font-medium text-gray-500">Tax Number</label>
-                            <p className="text-sm text-gray-900 mt-1">
-                              {selectedContract.representative_tax_number}
-                            </p>
-                          </div>
-                        )}
-                        {selectedContract.representative_bank_name && (
-                          <>
-                            <div>
-                              <label className="text-sm font-medium text-gray-500">Bank Name</label>
-                              <p className="text-sm text-gray-900 mt-1">
-                                {selectedContract.representative_bank_name}
-                              </p>
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium text-gray-500">
-                                Account Number
-                              </label>
-                              <p className="text-sm text-gray-900 mt-1">
-                                {selectedContract.representative_bank_account_number}
-                              </p>
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium text-gray-500">
-                                Account Holder
-                              </label>
-                              <p className="text-sm text-gray-900 mt-1">
-                                {selectedContract.representative_bank_account_holder}
-                              </p>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Sidebar */}
-                  <div className="space-y-6">
-                    {/* Financial Terms */}
-                    <div className="bg-gray-50 rounded-lg border border-gray-200 p-6">
-                      <div className="flex items-center gap-3 mb-4">
-                        <CreditCard className="h-5 w-5 text-gray-400" />
-                        <h2 className="text-lg font-semibold text-gray-900">Financial Terms</h2>
-                      </div>
-
-                      <div className="space-y-3">
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Total Value</label>
-                          <p className="text-lg font-semibold text-gray-900 mt-1">
-                            {formatCurrency(
-                              selectedContract.financial_terms.total_value,
-                              selectedContract.currency,
-                            )}
-                          </p>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">
-                            Payment Schedule
-                          </label>
-                          <p className="text-sm text-gray-900 mt-1">
-                            {selectedContract.financial_terms.payment_schedule}
-                          </p>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">
-                            Payment Method
-                          </label>
-                          <p className="text-sm text-gray-900 mt-1">
-                            {selectedContract.financial_terms.payment_method}
-                          </p>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Currency</label>
-                          <p className="text-sm text-gray-900 mt-1">{selectedContract.currency}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Contract Dates */}
-                    <div className="bg-gray-50 rounded-lg border border-gray-200 p-6">
-                      <div className="flex items-center gap-3 mb-4">
-                        <Calendar className="h-5 w-5 text-gray-400" />
-                        <h2 className="text-lg font-semibold text-gray-900">Important Dates</h2>
-                      </div>
-
-                      <div className="space-y-3">
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Created</label>
-                          <p className="text-sm text-gray-900 mt-1">
-                            {new Date(selectedContract.created_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Last Updated</label>
-                          <p className="text-sm text-gray-900 mt-1">
-                            {new Date(selectedContract.updated_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">
-                            Contract Duration
-                          </label>
-                          <p className="text-sm text-gray-900 mt-1">
-                            {Math.ceil(
-                              (new Date(selectedContract.end_date).getTime() -
-                                new Date(selectedContract.start_date).getTime()) /
-                                (1000 * 60 * 60 * 24),
-                            )}{" "}
-                            days
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Scope of Work */}
+                {/* Contract Overview */}
                 <div className="bg-gray-50 rounded-lg border border-gray-200 p-6">
-                  <div className="flex items-center gap-3 mb-6">
-                    <Scale className="h-5 w-5 text-gray-400" />
-                    <h2 className="text-lg font-semibold text-gray-900">
-                      Scope of Work & Legal Terms
-                    </h2>
+                  <div className="flex items-center gap-3 mb-4">
+                    <FileText className="h-5 w-5 text-gray-400" />
+                    <h2 className="text-lg font-semibold text-gray-900">Contract Overview</h2>
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
-                      <h3 className="text-sm font-semibold text-gray-900 mb-3">Deliverables</h3>
-                      <ul className="space-y-2">
-                        {selectedContract.scope_of_work.deliverables.map((item, index) => (
-                          <li key={index} className="text-sm text-gray-600 flex items-start gap-2">
-                            <span className="w-2 h-2 bg-blue-400 rounded-full mt-2 flex-shrink-0"></span>
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
+                      <label className="text-sm font-medium text-gray-500">Contract Number</label>
+                      <p className="text-sm text-gray-900 mt-1">
+                        {selectedContract.contract_number}
+                      </p>
                     </div>
-
                     <div>
-                      <h3 className="text-sm font-semibold text-gray-900 mb-3">Requirements</h3>
-                      <ul className="space-y-2">
-                        {selectedContract.scope_of_work.requirements.map((item, index) => (
-                          <li key={index} className="text-sm text-gray-600 flex items-start gap-2">
-                            <span className="w-2 h-2 bg-yellow-400 rounded-full mt-2 flex-shrink-0"></span>
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
+                      <label className="text-sm font-medium text-gray-500">Title</label>
+                      <p className="text-sm text-gray-900 mt-1">{selectedContract.title}</p>
                     </div>
-
                     <div>
-                      <h3 className="text-sm font-semibold text-gray-900 mb-3">Responsibilities</h3>
-                      <ul className="space-y-2">
-                        {selectedContract.scope_of_work.responsibilities.map((item, index) => (
-                          <li key={index} className="text-sm text-gray-600 flex items-start gap-2">
-                            <span className="w-2 h-2 bg-green-400 rounded-full mt-2 flex-shrink-0"></span>
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
+                      <label className="text-sm font-medium text-gray-500">Contract Type</label>
+                      <p className="text-sm text-gray-900 mt-1">
+                        {selectedContract.type.replace("_", " ")}
+                      </p>
                     </div>
-                  </div>
-
-                  <div className="mt-8 pt-6 border-t border-gray-200">
-                    <h3 className="text-sm font-semibold text-gray-900 mb-4">
-                      Legal Terms & Penalties
-                    </h3>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-2">Penalties</h4>
-                        <ul className="space-y-1">
-                          {selectedContract.legal_terms.penalties.map((penalty, index) => (
-                            <li key={index} className="text-sm text-gray-600">
-                              • {penalty}
-                            </li>
-                          ))}
-                        </ul>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Brand Name</label>
+                      <p className="text-sm text-gray-900 mt-1">{selectedContract.brand_name}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Status</label>
+                      <div className="mt-1">
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusStyles(contractStatus)}`}
+                        >
+                          {contractStatus}
+                        </span>
                       </div>
-
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Start Date</label>
+                      <p className="text-sm text-gray-900 mt-1">
+                        {new Date(selectedContract.start_date).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">End Date</label>
+                      <p className="text-sm text-gray-900 mt-1">
+                        {new Date(selectedContract.end_date).toLocaleDateString()}
+                      </p>
+                    </div>
+                    {selectedContract.signed_date && (
                       <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-2">Warranty</h4>
-                        <p className="text-sm text-gray-600">
-                          {selectedContract.legal_terms.warranty}
-                        </p>
-
-                        <h4 className="text-sm font-medium text-gray-700 mb-2 mt-4">
-                          Dispute Resolution
-                        </h4>
-                        <p className="text-sm text-gray-600">
-                          {selectedContract.legal_terms.dispute_resolution}
+                        <label className="text-sm font-medium text-gray-500">Signed Date</label>
+                        <p className="text-sm text-gray-900 mt-1">
+                          {new Date(selectedContract.signed_date).toLocaleDateString()}
                         </p>
                       </div>
+                    )}
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Created</label>
+                      <p className="text-sm text-gray-900 mt-1">
+                        {new Date(selectedContract.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Last Updated</label>
+                      <p className="text-sm text-gray-900 mt-1">
+                        {new Date(selectedContract.updated_at).toLocaleDateString()}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -983,7 +594,7 @@ export default function ContractApproval() {
               <DialogDescription className="mt-2 text-gray-600">
                 Are you sure you want to change the status of this{" "}
                 <span className="font-medium text-gray-900">
-                  {selectedContract?.brand.name} - {selectedContract?.type.replace("_", " ")}{" "}
+                  {selectedContract?.brand_name} - {selectedContract?.type.replace("_", " ")}{" "}
                   Contract
                 </span>
                 ?
@@ -999,10 +610,10 @@ export default function ContractApproval() {
               </Button>
               <Button
                 onClick={confirmApprove}
-                disabled={isProcessing}
+                disabled={actionLoading}
                 className="bg-red-500 hover:bg-red-600 text-white"
               >
-                {isProcessing ? "Processing..." : "Yes"}
+                {actionLoading ? "Processing..." : "Yes"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1028,7 +639,7 @@ export default function ContractApproval() {
               <DialogDescription className="mt-2 text-gray-600">
                 Are you sure you want to reject this{" "}
                 <span className="font-medium text-gray-900">
-                  {selectedContract?.brand.name} - {selectedContract?.type.replace("_", " ")}{" "}
+                  {selectedContract?.brand_name} - {selectedContract?.type.replace("_", " ")}{" "}
                   Contract
                 </span>
                 ?
@@ -1044,10 +655,10 @@ export default function ContractApproval() {
               </Button>
               <Button
                 onClick={confirmReject}
-                disabled={isProcessing}
+                disabled={actionLoading}
                 className="bg-red-500 hover:bg-red-600 text-white"
               >
-                {isProcessing ? "Processing..." : "Yes"}
+                {actionLoading ? "Processing..." : "Yes"}
               </Button>
             </DialogFooter>
           </DialogContent>

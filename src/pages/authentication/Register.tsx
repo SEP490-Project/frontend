@@ -7,11 +7,10 @@ const Register: React.FC = () => {
   const dispatch = useAppDispatch();
   const handleSubmit = async (data: {
     username: string;
-    fullName: string;
+    full_name: string;
     email: string;
     password: string;
   }) => {
-    console.log("Register data:", data);
     await dispatch(register(data));
   };
 

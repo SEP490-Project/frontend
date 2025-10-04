@@ -9,7 +9,7 @@ import { PasswordInput } from "../password-input";
 
 interface RegisterRequest {
   username: string;
-  fullName: string;
+  full_name: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -21,7 +21,7 @@ interface RegisterFormProps {
 
 const RegisterSchema = yup.object().shape({
   username: yup.string().required("Username is required"),
-  fullName: yup.string().required("Full name is required"),
+  full_name: yup.string().required("Full name is required"),
   email: yup.string().email("Invalid email").required("Email is required"),
   password: yup
     .string()
@@ -71,12 +71,12 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit }) => {
           <div className="w-full">
             <h5 className="pb-1">Full Name</h5>
             <Input
-              {...register("fullName")}
+              {...register("full_name")}
               placeholder="Enter your full name"
               className="w-full"
             />
-            {errors.fullName && (
-              <p className="text-red-500 text-sm mt-1">{errors.fullName.message}</p>
+            {errors.full_name && (
+              <p className="text-red-500 text-sm mt-1">{errors.full_name.message}</p>
             )}
           </div>
 

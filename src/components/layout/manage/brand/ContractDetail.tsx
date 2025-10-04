@@ -11,6 +11,7 @@ import {
   CreditCard,
   Scale,
   AlertTriangle,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,130 +22,37 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-
-interface ContractData {
-  id: string;
-  contract_number: string;
-  type: "ADVERTISING" | "AFFILIATE" | "BRAND_AMBASSADOR" | "CO_PRODUCING";
-  status: "DRAFT" | "ACTIVE" | "COMPLETED" | "TERMINATED";
-  signed_date?: string;
-  signed_location?: string;
-  start_date: string;
-  end_date: string;
-  brand: {
-    id: string;
-    name: string;
-    contact_email: string;
-    contact_phone: string;
-    address: string;
-  };
-  representative_name: string;
-  representative_role: string;
-  representative_phone: string;
-  representative_email: string;
-  representative_tax_number?: string;
-  representative_bank_name?: string;
-  representative_bank_account_number?: string;
-  representative_bank_account_holder?: string;
-  currency: string;
-  financial_terms: {
-    total_value: number;
-    payment_schedule: string;
-    payment_method: string;
-  };
-  scope_of_work: {
-    deliverables: string[];
-    requirements: string[];
-    responsibilities: string[];
-  };
-  legal_terms: {
-    penalties: string[];
-    warranty: string;
-    dispute_resolution: string;
-  };
-  created_at: string;
-  updated_at: string;
-}
+import { useContractDetail } from "@/libs/hooks/useContractDetail";
 
 interface ContractDetailProps {
+  contractId: string;
   onBack?: () => void;
 }
 
-export default function ContractDetail({ onBack }: ContractDetailProps) {
-  const [contractStatus, setContractStatus] = useState<
-    "DRAFT" | "ACTIVE" | "COMPLETED" | "TERMINATED"
-  >("DRAFT");
-  const [isProcessing, setIsProcessing] = useState(false);
+export default function ContractDetail({ contractId, onBack }: ContractDetailProps) {
+  const {
+    detailLoading,
+    contractDetail,
+    actionLoading,
+    fetchContractDetail,
+    approveContractAction,
+    rejectContractAction,
+    clearContractDetail,
+  } = useContractDetail();
+
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
 
-  // Mock contract data based on the SQL entity structure
-  const contractData: ContractData = {
-    id: "550e8400-e29b-41d4-a716-446655440000",
-    contract_number: "CTR-2024-001",
-    type: "BRAND_AMBASSADOR",
-    status: contractStatus,
-    signed_date: "2024-01-15",
-    signed_location: "Ho Chi Minh City, Vietnam",
-    start_date: "2024-02-01",
-    end_date: "2024-12-31",
-    brand: {
-      id: "brand-001",
-      name: "Innisfree Vietnam",
-      contact_email: "contact@innisfree.vn",
-      contact_phone: "+84 28 1234 5678",
-      address: "123 Nguyen Hue Street, District 1, Ho Chi Minh City",
-    },
-    representative_name: "Nguyen Thi Minh Anh",
-    representative_role: "Brand Ambassador Manager",
-    representative_phone: "+84 901 234 567",
-    representative_email: "minh.anh@innisfree.vn",
-    representative_tax_number: "0123456789",
-    representative_bank_name: "Vietcombank",
-    representative_bank_account_number: "1234567890",
-    representative_bank_account_holder: "Nguyen Thi Minh Anh",
-    currency: "VND",
-    financial_terms: {
-      total_value: 50000000,
-      payment_schedule: "Monthly payments of 5,000,000 VND",
-      payment_method: "Bank Transfer",
-    },
-    scope_of_work: {
-      deliverables: [
-        "4 Instagram posts per month featuring Innisfree products",
-        "2 Instagram stories per week showcasing product usage",
-        "1 monthly blog post about skincare routine",
-        "Attendance at 2 brand events per quarter",
-      ],
-      requirements: [
-        "Minimum 100K followers on Instagram",
-        "Engagement rate above 3%",
-        "Content must align with brand aesthetic",
-        "All posts require brand approval before publishing",
-      ],
-      responsibilities: [
-        "Create authentic and engaging content",
-        "Respond to comments and engage with audience",
-        "Provide monthly performance reports",
-        "Maintain professional brand image",
-      ],
-    },
-    legal_terms: {
-      penalties: [
-        "Late delivery penalty: 100,000 VND per day",
-        "Contract breach penalty: 20% of total contract value",
-        "Unauthorized content penalty: 500,000 VND per violation",
-      ],
-      warranty:
-        "Representative warrants that all content is original and does not infringe on third-party rights",
-      dispute_resolution:
-        "Any disputes shall be resolved through arbitration in Ho Chi Minh City under Vietnamese law",
-    },
-    created_at: "2024-01-10T09:00:00Z",
-    updated_at: "2024-01-15T14:30:00Z",
-  };
+  useEffect(() => {
+    if (contractId) {
+      fetchContractDetail(contractId);
+    }
+    return () => {
+      clearContractDetail();
+    };
+  }, [contractId, fetchContractDetail, clearContractDetail]);
 
   const handleApprove = () => {
     setShowApproveDialog(true);
@@ -155,25 +63,21 @@ export default function ContractDetail({ onBack }: ContractDetailProps) {
   };
 
   const confirmApprove = async () => {
-    setIsProcessing(true);
+    if (!contractDetail) return;
+
     setShowApproveDialog(false);
 
     try {
-      // Simulate API call
-      setTimeout(() => {
-        setContractStatus("ACTIVE");
-        setIsProcessing(false);
-        toast.success("Contract approved successfully!", {
-          position: "top-right",
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-        });
-      }, 1500);
+      await approveContractAction(contractDetail.id);
+      toast.success("Contract approved successfully!", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
     } catch {
-      setIsProcessing(false);
       toast.error("Failed to approve contract. Please try again.", {
         position: "top-right",
         autoClose: 5000,
@@ -186,25 +90,21 @@ export default function ContractDetail({ onBack }: ContractDetailProps) {
   };
 
   const confirmReject = async () => {
-    setIsProcessing(true);
+    if (!contractDetail) return;
+
     setShowRejectDialog(false);
 
     try {
-      // Simulate API call
-      setTimeout(() => {
-        setContractStatus("TERMINATED");
-        setIsProcessing(false);
-        toast.success("Contract rejected successfully!", {
-          position: "top-right",
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-        });
-      }, 1500);
+      await rejectContractAction(contractDetail.id);
+      toast.success("Contract rejected successfully!", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
     } catch {
-      setIsProcessing(false);
       toast.error("Failed to reject contract. Please try again.", {
         position: "top-right",
         autoClose: 5000,
@@ -231,12 +131,58 @@ export default function ContractDetail({ onBack }: ContractDetailProps) {
     }
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
-      currency: contractData.currency,
+      currency: currency,
     }).format(amount);
   };
+
+  // Show loading state
+  if (detailLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+        <div className="mx-auto max-w-[1200px]">
+          <div className="flex items-center justify-center h-64">
+            <div className="flex items-center gap-3">
+              <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+              <span className="text-gray-600">Loading contract details...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if no contract data
+  if (!contractDetail) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+        <div className="mx-auto max-w-[1200px]">
+          <div className="mb-6 flex items-center justify-between">
+            <Button
+              variant="ghost"
+              onClick={onBack}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Contracts
+            </Button>
+          </div>
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Contract Not Found</h3>
+              <p className="text-gray-600">
+                The contract you're looking for doesn't exist or you don't have permission to view
+                it.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
@@ -254,28 +200,28 @@ export default function ContractDetail({ onBack }: ContractDetailProps) {
             </Button>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Contract Details</h1>
-              <p className="text-sm text-gray-500">Contract #{contractData.contract_number}</p>
+              <p className="text-sm text-gray-500">Contract #{contractDetail.contract_number}</p>
             </div>
           </div>
 
-          {contractData.status === "DRAFT" && (
+          {contractDetail.status === "DRAFT" && (
             <div className="flex gap-3">
               <Button
                 onClick={handleReject}
-                disabled={isProcessing}
+                disabled={actionLoading}
                 variant="outline"
                 className="flex items-center gap-2 border-red-300 text-red-600 hover:bg-red-50"
               >
                 <X className="h-4 w-4" />
-                {isProcessing ? "Processing..." : "Reject"}
+                {actionLoading ? "Processing..." : "Reject"}
               </Button>
               <Button
                 onClick={handleApprove}
-                disabled={isProcessing}
+                disabled={actionLoading}
                 className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
               >
                 <Check className="h-4 w-4" />
-                {isProcessing ? "Processing..." : "Approve"}
+                {actionLoading ? "Processing..." : "Approve"}
               </Button>
             </div>
           )}
@@ -295,42 +241,42 @@ export default function ContractDetail({ onBack }: ContractDetailProps) {
                 <div>
                   <label className="text-sm font-medium text-gray-500">Contract Type</label>
                   <p className="text-sm text-gray-900 mt-1">
-                    {contractData.type.replace("_", " ")}
+                    {contractDetail.type.replace("_", " ")}
                   </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Status</label>
                   <div className="mt-1">
                     <span
-                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusStyles(contractData.status)}`}
+                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusStyles(contractDetail.status)}`}
                     >
-                      {contractData.status}
+                      {contractDetail.status}
                     </span>
                   </div>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Start Date</label>
                   <p className="text-sm text-gray-900 mt-1">
-                    {new Date(contractData.start_date).toLocaleDateString()}
+                    {new Date(contractDetail.start_date).toLocaleDateString()}
                   </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">End Date</label>
                   <p className="text-sm text-gray-900 mt-1">
-                    {new Date(contractData.end_date).toLocaleDateString()}
+                    {new Date(contractDetail.end_date).toLocaleDateString()}
                   </p>
                 </div>
-                {contractData.signed_date && (
+                {contractDetail.signed_date && (
                   <>
                     <div>
                       <label className="text-sm font-medium text-gray-500">Signed Date</label>
                       <p className="text-sm text-gray-900 mt-1">
-                        {new Date(contractData.signed_date).toLocaleDateString()}
+                        {new Date(contractDetail.signed_date).toLocaleDateString()}
                       </p>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-500">Signed Location</label>
-                      <p className="text-sm text-gray-900 mt-1">{contractData.signed_location}</p>
+                      <p className="text-sm text-gray-900 mt-1">{contractDetail.signed_location}</p>
                     </div>
                   </>
                 )}
@@ -347,19 +293,19 @@ export default function ContractDetail({ onBack }: ContractDetailProps) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-500">Brand Name</label>
-                  <p className="text-sm text-gray-900 mt-1">{contractData.brand.name}</p>
+                  <p className="text-sm text-gray-900 mt-1">{contractDetail.brand.name}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Contact Email</label>
-                  <p className="text-sm text-gray-900 mt-1">{contractData.brand.contact_email}</p>
+                  <p className="text-sm text-gray-900 mt-1">{contractDetail.brand.contact_email}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Contact Phone</label>
-                  <p className="text-sm text-gray-900 mt-1">{contractData.brand.contact_phone}</p>
+                  <p className="text-sm text-gray-900 mt-1">{contractDetail.brand.contact_phone}</p>
                 </div>
                 <div className="md:col-span-2">
                   <label className="text-sm font-medium text-gray-500">Address</label>
-                  <p className="text-sm text-gray-900 mt-1">{contractData.brand.address}</p>
+                  <p className="text-sm text-gray-900 mt-1">{contractDetail.brand.address}</p>
                 </div>
               </div>
             </div>
@@ -374,46 +320,50 @@ export default function ContractDetail({ onBack }: ContractDetailProps) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-500">Name</label>
-                  <p className="text-sm text-gray-900 mt-1">{contractData.representative_name}</p>
+                  <p className="text-sm text-gray-900 mt-1">{contractDetail.representative_name}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Role</label>
-                  <p className="text-sm text-gray-900 mt-1">{contractData.representative_role}</p>
+                  <p className="text-sm text-gray-900 mt-1">{contractDetail.representative_role}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Phone</label>
-                  <p className="text-sm text-gray-900 mt-1">{contractData.representative_phone}</p>
+                  <p className="text-sm text-gray-900 mt-1">
+                    {contractDetail.representative_phone}
+                  </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Email</label>
-                  <p className="text-sm text-gray-900 mt-1">{contractData.representative_email}</p>
+                  <p className="text-sm text-gray-900 mt-1">
+                    {contractDetail.representative_email}
+                  </p>
                 </div>
-                {contractData.representative_tax_number && (
+                {contractDetail.representative_tax_number && (
                   <div>
                     <label className="text-sm font-medium text-gray-500">Tax Number</label>
                     <p className="text-sm text-gray-900 mt-1">
-                      {contractData.representative_tax_number}
+                      {contractDetail.representative_tax_number}
                     </p>
                   </div>
                 )}
-                {contractData.representative_bank_name && (
+                {contractDetail.representative_bank_name && (
                   <>
                     <div>
                       <label className="text-sm font-medium text-gray-500">Bank Name</label>
                       <p className="text-sm text-gray-900 mt-1">
-                        {contractData.representative_bank_name}
+                        {contractDetail.representative_bank_name}
                       </p>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-500">Account Number</label>
                       <p className="text-sm text-gray-900 mt-1">
-                        {contractData.representative_bank_account_number}
+                        {contractDetail.representative_bank_account_number}
                       </p>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-500">Account Holder</label>
                       <p className="text-sm text-gray-900 mt-1">
-                        {contractData.representative_bank_account_holder}
+                        {contractDetail.representative_bank_account_holder}
                       </p>
                     </div>
                   </>
@@ -435,24 +385,27 @@ export default function ContractDetail({ onBack }: ContractDetailProps) {
                 <div>
                   <label className="text-sm font-medium text-gray-500">Total Value</label>
                   <p className="text-lg font-semibold text-gray-900 mt-1">
-                    {formatCurrency(contractData.financial_terms.total_value)}
+                    {formatCurrency(
+                      contractDetail.financial_terms.total_value,
+                      contractDetail.currency,
+                    )}
                   </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Payment Schedule</label>
                   <p className="text-sm text-gray-900 mt-1">
-                    {contractData.financial_terms.payment_schedule}
+                    {contractDetail.financial_terms.payment_schedule}
                   </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Payment Method</label>
                   <p className="text-sm text-gray-900 mt-1">
-                    {contractData.financial_terms.payment_method}
+                    {contractDetail.financial_terms.payment_method}
                   </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Currency</label>
-                  <p className="text-sm text-gray-900 mt-1">{contractData.currency}</p>
+                  <p className="text-sm text-gray-900 mt-1">{contractDetail.currency}</p>
                 </div>
               </div>
             </div>
@@ -468,21 +421,21 @@ export default function ContractDetail({ onBack }: ContractDetailProps) {
                 <div>
                   <label className="text-sm font-medium text-gray-500">Created</label>
                   <p className="text-sm text-gray-900 mt-1">
-                    {new Date(contractData.created_at).toLocaleDateString()}
+                    {new Date(contractDetail.created_at).toLocaleDateString()}
                   </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Last Updated</label>
                   <p className="text-sm text-gray-900 mt-1">
-                    {new Date(contractData.updated_at).toLocaleDateString()}
+                    {new Date(contractDetail.updated_at).toLocaleDateString()}
                   </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Contract Duration</label>
                   <p className="text-sm text-gray-900 mt-1">
                     {Math.ceil(
-                      (new Date(contractData.end_date).getTime() -
-                        new Date(contractData.start_date).getTime()) /
+                      (new Date(contractDetail.end_date).getTime() -
+                        new Date(contractDetail.start_date).getTime()) /
                         (1000 * 60 * 60 * 24),
                     )}{" "}
                     days
@@ -504,7 +457,7 @@ export default function ContractDetail({ onBack }: ContractDetailProps) {
             <div>
               <h3 className="text-sm font-semibold text-gray-900 mb-3">Deliverables</h3>
               <ul className="space-y-2">
-                {contractData.scope_of_work.deliverables.map((item, index) => (
+                {contractDetail.scope_of_work.deliverables.map((item, index) => (
                   <li key={index} className="text-sm text-gray-600 flex items-start gap-2">
                     <span className="w-2 h-2 bg-blue-400 rounded-full mt-2 flex-shrink-0"></span>
                     {item}
@@ -516,7 +469,7 @@ export default function ContractDetail({ onBack }: ContractDetailProps) {
             <div>
               <h3 className="text-sm font-semibold text-gray-900 mb-3">Requirements</h3>
               <ul className="space-y-2">
-                {contractData.scope_of_work.requirements.map((item, index) => (
+                {contractDetail.scope_of_work.requirements.map((item, index) => (
                   <li key={index} className="text-sm text-gray-600 flex items-start gap-2">
                     <span className="w-2 h-2 bg-yellow-400 rounded-full mt-2 flex-shrink-0"></span>
                     {item}
@@ -528,7 +481,7 @@ export default function ContractDetail({ onBack }: ContractDetailProps) {
             <div>
               <h3 className="text-sm font-semibold text-gray-900 mb-3">Responsibilities</h3>
               <ul className="space-y-2">
-                {contractData.scope_of_work.responsibilities.map((item, index) => (
+                {contractDetail.scope_of_work.responsibilities.map((item, index) => (
                   <li key={index} className="text-sm text-gray-600 flex items-start gap-2">
                     <span className="w-2 h-2 bg-green-400 rounded-full mt-2 flex-shrink-0"></span>
                     {item}
@@ -545,7 +498,7 @@ export default function ContractDetail({ onBack }: ContractDetailProps) {
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-2">Penalties</h4>
                 <ul className="space-y-1">
-                  {contractData.legal_terms.penalties.map((penalty, index) => (
+                  {contractDetail.legal_terms.penalties.map((penalty, index) => (
                     <li key={index} className="text-sm text-gray-600">
                       • {penalty}
                     </li>
@@ -555,11 +508,11 @@ export default function ContractDetail({ onBack }: ContractDetailProps) {
 
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-2">Warranty</h4>
-                <p className="text-sm text-gray-600">{contractData.legal_terms.warranty}</p>
+                <p className="text-sm text-gray-600">{contractDetail.legal_terms.warranty}</p>
 
                 <h4 className="text-sm font-medium text-gray-700 mb-2 mt-4">Dispute Resolution</h4>
                 <p className="text-sm text-gray-600">
-                  {contractData.legal_terms.dispute_resolution}
+                  {contractDetail.legal_terms.dispute_resolution}
                 </p>
               </div>
             </div>
@@ -587,7 +540,7 @@ export default function ContractDetail({ onBack }: ContractDetailProps) {
             <DialogDescription className="mt-2 text-gray-600">
               Are you sure you want to change the status of this{" "}
               <span className="font-medium text-gray-900">
-                {contractData.brand.name} - {contractData.type.replace("_", " ")} Contract
+                {contractDetail.brand.name} - {contractDetail.type.replace("_", " ")} Contract
               </span>
               ?
             </DialogDescription>
@@ -602,10 +555,10 @@ export default function ContractDetail({ onBack }: ContractDetailProps) {
             </Button>
             <Button
               onClick={confirmApprove}
-              disabled={isProcessing}
+              disabled={actionLoading}
               className="bg-red-500 hover:bg-red-600 text-white"
             >
-              {isProcessing ? "Processing..." : "Yes"}
+              {actionLoading ? "Processing..." : "Yes"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -631,7 +584,7 @@ export default function ContractDetail({ onBack }: ContractDetailProps) {
             <DialogDescription className="mt-2 text-gray-600">
               Are you sure you want to reject this{" "}
               <span className="font-medium text-gray-900">
-                {contractData.brand.name} - {contractData.type.replace("_", " ")} Contract
+                {contractDetail.brand.name} - {contractDetail.type.replace("_", " ")} Contract
               </span>
               ?
             </DialogDescription>
@@ -646,10 +599,10 @@ export default function ContractDetail({ onBack }: ContractDetailProps) {
             </Button>
             <Button
               onClick={confirmReject}
-              disabled={isProcessing}
+              disabled={actionLoading}
               className="bg-red-500 hover:bg-red-600 text-white"
             >
-              {isProcessing ? "Processing..." : "Yes"}
+              {actionLoading ? "Processing..." : "Yes"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { getContractsByBrand, approveContract, rejectContract } from "./thunk";
-import type { Contract } from "@/libs/types/contract";
+import { getContractsByBrand, approveContract, rejectContract, getContractById } from "./thunk";
+import type { Contract, ContractDetail } from "@/libs/types/contract";
 
 interface StateType {
   loading: boolean;
@@ -14,6 +14,8 @@ interface StateType {
     has_prev: boolean;
   } | null;
   actionLoading: boolean; // For approve/reject actions
+  detailLoading: boolean;
+  contractDetail: ContractDetail | null;
 }
 
 const initialState: StateType = {
@@ -21,6 +23,8 @@ const initialState: StateType = {
   contracts: [],
   pagination: null,
   actionLoading: false,
+  detailLoading: false,
+  contractDetail: null,
 };
 
 export const manageContractSlice = createSlice({
@@ -30,6 +34,9 @@ export const manageContractSlice = createSlice({
     clearContracts: (state) => {
       state.contracts = [];
       state.pagination = null;
+    },
+    clearContractDetail: (state) => {
+      state.contractDetail = null;
     },
   },
   extraReducers: (builder) => {
@@ -60,6 +67,10 @@ export const manageContractSlice = createSlice({
         if (contractIndex !== -1) {
           state.contracts[contractIndex].status = "ACTIVE";
         }
+        // Also update contract detail if it's the same contract
+        if (state.contractDetail && state.contractDetail.id === action.meta.arg) {
+          state.contractDetail.status = "ACTIVE";
+        }
       })
       .addCase(approveContract.rejected, (state) => {
         state.actionLoading = false;
@@ -78,9 +89,25 @@ export const manageContractSlice = createSlice({
         if (contractIndex !== -1) {
           state.contracts[contractIndex].status = "TERMINATED";
         }
+        // Also update contract detail if it's the same contract
+        if (state.contractDetail && state.contractDetail.id === action.meta.arg) {
+          state.contractDetail.status = "TERMINATED";
+        }
       })
       .addCase(rejectContract.rejected, (state) => {
         state.actionLoading = false;
+      })
+
+      // Get contract by ID
+      .addCase(getContractById.pending, (state) => {
+        state.detailLoading = true;
+      })
+      .addCase(getContractById.fulfilled, (state, action) => {
+        state.detailLoading = false;
+        state.contractDetail = action.payload.data;
+      })
+      .addCase(getContractById.rejected, (state) => {
+        state.detailLoading = false;
       });
   },
 });

@@ -41,3 +41,16 @@ export const rejectContract = createAsyncThunk(
     }
   },
 );
+
+export const getContractById = createAsyncThunk(
+  "contracts/getById",
+  async (contractId: string, { rejectWithValue }) => {
+    try {
+      const response = await manageContract.getContractById(contractId);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Failed to fetch contract detail");
+    }
+  },
+);

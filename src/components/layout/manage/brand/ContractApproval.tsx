@@ -32,6 +32,7 @@ import {
 } from "@/libs/stores/contractManager/thunk";
 import type { AppDispatch } from "@/libs/stores";
 import type { Contract } from "@/libs/types/contract";
+import { getBrandIdFromToken } from "@/libs/helper";
 
 interface ContractApprovalProps {
   brandId?: string;
@@ -52,7 +53,9 @@ export default function ContractApproval({ brandId: propBrandId }: ContractAppro
   >("DRAFT");
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
-  const [brandId] = useState(propBrandId || "brand-001"); // Use prop or default
+
+  // Get brand ID from JWT token or use prop
+  const brandId = propBrandId || getBrandIdFromToken();
 
   // Fetch contracts when component mounts or brand changes
   useEffect(() => {

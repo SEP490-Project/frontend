@@ -6,18 +6,14 @@ import { AxiosError } from "axios";
 export const login = createAsyncThunk("auth/login", async (req: Login, { rejectWithValue }) => {
   try {
     const response = await manageAuthen.login(req);
-    const token = response.data?.data.access_token;
-    const role = response.data?.data.role;
-    const allowedRoles = ["Company", "Admin"];
+    const data = response.data?.data;
 
-    if (!token || !role || !allowedRoles.includes(role)) {
-      return rejectWithValue("Tài khoản không tồn tại hoặc không được phép truy cập");
-    }
+    // Lưu vào localStorage
+    localStorage.setItem("access_token", data.access_token);
+    localStorage.setItem("refresh_token", data.refresh_token);
+    localStorage.setItem("user", JSON.stringify(data.user));
 
-    localStorage.setItem("authToken", token);
-    localStorage.setItem("role", role);
-
-    return response.data;
+    return data;
   } catch (error: unknown) {
     const err = error as AxiosError<{ message: string }>;
     return rejectWithValue(err.response?.data?.message || "Thất bại");

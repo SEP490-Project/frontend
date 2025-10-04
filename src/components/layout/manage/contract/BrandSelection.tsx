@@ -1,13 +1,16 @@
-import React from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { DataSelector } from "@/components/global";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { User, Mail, Phone, Globe, MapPin } from "lucide-react";
-import brands from "./brands.json";
+import { Mail, Phone, Globe } from "lucide-react";
+import { useAppDispatch } from "@/libs/stores";
+import { useBrand } from "@/libs/hooks/useBrand";
+import { brand, brandDetail } from "@/libs/stores/brandManager/thunk";
 import contracts from "./contracts.json";
+import { useDebounce } from "@/libs/hooks/useDebounce";
 
 interface BrandSelectionProps {
   formData: any;
@@ -79,75 +82,82 @@ const ContactInfo = ({ icon: Icon, children }: { icon: any; children: React.Reac
   </div>
 );
 
-const BrandDetails = ({ selectedBrand }: { selectedBrand: any }) => (
-  <div className="mt-6 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-      {/* Brand Info */}
-      <div className="xl:col-span-2 space-y-4">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <img
-              src={selectedBrand.logo_url}
-              alt={`${selectedBrand.name} logo`}
-              className="h-12 w-12 rounded-xl object-cover border-2 border-white shadow-sm"
-            />
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900">{selectedBrand.name}</h3>
-              <Badge
-                variant={selectedBrand.status === "ACTIVE" ? "default" : "secondary"}
-                className="mt-1"
-              >
-                {selectedBrand.status}
-              </Badge>
+const BrandDetails = ({ brandId }: { brandId: string }) => {
+  const dispatch = useAppDispatch();
+  const { brand } = useBrand();
+
+  useEffect(() => {
+    if (!brandId) return;
+    dispatch(brandDetail(brandId));
+  }, [brandId, dispatch]);
+
+  if (!brand) return null;
+
+  return (
+    <div className="mt-6 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        {/* Brand Info */}
+        <div className="xl:col-span-2 space-y-4">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              {brand.logo_url && (
+                <img
+                  src={brand.logo_url}
+                  alt={`${brand.name} logo`}
+                  className="h-12 w-12 rounded-xl object-cover border-2 border-white shadow-sm"
+                />
+              )}
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">{brand.name}</h3>
+                {brand.status && (
+                  <Badge
+                    variant={brand.status === "ACTIVE" ? "default" : "secondary"}
+                    className="mt-1"
+                  >
+                    {brand.status}
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-          <ContactInfo icon={Mail}>
-            <span>{selectedBrand.contact_email}</span>
-          </ContactInfo>
-          <ContactInfo icon={Phone}>
-            <span>{selectedBrand.contact_phone}</span>
-          </ContactInfo>
-          <ContactInfo icon={Globe}>
-            <a
-              href={selectedBrand.website_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline"
-            >
-              {selectedBrand.website_url}
-            </a>
-          </ContactInfo>
-          <ContactInfo icon={MapPin}>
-            <span className="truncate">{selectedBrand.address}</span>
-          </ContactInfo>
-        </div>
-      </div>
+          {brand.description && <p className="mt-3 text-sm text-slate-600">{brand.description}</p>}
 
-      {/* Representative */}
-      <div className="bg-white/80 rounded-lg p-4 border border-white/50">
-        <div className="flex items-center gap-2 mb-3">
-          <User className="h-4 w-4 text-slate-600" />
-          <span className="text-sm font-medium text-slate-700">Representative</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <img
-            src={selectedBrand.representative_ava}
-            alt={selectedBrand.representative}
-            className="w-12 h-12 rounded-full border-2 border-blue-200 object-cover"
-          />
-          <div>
-            <p className="font-medium text-slate-900">{selectedBrand.representative}</p>
-            <p className="text-xs text-slate-500">{selectedBrand.representative_email}</p>
-            <p className="text-xs text-slate-500">{selectedBrand.representative_phone}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+            {brand.contact_email && (
+              <ContactInfo icon={Mail}>
+                <span>{brand.contact_email}</span>
+              </ContactInfo>
+            )}
+            {brand.contact_phone && (
+              <ContactInfo icon={Phone}>
+                <span>{brand.contact_phone}</span>
+              </ContactInfo>
+            )}
+            {brand.website && (
+              <ContactInfo icon={Globe}>
+                <a
+                  href={brand.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
+                >
+                  {brand.website}
+                </a>
+              </ContactInfo>
+            )}
+            {/* Nếu sau này có address */}
+            {/* {brand.address && (
+              <ContactInfo icon={MapPin}>
+                <span className="truncate">{brand.address}</span>
+              </ContactInfo>
+            )} */}
           </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const ParentContractInfo = ({ formData }: { formData: any }) => {
   const parentContract = contracts.find((c) => c.id === formData.parentContractId);
@@ -172,19 +182,58 @@ const ParentContractInfo = ({ formData }: { formData: any }) => {
 
 const BrandSelection: React.FC<BrandSelectionProps> = ({
   formData,
-  selectedBrand,
   isExtension,
   contractTypeOptions,
   onBrandChange,
   onExtensionChange,
   onInputChange,
 }) => {
+  const dispatch = useAppDispatch();
+  const { brands, loading, pagination } = useBrand();
+
+  // Infinite scroll & search state
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
+  const [page, setPage] = useState(1);
+  const [allBrands, setAllBrands] = useState<any[]>([]);
+
+  // Reset brands and page when search changes
+  useEffect(() => {
+    setAllBrands([]);
+    setPage(1);
+  }, [debouncedSearch]);
+
+  // Fetch brands from thunk (API only, no local search)
+  useEffect(() => {
+    dispatch(
+      brand({
+        page,
+        limit: 10,
+        ...(debouncedSearch ? { keywords: debouncedSearch } : {}),
+      }),
+    );
+  }, [dispatch, page, debouncedSearch]);
+
+  // Append new brands from API only
+  useEffect(() => {
+    if (page === 1) setAllBrands(brands);
+    else setAllBrands((prev) => [...prev, ...brands]);
+  }, [brands, page]);
+
+  // Load more handler
+  const loadMore = useCallback(() => {
+    if (pagination?.has_next && !loading) setPage((p) => p + 1);
+  }, [pagination, loading]);
+
   const handleExtensionChange = (checked: boolean) => {
     onExtensionChange(checked);
     if (!checked) onInputChange("parentContractId", "");
   };
 
   const filteredContracts = contracts.filter((c) => c.brandId === formData.brandId);
+
+  // Always get selectedBrand from allBrands (API), not from local/filter
+  const currentBrandId = formData.brandId;
 
   return (
     <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
@@ -198,18 +247,22 @@ const BrandSelection: React.FC<BrandSelectionProps> = ({
         <div className="space-y-2">
           <Label className="flex items-center gap-2 text-sm font-medium">Select Brand *</Label>
           <DataSelector
-            data={brands}
+            data={allBrands}
             selectedId={formData.brandId}
             onSelect={onBrandChange}
             renderItem={(brand) => <BrandItem brand={brand} />}
             getLabel={(brand) => brand.name}
             title="Brands"
             placeholder="Choose a brand to work with"
+            onSearch={setSearch}
+            searchValue={search}
+            onScrollEnd={pagination?.has_next ? loadMore : undefined}
+            loading={loading}
           />
         </div>
 
         {/* Contract Extension */}
-        {selectedBrand && (
+        {currentBrandId && (
           <div className="space-y-4 mt-4">
             <div className="flex items-center gap-2">
               <Checkbox
@@ -242,7 +295,8 @@ const BrandSelection: React.FC<BrandSelectionProps> = ({
           </div>
         )}
 
-        {selectedBrand && <BrandDetails selectedBrand={selectedBrand} />}
+        {/* Show brand details if selected */}
+        {currentBrandId && <BrandDetails brandId={currentBrandId} />}
       </CardContent>
     </Card>
   );

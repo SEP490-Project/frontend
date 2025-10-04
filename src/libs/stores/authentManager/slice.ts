@@ -1,31 +1,9 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { login, register } from "./thunk";
+import { getInitialAuthState } from "@/libs/helper";
+import { setItem } from "@/libs/local-storage";
 
-interface User {
-  id: string;
-  email: string;
-  role: string;
-}
-
-interface AuthState {
-  loading: boolean;
-  isAuthenticated: boolean;
-  role: string;
-  user: User | null;
-  accessToken: string | null;
-  refreshToken: string | null;
-  error: string | null;
-}
-
-const initialState: AuthState = {
-  loading: false,
-  isAuthenticated: false,
-  role: "",
-  user: null,
-  accessToken: null,
-  refreshToken: null,
-  error: null,
-};
+const initialState = getInitialAuthState();
 
 export const manageAuthenSlice = createSlice({
   name: "authentManager",
@@ -37,7 +15,11 @@ export const manageAuthenSlice = createSlice({
       state.user = null;
       state.accessToken = null;
       state.refreshToken = null;
-      localStorage.clear();
+
+      // clear local storage keys
+      setItem("access_token", null);
+      setItem("refresh_token", null);
+      setItem("user", null);
     },
   },
   extraReducers: (builder) => {
@@ -59,15 +41,12 @@ export const manageAuthenSlice = createSlice({
         state.isAuthenticated = false;
         state.error = action.payload as string;
       })
-
-      // REGISTER
       .addCase(register.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(register.fulfilled, (state) => {
         state.loading = false;
-        // có thể set gì đó nếu API trả về luôn user
       })
       .addCase(register.rejected, (state, action) => {
         state.loading = false;

@@ -1,17 +1,19 @@
+// thunk.ts
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { manageAuthen } from "@/libs/services/manageAuthen";
 import type { Login, Register } from "@/libs/types/auth";
 import { AxiosError } from "axios";
+import { setItem, setRaw } from "@/libs/local-storage";
 
 export const login = createAsyncThunk("auth/login", async (req: Login, { rejectWithValue }) => {
   try {
     const response = await manageAuthen.login(req);
     const data = response.data?.data;
 
-    // Lưu vào localStorage
-    localStorage.setItem("access_token", data.access_token);
-    localStorage.setItem("refresh_token", data.refresh_token);
-    localStorage.setItem("user", JSON.stringify(data.user));
+    // Lưu vào localStorage qua helper
+    setRaw("access_token", data.access_token);
+    setRaw("refresh_token", data.refresh_token);
+    setItem("user", data.user);
 
     return data;
   } catch (error: unknown) {

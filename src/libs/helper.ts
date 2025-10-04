@@ -1,3 +1,5 @@
+import { getItem, getRaw } from "@/libs/local-storage";
+
 export const formatDate = (date: Date | string, type: "display" | "input" = "display"): string => {
   const d = new Date(date);
 
@@ -34,4 +36,20 @@ export const convertCurrencyForChart = (amount: number): string => {
     return `${(amount / 1_000).toFixed(1)}K`;
   }
   return `${amount.toString()}`;
+};
+
+export const getInitialAuthState = () => {
+  const accessToken = getRaw("access_token");
+  const refreshToken = getRaw("refresh_token");
+  const user = getItem<{ id: string; email: string; role: string }>("user");
+
+  return {
+    loading: false,
+    isAuthenticated: !!accessToken,
+    role: user?.role ?? "",
+    user: user ?? null,
+    accessToken: accessToken ?? null,
+    refreshToken: refreshToken ?? null,
+    error: null as string | null,
+  };
 };

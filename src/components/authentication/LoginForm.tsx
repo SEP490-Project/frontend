@@ -16,7 +16,15 @@ interface LoginFormProps {
 }
 
 const LoginSchema = yup.object().shape({
-  login_identifier: yup.string().email("Invalid email").required("Email is required"),
+  login_identifier: yup
+    .string()
+    .required("Email or Username is required")
+    .test("is-email-or-username", "Must be a valid email or username", (value) => {
+      if (!value) return false;
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const usernameRegex = /^[a-zA-Z0-9._-]{3,}$/;
+      return emailRegex.test(value) || usernameRegex.test(value);
+    }),
   password: yup
     .string()
     .min(6, "Password must be at least 6 characters")
@@ -25,48 +33,42 @@ const LoginSchema = yup.object().shape({
 
 export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
   const navigate = useNavigate();
-  const {
-    register,
-    handleSubmit,
-    // watch,
-    // formState: { errors },
-  } = useForm<MockLogin>({
+  const { register, handleSubmit } = useForm<MockLogin>({
     resolver: yupResolver(LoginSchema),
   });
 
   return (
     <div className="flex flex-col justify-center items-center gap-10 w-full">
       <div>
-        <h2 className="text-2xl font-extrabold font-[Poppins] text-center">Sign In</h2>
-        <p className="text-gray-600 font-[Poppins] mt-2 text-sm">
-          Welcome back! Please enter your details.
-        </p>
+        <h2 className="text-2xl font-extrabold text-center">Sign In</h2>
+        <p className="text-gray-600 mt-2 text-sm">Welcome back! Please enter your details.</p>
       </div>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 w-full">
         <div className="w-full">
-          <h5 className="pb-1 font-[Poppins]">Email</h5>
-          <Input {...register("login_identifier")} placeholder="Email" className="w-full" />
+          <h5 className="pb-1">Email or Username</h5>
+          <Input
+            {...register("login_identifier")}
+            placeholder="Email or Username"
+            className="w-full"
+          />
         </div>
         <div className="w-full">
-          <h5 className="pb-1 font-[Poppins]">Password</h5>
+          <h5 className="pb-1">Password</h5>
           <PasswordInput {...register("password")} placeholder="Password" className="w-full" />
           <div className="flex justify-end mt-2 text-sm ">
             <p
-              className="text-right cursor-pointer font-[Poppins] hover:underline text-primary"
+              className="text-right cursor-pointer hover:underline text-primary"
               onClick={() => navigate("/forgot-password")}
             >
               Forgot Password?
             </p>
           </div>
         </div>
-        <Button type="submit" className="mt-4 text-white font-[Poppins]" size={"lg"}>
+        <Button type="submit" className="mt-4 text-white" size={"lg"}>
           Sign In
         </Button>
       </form>
-      <div
-        className="text-sm text-center mt-4 font-[Poppins]"
-        onClick={() => navigate("/register")}
-      >
+      <div className="text-sm text-center mt-4" onClick={() => navigate("/register")}>
         Don't have an account?{" "}
         <span className="text-primary hover:underline cursor-pointer">Sign Up</span>
       </div>

@@ -7,5 +7,5 @@ export interface Register {
   email: string;
   password: string;
   username: string;
-  // fullname:string;
+  fullname: string;
 }

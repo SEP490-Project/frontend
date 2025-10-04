@@ -53,15 +53,15 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit }) => {
   return (
     <div className="flex flex-col justify-center items-center gap-8 w-full">
       <div>
-        <h2 className="text-2xl font-extrabold font-[Poppins] text-center">Sign Up</h2>
-        <p className="text-gray-600 font-[Poppins] mt-2 text-sm">
+        <h2 className="text-2xl font-extrabold text-center">Sign Up</h2>
+        <p className="text-gray-600 mt-2 text-sm">
           Create your account by filling in the details below.
         </p>
       </div>
       <form onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col gap-4 w-full">
         <div className="space-y-4">
           <div className="w-full">
-            <h5 className="pb-1 font-[Poppins]">Username</h5>
+            <h5 className="pb-1">Username</h5>
             <Input {...register("username")} placeholder="Enter your username" className="w-full" />
             {errors.username && (
               <p className="text-red-500 text-sm mt-1">{errors.username.message}</p>
@@ -69,7 +69,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit }) => {
           </div>
 
           <div className="w-full">
-            <h5 className="pb-1 font-[Poppins]">Full Name</h5>
+            <h5 className="pb-1">Full Name</h5>
             <Input
               {...register("fullName")}
               placeholder="Enter your full name"
@@ -81,13 +81,13 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit }) => {
           </div>
 
           <div className="w-full">
-            <h5 className="pb-1 font-[Poppins]">Email</h5>
+            <h5 className="pb-1">Email</h5>
             <Input {...register("email")} placeholder="Enter your email" className="w-full" />
             {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
           </div>
 
           <div className="w-full">
-            <h5 className="pb-1 font-[Poppins]">Password</h5>
+            <h5 className="pb-1">Password</h5>
             <PasswordInput
               {...register("password")}
               placeholder="Enter your password"
@@ -99,7 +99,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit }) => {
           </div>
 
           <div className="w-full">
-            <h5 className="pb-1 font-[Poppins]">Confirm Password</h5>
+            <h5 className="pb-1">Confirm Password</h5>
             <PasswordInput
               {...register("confirmPassword")}
               placeholder="Confirm your password"
@@ -111,12 +111,12 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit }) => {
           </div>
         </div>
 
-        <Button type="submit" className="mt-6 text-white font-[Poppins]" size="lg">
+        <Button type="submit" className="mt-6 text-white" size="lg">
           Sign Up
         </Button>
       </form>
 
-      <div className="text-sm text-center font-[Poppins]" onClick={() => navigate("/login")}>
+      <div className="text-sm text-center" onClick={() => navigate("/login")}>
         Already have an account?{" "}
         <span className="text-primary hover:underline cursor-pointer">Sign In</span>
       </div>

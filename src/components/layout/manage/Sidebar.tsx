@@ -23,6 +23,9 @@ import {
   FaXmark,
   FaPowerOff,
 } from "react-icons/fa6";
+import { useAuth } from "@/libs/hooks/useAuth";
+import { useDispatch } from "react-redux";
+import { manageAuthenActions } from "@/libs/stores/authentManager/slice";
 
 interface TabItem {
   href: string;
@@ -105,9 +108,10 @@ const NavSection: React.FC<NavSectionProps> = ({
                 >
                   {item.subTabs.map((sub) => {
                     const subUrl = new URL(sub.href, window.location.origin);
-                    const subRole = subUrl.searchParams.get("role");
+                    const subRole = subUrl.searchParams.get("role")?.toUpperCase();
                     const isSubActive =
-                      pathname.startsWith("/manage/admin/users") && roleParam === subRole;
+                      pathname.startsWith("/manage/admin/users") &&
+                      roleParam?.toUpperCase() === subRole;
 
                     return (
                       <NavLink
@@ -135,7 +139,6 @@ const NavSection: React.FC<NavSectionProps> = ({
 };
 
 interface SidebarProps {
-  role?: string;
   collapsed?: boolean;
   isMobile?: boolean;
   isMobileOpen?: boolean;
@@ -143,21 +146,20 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
-  role = "sale",
   collapsed = false,
   isMobile = false,
   isMobileOpen = false,
   onCloseMobile,
 }) => {
+  const { role } = useAuth();
   const location = useLocation();
   const pathname = location.pathname;
   const roleParam = new URLSearchParams(location.search).get("role");
+  const dispatch = useDispatch();
 
   // Handle logout
   const handleLogout = () => {
-    // Implement your logout logic here
-    // e.g., clear localStorage, redirect to login, etc.
-    localStorage.removeItem("token");
+    dispatch(manageAuthenActions.logout());
     window.location.href = "/login";
   };
 
@@ -167,11 +169,11 @@ const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   const roleBasedTabs: Record<string, TabItem[]> = {
-    brand: [
+    BRAND_PARTNER: [
       { href: "/manage/brand/contracts", label: "Contracts", icon: <FaRegFileLines size={18} /> },
       { href: "/manage/brand/campaigns", label: "Campaigns", icon: <FaFolderOpen size={18} /> },
     ],
-    marketing: [
+    MARKETING_STAFF: [
       { href: "/manage/marketing/partners", label: "Partners", icon: <FaHandshake size={18} /> },
       {
         href: "/manage/marketing/contracts",
@@ -184,14 +186,10 @@ const Sidebar: React.FC<SidebarProps> = ({
         icon: <FaListCheck size={18} />,
       },
     ],
-    sale: [
+    SALES_STAFF: [
       { href: "/manage/sale/task", label: "Tasks & Schedule", icon: <FaCalendarDays size={18} /> },
       { href: "/manage/sale/product", label: "Product", icon: <FaBoxOpen size={18} /> },
-      {
-        href: "/manage/sale/categorie",
-        label: "Category",
-        icon: <FaFolderTree size={18} />,
-      },
+      { href: "/manage/sale/categorie", label: "Category", icon: <FaFolderTree size={18} /> },
       { href: "/manage/sale/order", label: "Order", icon: <FaCartShopping size={18} /> },
       { href: "/manage/sale/review", label: "Review", icon: <FaStar size={18} /> },
       {
@@ -200,7 +198,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         icon: <FaMoneyCheckDollar size={18} />,
       },
     ],
-    content: [
+    CONTENT_STAFF: [
       {
         href: "/manage/content/task",
         label: "Tasks & Schedule",
@@ -209,17 +207,17 @@ const Sidebar: React.FC<SidebarProps> = ({
       { href: "/manage/content/blog", label: "Blog", icon: <FaFilePen size={18} /> },
       { href: "/manage/content/tag", label: "Tag", icon: <FaHashtag size={18} /> },
     ],
-    admin: [
+    ADMIN: [
       {
         href: "/manage/admin/users",
         label: "Users",
         icon: <FaUserGear size={18} />,
         subTabs: [
-          { href: "/manage/admin/users?role=customer", label: "Customer" },
-          { href: "/manage/admin/users?role=marketing", label: "Marketing Staff" },
-          { href: "/manage/admin/users?role=content", label: "Content Staff" },
-          { href: "/manage/admin/users?role=sale", label: "Sale Staff" },
-          { href: "/manage/admin/users?role=brand", label: "Brand Staff" },
+          { href: "/manage/admin/users?role=CUSTOMER", label: "Customer" },
+          { href: "/manage/admin/users?role=MARKETING_STAFF", label: "Marketing Staff" },
+          { href: "/manage/admin/users?role=CONTENT_STAFF", label: "Content Staff" },
+          { href: "/manage/admin/users?role=SALES_STAFF", label: "Sale Staff" },
+          { href: "/manage/admin/users?role=BRAND_PARTNER", label: "Brand Staff" },
         ],
       },
       { href: "/manage/admin/reports", label: "KPI & Reports", icon: <FaChartPie size={18} /> },
@@ -249,7 +247,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           </a>
         </div>
 
-        {/* Navigation sections - với flex-1 để đẩy logout xuống cuối */}
+        {/* Navigation sections */}
         <div className="flex-1 flex flex-col">
           <NavSection
             title="Dashboard"
@@ -258,7 +256,6 @@ const Sidebar: React.FC<SidebarProps> = ({
             pathname={pathname}
             roleParam={roleParam}
           />
-
           <NavSection
             title="Management"
             items={roleBasedTabs[role] || []}
@@ -266,7 +263,6 @@ const Sidebar: React.FC<SidebarProps> = ({
             pathname={pathname}
             roleParam={roleParam}
           />
-
           <NavSection
             title="Others"
             items={otherTabs}
@@ -276,7 +272,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           />
         </div>
 
-        {/* Logout Button - luôn ở cuối */}
+        {/* Logout Button */}
         <div className="mt-auto pt-4 border-t border-gray-200">
           <button
             onClick={handleLogout}
@@ -290,7 +286,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </aside>
 
-      {/* Mobile Sidebar with overlay */}
+      {/* Mobile Sidebar */}
       <AnimatePresence>
         {isMobile && isMobileOpen && (
           <>
@@ -325,7 +321,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <img src="/pink.png" alt="Logo" className="w-full h-14 object-contain" />
               </div>
 
-              {/* Navigation sections - với flex-1 để đẩy logout xuống cuối */}
               <div className="flex-1 flex flex-col">
                 <NavSection
                   title="Dashboard"
@@ -334,7 +329,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                   pathname={pathname}
                   roleParam={roleParam}
                 />
-
                 <NavSection
                   title="Management"
                   items={roleBasedTabs[role] || []}
@@ -342,7 +336,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                   pathname={pathname}
                   roleParam={roleParam}
                 />
-
                 <NavSection
                   title="Others"
                   items={otherTabs}
@@ -352,7 +345,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 />
               </div>
 
-              {/* Logout Button - luôn ở cuối mobile sidebar */}
+              {/* Logout */}
               <div className="mt-auto pt-4 border-t border-gray-200">
                 <button
                   onClick={handleLogout}

@@ -11,6 +11,7 @@ import {
   AddContract,
   ContractDetail,
   AddCampaign,
+  AddPartner,
 } from "@/pages/manager/marketing";
 import ManageLayout from "@/layouts/ManageLayout";
 import Login from "@/pages/authentication/Login";
@@ -21,6 +22,8 @@ import { ForgotPassword } from "@/pages/authentication/ForgotPassword";
 import { ResetPassword } from "@/pages/authentication/ResetPassword";
 import CustomerLayout from "@/layouts/CustomerLayout";
 import { AssignedTasks, ManageContent, ManageTags } from "@/pages/manager/content";
+import PrivateRoute from "./private-route";
+import PublicRoute from "./public-route";
 import { Product, ProductDetail } from "@/pages/manager/sale";
 
 const AppRoutes = () => (
@@ -71,13 +74,83 @@ const AppRoutes = () => (
         <Route path="/" element={<Homepage />} />
       </Route>
 
-      <Route element={<AuthenticationLayout />}>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
+      {/* ========== PUBLIC ROUTES (chỉ cho khách, không login) ========== */}
+      <Route element={<PublicRoute />}>
+        <Route element={<AuthenticationLayout />}>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+        </Route>
       </Route>
 
+      {/* ========== PRIVATE ROUTES (cần login, có role) ========== */}
+      {/* MANAGER COMMON (Admin + all staff) */}
+      <Route
+        element={
+          <PrivateRoute
+            allowedRoles={[
+              "ADMIN",
+              "SALES_STAFF",
+              "MARKETING_STAFF",
+              "CONTENT_STAFF",
+              "BRAND_PARTNER",
+            ]}
+          />
+        }
+      >
+        <Route path="/manage" element={<ManageLayout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="account" element={<Account />} />
+          <Route path="notification" element={<Notification />} />
+        </Route>
+      </Route>
+
+      {/* ADMIN */}
+      <Route element={<PrivateRoute allowedRoles={["ADMIN"]} />}>
+        <Route path="/manage/admin" element={<ManageLayout />}>
+          <Route path="users" element={<User />} />
+        </Route>
+      </Route>
+
+      {/* SALE STAFF */}
+      <Route element={<PrivateRoute allowedRoles={["SALES_STAFF"]} />}>
+        <Route path="/manage/sale" element={<ManageLayout />}>
+          <Route path="product" element={<Product />} />
+        </Route>
+      </Route>
+
+      {/* MARKETING STAFF */}
+      <Route element={<PrivateRoute allowedRoles={["MARKETING_STAFF"]} />}>
+        <Route path="/manage/marketing" element={<ManageLayout />}>
+          <Route path="partners" element={<Partner />} />
+          <Route path="partners/add" element={<AddPartner />} />
+          <Route path="contracts" element={<Contracts />} />
+          <Route path="contracts/add" element={<AddContract />} />
+          <Route path="contracts/:id" element={<ContractDetail />} />
+          <Route path="assignments" element={<Assignment />} />
+          <Route path="campaigns/add" element={<AddCampaign />} />
+        </Route>
+      </Route>
+
+      {/* BRAND PARTNER */}
+      <Route element={<PrivateRoute allowedRoles={["BRAND_PARTNER"]} />}>
+        <Route path="/manage/brand" element={<ManageLayout />}>
+          <Route path="contracts" element={<Contract />} />
+          <Route path="campaigns" element={<Campaign />} />
+        </Route>
+      </Route>
+
+      {/* CONTENT STAFF */}
+      <Route element={<PrivateRoute allowedRoles={["CONTENT_STAFF"]} />}>
+        <Route path="/manage/content" element={<ManageLayout />}>
+          <Route path="task" element={<AssignedTasks />} />
+          <Route path="blog" element={<ManageContent />} />
+          <Route path="tag" element={<ManageTags />} />
+        </Route>
+      </Route>
+
+      {/* ========== 404 ========== */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   </BrowserRouter>

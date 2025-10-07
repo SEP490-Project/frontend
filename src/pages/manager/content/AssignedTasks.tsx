@@ -2,8 +2,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { TaskList } from "@/components/layout/manage/content/TasksList";
-import { TaskSidebar } from "@/components/layout/manage/content/TaskSidebar";
+import { TaskList } from "@/components/manage/content/TasksList";
+import { TaskSidebar } from "@/components/manage/content/TaskSidebar";
 
 export default function TaskManagement() {
   const [currentDate, setCurrentDate] = useState(new Date());

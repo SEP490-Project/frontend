@@ -1,4 +1,4 @@
-import ContractApproval from "@/components/layout/manage/brand/ContractApproval";
+import ContractApproval from "@/components/manage/brand/ContractApproval";
 import React from "react";
 
 const ContractPage: React.FC = () => {

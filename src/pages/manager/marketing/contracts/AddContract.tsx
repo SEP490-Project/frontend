@@ -5,7 +5,7 @@ import {
   ContractTypeTemplate,
   FinancialTerms,
   Representative,
-} from "@/components/layout/manage/contract";
+} from "@/components/manage/contract";
 import { FaCheck } from "react-icons/fa6";
 import { validateContract, validateField } from "@/libs/validation/contractValidation";
 import brands from "./brands.json";

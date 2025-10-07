@@ -31,7 +31,7 @@ import {
   rejectContract,
 } from "@/libs/stores/contractManager/thunk";
 import type { AppDispatch } from "@/libs/stores";
-import type { Contract } from "@/libs/types/contract";
+import type { ContractBase } from "@/libs/types/contract";
 import { getBrandIdFromToken } from "@/libs/helper";
 
 interface ContractApprovalProps {
@@ -47,10 +47,8 @@ export default function ContractApproval({ brandId: propBrandId }: ContractAppro
   const [selectedStatus, setSelectedStatus] = useState("");
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
-  const [contractStatus, setContractStatus] = useState<
-    "DRAFT" | "ACTIVE" | "COMPLETED" | "TERMINATED"
-  >("DRAFT");
+  const [selectedContract, setSelectedContract] = useState<ContractBase | null>(null);
+  const [contractStatus, setContractStatus] = useState("");
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
 
@@ -87,7 +85,7 @@ export default function ContractApproval({ brandId: propBrandId }: ContractAppro
   });
 
   // Handle contract view
-  const handleViewContract = (contract: Contract) => {
+  const handleViewContract = (contract: ContractBase) => {
     setSelectedContract(contract);
     setContractStatus(contract.status);
     setIsModalOpen(true);

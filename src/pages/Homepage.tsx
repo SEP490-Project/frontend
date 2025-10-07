@@ -1,9 +1,9 @@
-import BestSeller from "@/components/layout/global/BestSeller";
-import Blogs from "@/components/layout/global/Blogs";
-import BloomBeautyGallery from "@/components/layout/global/BloomBeautyGallery";
-import Combo from "@/components/layout/global/Combo";
-import { HeroSection } from "@/components/layout/global/HeroSection";
-import NewArrivals from "@/components/layout/global/NewArrivals";
+import BestSeller from "@/components/home/BestSeller";
+import Blogs from "@/components/home/Blogs";
+import BloomBeautyGallery from "@/components/home/BloomBeautyGallery";
+import Combo from "@/components/home/Combo";
+import { HeroSection } from "@/components/home/HeroSection";
+import NewArrivals from "@/components/home/NewArrivals";
 
 const Homepage = () => {
   return (

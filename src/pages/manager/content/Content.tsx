@@ -19,7 +19,7 @@ const ManageContent = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold text-gray-900">Content Management</h1>
-          <Button onClick={handleSave} className="bg-pink-500 hover:bg-pink-600">
+          <Button onClick={handleSave} className="bg-[#FF9DB0] hover:bg-pink-600">
             Save Content
           </Button>
         </div>

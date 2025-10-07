@@ -1,18 +1,3 @@
-export interface Contract {
-  id: string;
-  brand_id: string;
-  brand_name: string;
-  contract_number: string;
-  title: string;
-  type: "ADVERTISING" | "AFFILIATE" | "BRAND_AMBASSADOR" | "CO_PRODUCING";
-  status: "DRAFT" | "ACTIVE" | "COMPLETED" | "TERMINATED";
-  signed_date?: string;
-  start_date: string;
-  end_date: string;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface ContractDetail {
   id: string;
   contract_number: string;
@@ -66,7 +51,7 @@ export interface ContractParams {
 }
 
 export interface ContractResponse {
-  data: Contract[];
+  data: ContractBase[];
   message: string;
   pagination: {
     page: number;
@@ -87,4 +72,18 @@ export interface ContractDetailResponse {
   status: string;
   status_code: number;
   success: boolean;
+}
+export interface ContractBase {
+  id: string;
+  title: string;
+  contract_number: string;
+  type: string;
+  status: string;
+  brand_id: string;
+  brand_name: string;
+  start_date: string;
+  end_date: string;
+  signed_date: string;
+  created_at: string;
+  updated_at: string;
 }

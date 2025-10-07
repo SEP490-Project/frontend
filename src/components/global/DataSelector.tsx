@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   Dialog,
   DialogTrigger,
@@ -25,6 +25,10 @@ interface DataSelectorProps<T> {
   getLabel: (item: T) => string;
   title: string;
   placeholder: string;
+  onSearch?: (value: string) => void;
+  searchValue?: string;
+  onScrollEnd?: () => void;
+  loading?: boolean;
 }
 
 const DataSelector = <T extends { id: string }>({
@@ -35,9 +39,22 @@ const DataSelector = <T extends { id: string }>({
   getLabel,
   title,
   placeholder,
+  onSearch,
+  searchValue,
+  onScrollEnd,
+  loading,
 }: DataSelectorProps<T>) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const selectedItem = data.find((item) => item.id === selectedId) || null;
+  const listRef = useRef<HTMLDivElement>(null);
+
+  // Infinite scroll handler
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    if (onScrollEnd && el.scrollTop + el.clientHeight >= el.scrollHeight - 10) {
+      onScrollEnd();
+    }
+  };
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -76,8 +93,12 @@ const DataSelector = <T extends { id: string }>({
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <Command>
-          <CommandInput placeholder={`Search ${title.toLowerCase()}...`} />
-          <CommandList className="max-h-48 overflow-y-auto">
+          <CommandInput
+            placeholder={`Search ${title.toLowerCase()}...`}
+            value={searchValue}
+            onValueChange={onSearch}
+          />
+          <CommandList className="max-h-48 overflow-y-auto" ref={listRef} onScroll={handleScroll}>
             <CommandEmpty>No items found.</CommandEmpty>
             <CommandGroup heading={title}>
               {data.map((item) => (
@@ -92,6 +113,7 @@ const DataSelector = <T extends { id: string }>({
                   {renderItem(item)}
                 </CommandItem>
               ))}
+              {loading && <div className="text-center py-2 text-xs text-gray-400">Loading...</div>}
             </CommandGroup>
           </CommandList>
         </Command>

@@ -31,3 +31,16 @@ export const addBrand = createAsyncThunk(
     }
   },
 );
+
+export const brandDetail = createAsyncThunk(
+  "/brands/id",
+  async (id: string, { rejectWithValue }) => {
+    try {
+      const response = await manageBrand.brandDetail(id);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Thất bại");
+    }
+  },
+);

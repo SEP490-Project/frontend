@@ -1,27 +1,13 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { login, register } from "./thunk";
+import { login, register, refresh, logout } from "./thunk";
 import { getInitialAuthState } from "@/libs/helper";
-import { setItem } from "@/libs/local-storage";
 
 const initialState = getInitialAuthState();
 
 export const manageAuthenSlice = createSlice({
   name: "authentManager",
   initialState,
-  reducers: {
-    logout: (state) => {
-      state.isAuthenticated = false;
-      state.role = "";
-      state.user = null;
-      state.accessToken = null;
-      state.refreshToken = null;
-
-      // clear local storage keys
-      setItem("access_token", null);
-      setItem("refresh_token", null);
-      setItem("user", null);
-    },
-  },
+  reducers: {},
   extraReducers: (builder) => {
     builder
       .addCase(login.pending, (state) => {
@@ -51,8 +37,25 @@ export const manageAuthenSlice = createSlice({
       .addCase(register.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+      })
+      .addCase(refresh.fulfilled, (state, action) => {
+        state.accessToken = action.payload.access_token;
+      })
+      .addCase(refresh.rejected, (state) => {
+        state.isAuthenticated = false;
+        state.accessToken = null;
+        state.refreshToken = null;
+        state.user = null;
+        state.role = "";
+      })
+      .addCase(logout.fulfilled, (state) => {
+        state.isAuthenticated = false;
+        state.accessToken = null;
+        state.refreshToken = null;
+        state.user = null;
+        state.role = "";
       });
   },
 });
 
-export const { reducer: manageAuthenReducer, actions: manageAuthenActions } = manageAuthenSlice;
+export const { reducer: manageAuthenReducer } = manageAuthenSlice;

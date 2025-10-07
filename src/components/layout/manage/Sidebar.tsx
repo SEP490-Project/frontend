@@ -24,8 +24,8 @@ import {
   FaPowerOff,
 } from "react-icons/fa6";
 import { useAuth } from "@/libs/hooks/useAuth";
-import { useDispatch } from "react-redux";
-import { manageAuthenActions } from "@/libs/stores/authentManager/slice";
+import { useAppDispatch } from "@/libs/stores";
+import { logout } from "@/libs/stores/authentManager/thunk";
 
 interface TabItem {
   href: string;
@@ -155,11 +155,11 @@ const Sidebar: React.FC<SidebarProps> = ({
   const location = useLocation();
   const pathname = location.pathname;
   const roleParam = new URLSearchParams(location.search).get("role");
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   // Handle logout
-  const handleLogout = () => {
-    dispatch(manageAuthenActions.logout());
+  const handleLogout = async () => {
+    await dispatch(logout());
     window.location.href = "/login";
   };
 

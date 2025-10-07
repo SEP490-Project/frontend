@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router";
+import AvatarUploader from "@/components/global/AvatarUploader";
 
 interface PartnerData {
   name: string;
@@ -26,6 +27,7 @@ const AddPartnerPage: React.FC = () => {
     logo_url: "",
   });
 
+  const [logoFile, setLogoFile] = useState<File | null>(null); // NEW: for avatar uploader
   const [errors, setErrors] = useState<Partial<PartnerData>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -84,6 +86,18 @@ const AddPartnerPage: React.FC = () => {
     return url.startsWith("http") ? url : `https://${url}`;
   };
 
+  // Handle avatar image change
+  const handleLogoChange = (file: File | null) => {
+    setLogoFile(file);
+    setPartner((prev) => ({
+      ...prev,
+      logo_url: "", // Clear logo_url if using file
+    }));
+    if (errors.logo_url) {
+      setErrors((prev) => ({ ...prev, logo_url: "" }));
+    }
+  };
+
   // Handle form submission
   const handleSubmit = async () => {
     if (!validateForm()) return;
@@ -95,9 +109,18 @@ const AddPartnerPage: React.FC = () => {
       const submissionData = {
         ...partner,
         website: formatUrl(partner.website),
-        logo_url: formatUrl(partner.logo_url),
+        logo_url: partner.logo_url ? formatUrl(partner.logo_url) : "", // fallback if no file
         description: partner.description || null, // Convert empty string to null
       };
+
+      // If logoFile exists, upload it and get the URL
+      if (logoFile) {
+        // TODO: Replace with actual upload logic
+        // Example: const uploadedUrl = await uploadLogoFile(logoFile);
+        // For now, simulate upload and use a fake URL
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        submissionData.logo_url = "https://fake-uploaded-url.com/logo.png";
+      }
 
       console.log("Partner Data:", submissionData);
 
@@ -117,28 +140,16 @@ const AddPartnerPage: React.FC = () => {
     }
   };
 
-  // Handle save as draft
-  const handleSaveDraft = () => {
-    console.log("Save as draft:", partner);
-    alert("Partner saved as draft!");
-  };
-
   return (
     <div className="min-h-fit p-4 sm:p-6">
-      <div className="max-w-4xl mx-auto pb-10">
+      <div className="max-w-7xl mx-auto pb-10">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/manage/marketing/partners")}
-            className="flex items-center gap-2"
-          ></Button>
           <h1 className="text-2xl font-bold">Add Partner</h1>
         </div>
 
         {/* Partner Information */}
-        <Card className="p-6 mb-8">
+        <Card className="p-6 mb-6">
           <h2 className="text-lg font-semibold mb-6">Partner Information</h2>
 
           <div className="space-y-6">
@@ -214,21 +225,15 @@ const AddPartnerPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Row 3: Logo URL */}
+            {/* Row 3: Logo Upload */}
             <div className="space-y-2">
-              <Label htmlFor="logo_url" className="text-sm font-medium">
-                Logo URL
-              </Label>
-              <Input
-                id="logo_url"
-                type="url"
-                placeholder="https://example.com/logo.png"
-                value={partner.logo_url}
-                onChange={(e) => handleChange("logo_url", e.target.value)}
-                className={errors.logo_url ? "border-red-500" : ""}
+              <Label className="text-sm font-medium">Logo</Label>
+              <AvatarUploader
+                initialImage={partner.logo_url}
+                onImageChange={handleLogoChange}
+                size="md"
               />
-              {errors.logo_url && <p className="text-sm text-red-500">{errors.logo_url}</p>}
-              <p className="text-xs text-gray-500">Optional. Direct link to partner's logo image</p>
+              <p className="text-xs text-gray-500">Optional. Upload a logo image for the partner</p>
             </div>
 
             {/* Row 4: Description */}
@@ -247,52 +252,16 @@ const AddPartnerPage: React.FC = () => {
               <p className="text-xs text-gray-500">Optional. Brief description about the partner</p>
             </div>
           </div>
-
-          {/* Preview Section */}
-          {(partner.name || partner.logo_url) && (
-            <div className="mt-8 pt-6 border-t">
-              <h3 className="text-sm font-medium mb-3 text-gray-700">Preview</h3>
-              <div className="flex items-center gap-4 p-4 border rounded-lg bg-gray-50">
-                {partner.logo_url ? (
-                  <img
-                    src={formatUrl(partner.logo_url)}
-                    alt="Partner logo"
-                    className="w-12 h-12 rounded border object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = `https://via.placeholder.com/48x48/3B82F6/FFFFFF?text=${partner.name.charAt(0) || "P"}`;
-                    }}
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded border bg-blue-500 flex items-center justify-center text-white font-semibold">
-                    {partner.name.charAt(0) || "P"}
-                  </div>
-                )}
-                <div>
-                  <div className="font-medium">{partner.name || "Partner Name"}</div>
-                  {partner.description && (
-                    <div className="text-sm text-gray-600 line-clamp-2">{partner.description}</div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
         </Card>
 
-        {/* Fixed Submit Actions */}
-        <div className="sticky bottom-0 -mx-2 bg-white/80 border-t rounded-xl border-gray-200 shadow-lg z-40">
-          <div className="flex justify-end gap-4 px-4 py-3">
-            <Button variant="outline" onClick={handleSaveDraft} disabled={isSubmitting}>
-              Save Draft
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={isSubmitting || !partner.name.trim()}
-              className="min-w-[120px]"
-            >
-              {isSubmitting ? "Creating..." : "Create Partner"}
-            </Button>
-          </div>
+        <div className="px-4 py-3">
+          <Button
+            onClick={handleSubmit}
+            disabled={isSubmitting || !partner.name.trim()}
+            className="w-full"
+          >
+            {isSubmitting ? "Creating..." : "Create Partner"}
+          </Button>
         </div>
       </div>
     </div>

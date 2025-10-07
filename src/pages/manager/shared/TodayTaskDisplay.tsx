@@ -33,7 +33,7 @@ const TodayTaskDisplay = ({ tasks }: { tasks: Task[] }) => {
     today.setHours(0, 0, 0, 0);
 
     const currentDateTask = new Date(today);
-    const taskDate = new Date(currentDateTask.setDate(currentDateTask.getDate() - 1));
+    const taskDate = new Date(currentDateTask.setDate(currentDateTask.getDate() + 1));
 
     return (
       deadlineDate.getTime() === today.getTime() || deadlineDate.getTime() === taskDate.getTime()

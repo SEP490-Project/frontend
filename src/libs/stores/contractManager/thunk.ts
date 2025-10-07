@@ -1,9 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { AxiosError } from "axios";
 import { manageContract } from "@/libs/services/manageContract";
-import { createAsyncThunk } from "@reduxjs/toolkit";
-import { AxiosError } from "axios";
-import { manageContract } from "@/libs/services/manageContract";
 import type { ContractParams } from "@/libs/types/contract";
 
 export const contract = createAsyncThunk(

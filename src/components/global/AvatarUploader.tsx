@@ -41,7 +41,7 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
     if (initialImage && !avatar.file) {
       setAvatar((prev) => ({ ...prev, preview: initialImage }));
     }
-  }, [initialImage]);
+  }, [initialImage, avatar.file]);
 
   const sizeClasses = {
     sm: "w-20 h-20",

@@ -5,13 +5,13 @@ import { Account, Notification, Dashboard } from "@/pages/manager/shared";
 import { User } from "@/pages/manager/admin";
 import { Contract, Campaign } from "@/pages/manager/brand";
 import {
-  Partner,
+  Brand,
   Assignment,
   Contracts,
   AddContract,
   ContractDetail,
   AddCampaign,
-  AddPartner,
+  AddBrand,
 } from "@/pages/manager/marketing";
 import ManageLayout from "@/layouts/ManageLayout";
 import Login from "@/pages/authentication/Login";
@@ -83,8 +83,8 @@ const AppRoutes = () => (
       {/* MARKETING STAFF */}
       <Route element={<PrivateRoute allowedRoles={["MARKETING_STAFF"]} />}>
         <Route path="/manage/marketing" element={<ManageLayout />}>
-          <Route path="partners" element={<Partner />} />
-          <Route path="partners/add" element={<AddPartner />} />
+          <Route path="brands" element={<Brand />} />
+          <Route path="brands/add" element={<AddBrand />} />
           <Route path="contracts" element={<Contracts />} />
           <Route path="contracts/add" element={<AddContract />} />
           <Route path="contracts/:id" element={<ContractDetail />} />

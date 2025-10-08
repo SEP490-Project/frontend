@@ -52,9 +52,9 @@ const Header: React.FC<HeaderProps> = ({
                 aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
               >
                 {collapsed ? (
-                  <FaIndent size={24} className="text-gray-600" />
+                  <FaIndent size={18} className="text-gray-600" />
                 ) : (
-                  <FaOutdent size={24} className="text-gray-500" />
+                  <FaOutdent size={18} className="text-gray-500" />
                 )}
               </button>
             </TooltipTrigger>
@@ -69,7 +69,7 @@ const Header: React.FC<HeaderProps> = ({
             className="p-2 rounded hover:bg-gray-100 transition"
             aria-label="Open sidebar"
           >
-            <FaIndent size={24} className="text-gray-600" />
+            <FaIndent size={18} className="text-gray-600" />
           </button>
         </div>
       </div>
@@ -141,7 +141,7 @@ const Header: React.FC<HeaderProps> = ({
                   className="relative p-2 rounded hover:bg-gray-100 transition focus:outline-none"
                   aria-label="Notifications"
                 >
-                  <FaRegBell size={22} className="text-gray-500" />
+                  <FaRegBell size={18} className="text-gray-500" />
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full px-1 border border-white shadow">
                     {notifications.length}
                   </span>
@@ -161,7 +161,7 @@ const Header: React.FC<HeaderProps> = ({
             </div>
             {notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-gray-400">
-                <FaRegBell size={32} className="mb-2" />
+                <FaRegBell size={18} className="mb-2" />
                 <span className="text-base">No new notifications</span>
               </div>
             ) : (

@@ -22,7 +22,7 @@ export const AuthenticationLayout = () => {
             <div className="absolute top-4 right-4 z-10">
               <Button variant={"outline"} color="primary" onClick={() => navigate("/")}>
                 <Home className="text-primary" />
-                <span className="ml-2 text-primary font-[Poppins] font-semibold">Home</span>
+                <span className="ml-2 text-primary font-semibold">Home</span>
               </Button>
             </div>
             <div className="flex flex-col items-center justify-center px-10 lg:px-20 min-h-[90vh]">

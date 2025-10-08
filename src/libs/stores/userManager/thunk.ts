@@ -1,11 +1,11 @@
 import { manageUser } from "@/libs/services/manageUser";
-import type { UserData } from "@/libs/types/user";
+import type { UserData, UserResponse } from "@/libs/types/user";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 
 const getProfileThunk = createAsyncThunk("userManager/getProfile", async (_, thunkAPI) => {
   try {
     const response = await manageUser.getProfile();
-    return response.data;
+    return response.data as UserResponse;
   } catch (error: any) {
     return thunkAPI.rejectWithValue(error);
   }
@@ -16,7 +16,7 @@ const updateProfileThunk = createAsyncThunk(
   async (updateData: UserData, thunkAPI) => {
     try {
       const response = await manageUser.updateProfile(updateData);
-      return response.data;
+      return response.data as UserResponse;
     } catch (error: any) {
       return thunkAPI.rejectWithValue(error);
     }

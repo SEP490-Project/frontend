@@ -45,7 +45,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
       </div>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 w-full">
         <div className="w-full">
-          <h5 className="pb-1">Email or Username</h5>
+          <h5 className="pb-1">Username</h5>
           <Input
             {...register("login_identifier")}
             placeholder="Email or Username"

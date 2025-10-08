@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router";
-import { BrandInfo, RepresentativeInfo } from "@/components/layout/manage/marketing/brand";
+import { BrandInfo, RepresentativeInfo } from "@/components/manage/marketing/brand";
 
 interface BrandData {
   name: string;

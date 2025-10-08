@@ -1,4 +1,5 @@
 import api from "@/libs/api";
+import type { ContractParams } from "@/libs/types/contract";
 
 export const manageContract = {
   brand: (params: {
@@ -13,4 +14,20 @@ export const manageContract = {
     sort_by: string;
     order: "asc" | "desc";
   }) => api.get("/contracts", { params }),
+
+  getContractsByBrand: (params: ContractParams) =>
+    api.get(`/contracts/brands/${params.brand_id}`, {
+      params: {
+        page: params.page,
+        limit: params.limit,
+        status: params.status,
+        type: params.type,
+      },
+    }),
+
+  getContractById: (contractId: string) => api.get(`/contracts/${contractId}`),
+
+  approveContract: (contractId: string) => api.patch(`/contracts/${contractId}/approve`),
+
+  rejectContract: (contractId: string) => api.patch(`/contracts/${contractId}/reject`),
 };

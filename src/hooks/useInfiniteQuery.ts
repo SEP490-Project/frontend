@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 
 interface InfiniteQueryOptions<T, Q = any> {
   fetchFn: (params: Q) => Promise<{ data: T[]; pagination: any }>;
@@ -19,12 +19,14 @@ export function useInfiniteQuery<T, Q = any>({
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState(searchKey);
 
+  const queryParamsString = useMemo(() => JSON.stringify(queryParams), [queryParams]);
+
   // Reset when search changes
   useEffect(() => {
     setItems([]);
     setPage(1);
     setHasMore(true);
-  }, [search, JSON.stringify(queryParams)]);
+  }, [search, queryParamsString]);
 
   // Fetch data
   useEffect(() => {
@@ -53,7 +55,7 @@ export function useInfiniteQuery<T, Q = any>({
     return () => {
       cancelled = true;
     };
-  }, [fetchFn, page, pageSize, search, JSON.stringify(queryParams)]);
+  }, [fetchFn, page, pageSize, search, queryParamsString]);
 
   const loadMore = useCallback(() => {
     if (hasMore && !loading) setPage((p) => p + 1);

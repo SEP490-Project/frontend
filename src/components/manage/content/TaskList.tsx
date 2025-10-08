@@ -200,7 +200,7 @@ export function TaskList({ currentDate }: TaskListProps) {
                     return (
                       <Card
                         key={item.id}
-                        className="group overflow-hidden border-border/40 bg-card hover:shadow-md transition-all duration-300 ease-out hover:border-border"
+                        className="group overflow-hidden border-border/40 bg-card hover:shadow-md transition-all duration-10 ease-out hover:border-border"
                       >
                         <CardContent className="p-6">
                           <div className="flex items-center justify-between">
@@ -239,7 +239,7 @@ export function TaskList({ currentDate }: TaskListProps) {
                               >
                                 <motion.div
                                   animate={{ rotate: isExpanded ? 180 : 0 }}
-                                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                                  transition={{ duration: 0.2, ease: "easeInOut" }}
                                 >
                                   <ChevronDown className="h-4 w-4" />
                                 </motion.div>
@@ -253,19 +253,31 @@ export function TaskList({ currentDate }: TaskListProps) {
                                 initial={{ height: 0, opacity: 0 }}
                                 animate={{ height: "auto", opacity: 1 }}
                                 exit={{ height: 0, opacity: 0 }}
-                                transition={{ duration: 0.3, ease: "easeInOut" }}
+                                transition={{
+                                  duration: 0.1,
+                                  ease: [0, 0, 0, 0],
+                                  opacity: { duration: 0.1 },
+                                }}
                                 className="mt-4 pt-4 border-t space-y-4 overflow-hidden"
                               >
-                                <div>
+                                <motion.div
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  transition={{ duration: 0.3 }}
+                                >
                                   <h4 className="text-sm font-semibold text-foreground mb-2">
                                     Description
                                   </h4>
                                   <p className="text-sm text-muted-foreground leading-relaxed">
                                     {item.details.description}
                                   </p>
-                                </div>
+                                </motion.div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <motion.div
+                                  className="grid grid-cols-1 md:grid-cols-3 gap-4"
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                >
                                   <div className="space-y-2">
                                     <div className="flex items-center gap-2">
                                       <User className="h-4 w-4 text-muted-foreground" />
@@ -299,9 +311,14 @@ export function TaskList({ currentDate }: TaskListProps) {
                                       {item.details.priority}
                                     </Badge>
                                   </div>
-                                </div>
+                                </motion.div>
 
-                                <div className="flex justify-end pt-2">
+                                <motion.div
+                                  className="flex justify-end pt-2"
+                                  initial={{ opacity: 0, y: 10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ duration: 0.3, delay: 0.3 }}
+                                >
                                   <Button
                                     onClick={() => handleViewTaskDetail(item.id)}
                                     className="gap-2"
@@ -310,7 +327,7 @@ export function TaskList({ currentDate }: TaskListProps) {
                                     <Eye className="h-4 w-4" />
                                     View Details
                                   </Button>
-                                </div>
+                                </motion.div>
                               </motion.div>
                             )}
                           </AnimatePresence>

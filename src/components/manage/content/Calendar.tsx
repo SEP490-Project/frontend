@@ -30,8 +30,9 @@ export function Calendar({ currentDate, setCurrentDate }: CalendarProps) {
   const firstDayWeekday = firstDayOfMonth.getDay();
   const daysInMonth = lastDayOfMonth.getDate();
 
-  const prevMonth = new Date(year, month - 1, 0);
-  const daysInPrevMonth = prevMonth.getDate();
+  // Get the last day of the previous month correctly
+  const lastDayOfPrevMonth = new Date(year, month, 0);
+  const daysInPrevMonth = lastDayOfPrevMonth.getDate();
 
   // Function to check if a date has tasks
   const hasTasksOnDate = (date: Date): boolean => {
@@ -157,25 +158,30 @@ export function Calendar({ currentDate, setCurrentDate }: CalendarProps) {
               <div
                 key={dayObj.date.getTime()}
                 className={`
-                  text-center cursor-pointer rounded transition-all duration-200 relative h-10 w-10 mx-auto
-                  flex flex-col items-center justify-center hover:scale-105
+                  text-center cursor-pointer rounded-lg transition-all duration-10 ease-out relative h-10 w-10 mx-auto
+                  flex flex-col items-center justify-center 
+                  group
                   ${
                     isSelectedDate
                       ? "bg-primary text-primary-foreground font-medium shadow-md"
                       : isTodayDate
                         ? "bg-accent text-accent-foreground font-medium"
                         : !dayObj.isCurrentMonth
-                          ? "text-muted-foreground hover:bg-accent/50"
-                          : "text-foreground hover:bg-accent/50"
+                          ? "text-muted-foreground"
+                          : "text-foreground"
                   }
                 `}
                 onClick={() => setCurrentDate(dayObj.date)}
               >
-                <span className="text-sm leading-none relative">
+                <span
+                  className={`text-sm leading-none relative transition-all duration-300 ease-out group-hover:font-bold ${
+                    isSelectedDate || isTodayDate ? "font-medium" : ""
+                  }`}
+                >
                   {dayObj.day}
                   {hasTasks && (
                     <div
-                      className={`absolute left-1/2 transform -translate-x-1/2 bottom-[-2px] h-0.5 w-4 rounded-full ${
+                      className={`absolute left-1/2 transform -translate-x-1/2 bottom-[-2px] h-0.5 w-4 rounded-full transition-all duration-300 ${
                         isSelectedDate ? "bg-primary-foreground" : "bg-primary"
                       }`}
                     />

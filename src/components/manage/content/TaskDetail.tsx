@@ -11,85 +11,11 @@ import {
   MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { beautyTasks } from "./TasksList";
 
-// Extended task data with contract and campaign information
-const taskContractData = {
-  1: {
-    contract: {
-      id: "CNT-2025-001",
-      clientName: "Beauty Essentials Co.",
-      contractValue: "$45,000",
-      startDate: "2025-09-01",
-      endDate: "2025-12-31",
-      status: "Active",
-    },
-    campaign: {
-      name: "Autumn Glow Campaign",
-      objective: "Promote fall skincare products and increase brand awareness",
-      budget: "$25,000",
-      timeline: "Sep 2025 - Nov 2025",
-      targetAudience: "Women 25-45 interested in skincare",
-    },
-    milestones: [
-      { id: 1, name: "Content Strategy Development", status: "completed", dueDate: "2025-09-15" },
-      { id: 2, name: "Fall Skincare Blog Series", status: "in-progress", dueDate: "2025-10-30" },
-      { id: 3, name: "Social Media Campaign Launch", status: "pending", dueDate: "2025-11-01" },
-      { id: 4, name: "Performance Analysis & Report", status: "pending", dueDate: "2025-11-30" },
-    ],
-  },
-  2: {
-    contract: {
-      id: "CNT-2025-002",
-      clientName: "Glamour Studios",
-      contractValue: "$32,000",
-      startDate: "2025-08-15",
-      endDate: "2025-11-15",
-      status: "Active",
-    },
-    campaign: {
-      name: "Autumn Glow Campaign",
-      objective: "Create engaging video content for makeup tutorials",
-      budget: "$18,000",
-      timeline: "Aug 2025 - Nov 2025",
-      targetAudience: "Beauty enthusiasts and makeup beginners",
-    },
-    milestones: [
-      { id: 1, name: "Video Concept Development", status: "completed", dueDate: "2025-08-30" },
-      { id: 2, name: "Makeup Tutorial Production", status: "in-progress", dueDate: "2025-10-15" },
-      { id: 3, name: "Post-Production & Editing", status: "pending", dueDate: "2025-10-30" },
-      { id: 4, name: "Campaign Distribution", status: "pending", dueDate: "2025-11-10" },
-    ],
-  },
-  3: {
-    contract: {
-      id: "CNT-2025-003",
-      clientName: "Spooky Beauty Inc.",
-      contractValue: "$28,500",
-      startDate: "2025-09-01",
-      endDate: "2025-10-31",
-      status: "Active",
-    },
-    campaign: {
-      name: "Spooky Beauty Series",
-      objective: "Halloween-themed beauty content and product promotion",
-      budget: "$15,000",
-      timeline: "Sep 2025 - Oct 2025",
-      targetAudience: "Young adults interested in seasonal beauty trends",
-    },
-    milestones: [
-      { id: 1, name: "Halloween Content Planning", status: "completed", dueDate: "2025-09-10" },
-      { id: 2, name: "Spooky Makeup Tutorials", status: "in-progress", dueDate: "2025-10-15" },
-      {
-        id: 3,
-        name: "Halloween Beauty Tips Campaign",
-        status: "in-progress",
-        dueDate: "2025-10-25",
-      },
-      { id: 4, name: "Campaign Wrap-up & Analysis", status: "pending", dueDate: "2025-10-31" },
-    ],
-  },
-};
+import tasksData from "@/pages/content/tasks-data.json";
+
+// Use task contract data from JSON
+const taskContractData = tasksData.taskContractData;
 
 interface TaskDetailProps {
   taskId: number | null;
@@ -99,6 +25,16 @@ interface TaskDetailProps {
 
 export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
   if (!taskId || !isVisible) return null;
+
+  // Transform JSON data to match expected format
+  const beautyTasks = tasksData.beautyTasks.map((taskGroup) => ({
+    ...taskGroup,
+    date: new Date(taskGroup.date),
+    items: taskGroup.items.map((item) => ({
+      ...item,
+      status: item.status as "to-do" | "in-progress" | "completed",
+    })),
+  }));
 
   // Find the task details with proper typing
   let task: any = null;
@@ -112,7 +48,7 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
 
   if (!task) return null;
 
-  const contractData = taskContractData[taskId as keyof typeof taskContractData];
+  const contractData = taskContractData[taskId.toString() as keyof typeof taskContractData];
   const getMilestoneStatusColor = (status: string) => {
     switch (status) {
       case "completed":

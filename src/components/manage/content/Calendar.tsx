@@ -1,7 +1,17 @@
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { beautyTasks } from "./TasksList";
+import tasksData from "@/pages/content/tasks-data.json";
+
+// Transform JSON data to match expected format
+const beautyTasks = tasksData.beautyTasks.map((task) => ({
+  ...task,
+  date: new Date(task.date),
+  items: task.items.map((item) => ({
+    ...item,
+    status: item.status as "to-do" | "in-progress" | "completed",
+  })),
+}));
 
 const daysOfWeek = ["S", "M", "T", "W", "T", "F", "S"];
 
@@ -87,18 +97,8 @@ export function Calendar({ currentDate, setCurrentDate }: CalendarProps) {
   const monthYearKey = `${year}-${month}`;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="bg-[#ffffff] rounded-lg border border-[#dadada] p-4"
-    >
-      <motion.div
-        className="flex items-center justify-between mb-4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
-      >
+    <div className="bg-card rounded-lg border border-border p-4">
+      <div className="flex items-center justify-between mb-4">
         <AnimatePresence mode="wait">
           <motion.span
             key={monthYearKey}
@@ -106,7 +106,7 @@ export function Calendar({ currentDate, setCurrentDate }: CalendarProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
             transition={{ duration: 0.3 }}
-            className="font-medium text-[#1c1b1f]"
+            className="font-medium text-foreground"
           >
             {currentDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
           </motion.span>
@@ -129,26 +129,15 @@ export function Calendar({ currentDate, setCurrentDate }: CalendarProps) {
             <ChevronDown className="h-3 w-3" />
           </Button>
         </div>
-      </motion.div>
+      </div>
 
-      <motion.div
-        className="grid grid-cols-7 gap-1 mb-2"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.4, delay: 0.2 }}
-      >
-        {daysOfWeek.map((day, index) => (
-          <motion.div
-            key={day}
-            initial={{ opacity: 0, y: -5 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.2 + index * 0.02 }}
-            className="text-center text-sm font-medium text-[#515663] py-1"
-          >
+      <div className="grid grid-cols-7 gap-1 mb-2">
+        {daysOfWeek.map((day) => (
+          <div key={day} className="text-center text-sm font-medium text-muted-foreground py-1">
             {day}
-          </motion.div>
+          </div>
         ))}
-      </motion.div>
+      </div>
 
       <AnimatePresence mode="wait">
         <motion.div
@@ -159,30 +148,25 @@ export function Calendar({ currentDate, setCurrentDate }: CalendarProps) {
           transition={{ duration: 0.3 }}
           className="grid grid-cols-7 gap-1 place-items-center"
         >
-          {calendarDays.map((dayObj, index) => {
+          {calendarDays.map((dayObj) => {
             const isTodayDate = isToday(dayObj.date);
             const isSelectedDate = isSelected(dayObj.date);
             const hasTasks = hasTasksOnDate(dayObj.date);
 
             return (
-              <motion.div
-                key={`${dayObj.date.getTime()}`}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.2, delay: index * 0.01 }}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
+              <div
+                key={dayObj.date.getTime()}
                 className={`
                   text-center cursor-pointer rounded transition-all duration-200 relative h-10 w-10 mx-auto
-                  flex flex-col items-center justify-center
+                  flex flex-col items-center justify-center hover:scale-105
                   ${
                     isSelectedDate
-                      ? "bg-[#6366f1] text-white font-medium shadow-md"
+                      ? "bg-primary text-primary-foreground font-medium shadow-md"
                       : isTodayDate
-                        ? "bg-[#accfff] text-[#1c1b1f] font-medium"
+                        ? "bg-accent text-accent-foreground font-medium"
                         : !dayObj.isCurrentMonth
-                          ? "text-[#8c96ab] hover:bg-[#f0f0f0]"
-                          : "text-[#1c1b1f] hover:bg-[#f5f5f5]"
+                          ? "text-muted-foreground hover:bg-accent/50"
+                          : "text-foreground hover:bg-accent/50"
                   }
                 `}
                 onClick={() => setCurrentDate(dayObj.date)}
@@ -190,21 +174,18 @@ export function Calendar({ currentDate, setCurrentDate }: CalendarProps) {
                 <span className="text-sm leading-none relative">
                   {dayObj.day}
                   {hasTasks && (
-                    <motion.div
-                      initial={{ opacity: 0, scaleX: 0 }}
-                      animate={{ opacity: 1, scaleX: 1 }}
-                      transition={{ duration: 0.3, delay: 0.1 }}
-                      className={`absolute left-1/2 transform -translate-x-1/2 bottom-[-2px] h-0.5 w-4 ${
-                        isSelectedDate ? "bg-white" : isTodayDate ? "bg-[#6366f1]" : "bg-[#6366f1]"
+                    <div
+                      className={`absolute left-1/2 transform -translate-x-1/2 bottom-[-2px] h-0.5 w-4 rounded-full ${
+                        isSelectedDate ? "bg-primary-foreground" : "bg-primary"
                       }`}
                     />
                   )}
                 </span>
-              </motion.div>
+              </div>
             );
           })}
         </motion.div>
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
 }

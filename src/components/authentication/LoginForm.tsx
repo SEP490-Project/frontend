@@ -6,6 +6,9 @@ import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useNavigate } from "react-router";
 import { PasswordInput } from "@/components/password-input";
+import { useAuth } from "@/libs/hooks/useAuth";
+import { Loader2 } from "lucide-react";
+
 interface MockLogin {
   login_identifier: string;
   password: string;
@@ -27,7 +30,7 @@ const LoginSchema = yup.object().shape({
     }),
   password: yup
     .string()
-    .min(6, "Password must be at least 6 characters")
+    .min(8, "Password must be at least 8 characters")
     .required("Password is required"),
 });
 
@@ -36,6 +39,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
   const { register, handleSubmit } = useForm<MockLogin>({
     resolver: yupResolver(LoginSchema),
   });
+  const { loading } = useAuth();
 
   return (
     <div className="flex flex-col justify-center items-center gap-10 w-full">
@@ -64,8 +68,22 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
             </p>
           </div>
         </div>
-        <Button type="submit" className="mt-4 text-white" size={"lg"}>
-          Sign In
+        <Button
+          type="submit"
+          className={`mt-4 text-white flex items-center justify-center transition ${
+            loading ? "opacity-70 cursor-not-allowed" : ""
+          }`}
+          size="lg"
+          disabled={loading}
+        >
+          {loading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Signing in...
+            </>
+          ) : (
+            "Sign In"
+          )}
         </Button>
       </form>
       <div className="text-sm text-center mt-4" onClick={() => navigate("/register")}>

@@ -3,7 +3,6 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -117,19 +116,6 @@ const ContractTypeTemplate: React.FC<ContractTypeTemplateProps> = ({
     if (onFieldValidation) {
       const validation = await validateField(field, value, { ...formData, [field]: value });
       onFieldValidation(field, validation.isValid ? null : validation.error);
-    }
-  };
-
-  const handleScopeFieldChange = async (field: string, value: any) => {
-    const updates = { [field]: value };
-    onUpdateScopeOfWork(updates);
-    if (onFieldValidation) {
-      const newScopeOfWork = { ...formData.scopeOfWork, ...updates };
-      const validation = await validateField(`scopeOfWork.${field}`, value, {
-        ...formData,
-        scopeOfWork: newScopeOfWork,
-      });
-      onFieldValidation(`scopeOfWork.${field}`, validation.isValid ? null : validation.error);
     }
   };
 
@@ -262,93 +248,377 @@ const ContractTypeTemplate: React.FC<ContractTypeTemplateProps> = ({
       )}
 
       {/* Scope of Work - Only show if contract type is selected */}
+      {/* Scope of Work - Digitalized by Contract Type */}
       {formData.type && (
         <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
           <CardHeader className="pb-4">
             <CardTitle className="text-xl">Scope of Work</CardTitle>
+            <p className="text-sm text-slate-600">
+              Tasks and deliverables are automatically structured based on contract type.
+            </p>
           </CardHeader>
+
           <CardContent className="space-y-6">
-            {/* Description */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Project Description *</Label>
-              <Textarea
-                value={formData.scopeOfWork.description || ""}
-                onChange={(e) => handleScopeFieldChange("description", e.target.value)}
-                placeholder="Describe the project scope and objectives..."
-                rows={4}
-                className={errors.scopeOfWork?.description ? "border-red-500" : ""}
-              />
-              {errors.scopeOfWork?.description && (
-                <p className="text-sm text-red-500">{errors.scopeOfWork.description}</p>
-              )}
-            </div>
-
-            {/* Technical Requirements (only for Advertising) */}
+            {/* ADVERTISING – Content + Product */}
             {formData.type === "ADVERTISING" && (
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Technical Requirements</Label>
-                <Textarea
-                  value={formData.scopeOfWork.technical_requirements || ""}
-                  onChange={(e) => onUpdateScopeOfWork({ technical_requirements: e.target.value })}
-                  placeholder="Specify technical requirements, quality standards, etc..."
-                  rows={3}
-                />
-              </div>
-            )}
-
-            {/* Co-Production Roles (only for Co-Producing) */}
-            {formData.type === "CO_PRODUCING" && (
-              <div className="space-y-4">
-                <Label className="text-sm font-medium">Co-Production Roles</Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-xs text-slate-600">Company Role</Label>
-                    <Textarea
-                      value={formData.scopeOfWork.co_production_roles?.company || ""}
-                      onChange={(e) =>
+              <>
+                {/* Content Section */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium">Content Tasks</Label>
+                    <Button
+                      type="button"
+                      onClick={() =>
                         onUpdateScopeOfWork({
-                          co_production_roles: {
-                            ...formData.scopeOfWork.co_production_roles,
-                            company: e.target.value,
-                          },
+                          contents: [
+                            ...(formData.scopeOfWork.contents || []),
+                            { title: "", platform: "", deadline: "" },
+                          ],
                         })
                       }
-                      placeholder="Describe the company's responsibilities..."
-                      rows={3}
-                    />
+                      size="sm"
+                      variant="outline"
+                      className="gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Content
+                    </Button>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs text-slate-600">KOL Role</Label>
-                    <Textarea
-                      value={formData.scopeOfWork.co_production_roles?.kol || ""}
-                      onChange={(e) =>
-                        onUpdateScopeOfWork({
-                          co_production_roles: {
-                            ...formData.scopeOfWork.co_production_roles,
-                            kol: e.target.value,
-                          },
-                        })
-                      }
-                      placeholder="Describe the KOL's responsibilities..."
-                      rows={3}
-                    />
-                  </div>
+                  {(formData.scopeOfWork.contents || []).map((content: any, index: number) => (
+                    <Card key={index} className="p-4 bg-slate-50/50 border-slate-200">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <Input
+                          placeholder="Title"
+                          value={content.title}
+                          onChange={(e) => {
+                            const updated = [...formData.scopeOfWork.contents];
+                            updated[index].title = e.target.value;
+                            onUpdateScopeOfWork({ contents: updated });
+                          }}
+                          className="h-10"
+                        />
+                        <Select
+                          value={content.platform}
+                          onValueChange={(v) => {
+                            const updated = [...formData.scopeOfWork.contents];
+                            updated[index].platform = v;
+                            onUpdateScopeOfWork({ contents: updated });
+                          }}
+                        >
+                          <SelectTrigger className="h-10">
+                            <SelectValue placeholder="Platform" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {CHANNEL_OPTIONS.map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <DatePicker
+                          field={`content-deadline-${index}`}
+                          value={content.deadline}
+                          placeholder="Deadline"
+                          onChange={(v: string) => {
+                            const updated = [...formData.scopeOfWork.contents];
+                            updated[index].deadline = v;
+                            onUpdateScopeOfWork({ contents: updated });
+                          }}
+                          error={undefined}
+                          openPopovers={openPopovers}
+                          setOpenPopovers={setOpenPopovers}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const updated = formData.scopeOfWork.contents.filter(
+                              (_: any, i: number) => i !== index,
+                            );
+                            onUpdateScopeOfWork({ contents: updated });
+                          }}
+                          className="h-10 gap-2 text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Remove
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
                 </div>
-              </div>
+
+                {/* Product Section */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium">Product Delivery</Label>
+                    <Button
+                      type="button"
+                      onClick={() =>
+                        onUpdateScopeOfWork({
+                          products: [
+                            ...(formData.scopeOfWork.products || []),
+                            { name: "", quantity: 1, delivery_date: "" },
+                          ],
+                        })
+                      }
+                      size="sm"
+                      variant="outline"
+                      className="gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Product
+                    </Button>
+                  </div>
+                  {(formData.scopeOfWork.products || []).map((product: any, index: number) => (
+                    <Card key={index} className="p-4 bg-slate-50/50 border-slate-200">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <Input
+                          placeholder="Product Name"
+                          value={product.name}
+                          onChange={(e) => {
+                            const updated = [...formData.scopeOfWork.products];
+                            updated[index].name = e.target.value;
+                            onUpdateScopeOfWork({ products: updated });
+                          }}
+                          className="h-10"
+                        />
+                        <Input
+                          type="number"
+                          min="1"
+                          placeholder="Quantity"
+                          value={product.quantity}
+                          onChange={(e) => {
+                            const updated = [...formData.scopeOfWork.products];
+                            updated[index].quantity = parseInt(e.target.value);
+                            onUpdateScopeOfWork({ products: updated });
+                          }}
+                          className="h-10"
+                        />
+                        <DatePicker
+                          field={`product-date-${index}`}
+                          value={product.delivery_date}
+                          placeholder="Delivery Date"
+                          onChange={(v: string) => {
+                            const updated = [...formData.scopeOfWork.products];
+                            updated[index].delivery_date = v;
+                            onUpdateScopeOfWork({ products: updated });
+                          }}
+                          error={undefined}
+                          openPopovers={openPopovers}
+                          setOpenPopovers={setOpenPopovers}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const updated = formData.scopeOfWork.products.filter(
+                              (_: any, i: number) => i !== index,
+                            );
+                            onUpdateScopeOfWork({ products: updated });
+                          }}
+                          className="h-10 gap-2 text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Remove
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </>
             )}
 
-            {/* Event Participation (only for Brand Ambassador) */}
-            {formData.type === "BRAND_AMBASSADOR" && (
-              <div className="space-y-4">
+            {/* AFFILIATE – Content only */}
+            {formData.type === "AFFILIATE" && (
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label className="text-sm font-medium">Event Participation</Label>
+                  <Label className="text-sm font-medium">Affiliate Content</Label>
                   <Button
                     type="button"
                     onClick={() =>
                       onUpdateScopeOfWork({
-                        event_participation: [
-                          ...(formData.scopeOfWork.event_participation || []),
-                          { event_name: "", note: "" },
+                        contents: [
+                          ...(formData.scopeOfWork.contents || []),
+                          {
+                            title: "",
+                            platform: "",
+                            tracking_link: "",
+                            coupon_code: "",
+                            deadline: "",
+                          },
+                        ],
+                      })
+                    }
+                    size="sm"
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Content
+                  </Button>
+                </div>
+                {(formData.scopeOfWork.contents || []).map((c: any, index: number) => (
+                  <Card key={index} className="p-4 bg-slate-50/50 border-slate-200">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                      <Input
+                        placeholder="Title"
+                        value={c.title}
+                        onChange={(e) => {
+                          const updated = [...formData.scopeOfWork.contents];
+                          updated[index].title = e.target.value;
+                          onUpdateScopeOfWork({ contents: updated });
+                        }}
+                        className="h-10"
+                      />
+                      <Select
+                        value={c.platform}
+                        onValueChange={(v) => {
+                          const updated = [...formData.scopeOfWork.contents];
+                          updated[index].platform = v;
+                          onUpdateScopeOfWork({ contents: updated });
+                        }}
+                      >
+                        <SelectTrigger className="h-10">
+                          <SelectValue placeholder="Platform" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CHANNEL_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        placeholder="Tracking Link"
+                        value={c.tracking_link}
+                        onChange={(e) => {
+                          const updated = [...formData.scopeOfWork.contents];
+                          updated[index].tracking_link = e.target.value;
+                          onUpdateScopeOfWork({ contents: updated });
+                        }}
+                        className="h-10"
+                      />
+                      <Input
+                        placeholder="Coupon Code"
+                        value={c.coupon_code}
+                        onChange={(e) => {
+                          const updated = [...formData.scopeOfWork.contents];
+                          updated[index].coupon_code = e.target.value;
+                          onUpdateScopeOfWork({ contents: updated });
+                        }}
+                        className="h-10"
+                      />
+                      <DatePicker
+                        field={`affiliate-deadline-${index}`}
+                        value={c.deadline}
+                        placeholder="Deadline"
+                        onChange={(v: string) => {
+                          const updated = [...formData.scopeOfWork.contents];
+                          updated[index].deadline = v;
+                          onUpdateScopeOfWork({ contents: updated });
+                        }}
+                        error={undefined}
+                        openPopovers={openPopovers}
+                        setOpenPopovers={setOpenPopovers}
+                      />
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {/* CO_PRODUCING – Product only */}
+            {formData.type === "CO_PRODUCING" && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">Co-Produced Products</Label>
+                  <Button
+                    type="button"
+                    onClick={() =>
+                      onUpdateScopeOfWork({
+                        products: [
+                          ...(formData.scopeOfWork.products || []),
+                          { name: "", role: "", quantity: 1, delivery_date: "" },
+                        ],
+                      })
+                    }
+                    size="sm"
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Product
+                  </Button>
+                </div>
+                {(formData.scopeOfWork.products || []).map((p: any, index: number) => (
+                  <Card key={index} className="p-4 bg-slate-50/50 border-slate-200">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <Input
+                        placeholder="Product Name"
+                        value={p.name}
+                        onChange={(e) => {
+                          const updated = [...formData.scopeOfWork.products];
+                          updated[index].name = e.target.value;
+                          onUpdateScopeOfWork({ products: updated });
+                        }}
+                        className="h-10"
+                      />
+                      <Input
+                        placeholder="Role"
+                        value={p.role}
+                        onChange={(e) => {
+                          const updated = [...formData.scopeOfWork.products];
+                          updated[index].role = e.target.value;
+                          onUpdateScopeOfWork({ products: updated });
+                        }}
+                        className="h-10"
+                      />
+                      <Input
+                        type="number"
+                        min="1"
+                        value={p.quantity}
+                        onChange={(e) => {
+                          const updated = [...formData.scopeOfWork.products];
+                          updated[index].quantity = parseInt(e.target.value);
+                          onUpdateScopeOfWork({ products: updated });
+                        }}
+                        className="h-10"
+                      />
+                      <DatePicker
+                        field={`copro-date-${index}`}
+                        value={p.delivery_date}
+                        placeholder="Delivery Date"
+                        onChange={(v: string) => {
+                          const updated = [...formData.scopeOfWork.products];
+                          updated[index].delivery_date = v;
+                          onUpdateScopeOfWork({ products: updated });
+                        }}
+                        error={undefined}
+                        openPopovers={openPopovers}
+                        setOpenPopovers={setOpenPopovers}
+                      />
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {/* BRAND_AMBASSADOR – Event only */}
+            {formData.type === "BRAND_AMBASSADOR" && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">Events</Label>
+                  <Button
+                    type="button"
+                    onClick={() =>
+                      onUpdateScopeOfWork({
+                        events: [
+                          ...(formData.scopeOfWork.events || []),
+                          { event_name: "", date: "", location: "", note: "" },
                         ],
                       })
                     }
@@ -360,286 +630,70 @@ const ContractTypeTemplate: React.FC<ContractTypeTemplateProps> = ({
                     Add Event
                   </Button>
                 </div>
-                <div className="space-y-3">
-                  {(formData.scopeOfWork.event_participation || []).map(
-                    (event: any, index: number) => (
-                      <Card key={index} className="p-4 bg-slate-50/50 border-slate-200">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div className="space-y-2">
-                            <Label className="text-xs text-slate-600">Event Name</Label>
-                            <Input
-                              value={event.event_name}
-                              onChange={(e) => {
-                                const updated = [...formData.scopeOfWork.event_participation];
-                                updated[index].event_name = e.target.value;
-                                onUpdateScopeOfWork({ event_participation: updated });
-                              }}
-                              placeholder="Event name"
-                              className="h-10"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label className="text-xs text-slate-600">Note</Label>
-                            <Input
-                              value={event.note}
-                              onChange={(e) => {
-                                const updated = [...formData.scopeOfWork.event_participation];
-                                updated[index].note = e.target.value;
-                                onUpdateScopeOfWork({ event_participation: updated });
-                              }}
-                              placeholder="Note"
-                              className="h-10"
-                            />
-                          </div>
-                          <div className="flex items-end">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                const updated = formData.scopeOfWork.event_participation.filter(
-                                  (_: any, i: number) => i !== index,
-                                );
-                                onUpdateScopeOfWork({ event_participation: updated });
-                              }}
-                              className="h-10 w-full gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              Remove
-                            </Button>
-                          </div>
-                        </div>
-                      </Card>
-                    ),
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Deliverables */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm font-medium">Deliverables</Label>
-                <Button
-                  type="button"
-                  onClick={() =>
-                    onUpdateScopeOfWork({
-                      deliverables: [
-                        ...(formData.scopeOfWork.deliverables || []),
-                        formData.type === "AFFILIATE"
-                          ? {
-                              type: "",
-                              channel: "",
-                              tracking_link: "",
-                              coupon_code: "",
-                              quantity: 1,
-                              deadline: "",
-                            }
-                          : {
-                              type: "",
-                              channel: "",
-                              quantity: 1,
-                              deadline: "",
-                            },
-                      ],
-                    })
-                  }
-                  size="sm"
-                  variant="outline"
-                  className="gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Deliverable
-                </Button>
-              </div>
-              <div className="space-y-3">
-                {(formData.scopeOfWork.deliverables || []).map(
-                  (deliverable: any, index: number) => (
-                    <Card key={index} className="p-4 bg-slate-50/50 border-slate-200">
-                      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-                        <div className="space-y-2">
-                          <Label className="text-xs text-slate-600">Type</Label>
-                          <Input
-                            value={deliverable.type}
-                            onChange={(e) => {
-                              const updated = [...formData.scopeOfWork.deliverables];
-                              updated[index].type = e.target.value;
-                              onUpdateScopeOfWork({ deliverables: updated });
-                            }}
-                            placeholder="Deliverable type"
-                            className="h-10"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs text-slate-600">Channel</Label>
-                          <Select
-                            value={deliverable.channel}
-                            onValueChange={(value) => {
-                              const updated = [...formData.scopeOfWork.deliverables];
-                              updated[index].channel = value;
-                              onUpdateScopeOfWork({ deliverables: updated });
-                            }}
-                          >
-                            <SelectTrigger className="h-10">
-                              <SelectValue placeholder="Select channel" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {CHANNEL_OPTIONS.map((option) => (
-                                <SelectItem key={option.value} value={option.value}>
-                                  {option.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        {/* Affiliate-specific fields */}
-                        {formData.type === "AFFILIATE" && (
-                          <>
-                            <div className="space-y-2">
-                              <Label className="text-xs text-slate-600">Tracking Link</Label>
-                              <Input
-                                value={deliverable.tracking_link || ""}
-                                onChange={(e) => {
-                                  const updated = [...formData.scopeOfWork.deliverables];
-                                  updated[index].tracking_link = e.target.value;
-                                  onUpdateScopeOfWork({ deliverables: updated });
-                                }}
-                                placeholder="Tracking link"
-                                className="h-10"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label className="text-xs text-slate-600">Coupon Code</Label>
-                              <Input
-                                value={deliverable.coupon_code || ""}
-                                onChange={(e) => {
-                                  const updated = [...formData.scopeOfWork.deliverables];
-                                  updated[index].coupon_code = e.target.value;
-                                  onUpdateScopeOfWork({ deliverables: updated });
-                                }}
-                                placeholder="Coupon code"
-                                className="h-10"
-                              />
-                            </div>
-                          </>
-                        )}
-                        <div className="space-y-2">
-                          <Label className="text-xs text-slate-600">Quantity</Label>
-                          <Input
-                            type="number"
-                            min="1"
-                            value={deliverable.quantity}
-                            onChange={(e) => {
-                              const updated = [...formData.scopeOfWork.deliverables];
-                              updated[index].quantity = parseInt(e.target.value);
-                              onUpdateScopeOfWork({ deliverables: updated });
-                            }}
-                            className="h-10"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs text-slate-600">Deadline</Label>
-                          <DatePicker
-                            field={`deliverable-deadline-${index}`}
-                            value={deliverable.deadline}
-                            placeholder="Select date"
-                            onChange={(value: string) => {
-                              const updated = [...formData.scopeOfWork.deliverables];
-                              updated[index].deadline = value;
-                              onUpdateScopeOfWork({ deliverables: updated });
-                            }}
-                            error={undefined}
-                            openPopovers={openPopovers}
-                            setOpenPopovers={setOpenPopovers}
-                          />
-                        </div>
-                        <div className="flex items-end">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const updated = formData.scopeOfWork.deliverables.filter(
-                                (_: any, i: number) => i !== index,
-                              );
-                              onUpdateScopeOfWork({ deliverables: updated });
-                            }}
-                            className="h-10 w-full gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            Remove
-                          </Button>
-                        </div>
-                      </div>
-                    </Card>
-                  ),
-                )}
-              </div>
-            </div>
-
-            {/* Branding Restrictions (not for Co-Producing) */}
-            {formData.type !== "CO_PRODUCING" && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm font-medium">Branding Restrictions</Label>
-                  <Button
-                    type="button"
-                    onClick={() =>
-                      onUpdateScopeOfWork({
-                        branding_restrictions: [
-                          ...(formData.scopeOfWork.branding_restrictions || []),
-                          "",
-                        ],
-                      })
-                    }
-                    size="sm"
-                    variant="outline"
-                    className="gap-2"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add Restriction
-                  </Button>
-                </div>
-                <div className="space-y-3">
-                  {(formData.scopeOfWork.branding_restrictions || []).map(
-                    (restriction: string, index: number) => (
-                      <Card key={index} className="p-4 bg-slate-50/50 border-slate-200">
-                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                          <div className="md:col-span-4 space-y-2">
-                            <Label className="text-xs text-slate-600">Restriction</Label>
-                            <Input
-                              value={restriction}
-                              onChange={(e) => {
-                                const updated = [...formData.scopeOfWork.branding_restrictions];
-                                updated[index] = e.target.value;
-                                onUpdateScopeOfWork({ branding_restrictions: updated });
-                              }}
-                              placeholder="Enter branding restriction..."
-                              className="h-10"
-                            />
-                          </div>
-                          <div className="flex items-end">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                const updated = formData.scopeOfWork.branding_restrictions.filter(
-                                  (_: any, i: number) => i !== index,
-                                );
-                                onUpdateScopeOfWork({ branding_restrictions: updated });
-                              }}
-                              className="h-10 w-full gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              Remove
-                            </Button>
-                          </div>
-                        </div>
-                      </Card>
-                    ),
-                  )}
-                </div>
+                {(formData.scopeOfWork.events || []).map((e: any, index: number) => (
+                  <Card key={index} className="p-4 bg-slate-50/50 border-slate-200">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                      <Input
+                        placeholder="Event Name"
+                        value={e.event_name}
+                        onChange={(ev) => {
+                          const updated = [...formData.scopeOfWork.events];
+                          updated[index].event_name = ev.target.value;
+                          onUpdateScopeOfWork({ events: updated });
+                        }}
+                        className="h-10"
+                      />
+                      <DatePicker
+                        field={`event-date-${index}`}
+                        value={e.date}
+                        placeholder="Date"
+                        onChange={(v: string) => {
+                          const updated = [...formData.scopeOfWork.events];
+                          updated[index].date = v;
+                          onUpdateScopeOfWork({ events: updated });
+                        }}
+                        error={undefined}
+                        openPopovers={openPopovers}
+                        setOpenPopovers={setOpenPopovers}
+                      />
+                      <Input
+                        placeholder="Location"
+                        value={e.location}
+                        onChange={(ev) => {
+                          const updated = [...formData.scopeOfWork.events];
+                          updated[index].location = ev.target.value;
+                          onUpdateScopeOfWork({ events: updated });
+                        }}
+                        className="h-10"
+                      />
+                      <Input
+                        placeholder="Note"
+                        value={e.note}
+                        onChange={(ev) => {
+                          const updated = [...formData.scopeOfWork.events];
+                          updated[index].note = ev.target.value;
+                          onUpdateScopeOfWork({ events: updated });
+                        }}
+                        className="h-10"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const updated = formData.scopeOfWork.events.filter(
+                            (_: any, i: number) => i !== index,
+                          );
+                          onUpdateScopeOfWork({ events: updated });
+                        }}
+                        className="h-10 gap-2 text-red-600 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Remove
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
               </div>
             )}
           </CardContent>

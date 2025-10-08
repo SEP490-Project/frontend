@@ -45,7 +45,7 @@ const isEmpty = (value: string | null | undefined): boolean => {
   return !value || value.trim() === "";
 };
 
-const PartnerPage: React.FC = () => {
+const BrandPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
@@ -92,12 +92,12 @@ const PartnerPage: React.FC = () => {
   return (
     <div className="min-h-fit p-4 sm:p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl sm:text-2xl font-semibold">Partners</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold">Brands</h1>
         <Button
           className="bg-primary hover:bg-[#f794a8] text-white"
-          onClick={() => navigate("/manage/marketing/partners/add")}
+          onClick={() => navigate("/manage/marketing/brands/add")}
         >
-          Add Partner
+          Add Brand
         </Button>
       </div>
 
@@ -139,7 +139,7 @@ const PartnerPage: React.FC = () => {
           // Loading state for table only
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="ml-2">Loading partners...</span>
+            <span className="ml-2">Loading brands...</span>
           </div>
         ) : (
           <>
@@ -148,7 +148,7 @@ const PartnerPage: React.FC = () => {
               <Table>
                 <TableHeader>
                   <TableRow className="border-b bg-gray-50">
-                    <TableHead className="font-semibold">Partner</TableHead>
+                    <TableHead className="font-semibold">Brand</TableHead>
                     <TableHead className="font-semibold">Email</TableHead>
                     <TableHead className="font-semibold">Phone</TableHead>
                     <TableHead className="font-semibold">Website</TableHead>
@@ -467,4 +467,4 @@ const PartnerPage: React.FC = () => {
   );
 };
 
-export default PartnerPage;
+export default BrandPage;

@@ -19,9 +19,9 @@ const GlobalHeader = () => {
           <a href="#" className="text-[#383838] hover:text-[#fec6d4] transition-colors font-medium">
             BESTSELLERS
           </a>
-          <a href="#" className="text-[#383838] hover:text-[#fec6d4] transition-colors font-medium">
+          {/* <a href="#" className="text-[#383838] hover:text-[#fec6d4] transition-colors font-medium">
             COLLECTION
-          </a>
+          </a> */}
           <a href="#" className="text-[#383838] hover:text-[#fec6d4] transition-colors font-medium">
             ABOUT US
           </a>
@@ -75,12 +75,12 @@ const GlobalHeader = () => {
                 >
                   BEST SELLERS
                 </a>
-                <a
+                {/* <a
                   href="#"
                   className="text-[#383838] hover:text-[#fec6d4] transition-colors font-medium text-lg"
                 >
                   COLLECTION
-                </a>
+                </a> */}
                 <a
                   href="#"
                   className="text-[#383838] hover:text-[#fec6d4] transition-colors font-medium text-lg"

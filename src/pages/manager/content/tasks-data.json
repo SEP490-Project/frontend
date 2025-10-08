@@ -1,0 +1,316 @@
+{
+  "beautyTasks": [
+    {
+      "date": "2025-10-29",
+      "items": [
+        {
+          "id": 1,
+          "type": "Blog",
+          "color": "#f7c06d",
+          "title": "Fall Skincare Transition Guide",
+          "campaign": "Autumn Glow Campaign",
+          "status": "completed",
+          "details": {
+            "description": "Comprehensive guide on transitioning skincare routine from summer to fall",
+            "assignee": "Sarah Chen",
+            "dueTime": "All day",
+            "priority": "High"
+          }
+        }
+      ]
+    },
+    {
+      "date": "2025-08-30",
+      "items": [
+        {
+          "id": 2,
+          "type": "Video",
+          "color": "#ff88fa",
+          "title": "Pumpkin Spice Makeup Look",
+          "campaign": "Autumn Glow Campaign",
+          "status": "in-progress",
+          "details": {
+            "description": "Create warm autumn-inspired makeup tutorial using our new fall palette",
+            "assignee": "Emma Rodriguez",
+            "dueTime": "2:00 PM",
+            "priority": "Medium"
+          }
+        }
+      ]
+    },
+    {
+      "date": "2025-09-01",
+      "items": []
+    },
+    {
+      "date": "2025-09-02",
+      "items": []
+    },
+    {
+      "date": "2025-09-03",
+      "items": [
+        {
+          "id": 3,
+          "type": "Post",
+          "color": "#9976ff",
+          "title": "Halloween Prep Skincare",
+          "campaign": "Spooky Beauty Series",
+          "status": "to-do",
+          "details": {
+            "description": "Instagram post about prepping skin for heavy Halloween makeup",
+            "assignee": "Michael Park",
+            "dueTime": "10:00 AM",
+            "priority": "High"
+          }
+        }
+      ]
+    },
+    {
+      "date": "2025-09-04",
+      "items": []
+    },
+    {
+      "date": "2025-09-05",
+      "items": [
+        {
+          "id": 4,
+          "type": "Video",
+          "color": "#ff88fa",
+          "title": "Vampire Makeup Tutorial",
+          "campaign": "Spooky Beauty Series",
+          "status": "to-do",
+          "details": {
+            "description": "Step-by-step vampire makeup look for Halloween using dramatic colors",
+            "assignee": "Jessica Liu",
+            "dueTime": "3:30 PM",
+            "priority": "Medium"
+          }
+        },
+        {
+          "id": 5,
+          "type": "Blog",
+          "color": "#f7c06d",
+          "title": "Best Makeup Removers Review",
+          "campaign": "Product Review Series",
+          "status": "in-progress",
+          "details": {
+            "description": "Comprehensive review of top 10 makeup removers for sensitive skin",
+            "assignee": "Alex Thompson",
+            "dueTime": "All day",
+            "priority": "Low"
+          }
+        }
+      ]
+    },
+    {
+      "date": "2025-09-06",
+      "items": []
+    },
+    {
+      "date": "2025-09-07",
+      "items": []
+    },
+    {
+      "date": "2025-09-08",
+      "items": [
+        {
+          "id": 6,
+          "type": "Post",
+          "color": "#9976ff",
+          "title": "Glowing Skin Tips",
+          "campaign": "Healthy Skin Initiative",
+          "status": "completed",
+          "details": {
+            "description": "Social media post featuring 5 tips for achieving naturally glowing skin",
+            "assignee": "Sarah Chen",
+            "dueTime": "9:00 AM",
+            "priority": "Medium"
+          }
+        }
+      ]
+    },
+    {
+      "date": "2025-09-10",
+      "items": [
+        {
+          "id": 7,
+          "type": "Video",
+          "color": "#ff88fa",
+          "title": "Morning Skincare Routine",
+          "campaign": "Daily Beauty Essentials",
+          "status": "to-do",
+          "details": {
+            "description": "Step-by-step morning skincare routine for glowing skin",
+            "assignee": "Emma Rodriguez",
+            "dueTime": "11:00 AM",
+            "priority": "High"
+          }
+        }
+      ]
+    },
+    {
+      "date": "2025-09-12",
+      "items": [
+        {
+          "id": 8,
+          "type": "Blog",
+          "color": "#f7c06d",
+          "title": "Winter Lip Care Guide",
+          "campaign": "Seasonal Beauty Tips",
+          "status": "in-progress",
+          "details": {
+            "description": "Complete guide to keeping lips healthy and moisturized during winter",
+            "assignee": "Michael Park",
+            "dueTime": "All day",
+            "priority": "Medium"
+          }
+        }
+      ]
+    },
+    {
+      "date": "2025-09-15",
+      "items": [
+        {
+          "id": 9,
+          "type": "Post",
+          "color": "#9976ff",
+          "title": "Eye Makeup Trends 2025",
+          "campaign": "Trend Alert Series",
+          "status": "to-do",
+          "details": {
+            "description": "Social media post showcasing the hottest eye makeup trends for 2025",
+            "assignee": "Jessica Liu",
+            "dueTime": "3:00 PM",
+            "priority": "High"
+          }
+        }
+      ]
+    }
+  ],
+  "taskContractData": {
+    "1": {
+      "contract": {
+        "id": "CNT-2025-001",
+        "clientName": "Beauty Essentials Co.",
+        "contractValue": "$45,000",
+        "startDate": "2025-09-01",
+        "endDate": "2025-12-31",
+        "status": "Active"
+      },
+      "campaign": {
+        "name": "Autumn Glow Campaign",
+        "objective": "Promote fall skincare products and increase brand awareness",
+        "budget": "$25,000",
+        "timeline": "Sep 2025 - Nov 2025",
+        "targetAudience": "Women 25-45 interested in skincare"
+      },
+      "milestones": [
+        {
+          "id": 1,
+          "name": "Content Strategy Development",
+          "status": "completed",
+          "dueDate": "2025-09-15"
+        },
+        {
+          "id": 2,
+          "name": "Fall Skincare Blog Series",
+          "status": "in-progress",
+          "dueDate": "2025-10-30"
+        },
+        {
+          "id": 3,
+          "name": "Social Media Campaign Launch",
+          "status": "pending",
+          "dueDate": "2025-11-01"
+        },
+        {
+          "id": 4,
+          "name": "Performance Analysis & Report",
+          "status": "pending",
+          "dueDate": "2025-11-30"
+        }
+      ]
+    },
+    "2": {
+      "contract": {
+        "id": "CNT-2025-002",
+        "clientName": "Glamour Studios",
+        "contractValue": "$32,000",
+        "startDate": "2025-08-15",
+        "endDate": "2025-11-15",
+        "status": "Active"
+      },
+      "campaign": {
+        "name": "Autumn Glow Campaign",
+        "objective": "Create engaging video content for makeup tutorials",
+        "budget": "$18,000",
+        "timeline": "Aug 2025 - Nov 2025",
+        "targetAudience": "Beauty enthusiasts and makeup beginners"
+      },
+      "milestones": [
+        {
+          "id": 1,
+          "name": "Video Concept Development",
+          "status": "completed",
+          "dueDate": "2025-08-30"
+        },
+        {
+          "id": 2,
+          "name": "Makeup Tutorial Production",
+          "status": "in-progress",
+          "dueDate": "2025-10-15"
+        },
+        {
+          "id": 3,
+          "name": "Post-Production & Editing",
+          "status": "pending",
+          "dueDate": "2025-10-30"
+        },
+        { "id": 4, "name": "Campaign Distribution", "status": "pending", "dueDate": "2025-11-10" }
+      ]
+    },
+    "3": {
+      "contract": {
+        "id": "CNT-2025-003",
+        "clientName": "Spooky Beauty Inc.",
+        "contractValue": "$28,500",
+        "startDate": "2025-09-01",
+        "endDate": "2025-10-31",
+        "status": "Active"
+      },
+      "campaign": {
+        "name": "Spooky Beauty Series",
+        "objective": "Halloween-themed beauty content and product promotion",
+        "budget": "$15,000",
+        "timeline": "Sep 2025 - Oct 2025",
+        "targetAudience": "Young adults interested in seasonal beauty trends"
+      },
+      "milestones": [
+        {
+          "id": 1,
+          "name": "Halloween Content Planning",
+          "status": "completed",
+          "dueDate": "2025-09-10"
+        },
+        {
+          "id": 2,
+          "name": "Spooky Makeup Tutorials",
+          "status": "in-progress",
+          "dueDate": "2025-10-15"
+        },
+        {
+          "id": 3,
+          "name": "Halloween Beauty Tips Campaign",
+          "status": "in-progress",
+          "dueDate": "2025-10-25"
+        },
+        {
+          "id": 4,
+          "name": "Campaign Wrap-up & Analysis",
+          "status": "pending",
+          "dueDate": "2025-10-31"
+        }
+      ]
+    }
+  }
+}

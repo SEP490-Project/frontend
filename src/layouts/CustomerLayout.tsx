@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { GlobalFooter, GlobalHeader } from "@/components/layout/customer";
+import { GlobalFooter, GlobalHeader } from "@/components/customer";
 import { Outlet } from "react-router-dom";
 
 const CustomerLayout = () => {

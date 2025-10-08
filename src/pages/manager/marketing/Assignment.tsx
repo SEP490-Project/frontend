@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Plus, Search, Filter } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -249,12 +249,11 @@ const AssignmentPage: React.FC = () => {
       >
         {/* Top Bar: Filters & Actions */}
         <div className="flex flex-wrap items-center gap-2 mb-8">
-          <div className="relative w-56">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-              <Search className="h-4 w-4" />
-            </span>
-            <Input className="pl-9" placeholder="Search tasks..." />
-          </div>
+          <Input
+            className="w-56"
+            placeholder="Search tasks..."
+            // prefix={<Search className="h-4 w-4 text-gray-400" />}
+          />
           <Button variant="outline" size="sm">
             <Filter className="mr-1" /> Filter
           </Button>

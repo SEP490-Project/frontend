@@ -249,18 +249,19 @@ const AssignmentPage: React.FC = () => {
       >
         {/* Top Bar: Filters & Actions */}
         <div className="flex flex-wrap items-center gap-2 mb-8">
-          <Input
-            className="w-56"
-            placeholder="Search tasks..."
-            prefix={<Search className="h-4 w-4 text-gray-400" />}
-          />
+          <div className="relative w-56">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <Search className="h-4 w-4" />
+            </span>
+            <Input className="pl-9" placeholder="Search tasks..." />
+          </div>
           <Button variant="outline" size="sm">
             <Filter className="mr-1" /> Filter
           </Button>
-          <Button variant="primary" size="sm">
+          <Button variant="default" size="sm">
             <Plus className="mr-1" /> New Task
           </Button>
-          <Button variant="primary" size="sm">
+          <Button variant="default" size="sm">
             <Plus className="mr-1" /> New Milestone
           </Button>
         </div>

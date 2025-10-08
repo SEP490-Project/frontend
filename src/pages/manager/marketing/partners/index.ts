@@ -1,2 +1,2 @@
-export { default as AddPartner } from "./AddPartner";
-export { default as PartnerDetail } from "./PartnerDetail";
+export { default as AddBrand } from "./AddBrand";
+export { default as BrandDetail } from "./BrandDetail";

@@ -1,4 +1,4 @@
-export { default as Partner } from "./Partner";
+export { default as Brand } from "./Brand";
 export { default as Contracts } from "./Contract";
 export { default as Assignment } from "./Assignment";
 

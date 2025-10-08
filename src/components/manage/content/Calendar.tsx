@@ -1,7 +1,7 @@
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import tasksData from "@/pages/content/tasks-data.json";
+import tasksData from "@/pages/manager/content/tasks-data.json";
 
 // Transform JSON data to match expected format
 const beautyTasks = tasksData.beautyTasks.map((task) => ({

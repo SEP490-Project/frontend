@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TaskDetail } from "./TaskDetail";
-import tasksData from "@/pages/content/tasks-data.json";
+import tasksData from "@/pages/manager/content/tasks-data.json";
 
 // Transform JSON data to match the expected format
 export const beautyTasks = tasksData.beautyTasks.map((task) => ({

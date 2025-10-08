@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import ContractDetail from "@/components/layout/manage/brand/ContractDetail";
+import ContractDetail from "@/components/manage/brand/ContractDetail";
 
 export default function ContractDetailPage() {
   const { id } = useParams<{ id: string }>();

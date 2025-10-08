@@ -2,8 +2,9 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { TaskList } from "@/components/manage/content/TasksList";
+
 import { TaskSidebar } from "@/components/manage/content/TaskSidebar";
+import { TaskList } from "@/components/manage/content/TaskList";
 
 export default function TaskManagement() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -47,41 +48,17 @@ export default function TaskManagement() {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="flex min-h-screen bg-[#ffffff]"
-    >
+    <div className="flex min-h-screen bg-background">
       {/* Left Sidebar */}
-      <motion.div
-        initial={{ x: -100, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.1 }}
-        className="w-80 bg-[#ffffff] border-r border-[#dadada] p-6"
-      >
+      <div className="w-80 bg-card border-r border-border p-6">
         <TaskSidebar currentDate={currentDate} setCurrentDate={setCurrentDate} />
-      </motion.div>
+      </div>
 
       {/* Main Content */}
-      <motion.div
-        initial={{ x: 100, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-        className="flex-1 p-6"
-      >
-        <motion.div
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="flex items-center justify-between mb-6"
-        >
+      <div className="flex-1 p-6">
+        <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              className="bg-[#ffffff] border-[#dadada] text-[#1c1b1f] hover:bg-[#f8f9fa] transition-all duration-200 hover:scale-105"
-              onClick={goToToday}
-            >
+            <Button variant="outline" onClick={goToToday} className="gap-2">
               📅 Today
             </Button>
             <AnimatePresence mode="wait">
@@ -91,7 +68,7 @@ export default function TaskManagement() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
                 transition={{ duration: 0.3 }}
-                className="text-xl font-medium text-[#1c1b1f]"
+                className="text-xl font-semibold text-foreground"
               >
                 {formatWeekRange(currentDate)}
               </motion.h1>
@@ -102,7 +79,7 @@ export default function TaskManagement() {
               variant="ghost"
               size="sm"
               onClick={() => navigateWeek("prev")}
-              className="transition-all duration-200 hover:bg-[#f5f5f5] hover:scale-110"
+              className="h-8 w-8 p-0"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -110,22 +87,15 @@ export default function TaskManagement() {
               variant="ghost"
               size="sm"
               onClick={() => navigateWeek("next")}
-              className="transition-all duration-200 hover:bg-[#f5f5f5] hover:scale-110"
+              className="h-8 w-8 p-0"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="transition-all duration-300 ease-in-out"
-        >
-          <TaskList currentDate={currentDate} />
-        </motion.div>
-      </motion.div>
-    </motion.div>
+        <TaskList currentDate={currentDate} />
+      </div>
+    </div>
   );
 }

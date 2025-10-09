@@ -23,7 +23,15 @@ import CustomerLayout from "@/layouts/CustomerLayout";
 import { AssignedTasks, ManageContent, ManageTags } from "@/pages/manager/content";
 import PrivateRoute from "./private-route";
 import PublicRoute from "./public-route";
-import { Product, ProductDetail } from "@/pages/manager/sale";
+import {
+  Product,
+  ProductDetail,
+  Category,
+  Order,
+  OrderDetail,
+  Review,
+  Transaction,
+} from "@/pages/manager/sale";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -73,6 +81,11 @@ const AppRoutes = () => (
           <Route path="product/create" element={<ProductDetail />} />
           <Route path="product/:id/edit" element={<ProductDetail />} />
           <Route path="product/:id" element={<ProductDetail />} />
+          <Route path="category" element={<Category />} />
+          <Route path="order" element={<Order />} />
+          <Route path="order/:id" element={<OrderDetail />} />
+          <Route path="review" element={<Review />} />
+          <Route path="transaction" element={<Transaction />} />
         </Route>
       </Route>
 

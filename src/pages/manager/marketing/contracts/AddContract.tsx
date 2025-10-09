@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import {
   ContractActions,
-  ContractTypeTemplate,
+  ContractInformation,
   FinancialTerms,
   Representative,
+  LegalTerms,
+  ScopeOfWork,
 } from "@/components/manage/marketing/contract";
 import { FaCheck } from "react-icons/fa6";
 import { validateContract, validateField } from "@/libs/validation/contractValidation";
@@ -31,8 +33,10 @@ const CONTRACT_TYPE_COLORS = {
 
 const INITIAL_TABS = [
   { id: "contract-info", label: "Contract Information", isRequired: true },
+  { id: "scope-of-work", label: "Scope of Work", isRequired: true },
   { id: "representative", label: "Representative Info", isRequired: true },
   { id: "financial-terms", label: "Financial Terms", isRequired: true },
+  { id: "legal-terms", label: "Legal Terms", isRequired: true },
   { id: "contract-actions", label: "Documents & Actions", isRequired: true },
 ];
 
@@ -115,9 +119,11 @@ const getDefaultFinancialTerms = (type: string) => {
 };
 
 const TAB_COMPONENTS: Record<string, React.FC<any>> = {
-  "contract-info": ContractTypeTemplate,
+  "contract-info": ContractInformation,
+  "scope-of-work": ScopeOfWork,
   representative: Representative,
   "financial-terms": FinancialTerms,
+  "legal-terms": LegalTerms,
   "contract-actions": ContractActions,
 };
 
@@ -130,16 +136,34 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
         formData.signedDate &&
         formData.startDate &&
         formData.endDate &&
-        formData.signedLocation &&
-        formData.scopeOfWork?.description
+        formData.signedLocation
       );
-    case "representative":
+    case "scope-of-work": {
+      if (!formData.type) return false;
+      const scopeOfWork = formData.scopeOfWork || {};
+
+      if (formData.type === "ADVERTISING") {
+        return !!(scopeOfWork.contents?.length > 0 && scopeOfWork.products?.length > 0);
+      }
+      if (formData.type === "AFFILIATE") {
+        return !!(scopeOfWork.contents?.length > 0);
+      }
+      if (formData.type === "CO_PRODUCING") {
+        return !!(scopeOfWork.products?.length > 0);
+      }
+      if (formData.type === "BRAND_AMBASSADOR") {
+        return !!(scopeOfWork.events?.length > 0);
+      }
+      return false;
+    }
+    case "representative": {
       return !!(
         formData.brandRepresentativeName &&
         formData.brandRepresentativeEmail &&
         formData.webRepresentativeName &&
         formData.webRepresentativeEmail
       );
+    }
     case "financial-terms": {
       if (!formData.type) return false;
       const hasSchedule =
@@ -175,6 +199,8 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
       }
       return false;
     }
+    case "legal-terms":
+      return !!formData.legalTerms?.compensationPercent;
     case "contract-actions":
       return formData.contractFiles?.length > 0 && formData.proposalFiles?.length > 0;
     default:

@@ -5,6 +5,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { DatePicker } from "@/components/date-picker";
+import { NumberInput } from "@/components/number-input";
 import { DataSelector } from "@/components/global";
 import { useAppDispatch } from "@/libs/stores";
 import { useContract } from "@/libs/hooks/useContract";
@@ -29,7 +31,7 @@ interface CreateCampaignProps {
   isCampaignValid: boolean;
   onNext: () => void;
   onReset: () => void;
-  onContractSelect: (contract: ContractBase | null) => void; // Add this prop
+  onContractSelect: (contract: ContractBase | null) => void;
 }
 
 // Helper component for contract item display
@@ -50,7 +52,7 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
   isCampaignValid,
   onNext,
   onReset,
-  onContractSelect, // Add this prop
+  onContractSelect,
 }) => {
   // Contract selection state & hooks
   const dispatch = useAppDispatch();
@@ -117,6 +119,20 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
     onContractSelect(selectedContract || null);
   };
 
+  // Handle budget change using the same format as FinancialTerms
+  const handleBudgetChange = (value: number) => {
+    setCampaignData((s) => ({ ...s, budget_projected: value }));
+  };
+
+  // Handle date changes
+  const handleStartDateChange = (date: string) => {
+    setCampaignData((s) => ({ ...s, start_date: date }));
+  };
+
+  const handleEndDateChange = (date: string) => {
+    setCampaignData((s) => ({ ...s, end_date: date }));
+  };
+
   // Get selected contract for displaying type
   const selectedContract = allContracts.find((c) => c.id === campaignData.contract_id);
 
@@ -175,18 +191,15 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
             <CardTitle>Budget</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <Label className="text-sm">Projected Budget</Label>
-              <Input
-                type="number"
-                step="0.01"
-                placeholder="e.g. 10000.50"
-                value={campaignData.budget_projected as any}
-                onChange={(e) =>
-                  setCampaignData((s) => ({ ...s, budget_projected: e.target.value }))
-                }
-                className="h-11"
-              />
+            <NumberInput
+              label="Projected Budget"
+              value={campaignData.budget_projected}
+              onChange={handleBudgetChange}
+              placeholder="10.000.000"
+              currency="VND"
+            />
+            <div className="text-xs text-gray-500">
+              <p>Enter the projected budget for this campaign</p>
             </div>
           </CardContent>
         </Card>
@@ -200,7 +213,7 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label className="text-sm">Campaign Name</Label>
+                <Label className="text-sm">Campaign Name *</Label>
                 <Input
                   placeholder="Summer Sale Campaign"
                   value={campaignData.name}
@@ -228,34 +241,31 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
               <CardTitle>Timeline</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label className="text-sm">Start Date</Label>
-                <Input
-                  type="date"
-                  value={campaignData.start_date}
-                  onChange={(e) => setCampaignData((s) => ({ ...s, start_date: e.target.value }))}
-                  className="h-11"
-                />
-                {selectedContract && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Auto-filled from contract (can be modified)
-                  </p>
-                )}
-              </div>
-              <div>
-                <Label className="text-sm">End Date</Label>
-                <Input
-                  type="date"
-                  value={campaignData.end_date}
-                  onChange={(e) => setCampaignData((s) => ({ ...s, end_date: e.target.value }))}
-                  className="h-11"
-                />
-                {selectedContract && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Auto-filled from contract (can be modified)
-                  </p>
-                )}
-              </div>
+              <DatePicker
+                label="Start Date"
+                value={campaignData.start_date}
+                onChange={handleStartDateChange}
+                placeholder="Pick start date"
+                required={true}
+              />
+              {selectedContract && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Auto-filled from contract (can be modified)
+                </p>
+              )}
+
+              <DatePicker
+                label="End Date"
+                value={campaignData.end_date}
+                onChange={handleEndDateChange}
+                placeholder="Pick end date"
+                required={true}
+              />
+              {selectedContract && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Auto-filled from contract (can be modified)
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>

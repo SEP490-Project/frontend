@@ -16,25 +16,22 @@ import {
 import ManageLayout from "@/layouts/ManageLayout";
 import Login from "@/pages/authentication/Login";
 import Register from "@/pages/authentication/Register";
-// import PrivateRoute from "./private-route";
 import { AuthenticationLayout } from "../layouts/AuthenticationLayout";
 import { ForgotPassword } from "@/pages/authentication/ForgotPassword";
 import { ResetPassword } from "@/pages/authentication/ResetPassword";
 import CustomerLayout from "@/layouts/CustomerLayout";
-import Product from "@/pages/manager/sale/Product";
 import { AssignedTasks, ManageContent, ManageTags } from "@/pages/manager/content";
 import PrivateRoute from "./private-route";
 import PublicRoute from "./public-route";
+import { Product, ProductDetail } from "@/pages/manager/sale";
 
 const AppRoutes = () => (
   <BrowserRouter>
     <Routes>
-      {/* ========== PUBLIC ROUTES (Homepage ai cũng xem được) ========== */}
       <Route element={<CustomerLayout />}>
         <Route path="/" element={<Homepage />} />
       </Route>
 
-      {/* ========== PUBLIC ROUTES (chỉ cho khách, không login) ========== */}
       <Route element={<PublicRoute />}>
         <Route element={<AuthenticationLayout />}>
           <Route path="/login" element={<Login />} />
@@ -44,8 +41,6 @@ const AppRoutes = () => (
         </Route>
       </Route>
 
-      {/* ========== PRIVATE ROUTES (cần login, có role) ========== */}
-      {/* MANAGER COMMON (Admin + all staff) */}
       <Route
         element={
           <PrivateRoute
@@ -66,21 +61,21 @@ const AppRoutes = () => (
         </Route>
       </Route>
 
-      {/* ADMIN */}
       <Route element={<PrivateRoute allowedRoles={["ADMIN"]} />}>
         <Route path="/manage/admin" element={<ManageLayout />}>
           <Route path="users" element={<User />} />
         </Route>
       </Route>
 
-      {/* SALE STAFF */}
       <Route element={<PrivateRoute allowedRoles={["SALES_STAFF"]} />}>
         <Route path="/manage/sale" element={<ManageLayout />}>
           <Route path="product" element={<Product />} />
+          <Route path="product/create" element={<ProductDetail />} />
+          <Route path="product/:id/edit" element={<ProductDetail />} />
+          <Route path="product/:id" element={<ProductDetail />} />
         </Route>
       </Route>
 
-      {/* MARKETING STAFF */}
       <Route element={<PrivateRoute allowedRoles={["MARKETING_STAFF"]} />}>
         <Route path="/manage/marketing" element={<ManageLayout />}>
           <Route path="brands" element={<Brand />} />
@@ -93,7 +88,6 @@ const AppRoutes = () => (
         </Route>
       </Route>
 
-      {/* BRAND PARTNER */}
       <Route element={<PrivateRoute allowedRoles={["BRAND_PARTNER"]} />}>
         <Route path="/manage/brand" element={<ManageLayout />}>
           <Route path="contracts" element={<Contract />} />
@@ -101,7 +95,6 @@ const AppRoutes = () => (
         </Route>
       </Route>
 
-      {/* CONTENT STAFF */}
       <Route element={<PrivateRoute allowedRoles={["CONTENT_STAFF"]} />}>
         <Route path="/manage/content" element={<ManageLayout />}>
           <Route path="task" element={<AssignedTasks />} />
@@ -110,7 +103,6 @@ const AppRoutes = () => (
         </Route>
       </Route>
 
-      {/* ========== 404 ========== */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   </BrowserRouter>

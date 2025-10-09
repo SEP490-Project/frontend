@@ -1,13 +1,22 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { getProfileThunk, updateProfileThunk } from "./thunk";
+import type { UserResponse } from "@/libs/types/user";
+
+interface UserManagerState {
+  userProfile: UserResponse | null;
+  loading: boolean;
+  error: string | null;
+}
+
+const initialState: UserManagerState = {
+  userProfile: null,
+  loading: false,
+  error: null,
+};
 
 const userManagerSlice = createSlice({
   name: "userManager",
-  initialState: {
-    userProfile: null,
-    loading: false,
-    error: null as string | null,
-  },
+  initialState,
   reducers: {},
   extraReducers: (builder) => {
     builder.addCase(getProfileThunk.pending, (state) => {
@@ -35,4 +44,4 @@ const userManagerSlice = createSlice({
   },
 });
 
-export default userManagerSlice.reducer;
+export const { reducer: manageUserReducer, actions: manageUserActions } = userManagerSlice;

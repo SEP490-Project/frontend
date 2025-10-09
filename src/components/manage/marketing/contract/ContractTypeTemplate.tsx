@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,18 @@ import { Calendar } from "@/components/ui/calendar";
 import { validateField } from "@/libs/validation/contractValidation";
 import { CalendarIcon, Plus, Trash2 } from "lucide-react";
 import { format } from "date-fns";
+
+// Brand selection imports
+import { DataSelector } from "@/components/global";
+import { useAppDispatch } from "@/libs/stores";
+import { useBrand } from "@/libs/hooks/useBrand";
+import {
+  brand as fetchBrands,
+  brandDetail as fetchBrandDetail,
+} from "@/libs/stores/brandManager/thunk";
+import { useDebounce } from "@/libs/hooks/useDebounce";
+import { Mail, Phone, Globe } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface ContractTypeTemplateProps {
   formData: any;
@@ -39,7 +51,101 @@ const CHANNEL_OPTIONS = [
   { value: "facebook", label: "Facebook" },
 ];
 
-// Helper Components
+// Helper Components (Brand)
+const BrandItem = ({ brand }: { brand: any }) => (
+  <div className="flex items-center gap-3 p-2">
+    {brand.logo_url && (
+      <img
+        src={brand.logo_url}
+        alt={brand.name}
+        className="h-8 w-8 rounded-lg object-cover border"
+      />
+    )}
+    <div>
+      <span className="font-medium">{brand.name}</span>
+      <p className="text-xs text-slate-500">{brand.contact_email}</p>
+    </div>
+  </div>
+);
+
+const ContactInfo = ({ icon: Icon, children }: { icon: any; children: React.ReactNode }) => (
+  <div className="flex items-center gap-2 text-slate-600">
+    <Icon className="h-4 w-4" />
+    {children}
+  </div>
+);
+
+const BrandDetails = ({ brandId }: { brandId: string }) => {
+  const dispatch = useAppDispatch();
+  const { brand } = useBrand();
+
+  useEffect(() => {
+    if (!brandId) return;
+    dispatch(fetchBrandDetail(brandId));
+  }, [brandId, dispatch]);
+
+  if (!brand) return null;
+
+  return (
+    <div className="mt-6 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="xl:col-span-2 space-y-4">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              {brand.logo_url && (
+                <img
+                  src={brand.logo_url}
+                  alt={`${brand.name} logo`}
+                  className="h-12 w-12 rounded-xl object-cover border-2 border-white shadow-sm"
+                />
+              )}
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">{brand.name}</h3>
+                {brand.status && (
+                  <Badge
+                    variant={brand.status === "ACTIVE" ? "default" : "secondary"}
+                    className="mt-1"
+                  >
+                    {brand.status}
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {brand.description && <p className="mt-3 text-sm text-slate-600">{brand.description}</p>}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+            {brand.contact_email && (
+              <ContactInfo icon={Mail}>
+                <span>{brand.contact_email}</span>
+              </ContactInfo>
+            )}
+            {brand.contact_phone && (
+              <ContactInfo icon={Phone}>
+                <span>{brand.contact_phone}</span>
+              </ContactInfo>
+            )}
+            {brand.website && (
+              <ContactInfo icon={Globe}>
+                <a
+                  href={brand.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
+                >
+                  {brand.website}
+                </a>
+              </ContactInfo>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// DatePicker (existing)
 const DatePicker = ({
   field,
   value,
@@ -104,11 +210,44 @@ const ContractTypeTemplate: React.FC<ContractTypeTemplateProps> = ({
   errors = {},
   onFieldValidation,
 }) => {
+  // Date popovers
   const [openPopovers, setOpenPopovers] = useState({
     startDate: false,
     endDate: false,
     signedDate: false,
   });
+
+  // Brand selection state & hooks
+  const dispatch = useAppDispatch();
+  const { brands, loading, pagination } = useBrand();
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
+  const [page, setPage] = useState(1);
+  const [allBrands, setAllBrands] = useState<any[]>([]);
+
+  useEffect(() => {
+    setAllBrands([]);
+    setPage(1);
+  }, [debouncedSearch]);
+
+  useEffect(() => {
+    dispatch(
+      fetchBrands({
+        page,
+        limit: 10,
+        ...(debouncedSearch ? { keywords: debouncedSearch } : {}),
+      }),
+    );
+  }, [dispatch, page, debouncedSearch]);
+
+  useEffect(() => {
+    if (page === 1) setAllBrands(brands);
+    else setAllBrands((prev) => [...prev, ...brands]);
+  }, [brands, page]);
+
+  const loadMore = useCallback(() => {
+    if (pagination?.has_next && !loading) setPage((p) => p + 1);
+  }, [pagination, loading]);
 
   // Field change handlers with validation
   const handleFieldChange = async (field: string, value: any) => {
@@ -123,7 +262,6 @@ const ContractTypeTemplate: React.FC<ContractTypeTemplateProps> = ({
     <div className="space-y-8">
       {/* Contract Type Selection */}
       <Card className="border-0 shadow-xl rounded-2xl bg-gradient-to-br from-primary/90 to-primary/30 relative overflow-hidden">
-        {/* overlay sáng nhẹ để bớt gắt */}
         <div className="absolute inset-0 bg-white/10 mix-blend-overlay" />
 
         <CardHeader className="relative pb-4">
@@ -160,6 +298,37 @@ const ContractTypeTemplate: React.FC<ContractTypeTemplateProps> = ({
           </div>
         </CardContent>
       </Card>
+
+      {/* Brand Selection - Only show after contract type is selected */}
+      {formData.type && (
+        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-xl">Brand Selection</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2 text-sm font-medium">Select Brand *</Label>
+              <DataSelector
+                data={allBrands}
+                selectedId={formData.brandId}
+                onSelect={(id) => onInputChange("brandId", id || "")}
+                renderItem={(b) => <BrandItem brand={b} />}
+                getLabel={(b) => b.name}
+                title="Brands"
+                placeholder="Choose a brand to work with"
+                onSearch={setSearch}
+                searchValue={search}
+                onScrollEnd={pagination?.has_next ? loadMore : undefined}
+                loading={loading}
+              />
+            </div>
+
+            {formData.brandId && <BrandDetails brandId={formData.brandId} />}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Basic Information - Only show if contract type is selected */}
       {formData.type && (

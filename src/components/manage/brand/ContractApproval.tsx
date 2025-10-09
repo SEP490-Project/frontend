@@ -32,7 +32,7 @@ import {
 } from "@/libs/stores/contractManager/thunk";
 import type { AppDispatch } from "@/libs/stores";
 import type { ContractBase } from "@/libs/types/contract";
-import { getBrandIdFromToken } from "@/libs/helper";
+import { getBrandIdFromToken } from "@/libs/helper/helper";
 
 interface ContractApprovalProps {
   brandId?: string;

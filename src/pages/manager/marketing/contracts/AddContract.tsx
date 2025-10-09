@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import {
-  BrandSelection,
   ContractActions,
   ContractTypeTemplate,
   FinancialTerms,
@@ -8,7 +7,6 @@ import {
 } from "@/components/manage/marketing/contract";
 import { FaCheck } from "react-icons/fa6";
 import { validateContract, validateField } from "@/libs/validation/contractValidation";
-import brands from "./brands.json";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -33,7 +31,6 @@ const CONTRACT_TYPE_COLORS = {
 
 const INITIAL_TABS = [
   { id: "contract-info", label: "Contract Information", isRequired: true },
-  { id: "brand-selection", label: "Brand Selection", isRequired: true },
   { id: "representative", label: "Representative Info", isRequired: true },
   { id: "financial-terms", label: "Financial Terms", isRequired: true },
   { id: "contract-actions", label: "Documents & Actions", isRequired: true },
@@ -119,7 +116,6 @@ const getDefaultFinancialTerms = (type: string) => {
 
 const TAB_COMPONENTS: Record<string, React.FC<any>> = {
   "contract-info": ContractTypeTemplate,
-  "brand-selection": BrandSelection,
   representative: Representative,
   "financial-terms": FinancialTerms,
   "contract-actions": ContractActions,
@@ -137,8 +133,6 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
         formData.signedLocation &&
         formData.scopeOfWork?.description
       );
-    case "brand-selection":
-      return !!formData.brandId;
     case "representative":
       return !!(
         formData.brandRepresentativeName &&
@@ -190,8 +184,6 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
 
 const AddContractPage: React.FC = () => {
   const [formData, setFormData] = useState<any>(INITIAL_FORM_DATA);
-  const [selectedBrand, setSelectedBrand] = useState<any>(null);
-  const [isExtension, setIsExtension] = useState(false);
   const [errors, setErrors] = useState<any>({});
   const [activeTab, setActiveTab] = useState(INITIAL_TABS[0].id);
   const [tabs, setTabs] = useState(INITIAL_TABS.map((tab) => ({ ...tab, isCompleted: false })));
@@ -260,22 +252,6 @@ const AddContractPage: React.FC = () => {
       ...prev,
       scopeOfWork: { ...prev.scopeOfWork, ...updates },
     }));
-  };
-
-  const handleBrandChange = (id: string | null) => {
-    handleInputChange("brandId", id || "");
-    const brand = brands.find((b) => b.id === id) || null;
-    setSelectedBrand(brand);
-    if (brand) {
-      handleInputChange("brandRepresentativeName", brand.representative);
-      handleInputChange("brandRepresentativeEmail", brand.representative_email);
-      handleInputChange("brandRepresentativePhone", brand.representative_phone);
-    }
-  };
-
-  const handleExtensionChange = (checked: boolean) => {
-    setIsExtension(checked);
-    if (!checked) handleInputChange("parentContractId", "");
   };
 
   const handleContractTypeChange = async (type: string) => {
@@ -361,11 +337,7 @@ const AddContractPage: React.FC = () => {
       onContractTypeChange: handleContractTypeChange,
       onUpdateScopeOfWork: updateScopeOfWork,
       onFieldValidation: handleFieldValidation,
-      selectedBrand,
-      isExtension,
       contractTypeOptions: CONTRACT_TYPE_OPTIONS,
-      onBrandChange: handleBrandChange,
-      onExtensionChange: handleExtensionChange,
       onUpdateFinancialTerms: updateFinancialTerms,
       onContractFilesChange: handleContractFilesChange,
       onProposalFilesChange: handleProposalFilesChange,
@@ -405,9 +377,9 @@ const AddContractPage: React.FC = () => {
         {/* Tabs Navigation */}
         <div className="border-b border-gray-200 mb-8">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList>
+            <TabsList className="flex w-full">
               {tabs.map((tab) => (
-                <TabsTrigger key={tab.id} value={tab.id}>
+                <TabsTrigger key={tab.id} value={tab.id} className="flex-1 justify-center">
                   {tab.label}
                   {tab.isCompleted && <FaCheck className="ml-2 h-3 w-3 text-green-500" />}
                   {tab.isRequired && !tab.isCompleted && (

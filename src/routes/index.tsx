@@ -7,6 +7,7 @@ import { Contract, Campaign } from "@/pages/manager/brand";
 import {
   Brand,
   Assignment,
+  SetUp,
   Contracts,
   AddContract,
   ContractDetail,
@@ -129,6 +130,7 @@ const AppRoutes = () => (
           <Route path="contracts/add" element={<AddContract />} />
           <Route path="contracts/:id" element={<ContractDetail />} />
           <Route path="assignments" element={<Assignment />} />
+          <Route path="assignments/setup" element={<SetUp />} />
           <Route path="campaigns/add" element={<AddCampaign />} />
         </Route>
       </Route>

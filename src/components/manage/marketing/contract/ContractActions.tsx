@@ -14,6 +14,7 @@ interface ContractActionsProps {
 }
 
 const ContractActions: React.FC<ContractActionsProps> = ({
+  formData, // Add formData to destructuring
   onContractFilesChange,
   onProposalFilesChange,
   onContractUpload,
@@ -36,7 +37,7 @@ const ContractActions: React.FC<ContractActionsProps> = ({
               accept=".pdf,.doc,.docx"
               multiple={true}
               maxSize={10}
-              maxFiles={5}
+              maxFiles={1}
               allowedTypes={["pdf", "doc", "docx"]}
               onFilesChange={onContractFilesChange}
               onUpload={onContractUpload}
@@ -44,9 +45,11 @@ const ContractActions: React.FC<ContractActionsProps> = ({
               title="Contract Files"
               showSummary={true}
               className="w-full"
+              // Add initial files from formData
+              initialFiles={formData.contractFiles}
             />
             <p className="text-xs text-slate-500">
-              Upload contract documents (PDF, DOC, DOCX only, max 5 files)
+              Upload contract documents (PDF, DOC, DOCX only, max 1 file)
             </p>
           </div>
 
@@ -59,16 +62,18 @@ const ContractActions: React.FC<ContractActionsProps> = ({
               accept=".pdf,.doc,.docx,.ppt,.pptx"
               multiple={true}
               maxSize={10}
-              maxFiles={5}
+              maxFiles={1}
               allowedTypes={["pdf", "doc", "docx", "ppt", "pptx"]}
               onFilesChange={onProposalFilesChange}
               onUpload={onProposalUpload}
               showPreview={false}
               title="Proposal Files"
               showSummary={true}
+              // Add initial files from formData
+              initialFiles={formData.proposalFiles}
             />
             <p className="text-xs text-slate-500">
-              Upload proposal documents and presentations (max 5 files)
+              Upload proposal documents and presentations (max 1 file)
             </p>
           </div>
         </CardContent>

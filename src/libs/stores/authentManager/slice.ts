@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { login, register, refresh, logout } from "./thunk";
-import { getInitialAuthState } from "@/libs/helper";
+import { getInitialAuthState } from "@/libs/helper/helper";
 import { toast } from "react-toastify";
 
 const initialState = getInitialAuthState();

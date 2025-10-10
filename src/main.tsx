@@ -2,7 +2,6 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import ReduxProvider from "./provider";
 import AppRoutes from "./routes";
-import "react-toastify/dist/ReactToastify.css";
 import "./index.css";
 import "./styles/font.css";
 import { TooltipProvider } from "./components/ui/tooltip";

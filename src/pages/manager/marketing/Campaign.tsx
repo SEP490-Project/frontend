@@ -17,22 +17,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FaEye, FaPenToSquare, FaFilter } from "react-icons/fa6";
-import { Trash, Loader2 } from "lucide-react";
+import { FaEye, FaPenToSquare, FaFilter, FaPlus } from "react-icons/fa6";
+import { Trash, Loader2, Target } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import PaginationTable from "@/components/global/PaginationTable";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { DeleteModal } from "@/components/modal/DeleteModal";
 import { useNavigate } from "react-router";
-import { useContract } from "@/libs/hooks/useContract";
+import { useCampaign } from "@/libs/hooks/useCampaign";
 import { useAppDispatch } from "@/libs/stores";
-import { contract } from "@/libs/stores/contractManager/thunk";
-import type { ContractBase } from "@/libs/types/contract";
+import { campaign } from "@/libs/stores/campaignManager/thunk";
+import type { CampaignData } from "@/libs/types/campaign";
 import { useDebounce } from "@/libs/hooks/useDebounce";
 
 const PAGE_SIZE = 10;
 
-const CONTRACT_TYPE_LABELS: Record<string, string> = {
+const CAMPAIGN_STATUS_LABELS: Record<string, string> = {
+  ACTIVE: "Active",
+  INACTIVE: "Inactive",
+};
+
+const CAMPAIGN_TYPE_LABELS: Record<string, string> = {
   ADVERTISING: "Advertising",
   AFFILIATE: "Affiliate",
   BRAND_AMBASSADOR: "Brand Ambassador",
@@ -40,45 +45,39 @@ const CONTRACT_TYPE_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  DRAFT: "bg-gray-100 text-gray-800 border-gray-200",
   ACTIVE: "bg-green-100 text-green-800 border-green-200",
-  COMPLETED: "bg-blue-100 text-blue-800 border-blue-200",
-  TERMINATED: "bg-red-100 text-red-800 border-red-200",
+  INACTIVE: "bg-red-100 text-red-800 border-red-200",
 };
 
-const CONTRACT_TYPE_COLORS: Record<string, string> = {
+const CAMPAIGN_TYPE_COLORS: Record<string, string> = {
   ADVERTISING: "bg-orange-100 text-orange-800 border-orange-200",
   AFFILIATE: "bg-blue-100 text-blue-800 border-blue-200",
   BRAND_AMBASSADOR: "bg-emerald-100 text-emerald-800 border-emerald-200",
   CO_PRODUCING: "bg-violet-100 text-violet-800 border-violet-200",
 };
 
-const ContractPage: React.FC = () => {
+const CampaignPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy] = useState("created_at");
-  const [order] = useState<"asc" | "desc">("desc");
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { contracts, loading, pagination } = useContract();
+  const { campaigns, loading, pagination } = useCampaign();
 
-  // Fetch contracts when filters change
+  // Fetch campaigns when filters change
   useEffect(() => {
-    const params: any = {
+    const params = {
       page,
       limit: PAGE_SIZE,
-      sort_by: sortBy,
-      order,
+      ...(debouncedSearchTerm && { keywords: debouncedSearchTerm }),
+      ...(statusFilter !== "ALL" && { status: statusFilter }),
+      ...(typeFilter !== "ALL" && { type: typeFilter }),
     };
-    if (typeFilter !== "ALL") params.type = typeFilter;
-    if (statusFilter !== "ALL") params.status = statusFilter;
-    if (debouncedSearchTerm) params.keyword = debouncedSearchTerm;
-    dispatch(contract(params));
-  }, [dispatch, page, typeFilter, statusFilter, debouncedSearchTerm, sortBy, order]);
+    dispatch(campaign(params));
+  }, [dispatch, page, typeFilter, statusFilter, debouncedSearchTerm]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -92,18 +91,27 @@ const ContractPage: React.FC = () => {
     return d.toLocaleDateString("vi-VN");
   };
 
-  // Table data
-  const paginatedContracts = contracts;
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(amount);
+  };
 
   return (
     <div className="min-h-fit p-4 sm:p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl sm:text-2xl font-semibold">Contracts</h1>
+        <div>
+          <h1 className="text-xl sm:text-2xl font-semibold">Campaigns</h1>
+          <p className="text-gray-600 mt-1">Manage and track your marketing campaigns</p>
+        </div>
         <Button
-          className="bg-primary hover:bg-[#f794a8] text-white"
-          onClick={() => navigate("/manage/marketing/contracts/add")}
+          className="bg-primary hover:bg-[#f794a8] text-white flex items-center gap-2"
+          onClick={() => navigate("/manage/marketing/campaigns/add")}
         >
-          Add Contract
+          <FaPlus className="h-4 w-4" />
+          Create Campaign
         </Button>
       </div>
 
@@ -116,7 +124,7 @@ const ContractPage: React.FC = () => {
           </div>
           <div className="flex-1 min-w-[200px]">
             <Input
-              placeholder="Search by contract title or contract number"
+              placeholder="Search by campaign name, description, or contract number..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full"
@@ -125,7 +133,7 @@ const ContractPage: React.FC = () => {
           <div className="min-w-[150px]">
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger>
-                <SelectValue placeholder="Type" />
+                <SelectValue placeholder="Campaign Type" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">All Types</SelectItem>
@@ -143,10 +151,8 @@ const ContractPage: React.FC = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">All Status</SelectItem>
-                <SelectItem value="DRAFT">Draft</SelectItem>
                 <SelectItem value="ACTIVE">Active</SelectItem>
-                <SelectItem value="COMPLETED">Completed</SelectItem>
-                <SelectItem value="TERMINATED">Terminated</SelectItem>
+                <SelectItem value="INACTIVE">Inactive</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -157,57 +163,74 @@ const ContractPage: React.FC = () => {
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="ml-2">Loading contracts...</span>
+            <span className="ml-2">Loading campaigns...</span>
           </div>
         ) : (
           <>
             {/* Desktop Table */}
-            <div className="hidden md:block">
+            <div className="hidden lg:block">
               <Table>
                 <TableHeader>
                   <TableRow className="border-b bg-gray-50">
-                    <TableHead className="font-semibold">Contract #</TableHead>
-                    <TableHead className="font-semibold">Title</TableHead>
+                    <TableHead className="font-semibold">Campaign</TableHead>
                     <TableHead className="font-semibold">Type</TableHead>
                     <TableHead className="font-semibold">Status</TableHead>
-                    <TableHead className="font-semibold">Signed Date</TableHead>
-                    <TableHead className="font-semibold">Created At</TableHead>
-                    <TableHead className="font-semibold">Start - End</TableHead>
-                    <TableHead className="font-semibold">Brand</TableHead>
+                    <TableHead className="font-semibold">Duration</TableHead>
+                    <TableHead className="font-semibold">Budget</TableHead>
+                    <TableHead className="font-semibold">Contract</TableHead>
+                    <TableHead className="font-semibold">Created</TableHead>
                     <TableHead className="font-semibold">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedContracts.map((contract: ContractBase) => (
-                    <TableRow key={contract.id} className="border-b hover:bg-gray-50">
-                      <TableCell className="py-4 font-semibold">
-                        {contract.contract_number}
-                      </TableCell>
-                      <TableCell className="py-4">{contract.title}</TableCell>
-                      <TableCell className="py-4">
-                        <Badge
-                          className={`border text-xs font-medium px-2 py-1 ${CONTRACT_TYPE_COLORS[contract.type] || ""}`}
-                        >
-                          {CONTRACT_TYPE_LABELS[contract.type] || contract.type}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <Badge
-                          className={`border ${STATUS_COLORS[contract.status] || ""} text-xs font-medium px-2 py-1`}
-                        >
-                          {contract.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="py-4">{formatDate(contract.signed_date)}</TableCell>
-                      <TableCell className="py-4">{formatDate(contract.created_at)}</TableCell>
+                  {campaigns.map((campaign: CampaignData) => (
+                    <TableRow key={campaign.id} className="border-b hover:bg-gray-50">
                       <TableCell className="py-4">
                         <div>
-                          <span>{formatDate(contract.start_date)}</span>
-                          <span className="mx-1">-</span>
-                          <span>{formatDate(contract.end_date)}</span>
+                          <div className="font-semibold text-gray-900">{campaign.name}</div>
+                          {campaign.description && (
+                            <div className="text-sm text-gray-500 mt-1 max-w-xs truncate">
+                              {campaign.description}
+                            </div>
+                          )}
                         </div>
                       </TableCell>
-                      <TableCell className="py-4">{contract.brand_name}</TableCell>
+                      <TableCell className="py-4">
+                        <Badge
+                          className={`border text-xs font-medium px-2 py-1 ${CAMPAIGN_TYPE_COLORS[campaign.type] || ""}`}
+                        >
+                          {CAMPAIGN_TYPE_LABELS[campaign.type] || campaign.type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <Badge
+                          className={`border ${STATUS_COLORS[campaign.status] || ""} text-xs font-medium px-2 py-1`}
+                        >
+                          {CAMPAIGN_STATUS_LABELS[campaign.status] || campaign.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <div className="text-sm">
+                          <div>{formatDate(campaign.start_date)}</div>
+                          <div className="text-gray-500">to {formatDate(campaign.end_date)}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <div className="text-sm font-medium">
+                          {formatCurrency(campaign.budget_projected)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <div className="text-sm">
+                          <div className="font-medium">{campaign.contract_number}</div>
+                          <div className="text-gray-500 max-w-xs truncate">
+                            {campaign.contract_title}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-4 text-sm">
+                        {formatDate(campaign.created_at)}
+                      </TableCell>
                       <TableCell className="py-4">
                         <div className="flex gap-1">
                           <Tooltip>
@@ -216,12 +239,15 @@ const ContractPage: React.FC = () => {
                                 variant="ghost"
                                 size="sm"
                                 className="h-8 w-8 p-0 hover:bg-blue-50"
+                                onClick={() =>
+                                  navigate(`/manage/marketing/campaigns/${campaign.id}`)
+                                }
                               >
                                 <FaEye className="text-blue-600" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>View contract</p>
+                              <p>View campaign</p>
                             </TooltipContent>
                           </Tooltip>
                           <Tooltip>
@@ -230,12 +256,15 @@ const ContractPage: React.FC = () => {
                                 variant="ghost"
                                 size="sm"
                                 className="h-8 w-8 p-0 hover:bg-yellow-50"
+                                onClick={() =>
+                                  navigate(`/manage/marketing/campaigns/${campaign.id}/edit`)
+                                }
                               >
                                 <FaPenToSquare className="text-yellow-600" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>Edit contract</p>
+                              <p>Edit campaign</p>
                             </TooltipContent>
                           </Tooltip>
                           <Dialog>
@@ -252,10 +281,10 @@ const ContractPage: React.FC = () => {
                                 </DialogTrigger>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>Delete contract</p>
+                                <p>Delete campaign</p>
                               </TooltipContent>
                             </Tooltip>
-                            <DeleteModal name={contract.contract_number} />
+                            <DeleteModal name={campaign.name} />
                           </Dialog>
                         </div>
                       </TableCell>
@@ -266,51 +295,64 @@ const ContractPage: React.FC = () => {
             </div>
 
             {/* Mobile Card List */}
-            <div className="md:hidden divide-y">
-              {paginatedContracts.map((contract: ContractBase) => (
-                <div key={contract.id} className="p-4 flex flex-col gap-3 bg-white">
-                  <div className="flex items-center gap-3">
+            <div className="lg:hidden divide-y">
+              {campaigns.map((campaign: CampaignData) => (
+                <div key={campaign.id} className="p-4 flex flex-col gap-3 bg-white">
+                  <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="font-medium text-gray-900">{contract.contract_number}</div>
-                      <Badge className="border text-xs font-medium px-2 py-1">
-                        {CONTRACT_TYPE_LABELS[contract.type] || contract.type}
-                      </Badge>
-                      <Badge
-                        className={`ml-2 border ${STATUS_COLORS[contract.status] || ""} text-xs font-medium px-2 py-1`}
-                      >
-                        {contract.status}
-                      </Badge>
+                      <div className="font-semibold text-gray-900">{campaign.name}</div>
+                      <div className="flex gap-2 mt-2">
+                        <Badge
+                          className={`border text-xs font-medium px-2 py-1 ${CAMPAIGN_TYPE_COLORS[campaign.type] || ""}`}
+                        >
+                          {CAMPAIGN_TYPE_LABELS[campaign.type] || campaign.type}
+                        </Badge>
+                        <Badge
+                          className={`border ${STATUS_COLORS[campaign.status] || ""} text-xs font-medium px-2 py-1`}
+                        >
+                          {CAMPAIGN_STATUS_LABELS[campaign.status] || campaign.status}
+                        </Badge>
+                      </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm text-gray-500">Signed</div>
-                      <div className="font-semibold text-lg">
-                        {formatDate(contract.signed_date)}
-                      </div>
-                      <div className="text-sm text-gray-500 mt-1">Created</div>
-                      <div className="text-sm font-medium">{formatDate(contract.created_at)}</div>
+                      <div className="text-sm text-gray-500">Created</div>
+                      <div className="text-sm font-medium">{formatDate(campaign.created_at)}</div>
                     </div>
                   </div>
+
+                  {campaign.description && (
+                    <div className="text-sm text-gray-600">{campaign.description}</div>
+                  )}
+
                   <div className="space-y-2 text-sm text-gray-600">
                     <div>
-                      <span className="font-medium">Brand:</span> {contract.brand_name}
+                      <span className="font-medium">Duration:</span>{" "}
+                      {formatDate(campaign.start_date)} - {formatDate(campaign.end_date)}
                     </div>
                     <div>
-                      <span className="font-medium">Title:</span> {contract.title}
+                      <span className="font-medium">Budget:</span>{" "}
+                      {formatCurrency(campaign.budget_projected)}
                     </div>
                     <div>
-                      <span className="font-medium">Start-End:</span>{" "}
-                      {formatDate(contract.start_date)} - {formatDate(contract.end_date)}
+                      <span className="font-medium">Contract:</span> {campaign.contract_number}
                     </div>
+                    <div className="text-xs text-gray-500 truncate">{campaign.contract_title}</div>
                   </div>
+
                   <div className="flex gap-1 pt-2">
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-blue-50">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 hover:bg-blue-50"
+                          onClick={() => navigate(`/manage/marketing/campaigns/${campaign.id}`)}
+                        >
                           <FaEye className="text-blue-600" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>View contract</p>
+                        <p>View campaign</p>
                       </TooltipContent>
                     </Tooltip>
                     <Tooltip>
@@ -319,12 +361,15 @@ const ContractPage: React.FC = () => {
                           variant="ghost"
                           size="sm"
                           className="h-8 w-8 p-0 hover:bg-yellow-50"
+                          onClick={() =>
+                            navigate(`/manage/marketing/campaigns/${campaign.id}/edit`)
+                          }
                         >
                           <FaPenToSquare className="text-yellow-600" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Edit contract</p>
+                        <p>Edit campaign</p>
                       </TooltipContent>
                     </Tooltip>
                     <Dialog>
@@ -341,10 +386,10 @@ const ContractPage: React.FC = () => {
                           </DialogTrigger>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Delete contract</p>
+                          <p>Delete campaign</p>
                         </TooltipContent>
                       </Tooltip>
-                      <DeleteModal name={contract.contract_number} />
+                      <DeleteModal name={campaign.name} />
                     </Dialog>
                   </div>
                 </div>
@@ -352,9 +397,22 @@ const ContractPage: React.FC = () => {
             </div>
 
             {/* No results message */}
-            {(!paginatedContracts || paginatedContracts.length === 0) && (
-              <div className="text-center py-8 text-gray-500">
-                No contracts found matching your criteria.
+            {(!campaigns || campaigns.length === 0) && (
+              <div className="text-center py-16">
+                <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No campaigns found</h3>
+                <p className="text-gray-500 mb-4">
+                  {searchTerm || typeFilter !== "ALL" || statusFilter !== "ALL"
+                    ? "No campaigns match your current filters."
+                    : "Get started by creating your first marketing campaign."}
+                </p>
+                <Button
+                  className="bg-primary hover:bg-[#f794a8] text-white"
+                  onClick={() => navigate("/manage/marketing/campaigns/add")}
+                >
+                  <FaPlus className="h-4 w-4 mr-2" />
+                  Create Campaign
+                </Button>
               </div>
             )}
 
@@ -374,4 +432,4 @@ const ContractPage: React.FC = () => {
   );
 };
 
-export default ContractPage;
+export default CampaignPage;

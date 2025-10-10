@@ -80,7 +80,7 @@ const RepresentativeInfoTab: React.FC<RepresentativeInfoTabProps> = ({
           <Input
             id="rep-phone"
             type="tel"
-            placeholder="+1234567890"
+            placeholder="0123456789"
             value={representativeData.phone}
             onChange={(e) => onRepresentativeChange("phone", e.target.value)}
             className={errors.phone ? "border-red-500" : ""}

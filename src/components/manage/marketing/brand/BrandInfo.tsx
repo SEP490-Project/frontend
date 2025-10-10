@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import AvatarUploader from "@/components/global/AvatarUploader";
+import AddressSelector from "@/components/global/AddressSelector";
 
 interface BrandData {
   name: string;
@@ -91,7 +92,7 @@ const BrandInfoTab: React.FC<BrandInfoTabProps> = ({
           <Input
             id="contact-phone"
             type="tel"
-            placeholder="+84123456789"
+            placeholder="0123456789"
             value={brandData.contact_phone || ""}
             onChange={(e) => onBrandChange("contact_phone", e.target.value)}
             className={errors.contact_phone ? "border-red-500" : ""}
@@ -107,21 +108,15 @@ const BrandInfoTab: React.FC<BrandInfoTabProps> = ({
         <p className="text-xs text-gray-500">Optional. Upload a logo image for the brand</p>
       </div>
 
-      {/* Address */}
-      <div className="space-y-2">
-        <Label htmlFor="address" className="text-sm font-medium">
-          Address
-        </Label>
-        <Textarea
-          id="address"
-          placeholder="Brand address..."
-          value={brandData.address || ""}
-          onChange={(e) => onBrandChange("address", e.target.value)}
-          rows={2}
-          className="resize-none"
-        />
-        <p className="text-xs text-gray-500">Optional. Company address</p>
-      </div>
+      {/* Address với AddressSelector */}
+      <AddressSelector
+        value={brandData.address || ""}
+        onChange={(address) => onBrandChange("address", address)}
+        label="Address"
+        placeholder="Search for brand address..."
+        error={errors.address}
+      />
+      <p className="text-xs text-gray-500 -mt-1">Optional. Company address with auto-suggestions</p>
 
       {/* Tax Number */}
       <div className="space-y-2">

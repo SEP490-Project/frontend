@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,6 @@ interface RepresentativeProps {
   errors?: any;
 }
 
-// Reusable form field component
 const FormField = ({
   label,
   field,
@@ -19,6 +18,7 @@ const FormField = ({
   formData,
   onInputChange,
   errors,
+  disabled = false,
 }: any) => (
   <div className="space-y-2">
     <Label className="text-sm font-medium">
@@ -29,15 +29,24 @@ const FormField = ({
       value={formData[field] || ""}
       onChange={(e) => onInputChange(field, e.target.value)}
       placeholder={placeholder}
-      className="h-11"
       required={required}
+      disabled={disabled}
+      className={`h-11 ${
+        disabled ? "bg-gray-100 text-gray-500 cursor-not-allowed border-gray-300" : "bg-white"
+      }`}
     />
     {errors[field] && <p className="text-red-500 text-xs italic">{errors[field]}</p>}
   </div>
 );
 
-// Representative section component
-const RepresentativeSection = ({ title, fields, formData, onInputChange, errors }: any) => (
+const RepresentativeSection = ({
+  title,
+  fields,
+  formData,
+  onInputChange,
+  errors,
+  disabled = false,
+}: any) => (
   <div className="space-y-6">
     <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
       <h3 className="text-lg font-semibold text-slate-800">{title}</h3>
@@ -51,6 +60,7 @@ const RepresentativeSection = ({ title, fields, formData, onInputChange, errors 
           formData={formData}
           onInputChange={onInputChange}
           errors={errors}
+          disabled={disabled}
         />
       ))}
     </div>
@@ -62,7 +72,23 @@ const Representative: React.FC<RepresentativeProps> = ({
   onInputChange,
   errors = {},
 }) => {
-  // Field configurations
+  // ✅ Dữ liệu thật của KOL - cứng trong frontend
+  const kolRepresentativeData = {
+    webRepresentativeName: "Nguyễn Minh Anh",
+    webRepresentativePosition: "Content Creator / KOL",
+    webRepresentativePhone: "+84 912 345 678",
+    webRepresentativeEmail: "minhanh.kol@example.com",
+    webRepresentativeTaxNumber: "1234567890",
+  };
+
+  // ✅ Gán dữ liệu KOL mặc định khi component mount
+  useEffect(() => {
+    Object.entries(kolRepresentativeData).forEach(([key, value]) => {
+      onInputChange(key, value);
+    });
+  }, []);
+
+  // Party A fields
   const brandRepresentativeFields = [
     {
       label: "Full Name",
@@ -71,14 +97,14 @@ const Representative: React.FC<RepresentativeProps> = ({
       required: true,
     },
     { label: "Position", field: "brandRepresentativePosition", placeholder: "Job title/position" },
-    { label: "Phone Number", field: "brandRepresentativePhone", placeholder: "+84 xxx xxx xxx" },
+    { label: "Phone Number", field: "brandRepresentativePhone", placeholder: "0xxx xxx xxx" },
     {
       label: "Email Address",
       field: "brandRepresentativeEmail",
-      placeholder: "email@company.com",
+      placeholder: "example@company.com",
       type: "email",
     },
-    { label: "Tax Number", field: "brandTaxNumber", placeholder: "Tax identification number" },
+    { label: "Tax Number", field: "brandTaxNumber", placeholder: "Tax code" },
     { label: "Bank Name", field: "brandBankName", placeholder: "Bank name" },
     {
       label: "Account Number",
@@ -92,6 +118,7 @@ const Representative: React.FC<RepresentativeProps> = ({
     },
   ];
 
+  // Party B fields
   const webRepresentativeFields = [
     {
       label: "Full Name",
@@ -104,7 +131,7 @@ const Representative: React.FC<RepresentativeProps> = ({
       field: "webRepresentativePosition",
       placeholder: "e.g., Content Creator, KOL, Blogger",
     },
-    { label: "Phone Number", field: "webRepresentativePhone", placeholder: "+84 xxx xxx xxx" },
+    { label: "Phone Number", field: "webRepresentativePhone", placeholder: "xxx xxx xxx" },
     {
       label: "Email Address",
       field: "webRepresentativeEmail",
@@ -121,12 +148,11 @@ const Representative: React.FC<RepresentativeProps> = ({
   return (
     <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
       <CardHeader className="pb-4">
-        <div className="flex items-center gap-2">
-          <CardTitle className="text-xl">Representative Details</CardTitle>
-        </div>
+        <CardTitle className="text-xl">Representative Details</CardTitle>
       </CardHeader>
+
       <CardContent className="space-y-8">
-        {/* Brand Representative (Party A) */}
+        {/* Party A - nhập tay */}
         <RepresentativeSection
           title="Brand Representative (Party A)"
           fields={brandRepresentativeFields}
@@ -135,13 +161,14 @@ const Representative: React.FC<RepresentativeProps> = ({
           errors={errors}
         />
 
-        {/* Web Representative (Party B) */}
+        {/* Party B - dữ liệu cứng, disable */}
         <RepresentativeSection
           title="Web Representative (Party B - KOL/Blogger)"
           fields={webRepresentativeFields}
           formData={formData}
           onInputChange={onInputChange}
           errors={errors}
+          disabled
         />
       </CardContent>
     </Card>

@@ -15,7 +15,7 @@ interface ForgotPasswordFormProps {
 }
 
 const ForgotPasswordSchema = yup.object().shape({
-  email: yup.string().email("Invalid email").required("Email is required"),
+  email: yup.string().email("Invalid email").required("Email is required").trim(),
 });
 
 export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onSubmit }) => {

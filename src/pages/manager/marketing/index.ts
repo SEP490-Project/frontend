@@ -5,4 +5,3 @@ export { default as Campaign } from "./Campaign";
 export * from "./contracts";
 export * from "./campaigns";
 export * from "./brands";
-export * from "./setup";

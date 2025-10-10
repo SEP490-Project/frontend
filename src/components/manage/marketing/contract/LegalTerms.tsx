@@ -103,22 +103,6 @@ const LegalTerms: React.FC<LegalTermsProps> = ({ formData, onInputChange }) => {
               </div>
             </div>
           </div>
-
-          {/* Custom Terms (Optional) */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">Additional Terms (Optional)</Label>
-            <textarea
-              className="w-full min-h-[100px] p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              placeholder="Add any additional terms or conditions specific to this contract..."
-              value={formData.legalTerms?.additionalTerms || ""}
-              onChange={(e) =>
-                onInputChange("legalTerms", {
-                  ...formData.legalTerms,
-                  additionalTerms: e.target.value,
-                })
-              }
-            />
-          </div>
         </CardContent>
       </Card>
     </div>

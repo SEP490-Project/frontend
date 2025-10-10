@@ -66,8 +66,6 @@ const ContractPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const { contracts, loading, pagination } = useContract();
 
-  console.log("Contracts:", contracts);
-
   // Fetch contracts when filters change
   useEffect(() => {
     const params: any = {

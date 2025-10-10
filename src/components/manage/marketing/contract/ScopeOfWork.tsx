@@ -16,6 +16,9 @@ import { Plus, Trash2 } from "lucide-react";
 interface ScopeOfWorkProps {
   formData: any;
   onUpdateScopeOfWork: (updates: any) => void;
+  contractTypeOptions: { value: string; label: string }[];
+  onContractTypeChange: (type: string) => void;
+  errors?: any;
 }
 
 const CHANNEL_OPTIONS = [
@@ -24,15 +27,13 @@ const CHANNEL_OPTIONS = [
   { value: "facebook", label: "Facebook" },
 ];
 
-const ScopeOfWork: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork }) => {
-  if (!formData.type) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-gray-500">Please select a contract type first</p>
-      </div>
-    );
-  }
-
+const ScopeOfWork: React.FC<ScopeOfWorkProps> = ({
+  formData,
+  onUpdateScopeOfWork,
+  contractTypeOptions,
+  onContractTypeChange,
+  errors = {},
+}) => {
   return (
     <div className="space-y-8">
       <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
@@ -44,6 +45,24 @@ const ScopeOfWork: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork
         </CardHeader>
 
         <CardContent className="space-y-6">
+          {/* Contract Type Selection */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Contract Type *</Label>
+            <Select value={formData.type} onValueChange={onContractTypeChange}>
+              <SelectTrigger className={`h-11 ${errors.type ? "border-red-500" : ""}`}>
+                <SelectValue placeholder="Select contract type" />
+              </SelectTrigger>
+              <SelectContent>
+                {contractTypeOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.type && <p className="text-sm text-red-500">{errors.type}</p>}
+          </div>
+
           {/* ADVERTISING – Content + Product */}
           {formData.type === "ADVERTISING" && (
             <>
@@ -235,7 +254,6 @@ const ScopeOfWork: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork
                           title: "",
                           platform: "",
                           tracking_link: "",
-                          coupon_code: "",
                           deadline: "",
                         },
                       ],
@@ -287,16 +305,6 @@ const ScopeOfWork: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork
                       onChange={(e) => {
                         const updated = [...(formData.scopeOfWork?.contents || [])];
                         updated[index].tracking_link = e.target.value;
-                        onUpdateScopeOfWork({ contents: updated });
-                      }}
-                      className="h-10"
-                    />
-                    <Input
-                      placeholder="Coupon Code"
-                      value={c.coupon_code || ""}
-                      onChange={(e) => {
-                        const updated = [...(formData.scopeOfWork?.contents || [])];
-                        updated[index].coupon_code = e.target.value;
                         onUpdateScopeOfWork({ contents: updated });
                       }}
                       className="h-10"

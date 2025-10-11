@@ -23,8 +23,7 @@ import { useDispatch } from "react-redux";
 import { useCampaign } from "@/libs/hooks/useCampaign";
 import { getCampaignsByBrand } from "@/libs/stores/campaignManager/thunk";
 import type { AppDispatch } from "@/libs/stores";
-import type { Campaign } from "@/libs/types/campaign";
-import { getBrandIdFromToken } from "@/libs/helper";
+import type { CampaignData } from "@/libs/types/campaign";
 
 interface CampaignManagementProps {
   brandId?: string;
@@ -39,10 +38,10 @@ export default function CampaignManagement({ brandId: propBrandId }: CampaignMan
   const [selectedStatus, setSelectedStatus] = useState("");
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+  const [selectedCampaign, setSelectedCampaign] = useState<CampaignData | null>(null);
 
   // Get brand ID from JWT token or use prop
-  const brandId = propBrandId || getBrandIdFromToken();
+  const brandId = propBrandId;
 
   // Fetch campaigns when component mounts or brand changes
   useEffect(() => {
@@ -65,7 +64,7 @@ export default function CampaignManagement({ brandId: propBrandId }: CampaignMan
   const filteredData = campaigns.filter((item) => {
     const matchesSearch =
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.contract_title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.contract_number.toLowerCase().includes(searchTerm.toLowerCase());
@@ -75,7 +74,7 @@ export default function CampaignManagement({ brandId: propBrandId }: CampaignMan
   });
 
   // Handle campaign view
-  const handleViewCampaign = (campaign: Campaign) => {
+  const handleViewCampaign = (campaign: CampaignData) => {
     setSelectedCampaign(campaign);
     setIsModalOpen(true);
   };

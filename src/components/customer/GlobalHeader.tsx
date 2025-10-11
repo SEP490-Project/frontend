@@ -1,8 +1,13 @@
 import { Search, User, ShoppingBag, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useAuth } from "@/libs/hooks/useAuth";
+import { useNavigate } from "react-router";
 
 const GlobalHeader = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
   return (
     <header className="bg-white px-4 py-4 shadow-sm">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -34,24 +39,36 @@ const GlobalHeader = () => {
         <div className="flex items-center space-x-6">
           {/* Desktop Icons */}
           <div className="hidden md:flex items-center space-x-6">
-            <button className="flex flex-col items-center group">
-              <Search className="w-5 h-5 text-[#383838] group-hover:text-[#fec6d4] transition-colors" />
-              <span className="text-xs text-[#383838] mt-1 group-hover:text-[#fec6d4] transition-colors">
-                SEARCH
-              </span>
-            </button>
-            <button className="flex flex-col items-center group">
-              <User className="w-5 h-5 text-[#383838] group-hover:text-[#fec6d4] transition-colors" />
-              <span className="text-xs text-[#383838] mt-1 group-hover:text-[#fec6d4] transition-colors">
-                ACCOUNT
-              </span>
-            </button>
-            <button className="flex flex-col items-center group">
-              <ShoppingBag className="w-5 h-5 text-[#383838] group-hover:text-[#fec6d4] transition-colors" />
-              <span className="text-xs text-[#383838] mt-1 group-hover:text-[#fec6d4] transition-colors">
-                CART
-              </span>
-            </button>
+            {user ? (
+              <>
+                <button className="flex flex-col items-center">
+                  <Search className="w-6 h-6 text-[#383838]" />
+                  <span className="text-sm text-[#383838] mt-2">SEARCH</span>
+                </button>
+                <button className="flex flex-col items-center">
+                  <User className="w-6 h-6 text-[#383838]" />
+                  <span className="text-sm text-[#383838] mt-2">ACCOUNT</span>
+                </button>
+                <button className="flex flex-col items-center">
+                  <ShoppingBag className="w-6 h-6 text-[#383838]" />
+                  <span className="text-sm text-[#383838] mt-2">CART</span>
+                </button>
+              </>
+            ) : (
+              <div className="flex items-center space-x-4">
+                <button onClick={() => navigate("/login")}>
+                  <span className="cursor-pointer text-[#383838] hover:text-primary mt-2 font-semibold transition-colors">
+                    LOGIN
+                  </span>
+                </button>
+                <span className="text-[#383838]">|</span>
+                <button onClick={() => navigate("/register")}>
+                  <span className="cursor-pointer text-[#383838] hover:text-primary mt-2 font-semibold transition-colors">
+                    REGISTER
+                  </span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Mobile Menu */}
@@ -93,23 +110,38 @@ const GlobalHeader = () => {
                 >
                   BLOG
                 </a>
+                {user ? (
+                  <div className="border-t pt-6 mt-6">
+                    <div className="flex justify-around">
+                      <button className="flex flex-col items-center">
+                        <Search className="w-6 h-6 text-[#383838]" />
+                        <span className="text-sm text-[#383838] mt-2">SEARCH</span>
+                      </button>
+                      <button className="flex flex-col items-center">
+                        <User className="w-6 h-6 text-[#383838]" />
+                        <span className="text-sm text-[#383838] mt-2">ACCOUNT</span>
+                      </button>
+                      <button className="flex flex-col items-center">
+                        <ShoppingBag className="w-6 h-6 text-[#383838]" />
+                        <span className="text-sm text-[#383838] mt-2">CART</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-start gap-6 border-t pt-6 mt-6">
+                    <button onClick={() => navigate("/login")}>
+                      <span className="cursor-pointer text-lg text-[#383838] hover:text-primary mt-2 font-semibold transition-colors">
+                        LOGIN
+                      </span>
+                    </button>
 
-                <div className="border-t pt-6 mt-6">
-                  <div className="flex justify-around">
-                    <button className="flex flex-col items-center">
-                      <Search className="w-6 h-6 text-[#383838]" />
-                      <span className="text-sm text-[#383838] mt-2">SEARCH</span>
-                    </button>
-                    <button className="flex flex-col items-center">
-                      <User className="w-6 h-6 text-[#383838]" />
-                      <span className="text-sm text-[#383838] mt-2">ACCOUNT</span>
-                    </button>
-                    <button className="flex flex-col items-center">
-                      <ShoppingBag className="w-6 h-6 text-[#383838]" />
-                      <span className="text-sm text-[#383838] mt-2">CART</span>
+                    <button onClick={() => navigate("/register")}>
+                      <span className="cursor-pointer text-lg text-[#383838] hover:text-primary mt-2 font-semibold transition-colors">
+                        REGISTER
+                      </span>
                     </button>
                   </div>
-                </div>
+                )}
               </nav>
             </SheetContent>
           </Sheet>

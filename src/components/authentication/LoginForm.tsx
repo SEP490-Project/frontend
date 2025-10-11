@@ -27,11 +27,13 @@ const LoginSchema = yup.object().shape({
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       const usernameRegex = /^[a-zA-Z0-9._-]{3,}$/;
       return emailRegex.test(value) || usernameRegex.test(value);
-    }),
+    })
+    .trim(),
   password: yup
     .string()
-    .min(8, "Password must be at least 8 characters")
-    .required("Password is required"),
+    .min(6, "Password must be at least 6 characters")
+    .required("Password is required")
+    .trim(),
 });
 
 export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {

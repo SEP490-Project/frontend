@@ -9,13 +9,13 @@ import { PasswordInput } from "@/components/password-input";
 import { useAuth } from "@/libs/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 
-interface MockLogin {
+interface LoginRequest {
   login_identifier: string;
   password: string;
 }
 
 interface LoginFormProps {
-  onSubmit: (data: MockLogin) => void;
+  onSubmit: (data: LoginRequest) => void;
 }
 
 const LoginSchema = yup.object().shape({
@@ -38,7 +38,7 @@ const LoginSchema = yup.object().shape({
 
 export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
   const navigate = useNavigate();
-  const { register, handleSubmit } = useForm<MockLogin>({
+  const { register, handleSubmit } = useForm<LoginRequest>({
     resolver: yupResolver(LoginSchema),
   });
   const { loading } = useAuth();

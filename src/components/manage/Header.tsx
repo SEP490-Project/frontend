@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { NavLink } from "react-router-dom";
+import { useAuth } from "@/libs/hooks/useAuth";
+import { defaultAvatarByName } from "@/libs/helper/default-avatar";
 interface HeaderProps {
   collapsed?: boolean;
   onToggleCollapse?: () => void;
@@ -27,11 +29,8 @@ const Header: React.FC<HeaderProps> = ({
   onToggleMobileSidebar,
 }) => {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-
-  const user = {
-    name: "Nguyen Van A",
-    avatar: "https://i.pravatar.cc/40?img=3",
-  };
+  const { user } = useAuth();
+  console.log("User in Header:", user);
 
   const notifications = [
     { id: 1, text: "You have a meeting at 10 AM today" },
@@ -82,13 +81,22 @@ const Header: React.FC<HeaderProps> = ({
             <TooltipTrigger asChild>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 px-2 md:px-3 py-1 rounded hover:bg-gray-100 transition">
-                  <img
-                    src={user.avatar}
-                    alt="avatar"
-                    className="w-9 h-9 rounded-full border-2 border-primary shadow-sm"
-                  />
+                  {user?.avatar ? (
+                    <img
+                      src={user?.avatar}
+                      alt="avatar"
+                      className="w-9 h-9 rounded-full border-2 border-primary shadow-sm"
+                    />
+                  ) : (
+                    <div className="w-9 h-9 rounded-full border-2 border-primary bg-gray-200 text-gray-600 flex items-center justify-center font-semibold shadow-sm">
+                      {defaultAvatarByName(user?.username || "")}
+                    </div>
+                  )}
                   <span className="hidden md:inline text-gray-800 font-semibold text-base">
-                    {user.name}
+                    {user?.username}
+                    <div className="text-[0.6rem] text-gray-400 flex justify-start">
+                      {user?.role}
+                    </div>
                   </span>
                   <span
                     className={`transition-transform duration-200 ${
@@ -106,13 +114,6 @@ const Header: React.FC<HeaderProps> = ({
             align="end"
             className="w-56 animate-in slide-in-from-top-2 fade-in-0 duration-200 rounded-xl shadow-lg border border-gray-100 bg-white"
           >
-            <div className="px-4 py-3 flex items-center gap-3 border-b">
-              <img src={user.avatar} alt="avatar" className="w-10 h-10 rounded-full border" />
-              <div>
-                <div className="font-semibold text-gray-800">{user.name}</div>
-                <div className="text-xs text-gray-400">Admin</div>
-              </div>
-            </div>
             <DropdownMenuItem asChild>
               <NavLink
                 to="/manage/account"

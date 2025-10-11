@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -10,10 +10,8 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, Trash2, AlertCircle, CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
+import { DatePicker } from "@/components/date-picker";
+import { Plus, Trash2, AlertCircle } from "lucide-react";
 
 interface FinancialTermsProps {
   formData: any;
@@ -62,12 +60,6 @@ const formatNumber = (value: number | string): string => {
 const parseNumber = (formattedValue: string): number => {
   if (!formattedValue) return 0;
   return parseFloat(formattedValue.replace(/\./g, "")) || 0;
-};
-
-const parseDate = (dateString: string): Date | undefined => {
-  if (!dateString) return undefined;
-  const date = new Date(dateString);
-  return isNaN(date.getTime()) ? undefined : date;
 };
 
 // Validation Functions
@@ -133,8 +125,6 @@ const SelectField = ({
 );
 
 const ScheduleItem = ({ item, index, onUpdate, onRemove, type, hasError, hasDateError }: any) => {
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-
   return (
     <Card className="p-4 bg-slate-50 border-slate-200">
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -179,32 +169,15 @@ const ScheduleItem = ({ item, index, onUpdate, onRemove, type, hasError, hasDate
           />
         </div>
 
-        <div className="space-y-2">
-          <Label className="text-xs text-slate-600">Due Date</Label>
-          <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline2"
-                className={`h-10 w-full justify-start text-left font-normal ${
-                  !item.dueDate ? "text-muted-foreground" : ""
-                } ${hasDateError ? "border-red-500" : ""}`}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {item.dueDate ? format(parseDate(item.dueDate)!, "dd/MM/yyyy") : "Pick a date"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={parseDate(item.dueDate)}
-                onSelect={(date) => {
-                  onUpdate(index, "dueDate", date ? format(date, "yyyy-MM-dd") : "");
-                  setIsCalendarOpen(false); // Đóng calendar sau khi chọn
-                }}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
+        <div>
+          <DatePicker
+            label="Due Date"
+            value={item.dueDate}
+            onChange={(date) => onUpdate(index, "dueDate", date)}
+            placeholder="Pick a date"
+            error={hasDateError ? "Invalid date order" : undefined}
+            className="flex-1"
+          />
         </div>
 
         <div className="flex items-end">

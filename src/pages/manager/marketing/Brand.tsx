@@ -38,7 +38,7 @@ interface Partner extends Brands {
   isActive: boolean;
 }
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 10;
 
 // Helper function to check if a value is empty (null, undefined, or empty string)
 const isEmpty = (value: string | null | undefined): boolean => {

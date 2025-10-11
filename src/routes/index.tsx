@@ -3,10 +3,10 @@ import Homepage from "@/pages/Homepage";
 import NotFound from "@/pages/NotFound";
 import { Account, Notification, Dashboard } from "@/pages/manager/shared";
 import { User } from "@/pages/manager/admin";
-import { Contract, Campaign } from "@/pages/manager/brand";
+import { Contract, Campaign as BrandCampaign } from "@/pages/manager/brand";
 import {
   Brand,
-  Assignment,
+  Campaign as MarketingCampaign,
   Contracts,
   AddContract,
   ContractDetail,
@@ -96,7 +96,7 @@ const AppRoutes = () => (
           <Route path="contracts" element={<Contracts />} />
           <Route path="contracts/add" element={<AddContract />} />
           <Route path="contracts/:id" element={<ContractDetail />} />
-          <Route path="assignments" element={<Assignment />} />
+          <Route path="campaigns" element={<MarketingCampaign />} />
           <Route path="campaigns/add" element={<AddCampaign />} />
         </Route>
       </Route>
@@ -104,7 +104,7 @@ const AppRoutes = () => (
       <Route element={<PrivateRoute allowedRoles={["BRAND_PARTNER"]} />}>
         <Route path="/manage/brand" element={<ManageLayout />}>
           <Route path="contracts" element={<Contract />} />
-          <Route path="campaigns" element={<Campaign />} />
+          <Route path="campaigns" element={<BrandCampaign />} />
         </Route>
       </Route>
 

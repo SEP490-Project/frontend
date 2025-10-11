@@ -194,6 +194,7 @@ const AddBrandPage: React.FC = () => {
   // Handle form submission
   const handleSubmit = async () => {
     if (!validateForm()) {
+      console.log("Validation errors:", errors);
       // Check which tab has errors and switch to it
       if (Object.keys(errors.brand).length > 0) {
         setActiveTab("brand");
@@ -221,6 +222,8 @@ const AddBrandPage: React.FC = () => {
         representative: formData.representative,
       };
 
+      console.log("Submission Data:", submissionData);
+
       // If logoFile exists, upload it and get the URL
       if (logoFile) {
         // TODO: Replace with actual upload logic
@@ -234,7 +237,7 @@ const AddBrandPage: React.FC = () => {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       alert("Brand created successfully!");
-      navigate("/manage/marketing/partners");
+      navigate("/manage/marketing/brands");
     } catch (error) {
       console.error("Error creating brand:", error);
       alert("Error creating brand. Please try again.");
@@ -283,7 +286,7 @@ const AddBrandPage: React.FC = () => {
 
         <div className="px-4 py-3">
           <Button onClick={handleSubmit} disabled={isSubmitting || !canSubmit} className="w-full">
-            {isSubmitting ? "Creating..." : "Create Brand"}
+            {isSubmitting ? "Submitting..." : "Submit Brand"}
           </Button>
         </div>
       </div>

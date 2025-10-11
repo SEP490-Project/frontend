@@ -22,7 +22,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useState, useEffect } from "react";
-import { toast } from "react-toastify";
 import { useDispatch } from "react-redux";
 import { useContract } from "@/libs/hooks/useContract";
 import {
@@ -32,7 +31,8 @@ import {
 } from "@/libs/stores/contractManager/thunk";
 import type { AppDispatch } from "@/libs/stores";
 import type { ContractBase } from "@/libs/types/contract";
-import { getBrandIdFromToken } from "@/libs/helper";
+import { getBrandIdFromToken } from "@/libs/helper/helper";
+import { toast } from "sonner";
 
 interface ContractApprovalProps {
   brandId?: string;
@@ -106,23 +106,9 @@ export default function ContractApproval({ brandId: propBrandId }: ContractAppro
     try {
       await dispatch(approveContract(selectedContract.id)).unwrap();
       setContractStatus("ACTIVE");
-      toast.success("Contract approved successfully!", {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
+      toast.success("Contract approved successfully!");
     } catch {
-      toast.error("Failed to approve contract. Please try again.", {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
+      toast.error("Failed to approve contract. Please try again.");
     }
   };
 
@@ -133,23 +119,9 @@ export default function ContractApproval({ brandId: propBrandId }: ContractAppro
     try {
       await dispatch(rejectContract(selectedContract.id)).unwrap();
       setContractStatus("TERMINATED");
-      toast.success("Contract rejected successfully!", {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
+      toast.success("Contract rejected successfully!");
     } catch {
-      toast.error("Failed to reject contract. Please try again.", {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
+      toast.error("Failed to reject contract. Please try again.");
     }
   };
 

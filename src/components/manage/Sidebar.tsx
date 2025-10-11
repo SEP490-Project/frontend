@@ -181,8 +181,8 @@ const Sidebar: React.FC<SidebarProps> = ({
         icon: <FaFileContract size={18} />,
       },
       {
-        href: "/manage/marketing/assignments",
-        label: "Assignments & Tasks",
+        href: "/manage/marketing/campaigns",
+        label: "Campaigns",
         icon: <FaListCheck size={18} />,
       },
     ],

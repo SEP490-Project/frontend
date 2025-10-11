@@ -1,21 +1,21 @@
-export interface Campaign {
+export interface CampaignData {
   id: string;
   name: string;
-  description: string;
-  contract_id: string;
-  contract_number: string;
-  contract_title: string;
+  description?: string | null;
   status: string;
+  type: string;
   start_date: string;
   end_date: string;
   budget_actual: number;
   budget_projected: number;
-  type: string;
+  contract_id: string;
+  contract_number: string;
+  contract_title: string;
   created_at: string;
   updated_at: string;
 }
 
-export type CampaignBase = Campaign;
+export type CampaignBase = CampaignData;
 
 export interface CampaignParams {
   brand_id?: string;
@@ -26,7 +26,7 @@ export interface CampaignParams {
 }
 
 export interface CampaignResponse {
-  data: Campaign[];
+  data: CampaignData[];
   message: string;
   pagination: {
     has_next: boolean;

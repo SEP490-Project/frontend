@@ -66,8 +66,6 @@ const ContractPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const { contracts, loading, pagination } = useContract();
 
-  console.log("Contracts:", contracts);
-
   // Fetch contracts when filters change
   useEffect(() => {
     const params: any = {
@@ -173,6 +171,7 @@ const ContractPage: React.FC = () => {
                     <TableHead className="font-semibold">Type</TableHead>
                     <TableHead className="font-semibold">Status</TableHead>
                     <TableHead className="font-semibold">Signed Date</TableHead>
+                    <TableHead className="font-semibold">Created At</TableHead>
                     <TableHead className="font-semibold">Start - End</TableHead>
                     <TableHead className="font-semibold">Brand</TableHead>
                     <TableHead className="font-semibold">Actions</TableHead>
@@ -200,6 +199,7 @@ const ContractPage: React.FC = () => {
                         </Badge>
                       </TableCell>
                       <TableCell className="py-4">{formatDate(contract.signed_date)}</TableCell>
+                      <TableCell className="py-4">{formatDate(contract.created_at)}</TableCell>
                       <TableCell className="py-4">
                         <div>
                           <span>{formatDate(contract.start_date)}</span>
@@ -286,6 +286,8 @@ const ContractPage: React.FC = () => {
                       <div className="font-semibold text-lg">
                         {formatDate(contract.signed_date)}
                       </div>
+                      <div className="text-sm text-gray-500 mt-1">Created</div>
+                      <div className="text-sm font-medium">{formatDate(contract.created_at)}</div>
                     </div>
                   </div>
                   <div className="space-y-2 text-sm text-gray-600">

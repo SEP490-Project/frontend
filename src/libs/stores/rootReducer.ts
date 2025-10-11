@@ -4,7 +4,9 @@ import { manageBrandReducer } from "./brandManager/slice";
 import { manageContractReducer } from "./contractManager/slice";
 import { manageContentReducer } from "./contentManager/slice";
 import { manageUserReducer } from "./userManager/slice";
-import manageCampaignReducer from "./campaignManager";
+import { manageGoongReducer } from "./goongManager/slice";
+import { manageCampaignReducer } from "./campaignManager/slice";
+import { productManagerReducer } from "./productManager/slice";
 
 export const rootReducer = combineReducers({
   manageAuthen: manageAuthenReducer,
@@ -12,5 +14,7 @@ export const rootReducer = combineReducers({
   manageContract: manageContractReducer,
   manageContent: manageContentReducer,
   manageUser: manageUserReducer,
+  manageGoong: manageGoongReducer,
   manageCampaign: manageCampaignReducer,
+  manageProduct: productManagerReducer,
 });

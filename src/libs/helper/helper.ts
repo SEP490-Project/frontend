@@ -68,7 +68,14 @@ export const convertCurrencyForChart = (amount: number): string => {
 export const getInitialAuthState = () => {
   const accessToken = getRaw("access_token");
   const refreshToken = getRaw("refresh_token");
-  const user = getItem<{ id: string; email: string; role: string }>("user");
+  const user = getItem<{
+    id: string;
+    email: string;
+    role: string;
+    username: string;
+    is_active: boolean;
+    avatar: string;
+  }>("user");
 
   return {
     loading: false,

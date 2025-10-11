@@ -23,8 +23,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useState, useEffect } from "react";
-import { toast } from "react-toastify";
 import { useContractDetail } from "@/libs/hooks/useContractDetail";
+import { toast } from "sonner";
 
 interface ContractDetailProps {
   contractId: string;
@@ -69,23 +69,9 @@ export default function ContractDetail({ contractId, onBack }: ContractDetailPro
 
     try {
       await approveContractAction(contractDetail.id);
-      toast.success("Contract approved successfully!", {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
+      toast.success("Contract approved successfully!");
     } catch {
-      toast.error("Failed to approve contract. Please try again.", {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
+      toast.error("Failed to approve contract. Please try again.");
     }
   };
 
@@ -96,23 +82,9 @@ export default function ContractDetail({ contractId, onBack }: ContractDetailPro
 
     try {
       await rejectContractAction(contractDetail.id);
-      toast.success("Contract rejected successfully!", {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
+      toast.success("Contract rejected successfully!");
     } catch {
-      toast.error("Failed to reject contract. Please try again.", {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
+      toast.error("Failed to reject contract. Please try again.");
     }
   };
 

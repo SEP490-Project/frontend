@@ -181,15 +181,15 @@ const Sidebar: React.FC<SidebarProps> = ({
         icon: <FaFileContract size={18} />,
       },
       {
-        href: "/manage/marketing/assignments",
-        label: "Assignments & Tasks",
+        href: "/manage/marketing/campaigns",
+        label: "Campaigns",
         icon: <FaListCheck size={18} />,
       },
     ],
     SALES_STAFF: [
       { href: "/manage/sale/task", label: "Tasks & Schedule", icon: <FaCalendarDays size={18} /> },
       { href: "/manage/sale/product", label: "Product", icon: <FaBoxOpen size={18} /> },
-      { href: "/manage/sale/categorie", label: "Category", icon: <FaFolderTree size={18} /> },
+      { href: "/manage/sale/category", label: "Category", icon: <FaFolderTree size={18} /> },
       { href: "/manage/sale/order", label: "Order", icon: <FaCartShopping size={18} /> },
       { href: "/manage/sale/review", label: "Review", icon: <FaStar size={18} /> },
       {

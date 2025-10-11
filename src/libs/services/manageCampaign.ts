@@ -13,4 +13,12 @@ export const manageCampaign = {
     }),
 
   getCampaignById: (campaignId: string) => api.get(`/campaigns/${campaignId}`),
+
+  campaign: (params: {
+    page: number;
+    limit: number;
+    keywords?: string;
+    status?: string;
+    type?: string;
+  }) => api.get("/campaigns", { params }),
 };

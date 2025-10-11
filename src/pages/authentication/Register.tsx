@@ -2,7 +2,6 @@ import React from "react";
 import { useAppDispatch } from "@/libs/stores";
 import { register } from "@/libs/stores/authentManager/thunk";
 import { RegisterForm } from "@/components/authentication/RegisterForm";
-import { toast } from "sonner";
 
 const Register: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -14,10 +13,8 @@ const Register: React.FC = () => {
   }) => {
     try {
       await dispatch(register(data));
-      toast.success("Registration successful! Please check your email to verify your account.");
     } catch (error: any) {
       console.error("Registration failed:", error);
-      toast.error("Registration failed. Please try again.");
     }
   };
 

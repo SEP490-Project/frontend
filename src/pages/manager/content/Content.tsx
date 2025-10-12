@@ -148,7 +148,7 @@ const ManageContent = () => {
                 </CardHeader>
                 <CardContent>
                   <div
-                    className="prose max-w-none"
+                    className="ProseMirror prose prose-sm sm:prose-base lg:prose-lg max-w-none prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-blockquote:my-2 p-4 border rounded-md focus:outline-none"
                     dangerouslySetInnerHTML={{ __html: content.html }}
                   />
                 </CardContent>

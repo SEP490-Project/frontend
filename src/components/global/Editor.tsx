@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
@@ -14,6 +14,14 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import FileUploader from "@/components/global/FileUploader";
 import {
   Bold,
   Italic,
@@ -36,7 +44,6 @@ import {
   Undo,
   Redo,
   Quote,
-  Code,
   Minus,
 } from "lucide-react";
 
@@ -49,6 +56,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
   initialContent = "<p>Start typing...</p>",
   onChange,
 }) => {
+  const [showImageUploader, setShowImageUploader] = useState(false);
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -61,11 +69,26 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
           keepAttributes: false,
         },
       }),
-      Link,
-      Image,
+      Link.configure({
+        openOnClick: false,
+        HTMLAttributes: {
+          rel: "noopener noreferrer",
+          target: "_blank",
+        },
+      }),
+      Image.configure({
+        HTMLAttributes: {
+          class: "max-w-full h-auto",
+        },
+      }),
       TextStyle,
       Color,
-      Highlight.configure({ multicolor: true }),
+      Highlight.configure({
+        multicolor: true,
+        HTMLAttributes: {
+          class: "highlight",
+        },
+      }),
       Underline,
       TextAlign.configure({
         types: ["heading", "paragraph"],
@@ -75,7 +98,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
     editorProps: {
       attributes: {
         class:
-          "prose prose-sm sm:prose-base focus:outline-none min-h-[300px] p-4 dark:prose-invert border rounded-md",
+          "prose prose-sm sm:prose-base focus:outline-none min-h-[300px] p-4 dark:prose-invert border rounded-md max-w-none prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-blockquote:my-2",
       },
     },
     onUpdate: ({ editor }) => {
@@ -94,18 +117,41 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
 
   if (!editor) return null;
 
-  const addImage = async () => {
-    const url = window.prompt("Enter image URL");
-    if (url) {
-      editor.chain().focus().setImage({ src: url }).run();
+  const handleImageUpload = (files: File[]) => {
+    if (files.length > 0) {
+      const file = files[0];
+      // Create a temporary URL for the uploaded image
+      const imageUrl = URL.createObjectURL(file);
+      editor.chain().focus().setImage({ src: imageUrl }).run();
+      setShowImageUploader(false);
+
+      // In a real application, you would upload the file to your server
+      // and then update the image src with the permanent URL
+      // For now, we'll use the temporary blob URL
     }
   };
 
+  const addImage = () => {
+    setShowImageUploader(true);
+  };
+
   const addLink = () => {
-    const url = window.prompt("Enter link URL");
-    if (url) {
-      editor.chain().focus().setLink({ href: url }).run();
+    const previousUrl = editor.getAttributes("link").href;
+    const url = window.prompt("Enter link URL", previousUrl);
+
+    // If url is null, user cancelled
+    if (url === null) {
+      return;
     }
+
+    // If url is empty, remove link
+    if (url === "") {
+      editor.chain().focus().extendMarkRange("link").unsetLink().run();
+      return;
+    }
+
+    // Update link
+    editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
   };
 
   const colors = [
@@ -192,7 +238,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
   ];
 
   return (
-    <Card className="w-full max-w-5xl mx-auto shadow-sm">
+    <Card className="w-full mx-auto shadow-sm">
       <CardHeader className="pb-2">
         <div className="flex flex-wrap items-center gap-1">
           {/* Undo/Redo */}
@@ -268,6 +314,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
                     onClick={() => {
                       editor.chain().focus().setColor(color).run();
                     }}
+                    title={`Set text color to ${color}`}
                   />
                 ))}
               </div>
@@ -299,6 +346,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
                     onClick={() => {
                       editor.chain().focus().setHighlight({ color }).run();
                     }}
+                    title={`Set highlight color to ${color}`}
                   />
                 ))}
               </div>
@@ -391,7 +439,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
 
           <Separator orientation="vertical" className="mx-1 h-5" />
 
-          {/* Quote and Code */}
+          {/* Quote */}
           <Button
             variant="ghost"
             size="icon"
@@ -399,14 +447,6 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
             className={editor.isActive("blockquote") ? "bg-muted" : ""}
           >
             <Quote className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => editor.chain().focus().toggleCode().run()}
-            className={editor.isActive("code") ? "bg-muted" : ""}
-          >
-            <Code className="w-4 h-4" />
           </Button>
 
           <Separator orientation="vertical" className="mx-1 h-5" />
@@ -424,12 +464,32 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
             variant="ghost"
             size="icon"
             onClick={() => editor.chain().focus().unsetLink().run()}
+            disabled={!editor.isActive("link")}
           >
             <Unlink className="w-4 h-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={addImage}>
-            <ImageIcon className="w-4 h-4" />
-          </Button>
+          <Dialog open={showImageUploader} onOpenChange={setShowImageUploader}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={addImage}>
+                <ImageIcon className="w-4 h-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Upload Image</DialogTitle>
+              </DialogHeader>
+              <FileUploader
+                accept="image/*"
+                multiple={false}
+                maxSize={5}
+                maxFiles={1}
+                allowedTypes={["jpg", "jpeg", "png", "gif", "webp"]}
+                onFilesChange={handleImageUpload}
+                title="Select Image"
+                showSummary={false}
+              />
+            </DialogContent>
+          </Dialog>
         </div>
       </CardHeader>
 

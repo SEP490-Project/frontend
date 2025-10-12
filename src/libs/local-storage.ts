@@ -1,22 +1,29 @@
-/**
- * Retrieves a value from localStorage by its key, and parses it as type `T`.
- * @param key The key to look up in localStorage.
- * @returns The parsed value as type `T`, or `null` if no value is found for the given key.
- * @template T The type of the value to parse from localStorage. Defaults to `unknown`.
- */
+// đọc/ghi cho JSON object
 const getItem = <T = unknown>(key: string): T | null => {
   const value = window.localStorage.getItem(key);
   if (!value) return null;
-  return JSON.parse(value) as T;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return null;
+  }
 };
 
-/**
- * Saves a value to localStorage with the given key.
- * @param key The key to use to store the value in localStorage.
- * @param value The value to save to localStorage.
- */
 const setItem = (key: string, value: unknown) => {
   window.localStorage.setItem(key, JSON.stringify(value));
 };
 
-export { getItem, setItem };
+// đọc/ghi cho string token
+const getRaw = (key: string): string | null => {
+  return window.localStorage.getItem(key);
+};
+
+const setRaw = (key: string, value: string) => {
+  window.localStorage.setItem(key, value);
+};
+
+const removeItem = (key: string) => {
+  window.localStorage.removeItem(key);
+};
+
+export { getItem, setItem, getRaw, setRaw, removeItem };

@@ -42,13 +42,7 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-@font-face {
-  font-family: "Poppins";
-  src: url("../assets/fonts/poppins/Poppins-Regular.ttf") format("truetype");
-}
-
 :root {
-  --font-sans: "Poppins", sans-serif;
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -175,4 +169,9 @@ body,
 * {
   scrollbar-width: thin;
   scrollbar-color: #888 #f1f1f1;
+}
+
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
 }

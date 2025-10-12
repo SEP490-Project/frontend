@@ -1,6 +1,7 @@
-export { default as Partner } from "./Partner";
+export { default as Brand } from "./Brand";
 export { default as Contracts } from "./Contract";
-export { default as Assignment } from "./Assignment";
+export { default as Campaign } from "./Campaign";
 
 export * from "./contracts";
-export * from "./campaign";
+export * from "./campaigns";
+export * from "./brands";

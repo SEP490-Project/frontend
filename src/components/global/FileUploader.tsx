@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import type { ReactElement } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -55,7 +55,33 @@ const formatFileSize = (bytes: number) =>
     ? "0 Bytes"
     : `${(bytes / 1024 ** Math.floor(Math.log(bytes) / Math.log(1024))).toFixed(2)} ${["Bytes", "KB", "MB", "GB"][Math.floor(Math.log(bytes) / Math.log(1024))]}`;
 
-const FileUploader = ({
+// First, add proper typing for the component props
+interface FileItem {
+  id: string;
+  file: File;
+  progress: number;
+  status: "uploading" | "completed" | "error";
+  preview?: string;
+}
+
+interface FileUploaderProps {
+  accept?: string;
+  multiple?: boolean;
+  maxSize?: number;
+  maxFiles?: number;
+  onFilesChange?: (files: File[]) => void;
+  onUpload?: (files: File[]) => Promise<void>;
+  className?: string;
+  disabled?: boolean;
+  showPreview?: boolean;
+  allowedTypes?: string[];
+  title?: string;
+  showSummary?: boolean;
+  initialFiles?: File[];
+}
+
+// Update the component with proper initialization of files
+const FileUploader: React.FC<FileUploaderProps> = ({
   accept = "*/*",
   multiple = true,
   maxSize = 10,
@@ -68,8 +94,30 @@ const FileUploader = ({
   allowedTypes = [],
   title,
   showSummary = true,
-}: any) => {
-  const [files, setFiles] = useState<any[]>([]);
+  initialFiles = [],
+}) => {
+  // Initialize files state with proper structure
+  const [files, setFiles] = useState<FileItem[]>(() =>
+    initialFiles.map((file) => ({
+      id: Math.random().toString(36).substr(2, 9),
+      file,
+      progress: 100,
+      status: "completed" as const,
+      preview: file.type.startsWith("image/") ? URL.createObjectURL(file) : undefined,
+    })),
+  );
+
+  // Clean up object URLs on unmount
+  useEffect(() => {
+    return () => {
+      files.forEach((file) => {
+        if (file.preview && file.preview.startsWith("blob:")) {
+          URL.revokeObjectURL(file.preview);
+        }
+      });
+    };
+  }, []);
+
   const [isDragActive, setIsDragActive] = useState(false);
   const [error, setError] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -108,6 +156,7 @@ const FileUploader = ({
     return null;
   };
 
+  // Update processFiles to handle previews properly
   const processFiles = useCallback(
     (fileList: FileList) => {
       let errorMessage = "";
@@ -115,26 +164,29 @@ const FileUploader = ({
         setError(`Maximum ${maxFiles} files allowed`);
         return;
       }
-      const newFiles = Array.from(fileList).reduce<any[]>((arr, file) => {
+
+      const newFiles = Array.from(fileList).reduce<FileItem[]>((arr, file) => {
         const err = validateFile(file);
         if (err) {
           errorMessage = err;
           return arr;
         }
+
         const id = Math.random().toString(36).substr(2, 9);
-        const fileItem: any = { id, file, progress: 0, status: "uploading" };
-        if (file.type.startsWith("image/") && showPreview) {
-          const reader = new FileReader();
-          reader.onload = (e) =>
-            setFiles((prev) =>
-              prev.map((f) => (f.id === id ? { ...f, preview: e.target?.result } : f)),
-            );
-          reader.readAsDataURL(file);
-        }
+        const fileItem: FileItem = {
+          id,
+          file,
+          progress: 0,
+          status: "uploading",
+          preview: file.type.startsWith("image/") ? URL.createObjectURL(file) : undefined,
+        };
+
         arr.push(fileItem);
         return arr;
       }, []);
+
       if (errorMessage) return setError(errorMessage);
+
       setError("");
       setFiles((prev) => [...prev, ...newFiles]);
       newFiles.forEach((f) => simulateUploadProgress(f.id));
@@ -162,9 +214,17 @@ const FileUploader = ({
     }, 200);
   };
 
+  // Update removeFile to clean up preview URLs
   const removeFile = (fileId: string) => {
-    setFiles((prev) => prev.filter((f) => f.id !== fileId));
-    onFilesChange?.(files.filter((f) => f.id !== fileId).map((f) => f.file));
+    setFiles((prev) => {
+      const fileToRemove = prev.find((f) => f.id === fileId);
+      if (fileToRemove?.preview && fileToRemove.preview.startsWith("blob:")) {
+        URL.revokeObjectURL(fileToRemove.preview);
+      }
+      const newFiles = prev.filter((f) => f.id !== fileId);
+      onFilesChange?.(newFiles.map((f) => f.file));
+      return newFiles;
+    });
   };
 
   return (

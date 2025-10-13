@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-import tasksData from "@/pages/manager/content/tasks-data.json";
+import tasksData from "@/pages/manager/content/mock-data/tasks-data.json";
 
 // Use task contract data from JSON
 const taskContractData = tasksData.taskContractData;

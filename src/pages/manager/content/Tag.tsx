@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FaPenToSquare, FaFilter } from "react-icons/fa6";
-import { mockTags } from "./tag-mock-data";
+import { mockTags } from "./mock-data/tag-mock-data";
 import { Trash } from "lucide-react";
 import { DeleteModal } from "@/components/modal/DeleteModal";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";

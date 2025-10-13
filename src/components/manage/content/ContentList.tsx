@@ -9,6 +9,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import {
   Eye,
@@ -20,12 +26,32 @@ import {
   User,
   ChevronLeft,
   ChevronRight,
+  FileText,
+  Video,
+  Settings,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import ContentDetailModal from "./ContentDetailModal";
+import TaskSelectionDialog from "./TaskSelectionDialog";
 import type { Content } from "@/libs/types/content";
 
+type ContentType = "blog" | "video";
+
+interface ContentTask {
+  id: number;
+  title: string;
+  type: "Blog" | "Video";
+  details: {
+    description: string;
+    assignee: string;
+    dueTime: string;
+    priority: "High" | "Medium" | "Low";
+  };
+  color: string;
+}
+
 interface ContentListProps {
-  onCreateNew?: () => void;
+  onCreateNew?: (contentType: ContentType, task?: ContentTask) => void;
   onEdit?: (content: Content) => void;
   onView?: (content: Content) => void;
 }
@@ -49,6 +75,11 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     status: "",
     actor: "",
   });
+
+  const [selectedContent, setSelectedContent] = useState<Content | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isTaskSelectionOpen, setIsTaskSelectionOpen] = useState(false);
+  const [selectedContentType, setSelectedContentType] = useState<ContentType>("blog");
 
   useEffect(() => {
     fetchContents(filters);
@@ -83,6 +114,41 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     fetchContents(filters);
   };
 
+  const handleViewContent = (content: Content) => {
+    setSelectedContent(content);
+    setIsDetailModalOpen(true);
+    // Also call the parent onView if provided
+    onView?.(content);
+  };
+
+  const handleCloseDetailModal = () => {
+    setIsDetailModalOpen(false);
+    setSelectedContent(null);
+  };
+
+  const handleRequestApproval = async (contentId: string) => {
+    // TODO: Implement request approval logic
+    // For now, we'll change status to pending
+    console.log("Requesting approval for content:", contentId);
+    // You can implement the actual API call here
+    fetchContents(filters);
+    handleCloseDetailModal();
+  };
+
+  const handleCreateNewClick = (contentType: ContentType) => {
+    setSelectedContentType(contentType);
+    setIsTaskSelectionOpen(true);
+  };
+
+  const handleTaskSelect = (task: ContentTask) => {
+    setIsTaskSelectionOpen(false);
+    onCreateNew?.(selectedContentType, task);
+  };
+
+  const handleTaskSelectionClose = () => {
+    setIsTaskSelectionOpen(false);
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "posted":
@@ -112,10 +178,6 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-semibold">Recent contents</h2>
-        <Button onClick={onCreateNew} className="bg-[#FF9DB0] hover:bg-pink-600">
-          <Plus className="w-4 h-4 mr-2" />
-          Create New
-        </Button>
       </div>
 
       {/* Filters */}
@@ -148,6 +210,28 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
         </CardContent>
       </Card>
 
+      {/* Create New Button */}
+      <div className="flex justify-end">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button className="bg-[#FF9DB0] hover:bg-pink-600">
+              <Plus className="w-4 h-4 mr-2" />
+              Create New
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleCreateNewClick("blog")}>
+              <FileText className="w-4 h-4 mr-2" />
+              Create Blog
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleCreateNewClick("video")}>
+              <Video className="w-4 h-4 mr-2" />
+              Create Video
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       {/* Content Table */}
       <Card>
         <CardContent className="p-0">
@@ -164,10 +248,11 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
             <>
               {/* Table Header */}
               <div className="grid grid-cols-12 gap-4 p-4 bg-gray-50 border-b font-medium text-sm text-gray-600">
-                <div className="col-span-3">Title</div>
+                <div className="col-span-2">Title</div>
                 <div className="col-span-2">Actor</div>
-                <div className="col-span-2">Date - Time</div>
+                <div className="col-span-2">Time Created</div>
                 <div className="col-span-1">Views</div>
+                <div className="col-span-1">Type</div>
                 <div className="col-span-2">Action</div>
                 <div className="col-span-2">Status</div>
               </div>
@@ -183,7 +268,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                     key={content.id}
                     className="grid grid-cols-12 gap-4 p-4 border-b hover:bg-gray-50 transition-colors"
                   >
-                    <div className="col-span-3">
+                    <div className="col-span-2">
                       <h4 className="font-medium text-gray-900 truncate">{content.title}</h4>
                     </div>
 
@@ -203,31 +288,48 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                       <span className="text-gray-600">{content.views}</span>
                     </div>
 
-                    <div className="col-span-2 flex items-center space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onView?.(content)}
-                        className="p-1 h-8 w-8"
-                      >
-                        <Eye className="w-4 h-4 text-blue-500" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onEdit?.(content)}
-                        className="p-1 h-8 w-8"
-                      >
-                        <Edit className="w-4 h-4 text-green-500" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(content.id)}
-                        className="p-1 h-8 w-8"
-                      >
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </Button>
+                    <div className="col-span-1 flex items-center">
+                      <div className="flex items-center">
+                        {content.content_type === "video" ? (
+                          <Video className="w-4 h-4 mr-1 text-purple-500" />
+                        ) : (
+                          <FileText className="w-4 h-4 mr-1 text-blue-500" />
+                        )}
+                        <span className="text-gray-600 capitalize">
+                          {content.content_type || "blog"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="col-span-2 flex items-center">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="p-1 h-8 w-8 hover:bg-gray-100"
+                          >
+                            <Settings className="w-4 h-4 text-gray-600" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start">
+                          <DropdownMenuItem onClick={() => handleViewContent(content)}>
+                            <Eye className="w-4 h-4 mr-2" />
+                            View
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onEdit?.(content)}>
+                            <Edit className="w-4 h-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDelete(content.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
 
                     <div className="col-span-2 flex items-center">
@@ -276,6 +378,22 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
           </div>
         </div>
       )}
+
+      {/* Content Detail Modal */}
+      <ContentDetailModal
+        content={selectedContent}
+        isOpen={isDetailModalOpen}
+        onClose={handleCloseDetailModal}
+        onRequestApproval={handleRequestApproval}
+      />
+
+      {/* Task Selection Dialog */}
+      <TaskSelectionDialog
+        isOpen={isTaskSelectionOpen}
+        onClose={handleTaskSelectionClose}
+        contentType={selectedContentType}
+        onTaskSelect={handleTaskSelect}
+      />
     </div>
   );
 };

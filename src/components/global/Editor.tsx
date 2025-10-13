@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
@@ -14,6 +14,14 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import FileUploader from "@/components/global/FileUploader";
 import {
   Bold,
   Italic,
@@ -36,7 +44,6 @@ import {
   Undo,
   Redo,
   Quote,
-  Code,
   Minus,
 } from "lucide-react";
 
@@ -49,6 +56,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
   initialContent = "<p>Start typing...</p>",
   onChange,
 }) => {
+  const [showImageUploader, setShowImageUploader] = useState(false);
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -61,11 +69,26 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
           keepAttributes: false,
         },
       }),
-      Link,
-      Image,
+      Link.configure({
+        openOnClick: false,
+        HTMLAttributes: {
+          rel: "noopener noreferrer",
+          target: "_blank",
+        },
+      }),
+      Image.configure({
+        HTMLAttributes: {
+          class: "max-w-full h-auto",
+        },
+      }),
       TextStyle,
       Color,
-      Highlight.configure({ multicolor: true }),
+      Highlight.configure({
+        multicolor: true,
+        HTMLAttributes: {
+          class: "highlight",
+        },
+      }),
       Underline,
       TextAlign.configure({
         types: ["heading", "paragraph"],
@@ -75,7 +98,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
     editorProps: {
       attributes: {
         class:
-          "prose prose-sm sm:prose-base focus:outline-none min-h-[300px] p-4 dark:prose-invert border rounded-md",
+          "prose prose-sm sm:prose-base focus:outline-none min-h-[300px] p-4 dark:prose-invert border rounded-md max-w-none prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-blockquote:my-2",
       },
     },
     onUpdate: ({ editor }) => {
@@ -94,18 +117,55 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
 
   if (!editor) return null;
 
-  const addImage = async () => {
-    const url = window.prompt("Enter image URL");
-    if (url) {
-      editor.chain().focus().setImage({ src: url }).run();
+  // Word count function
+  const getWordCount = () => {
+    const text = editor.getText();
+    const words = text
+      .trim()
+      .split(/\s+/)
+      .filter((word) => word.length > 0);
+    return words.length;
+  };
+
+  const getCharacterCount = () => {
+    return editor.getText().length;
+  };
+
+  const handleImageUpload = (files: File[]) => {
+    if (files.length > 0) {
+      const file = files[0];
+      // Create a temporary URL for the uploaded image
+      const imageUrl = URL.createObjectURL(file);
+      editor.chain().focus().setImage({ src: imageUrl }).run();
+      setShowImageUploader(false);
+
+      // In a real application, you would upload the file to your server
+      // and then update the image src with the permanent URL
+      // For now, we'll use the temporary blob URL
     }
   };
 
+  const addImage = () => {
+    setShowImageUploader(true);
+  };
+
   const addLink = () => {
-    const url = window.prompt("Enter link URL");
-    if (url) {
-      editor.chain().focus().setLink({ href: url }).run();
+    const previousUrl = editor.getAttributes("link").href;
+    const url = window.prompt("Enter link URL", previousUrl);
+
+    // If url is null, user cancelled
+    if (url === null) {
+      return;
     }
+
+    // If url is empty, remove link
+    if (url === "") {
+      editor.chain().focus().extendMarkRange("link").unsetLink().run();
+      return;
+    }
+
+    // Update link
+    editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
   };
 
   const colors = [
@@ -192,244 +252,267 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
   ];
 
   return (
-    <Card className="w-full max-w-5xl mx-auto shadow-sm">
+    <Card className="w-full mx-auto shadow-sm">
       <CardHeader className="pb-2">
-        <div className="flex flex-wrap items-center gap-1">
-          {/* Undo/Redo */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => editor.chain().focus().undo().run()}
-            disabled={!editor.can().undo()}
-          >
-            <Undo className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => editor.chain().focus().redo().run()}
-            disabled={!editor.can().redo()}
-          >
-            <Redo className="w-4 h-4" />
-          </Button>
+        <div className="flex flex-wrap items-center justify-between gap-1">
+          <div className="flex flex-wrap items-center gap-1">
+            {/* Undo/Redo */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => editor.chain().focus().undo().run()}
+              disabled={!editor.can().undo()}
+            >
+              <Undo className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => editor.chain().focus().redo().run()}
+              disabled={!editor.can().redo()}
+            >
+              <Redo className="w-4 h-4" />
+            </Button>
 
-          <Separator orientation="vertical" className="mx-1 h-5" />
+            <Separator orientation="vertical" className="mx-1 h-5" />
 
-          {/* Text Formatting */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => editor.chain().focus().toggleBold().run()}
-            className={editor.isActive("bold") ? "bg-muted" : ""}
-          >
-            <Bold className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => editor.chain().focus().toggleItalic().run()}
-            className={editor.isActive("italic") ? "bg-muted" : ""}
-          >
-            <Italic className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => editor.chain().focus().toggleUnderline().run()}
-            className={editor.isActive("underline") ? "bg-muted" : ""}
-          >
-            <UnderlineIcon className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => editor.chain().focus().toggleStrike().run()}
-            className={editor.isActive("strike") ? "bg-muted" : ""}
-          >
-            <Strikethrough className="w-4 h-4" />
-          </Button>
+            {/* Text Formatting */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => editor.chain().focus().toggleBold().run()}
+              className={editor.isActive("bold") ? "bg-muted" : ""}
+            >
+              <Bold className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => editor.chain().focus().toggleItalic().run()}
+              className={editor.isActive("italic") ? "bg-muted" : ""}
+            >
+              <Italic className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => editor.chain().focus().toggleUnderline().run()}
+              className={editor.isActive("underline") ? "bg-muted" : ""}
+            >
+              <UnderlineIcon className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => editor.chain().focus().toggleStrike().run()}
+              className={editor.isActive("strike") ? "bg-muted" : ""}
+            >
+              <Strikethrough className="w-4 h-4" />
+            </Button>
 
-          <Separator orientation="vertical" className="mx-1 h-5" />
+            <Separator orientation="vertical" className="mx-1 h-5" />
 
-          {/* Text Color */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Palette className="w-4 h-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-64">
-              <div className="grid grid-cols-10 gap-1 p-2">
-                {colors.map((color) => (
+            {/* Text Color */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Palette className="w-4 h-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64">
+                <div className="grid grid-cols-10 gap-1 p-2">
+                  {colors.map((color) => (
+                    <button
+                      key={color}
+                      className="w-6 h-6 rounded border border-gray-200 hover:scale-110 transition-transform"
+                      style={{ backgroundColor: color }}
+                      onClick={() => {
+                        editor.chain().focus().setColor(color).run();
+                      }}
+                      title={`Set text color to ${color}`}
+                    />
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            {/* Highlight Color */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Highlighter className="w-4 h-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64">
+                <div className="grid grid-cols-10 gap-1 p-2">
                   <button
-                    key={color}
-                    className="w-6 h-6 rounded border border-gray-200 hover:scale-110 transition-transform"
-                    style={{ backgroundColor: color }}
+                    className="w-6 h-6 rounded border border-gray-200 hover:scale-110 transition-transform bg-transparent"
                     onClick={() => {
-                      editor.chain().focus().setColor(color).run();
+                      editor.chain().focus().unsetHighlight().run();
                     }}
-                  />
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
+                  >
+                    <Minus className="w-3 h-3 mx-auto" />
+                  </button>
+                  {colors.map((color) => (
+                    <button
+                      key={color}
+                      className="w-6 h-6 rounded border border-gray-200 hover:scale-110 transition-transform"
+                      style={{ backgroundColor: color }}
+                      onClick={() => {
+                        editor.chain().focus().setHighlight({ color }).run();
+                      }}
+                      title={`Set highlight color to ${color}`}
+                    />
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
 
-          {/* Highlight Color */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Highlighter className="w-4 h-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-64">
-              <div className="grid grid-cols-10 gap-1 p-2">
-                <button
-                  className="w-6 h-6 rounded border border-gray-200 hover:scale-110 transition-transform bg-transparent"
-                  onClick={() => {
-                    editor.chain().focus().unsetHighlight().run();
-                  }}
-                >
-                  <Minus className="w-3 h-3 mx-auto" />
-                </button>
-                {colors.map((color) => (
-                  <button
-                    key={color}
-                    className="w-6 h-6 rounded border border-gray-200 hover:scale-110 transition-transform"
-                    style={{ backgroundColor: color }}
-                    onClick={() => {
-                      editor.chain().focus().setHighlight({ color }).run();
-                    }}
-                  />
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
+            <Separator orientation="vertical" className="mx-1 h-5" />
 
-          <Separator orientation="vertical" className="mx-1 h-5" />
+            {/* Headings */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+              className={editor.isActive("heading", { level: 1 }) ? "bg-muted" : ""}
+            >
+              <Heading1 className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+              className={editor.isActive("heading", { level: 2 }) ? "bg-muted" : ""}
+            >
+              <Heading2 className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+              className={editor.isActive("heading", { level: 3 }) ? "bg-muted" : ""}
+            >
+              <Heading3 className="w-4 h-4" />
+            </Button>
 
-          {/* Headings */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-            className={editor.isActive("heading", { level: 1 }) ? "bg-muted" : ""}
-          >
-            <Heading1 className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-            className={editor.isActive("heading", { level: 2 }) ? "bg-muted" : ""}
-          >
-            <Heading2 className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-            className={editor.isActive("heading", { level: 3 }) ? "bg-muted" : ""}
-          >
-            <Heading3 className="w-4 h-4" />
-          </Button>
+            <Separator orientation="vertical" className="mx-1 h-5" />
 
-          <Separator orientation="vertical" className="mx-1 h-5" />
+            {/* Lists */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => editor.chain().focus().toggleBulletList().run()}
+              className={editor.isActive("bulletList") ? "bg-muted" : ""}
+            >
+              <List className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => editor.chain().focus().toggleOrderedList().run()}
+              className={editor.isActive("orderedList") ? "bg-muted" : ""}
+            >
+              <ListOrdered className="w-4 h-4" />
+            </Button>
 
-          {/* Lists */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
-            className={editor.isActive("bulletList") ? "bg-muted" : ""}
-          >
-            <List className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => editor.chain().focus().toggleOrderedList().run()}
-            className={editor.isActive("orderedList") ? "bg-muted" : ""}
-          >
-            <ListOrdered className="w-4 h-4" />
-          </Button>
+            <Separator orientation="vertical" className="mx-1 h-5" />
 
-          <Separator orientation="vertical" className="mx-1 h-5" />
+            {/* Text Alignment */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => editor.chain().focus().setTextAlign("left").run()}
+              className={editor.isActive({ textAlign: "left" }) ? "bg-muted" : ""}
+            >
+              <AlignLeft className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => editor.chain().focus().setTextAlign("center").run()}
+              className={editor.isActive({ textAlign: "center" }) ? "bg-muted" : ""}
+            >
+              <AlignCenter className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => editor.chain().focus().setTextAlign("right").run()}
+              className={editor.isActive({ textAlign: "right" }) ? "bg-muted" : ""}
+            >
+              <AlignRight className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => editor.chain().focus().setTextAlign("justify").run()}
+              className={editor.isActive({ textAlign: "justify" }) ? "bg-muted" : ""}
+            >
+              <AlignJustify className="w-4 h-4" />
+            </Button>
 
-          {/* Text Alignment */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => editor.chain().focus().setTextAlign("left").run()}
-            className={editor.isActive({ textAlign: "left" }) ? "bg-muted" : ""}
-          >
-            <AlignLeft className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => editor.chain().focus().setTextAlign("center").run()}
-            className={editor.isActive({ textAlign: "center" }) ? "bg-muted" : ""}
-          >
-            <AlignCenter className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => editor.chain().focus().setTextAlign("right").run()}
-            className={editor.isActive({ textAlign: "right" }) ? "bg-muted" : ""}
-          >
-            <AlignRight className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => editor.chain().focus().setTextAlign("justify").run()}
-            className={editor.isActive({ textAlign: "justify" }) ? "bg-muted" : ""}
-          >
-            <AlignJustify className="w-4 h-4" />
-          </Button>
+            <Separator orientation="vertical" className="mx-1 h-5" />
 
-          <Separator orientation="vertical" className="mx-1 h-5" />
+            {/* Quote */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => editor.chain().focus().toggleBlockquote().run()}
+              className={editor.isActive("blockquote") ? "bg-muted" : ""}
+            >
+              <Quote className="w-4 h-4" />
+            </Button>
 
-          {/* Quote and Code */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => editor.chain().focus().toggleBlockquote().run()}
-            className={editor.isActive("blockquote") ? "bg-muted" : ""}
-          >
-            <Quote className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => editor.chain().focus().toggleCode().run()}
-            className={editor.isActive("code") ? "bg-muted" : ""}
-          >
-            <Code className="w-4 h-4" />
-          </Button>
+            <Separator orientation="vertical" className="mx-1 h-5" />
 
-          <Separator orientation="vertical" className="mx-1 h-5" />
+            {/* Links and Images */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={addLink}
+              className={editor.isActive("link") ? "bg-muted" : ""}
+            >
+              <Link2 className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => editor.chain().focus().unsetLink().run()}
+              disabled={!editor.isActive("link")}
+            >
+              <Unlink className="w-4 h-4" />
+            </Button>
+            <Dialog open={showImageUploader} onOpenChange={setShowImageUploader}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" onClick={addImage}>
+                  <ImageIcon className="w-4 h-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Upload Image</DialogTitle>
+                </DialogHeader>
+                <FileUploader
+                  accept="image/*"
+                  multiple={false}
+                  maxSize={5}
+                  maxFiles={1}
+                  allowedTypes={["jpg", "jpeg", "png", "gif", "webp", "mp4", "wav"]}
+                  onFilesChange={handleImageUpload}
+                  title="Select Image"
+                  showSummary={false}
+                />
+              </DialogContent>
+            </Dialog>
+          </div>
 
-          {/* Links and Images */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={addLink}
-            className={editor.isActive("link") ? "bg-muted" : ""}
-          >
-            <Link2 className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => editor.chain().focus().unsetLink().run()}
-          >
-            <Unlink className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={addImage}>
-            <ImageIcon className="w-4 h-4" />
-          </Button>
+          {/* Word Count Section */}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 px-3 py-1 rounded-md">
+            <span>{getWordCount()} words</span>
+            <Separator orientation="vertical" className="h-4" />
+            <span>{getCharacterCount()} characters</span>
+          </div>
         </div>
       </CardHeader>
 

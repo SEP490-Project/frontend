@@ -7,12 +7,12 @@ import {
   AlertTriangle,
   FileText,
   Target,
-  DollarSign,
+  Briefcase,
   MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-import tasksData from "@/pages/manager/content/tasks-data.json";
+import tasksData from "@/pages/manager/content/mock-data/tasks-data.json";
 
 // Use task contract data from JSON
 const taskContractData = tasksData.taskContractData;
@@ -184,7 +184,7 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
             className="bg-gradient-to-br from-blue-50 to-white rounded-2xl p-6 border border-blue-200 shadow-sm"
           >
             <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-blue-600" />
+              <Briefcase className="h-5 w-5 text-blue-600" />
               Contract Information
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -196,13 +196,6 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
               <div className="bg-white p-4 rounded-lg border border-gray-100">
                 <p className="text-sm text-gray-500 mb-1">Client</p>
                 <p className="font-semibold text-gray-900">{contractData.contract.clientName}</p>
-              </div>
-
-              <div className="bg-white p-4 rounded-lg border border-gray-100">
-                <p className="text-sm text-gray-500 mb-1">Contract Value</p>
-                <p className="font-semibold text-green-600 text-lg">
-                  {contractData.contract.contractValue}
-                </p>
               </div>
 
               <div className="bg-white p-4 rounded-lg border border-gray-100">
@@ -244,11 +237,7 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
                 </h3>
                 <p className="text-gray-700 mb-3">{contractData.campaign.objective}</p>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Budget</p>
-                    <p className="font-semibold text-purple-600">{contractData.campaign.budget}</p>
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-gray-500 mb-1">Timeline</p>
                     <p className="font-semibold text-gray-900">{contractData.campaign.timeline}</p>

@@ -4,7 +4,6 @@ import { NavLink, useLocation } from "react-router-dom";
 import {
   FaChartLine,
   FaUserGear,
-  FaChartPie,
   FaRegUser,
   FaRegCircleQuestion,
   FaRegFileLines,
@@ -26,6 +25,7 @@ import {
 import { useAuth } from "@/libs/hooks/useAuth";
 import { useAppDispatch } from "@/libs/stores";
 import { logout } from "@/libs/stores/authentManager/thunk";
+import { Bolt } from "lucide-react";
 
 interface TabItem {
   href: string;
@@ -212,15 +212,8 @@ const Sidebar: React.FC<SidebarProps> = ({
         href: "/manage/admin/users",
         label: "Users",
         icon: <FaUserGear size={18} />,
-        subTabs: [
-          { href: "/manage/admin/users?role=CUSTOMER", label: "Customer" },
-          { href: "/manage/admin/users?role=MARKETING_STAFF", label: "Marketing Staff" },
-          { href: "/manage/admin/users?role=CONTENT_STAFF", label: "Content Staff" },
-          { href: "/manage/admin/users?role=SALES_STAFF", label: "Sale Staff" },
-          { href: "/manage/admin/users?role=BRAND_PARTNER", label: "Brand Staff" },
-        ],
       },
-      { href: "/manage/admin/reports", label: "KPI & Reports", icon: <FaChartPie size={18} /> },
+      { href: "/manage/admin/configurations", label: "Configurations", icon: <Bolt size={18} /> },
     ],
   };
 

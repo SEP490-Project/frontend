@@ -1,22 +1,14 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { getProfileThunk, updateProfileThunk } from "./thunk";
-import type { UserResponse } from "@/libs/types/user";
+import { getAllUsersThunk, getProfileThunk, updateProfileThunk } from "./thunk";
+import type { UserData, UserResponse } from "@/libs/types/user";
 
-interface UserManagerState {
-  userProfile: UserResponse | null;
-  loading: boolean;
-  error: string | null;
-}
-
-const initialState: UserManagerState = {
-  userProfile: null,
-  loading: false,
-  error: null,
-};
-
-const userManagerSlice = createSlice({
-  name: "userManager",
-  initialState,
+const userProfileSlice = createSlice({
+  name: "userProfile",
+  initialState: {
+    userProfile: null as UserResponse<UserData> | null,
+    loading: false,
+    error: null as string | null,
+  },
   reducers: {},
   extraReducers: (builder) => {
     builder.addCase(getProfileThunk.pending, (state) => {
@@ -44,4 +36,38 @@ const userManagerSlice = createSlice({
   },
 });
 
+const userManagerSlice = createSlice({
+  name: "userManager",
+  initialState: {
+    users: null as UserResponse<UserData[]> | null,
+    loading: false,
+    error: null as string | null,
+  },
+  reducers: {},
+  extraReducers: (builder) => {
+    builder.addCase(getAllUsersThunk.pending, (state) => {
+      state.loading = true;
+    });
+    builder.addCase(getAllUsersThunk.fulfilled, (state, action) => {
+      state.loading = false;
+      state.users = action.payload;
+    });
+    builder.addCase(getAllUsersThunk.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string | null;
+    });
+    builder.addCase(updateProfileThunk.pending, (state) => {
+      state.loading = true;
+    });
+    builder.addCase(updateProfileThunk.fulfilled, (state) => {
+      state.loading = false;
+    });
+    builder.addCase(updateProfileThunk.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string | null;
+    });
+  },
+});
+
+export const { reducer: userProfileReducer, actions: userProfileActions } = userProfileSlice;
 export const { reducer: manageUserReducer, actions: manageUserActions } = userManagerSlice;

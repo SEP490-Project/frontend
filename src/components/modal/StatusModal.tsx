@@ -11,9 +11,11 @@ import {
 export const StatusModal = ({
   name,
   status = "Active",
+  onConfirm,
 }: {
   name: string;
   status: string;
+  onConfirm: () => void;
 }): React.ReactElement => {
   return (
     <DialogContent>
@@ -36,7 +38,12 @@ export const StatusModal = ({
         <DialogClose asChild>
           <button className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">No</button>
         </DialogClose>
-        <button className="px-4 py-2 bg-primary text-white rounded hover:bg-[#f794a8]">Yes</button>
+        <button
+          className="px-4 py-2 bg-primary text-white rounded hover:bg-[#f794a8]"
+          onClick={onConfirm}
+        >
+          Yes
+        </button>
       </DialogFooter>
     </DialogContent>
   );

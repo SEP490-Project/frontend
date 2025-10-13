@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import {
-  ContractActions,
+  ContractFiles,
   ContractInformation,
   FinancialTerms,
   LegalTerms,
   ScopeOfWork,
-} from "@/components/manage/marketing/contract";
+} from "./component/add";
 import {
   FaCheck,
   FaArrowLeft,
@@ -13,7 +13,7 @@ import {
   FaRotateLeft,
   FaTriangleExclamation,
 } from "react-icons/fa6";
-import { validateContract, validateField } from "@/libs/validation/contractValidation";
+import { validateContract, validateField } from "./validation";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -134,7 +134,7 @@ const TAB_COMPONENTS: Record<string, React.FC<any>> = {
   "scope-of-work": ScopeOfWork,
   "financial-terms": FinancialTerms,
   "legal-terms": LegalTerms,
-  "contract-actions": ContractActions,
+  "contract-actions": ContractFiles,
 };
 
 const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {

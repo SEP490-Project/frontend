@@ -8,20 +8,27 @@ import { format } from "date-fns";
 
 interface DatePickerProps {
   label?: string;
-  value: string;
+  value?: string;
   onChange: (date: string) => void;
   placeholder?: string;
   error?: string;
   required?: boolean;
   disabled?: boolean;
+  minDate?: string;
+  maxDate?: string;
+  dateFormat?: string;
   className?: string;
 }
 
-// Helper function để parse date
-const parseDate = (dateString: string): Date | undefined => {
+// Helper parse date safely
+const parseDate = (dateString?: string): Date | undefined => {
   if (!dateString) return undefined;
-  const date = new Date(dateString);
-  return isNaN(date.getTime()) ? undefined : date;
+  try {
+    const d = new Date(dateString);
+    return isNaN(d.getTime()) ? undefined : d;
+  } catch {
+    return undefined;
+  }
 };
 
 export const DatePicker: React.FC<DatePickerProps> = ({
@@ -32,9 +39,26 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   error,
   required = false,
   disabled = false,
+  minDate,
+  maxDate,
+  dateFormat = "dd/MM/yyyy",
   className = "",
 }) => {
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedDate = parseDate(value);
+
+  const handleSelect = (date?: Date) => {
+    if (!date) {
+      onChange("");
+      return setIsOpen(false);
+    }
+
+    if (minDate && date < new Date(minDate)) return;
+    if (maxDate && date > new Date(maxDate)) return;
+
+    onChange(format(date, "yyyy-MM-dd"));
+    setIsOpen(false);
+  };
 
   return (
     <div className={`space-y-2 ${className}`}>
@@ -44,7 +68,8 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           {required && <span className="text-red-500 ml-1">*</span>}
         </Label>
       )}
-      <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           <Button
             variant="outline2"
@@ -56,21 +81,26 @@ export const DatePicker: React.FC<DatePickerProps> = ({
             }`}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
-            {value ? format(parseDate(value)!, "dd/MM/yyyy") : placeholder}
+            {value ? format(parseDate(value)!, dateFormat) : placeholder}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
-            mode="single"
-            selected={parseDate(value)}
-            onSelect={(date) => {
-              onChange(date ? format(date, "yyyy-MM-dd") : "");
-              setIsCalendarOpen(false);
-            }}
-            initialFocus
-          />
-        </PopoverContent>
+
+        {!disabled && (
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={handleSelect}
+              autoFocus
+              hidden={[
+                ...(parseDate(minDate) ? [{ before: parseDate(minDate)! }] : []),
+                ...(parseDate(maxDate) ? [{ after: parseDate(maxDate)! }] : []),
+              ]}
+            />
+          </PopoverContent>
+        )}
       </Popover>
+
       {error && <p className="text-sm text-red-500">{error}</p>}
     </div>
   );

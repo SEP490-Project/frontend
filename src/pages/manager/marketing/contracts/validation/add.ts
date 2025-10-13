@@ -76,7 +76,7 @@ const contractSchema = yup.object({
         end.setHours(0, 0, 0, 0);
 
         // Cannot be between start and end date (inclusive)
-        if (signed >= start && signed <= end) {
+        if (signed > start && signed <= end) {
           return this.createError({
             message: "Signed date cannot be during the contract period",
           });

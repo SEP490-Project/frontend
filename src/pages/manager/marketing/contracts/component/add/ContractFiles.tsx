@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { FileUploader } from "@/components/global";
 
-interface ContractActionsProps {
+interface ContractFilesProps {
   formData: any;
   onContractFilesChange: (files: File[]) => void;
   onProposalFilesChange: (files: File[]) => void;
@@ -13,7 +13,7 @@ interface ContractActionsProps {
   onSubmit: (e: React.FormEvent) => void;
 }
 
-const ContractActions: React.FC<ContractActionsProps> = ({
+const ContractFiles: React.FC<ContractFilesProps> = ({
   formData, // Add formData to destructuring
   onContractFilesChange,
   onProposalFilesChange,
@@ -82,4 +82,4 @@ const ContractActions: React.FC<ContractActionsProps> = ({
   );
 };
 
-export default ContractActions;
+export default ContractFiles;

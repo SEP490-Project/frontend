@@ -9,8 +9,8 @@ const Login: React.FC = () => {
   const handleSubmit = async (data: { login_identifier: string; password: string }) => {
     try {
       await dispatch(login(data)).unwrap();
-    } catch (err) {
-      console.error("Login failed:", err);
+    } catch (error) {
+      console.error("Login failed:", error);
     }
   };
 

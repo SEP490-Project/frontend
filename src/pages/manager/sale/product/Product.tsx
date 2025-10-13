@@ -330,6 +330,11 @@ const Product: React.FC = () => {
                   size="sm"
                   className="h-8 w-8 p-0 hover:bg-yellow-50"
                   title="Edit"
+                  onClick={() => {
+                    navigate(`/manage/sale/product/${product.id}/edit`, {
+                      state: { type: ProductFormMode.EDIT, data: product },
+                    });
+                  }}
                 >
                   <FaPenToSquare className="text-yellow-600" />
                 </Button>

@@ -1,4 +1,4 @@
-import TiptapEditor from "@/components/global/Editor";
+import { Editor } from "@/components/global";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -116,7 +116,7 @@ const ManageContent = () => {
                 </h3>
               </CardHeader>
               <CardContent>
-                <TiptapEditor
+                <Editor
                   initialContent={
                     editingContent
                       ? editingContent.html_content

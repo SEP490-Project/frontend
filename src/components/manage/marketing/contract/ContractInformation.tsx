@@ -20,7 +20,7 @@ import {
   brandDetail as fetchBrandDetail,
 } from "@/libs/stores/brandManager/thunk";
 import { useDebounce } from "@/libs/hooks/useDebounce";
-import { Mail, Phone, Globe } from "lucide-react";
+import { Mail, Phone, Globe, User, Building } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface ContractInformationProps {
@@ -39,6 +39,23 @@ const CONTRACT_TYPE_OPTIONS = [
   { value: "BRAND_AMBASSADOR", label: "Brand Ambassador" },
   { value: "CO_PRODUCING", label: "Co-Production" },
 ];
+
+// Sample data for representatives
+const SAMPLE_BRAND_REPRESENTATIVE = {
+  brandRepresentativeName: "Nguyễn Văn A",
+  brandRepresentativePosition: "Marketing Manager",
+  brandRepresentativePhone: "+84 901 234 567",
+  brandRepresentativeEmail: "marketing@brand.com",
+  brandTaxNumber: "0123456789",
+};
+
+const SAMPLE_WEB_REPRESENTATIVE = {
+  webRepresentativeName: "Nguyễn Minh Anh",
+  webRepresentativePosition: "Content Creator / KOL",
+  webRepresentativePhone: "+84 912 345 678",
+  webRepresentativeEmail: "minhanh.kol@example.com",
+  webRepresentativeTaxNumber: "1234567890",
+};
 
 // Helper Components (Brand)
 const BrandItem = ({ brand }: { brand: any }) => (
@@ -134,6 +151,72 @@ const BrandDetails = ({ brandId }: { brandId: string }) => {
   );
 };
 
+// Form Field Component
+const FormField = ({
+  label,
+  field,
+  placeholder,
+  type = "text",
+  required = false,
+  formData,
+  onInputChange,
+  errors,
+  disabled = false,
+}: any) => (
+  <div className="space-y-2">
+    <Label className="text-sm font-medium">
+      {label} {required && "*"}
+    </Label>
+    <Input
+      type={type}
+      value={formData[field] || ""}
+      onChange={(e) => onInputChange(field, e.target.value)}
+      placeholder={placeholder}
+      required={required}
+      disabled={disabled}
+      className={`h-11 ${
+        disabled ? "bg-gray-100 text-gray-500 cursor-not-allowed border-gray-300" : "bg-white"
+      } ${errors[field] ? "border-red-500" : ""}`}
+    />
+    {errors[field] && <p className="text-red-500 text-xs italic">{errors[field]}</p>}
+  </div>
+);
+
+const RepresentativeSection = ({
+  title,
+  icon: Icon,
+  fields,
+  formData,
+  onInputChange,
+  errors,
+  disabled = false,
+}: any) => (
+  <div className="space-y-6">
+    <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+      <Icon className="h-5 w-5 text-slate-600" />
+      <h3 className="text-lg font-semibold text-slate-800">{title}</h3>
+      {disabled && (
+        <Badge variant="secondary" className="text-xs">
+          Auto-filled
+        </Badge>
+      )}
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {fields.map((field: any) => (
+        <FormField
+          key={field.field}
+          {...field}
+          formData={formData}
+          onInputChange={onInputChange}
+          errors={errors}
+          disabled={disabled}
+        />
+      ))}
+    </div>
+  </div>
+);
+
 const ContractInformation: React.FC<ContractInformationProps> = ({
   formData,
   onContractTypeChange,
@@ -174,14 +257,123 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
     if (pagination?.has_next && !brandLoading) setPage((p) => p + 1);
   }, [pagination, brandLoading]);
 
+  // Auto-fill representative data on component mount
+  useEffect(() => {
+    // Fill brand representative data
+    Object.entries(SAMPLE_BRAND_REPRESENTATIVE).forEach(([key, value]) => {
+      if (!formData[key]) {
+        onInputChange(key, value);
+      }
+    });
+
+    // Fill web representative data
+    Object.entries(SAMPLE_WEB_REPRESENTATIVE).forEach(([key, value]) => {
+      if (!formData[key]) {
+        onInputChange(key, value);
+      }
+    });
+  }, []);
+
   /** FIELD CHANGE WITH VALIDATION */
   const handleFieldChange = async (field: string, value: any) => {
+    const updatedForm = { ...formData, [field]: value };
     onInputChange(field, value);
+
+    // Auto-sync startDate with signedDate
+    if (field === "signedDate") {
+      onInputChange("startDate", value);
+      updatedForm.startDate = value;
+    }
+
     if (onFieldValidation) {
-      const validation = await validateField(field, value, { ...formData, [field]: value });
+      const validation = await validateField(field, value, updatedForm);
       onFieldValidation(field, validation.isValid ? null : validation.error);
+
+      // Also validate startDate when signedDate changes
+      if (field === "signedDate") {
+        const startDateValidation = await validateField("startDate", value, updatedForm);
+        onFieldValidation(
+          "startDate",
+          startDateValidation.isValid ? null : startDateValidation.error,
+        );
+      }
+
+      if (
+        (field === "signedDate" && updatedForm.endDate) ||
+        (field === "endDate" && updatedForm.signedDate)
+      ) {
+        const signedDate = new Date(updatedForm.signedDate);
+        const endDate = new Date(updatedForm.endDate);
+
+        if (endDate < signedDate) {
+          onFieldValidation("endDate", "End Date must be later than or equal to Signed Date.");
+        } else {
+          onFieldValidation("endDate", null);
+        }
+      }
     }
   };
+
+  // Representative field definitions
+  const brandRepresentativeFields = [
+    {
+      label: "Full Name",
+      field: "brandRepresentativeName",
+      placeholder: "Representative full name",
+      required: true,
+    },
+    { label: "Position", field: "brandRepresentativePosition", placeholder: "Job title/position" },
+    { label: "Phone Number", field: "brandRepresentativePhone", placeholder: "0xxx xxx xxx" },
+    {
+      label: "Email Address",
+      field: "brandRepresentativeEmail",
+      placeholder: "example@company.com",
+      type: "email",
+      required: true,
+    },
+    { label: "Tax Number", field: "brandTaxNumber", placeholder: "Tax code" },
+  ];
+
+  const brandBankFields = [
+    { label: "Bank Name", field: "brandBankName", placeholder: "Bank name" },
+    {
+      label: "Account Number",
+      field: "brandBankAccountNumber",
+      placeholder: "Bank account number",
+    },
+    {
+      label: "Account Holder Name",
+      field: "brandBankAccountHolder",
+      placeholder: "Account holder full name",
+    },
+  ];
+
+  const webRepresentativeFields = [
+    {
+      label: "Full Name",
+      field: "webRepresentativeName",
+      placeholder: "KOL/Blogger full name",
+      required: true,
+    },
+    {
+      label: "Position",
+      field: "webRepresentativePosition",
+      placeholder: "e.g., Content Creator, KOL, Blogger",
+    },
+    { label: "Phone Number", field: "webRepresentativePhone", placeholder: "xxx xxx xxx" },
+    {
+      label: "Email Address",
+      field: "webRepresentativeEmail",
+      placeholder: "email@example.com",
+      type: "email",
+      required: true,
+    },
+    {
+      label: "Tax Number",
+      field: "webRepresentativeTaxNumber",
+      placeholder: "Personal tax identification number",
+    },
+  ];
 
   /** RENDER UI */
   return (
@@ -290,41 +482,101 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                 onChange={(value: string) => handleFieldChange("signedDate", value)}
                 placeholder="Select signed date"
                 error={errors.signedDate}
+                required
               />
 
               {/* Contract Duration */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Contract Duration *</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <DatePicker
-                    label=""
-                    value={formData.startDate || ""}
-                    onChange={(value: string) => handleFieldChange("startDate", value)}
-                    placeholder="Start date"
-                    error={errors.startDate}
-                    required
-                  />
-                  <DatePicker
-                    label=""
-                    value={formData.endDate || ""}
-                    onChange={(value: string) => handleFieldChange("endDate", value)}
-                    placeholder="End date"
-                    error={errors.endDate}
-                    required
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium">Start Date *</Label>
+                    <DatePicker
+                      value={formData.startDate || formData.signedDate || ""}
+                      onChange={() => {
+                        console.log("OK");
+                      }}
+                      placeholder="Start date (Auto-filled)"
+                      error={errors.startDate}
+                      required
+                      disabled
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Automatically set to the <span className="font-medium">Signed Date</span>.
+                    </p>
+                  </div>
+
+                  {/* End Date - Cho phép chọn */}
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium">End Date *</Label>
+                    <DatePicker
+                      value={formData.endDate || ""}
+                      onChange={(value: string) => handleFieldChange("endDate", value)}
+                      placeholder="Select end date"
+                      error={errors.endDate}
+                      required
+                    />
+                  </div>
                 </div>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-              {/* Currency */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Currency</Label>
-                <Input
-                  value="VND (₫)"
-                  disabled
-                  className="h-11 bg-gray-100 text-gray-700 cursor-not-allowed"
-                />
+      {/* REPRESENTATIVE INFORMATION */}
+      {formData.type && (
+        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-xl">Representative Information</CardTitle>
+            <p className="text-sm text-slate-600">
+              Contract representative details (auto-filled from system)
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-8">
+            {/* Brand Representative - Disabled */}
+            <RepresentativeSection
+              title="Brand Representative (Party A)"
+              icon={Building}
+              fields={brandRepresentativeFields}
+              formData={formData}
+              onInputChange={onInputChange}
+              errors={errors}
+              disabled={true}
+            />
+
+            {/* Brand Bank Information - Editable */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+                <Building className="h-5 w-5 text-slate-600" />
+                <h3 className="text-lg font-semibold text-slate-800">Brand Banking Information</h3>
+                <Badge variant="outline" className="text-xs">
+                  Editable
+                </Badge>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {brandBankFields.map((field: any) => (
+                  <FormField
+                    key={field.field}
+                    {...field}
+                    formData={formData}
+                    onInputChange={handleFieldChange}
+                    errors={errors}
+                    disabled={false}
+                  />
+                ))}
               </div>
             </div>
+
+            {/* Web Representative - Disabled */}
+            <RepresentativeSection
+              title="Web Representative (Party B - KOL/Blogger)"
+              icon={User}
+              fields={webRepresentativeFields}
+              formData={formData}
+              onInputChange={onInputChange}
+              errors={errors}
+              disabled={true}
+            />
           </CardContent>
         </Card>
       )}

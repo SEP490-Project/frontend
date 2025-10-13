@@ -25,7 +25,6 @@ import {
   List,
   ListOrdered,
   Link2,
-  Unlink,
   ImageIcon,
   AlignLeft,
   AlignCenter,
@@ -36,7 +35,6 @@ import {
   Undo,
   Redo,
   Quote,
-  Code,
   Minus,
 } from "lucide-react";
 
@@ -400,14 +398,6 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
           >
             <Quote className="w-4 h-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => editor.chain().focus().toggleCode().run()}
-            className={editor.isActive("code") ? "bg-muted" : ""}
-          >
-            <Code className="w-4 h-4" />
-          </Button>
 
           <Separator orientation="vertical" className="mx-1 h-5" />
 
@@ -419,13 +409,6 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
             className={editor.isActive("link") ? "bg-muted" : ""}
           >
             <Link2 className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => editor.chain().focus().unsetLink().run()}
-          >
-            <Unlink className="w-4 h-4" />
           </Button>
           <Button variant="ghost" size="icon" onClick={addImage}>
             <ImageIcon className="w-4 h-4" />

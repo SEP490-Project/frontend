@@ -118,7 +118,7 @@ export const mockTasks: Task[] = [
       details: "Research customer needs, competitors, and trends for the new product.",
       proposal: "This must be a attached file",
     },
-    deadline: "2025-10-2",
+    deadline: "2025-10-10",
     type: "INTERNAL",
     status: "IN_PROGRESS",
     assigned_to: "b12e2a1f-223c-48d4-99cd-8f1b2b3f7a90",

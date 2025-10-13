@@ -92,7 +92,12 @@ const BrandPage: React.FC = () => {
   return (
     <div className="min-h-fit p-4 sm:p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl sm:text-2xl font-semibold">Brands</h1>
+        <div>
+          <h1 className="text-xl sm:text-2xl font-semibold">Brands</h1>
+          <p className="text-gray-600 mt-1">
+            Manage all your brand assets, identity guidelines, and usage documentation
+          </p>
+        </div>
         <Button
           className="bg-primary hover:bg-[#f794a8] text-white"
           onClick={() => navigate("/manage/marketing/brands/add")}

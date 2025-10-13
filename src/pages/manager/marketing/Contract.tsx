@@ -98,7 +98,12 @@ const ContractPage: React.FC = () => {
   return (
     <div className="min-h-fit p-4 sm:p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl sm:text-2xl font-semibold">Contracts</h1>
+        <div>
+          <h1 className="text-xl sm:text-2xl font-semibold">Contracts</h1>
+          <p className="text-gray-600 mt-1">
+            Manage, track the status, and store all your contracts and agreements
+          </p>
+        </div>
         <Button
           className="bg-primary hover:bg-[#f794a8] text-white"
           onClick={() => navigate("/manage/marketing/contracts/add")}

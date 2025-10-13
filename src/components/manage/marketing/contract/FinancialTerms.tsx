@@ -10,13 +10,10 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
-import { DatePicker } from "@/components/date-picker";
-import { Plus, Trash2, AlertCircle } from "lucide-react";
+import { Plus, Trash2, Info } from "lucide-react";
 
 interface FinancialTermsProps {
   formData: any;
-  contractTypeOptions: { value: string; label: string }[];
-  onContractTypeChange: (type: string) => void;
   onUpdateFinancialTerms: (updates: any) => void;
   errors?: any;
 }
@@ -62,25 +59,6 @@ const parseNumber = (formattedValue: string): number => {
   return parseFloat(formattedValue.replace(/\./g, "")) || 0;
 };
 
-// Validation Functions
-const validateSchedulePercentage = (schedule: any[]) => {
-  if (!schedule?.length) return null;
-  const totalPercent = schedule.reduce((sum: number, item: any) => sum + (item.percent || 0), 0);
-  return totalPercent > 100 ? `Total percentage is ${totalPercent}% which exceeds 100%` : null;
-};
-
-const validateScheduleDates = (schedule: any[]) => {
-  if (!schedule || schedule.length < 2) return null;
-  for (let i = 1; i < schedule.length; i++) {
-    const current = schedule[i].dueDate;
-    const previous = schedule[i - 1].dueDate;
-    if (current && previous && new Date(current) <= new Date(previous)) {
-      return `Schedule ${i + 1} date must be after Schedule ${i} date`;
-    }
-  }
-  return null;
-};
-
 // Components
 const NumberInput = ({ label, value, onChange, placeholder, error, disabled = false }: any) => (
   <div className="space-y-2">
@@ -123,79 +101,6 @@ const SelectField = ({
     {error && <p className="text-sm text-red-500">{error}</p>}
   </div>
 );
-
-const ScheduleItem = ({ item, index, onUpdate, onRemove, type, hasError, hasDateError }: any) => {
-  return (
-    <Card className="p-4 bg-slate-50 border-slate-200">
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <div className="space-y-2">
-          <Label className="text-xs text-slate-600">Milestone</Label>
-          <Input
-            value={item.milestone}
-            onChange={(e) => onUpdate(index, "milestone", e.target.value)}
-            placeholder="Upon Signing"
-            className="h-10"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label className="text-xs text-slate-600">Percent (%)</Label>
-          <Input
-            type="text"
-            value={item.percent || ""}
-            onChange={(e) => {
-              const cleanValue = e.target.value.replace(/[^\d.]/g, "");
-              const numValue = Math.min(100, Math.max(0, parseFloat(cleanValue) || 0));
-              onUpdate(index, "percent", numValue);
-            }}
-            placeholder="50"
-            className={`h-10 ${hasError ? "border-red-300" : ""}`}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label className="text-xs text-slate-600">Amount (VND)</Label>
-          <Input
-            type="text"
-            value={formatNumber(item.amount)}
-            onChange={(e) => onUpdate(index, "amount", parseNumber(e.target.value))}
-            placeholder="0"
-            className={`h-10 ${
-              type === "ADVERTISING" || type === "BRAND_AMBASSADOR"
-                ? "bg-gray-100 text-gray-700 cursor-not-allowed"
-                : ""
-            }`}
-            readOnly={type === "ADVERTISING" || type === "BRAND_AMBASSADOR"}
-          />
-        </div>
-
-        <div>
-          <DatePicker
-            label="Due Date"
-            value={item.dueDate}
-            onChange={(date) => onUpdate(index, "dueDate", date)}
-            placeholder="Pick a date"
-            error={hasDateError ? "Invalid date order" : undefined}
-            className="flex-1"
-          />
-        </div>
-
-        <div className="flex items-end">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => onRemove(index)}
-            className="h-10 w-full gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-          >
-            <Trash2 className="h-4 w-4" />
-            Remove
-          </Button>
-        </div>
-      </div>
-    </Card>
-  );
-};
 
 const AffiliateLevel = ({ level, index, onUpdate, onRemove }: any) => (
   <Card className="p-4 bg-slate-50 border-slate-200">
@@ -267,68 +172,32 @@ const CapitalContribution = ({ title, data, onChange }: any) => (
 
 const FinancialTerms: React.FC<FinancialTermsProps> = ({
   formData,
-  contractTypeOptions,
-  onContractTypeChange,
   onUpdateFinancialTerms,
   errors = {},
 }) => {
   const financialTerms = formData.financialTerms || {};
-  const schedule = financialTerms.schedule || [];
 
-  const calculateScheduleTotal = () =>
-    schedule.reduce((total: number, item: any) => total + (item.amount || 0), 0);
-
-  const isScheduleTotalValid = () => {
-    const totalCost = financialTerms.totalCost || 0;
-    const scheduleTotal = calculateScheduleTotal();
-    return Math.abs(totalCost - scheduleTotal) < 0.01;
-  };
-
-  const updateScheduleItem = (index: number, field: string, value: any) => {
-    const newSchedule = [...schedule];
-    newSchedule[index] = { ...newSchedule[index], [field]: value };
-
-    const updateData: any = { schedule: newSchedule };
-
-    if (field === "percent") {
-      updateData.scheduleError = validateSchedulePercentage(newSchedule);
-      if (formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR") {
-        const totalCost = financialTerms.totalCost || 0;
-        newSchedule[index].amount = Math.round((totalCost * value) / 100);
-        updateData.schedule = newSchedule;
-      }
-    }
-
-    if (field === "dueDate") {
-      updateData.scheduleDateError = validateScheduleDates(newSchedule);
-    }
-
-    onUpdateFinancialTerms(updateData);
-  };
-
-  const addScheduleItem = () => {
-    const newItem = { milestone: "", percent: 0, amount: 0, dueDate: "", requiredDocs: [] };
-    onUpdateFinancialTerms({ schedule: [...schedule, newItem] });
-  };
-
-  const removeScheduleItem = (index: number) => {
-    const newSchedule = schedule.filter((_: any, i: number) => i !== index);
-    onUpdateFinancialTerms({ schedule: newSchedule });
-  };
+  // Return early if no contract type selected
+  if (!formData.type) {
+    return (
+      <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-xl">Financial Terms</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-12">
+            <p className="text-gray-500">Please select a contract type first</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const updateTotalCost = (totalCost: number) => {
-    const updates: any = { totalCost };
-    if (formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR") {
-      const updatedSchedule = schedule.map((item: any) => ({
-        ...item,
-        amount: Math.round((totalCost * (item.percent || 0)) / 100),
-      }));
-      updates.schedule = updatedSchedule;
-    }
-    onUpdateFinancialTerms(updates);
+    onUpdateFinancialTerms({ totalCost });
   };
 
-  // Array handlers
+  // Array handlers for affiliate levels
   const addAffiliateLevel = () => {
     const levels = financialTerms.levels || [];
     const newLevel = { level: levels.length + 1, minClicks: 0, multiplier: 0.1 };
@@ -349,72 +218,50 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({
   const getPaymentDateOptions = (cycle: string) =>
     PAYMENT_DATE_OPTIONS[cycle as keyof typeof PAYMENT_DATE_OPTIONS] || [];
 
-  const totalPercent = schedule.reduce((sum: number, item: any) => sum + (item.percent || 0), 0);
-
   return (
     <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
       <CardHeader className="pb-4">
         <CardTitle className="text-xl">Financial Terms</CardTitle>
+        <p className="text-sm text-slate-600">Configure payment terms for this contract</p>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Contract Type */}
-        <SelectField
-          label="Contract Type *"
-          value={formData.type}
-          onChange={onContractTypeChange}
-          options={contractTypeOptions}
-          placeholder="Select contract type"
-          error={errors.type}
-        />
+      <CardContent className="space-y-8">
+        {/* Contract Type Specific Terms */}
 
-        {/* Common Payment Settings */}
-        {formData.type && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Payment Method</Label>
-              <Input
-                value="Chuyển khoản"
-                disabled
-                className="h-11 bg-gray-100 text-gray-700 cursor-not-allowed"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Currency</Label>
-              <Input
-                value="VND (₫)"
-                disabled
-                className="h-11 bg-gray-100 text-gray-700 cursor-not-allowed"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Fixed Payment Model */}
+        {/* Fixed Payment Model - ADVERTISING & BRAND_AMBASSADOR */}
         {(formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR") && (
           <div className="space-y-6">
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <Info className="h-4 w-4 text-blue-600" />
+                <h3 className="font-medium text-blue-900">Fixed Cost Contract</h3>
+              </div>
+              <p className="text-sm text-blue-700">This contract uses a fixed total cost model.</p>
+            </div>
+
             <NumberInput
-              label="Total Cost (VND) *"
+              label="Total Contract Cost (VND) *"
               value={financialTerms.totalCost}
               onChange={updateTotalCost}
               placeholder="0"
               error={errors.financialTerms?.totalCost}
             />
-
-            {schedule.length > 0 && !isScheduleTotalValid() && (
-              <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                <AlertCircle className="h-4 w-4 text-yellow-600" />
-                <p className="text-sm text-yellow-700">
-                  Schedule total ({formatNumber(calculateScheduleTotal())} VND) doesn't match total
-                  cost ({formatNumber(financialTerms.totalCost || 0)} VND)
-                </p>
-              </div>
-            )}
           </div>
         )}
 
         {/* Affiliate Model */}
         {formData.type === "AFFILIATE" && (
           <div className="space-y-6">
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <Info className="h-4 w-4 text-green-600" />
+                <h3 className="font-medium text-green-900">Performance-Based Contract</h3>
+              </div>
+              <p className="text-sm text-green-700">
+                This contract uses performance-based payments with commission levels and regular
+                payment cycles.
+              </p>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <NumberInput
                 label="Base Per Click (VND) *"
@@ -498,6 +345,16 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({
         {/* Co-Production Model */}
         {formData.type === "CO_PRODUCING" && (
           <div className="space-y-6">
+            <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <Info className="h-4 w-4 text-purple-600" />
+                <h3 className="font-medium text-purple-900">Revenue Sharing Contract</h3>
+              </div>
+              <p className="text-sm text-purple-700">
+                This contract uses capital contribution and profit sharing model between parties.
+              </p>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <CapitalContribution
                 title="Company Capital Contribution"
@@ -577,103 +434,6 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({
                 disabled={!financialTerms.profitDistributionCycle}
               />
             </div>
-          </div>
-        )}
-
-        {/* Payment Schedule */}
-        {formData.type && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-lg font-medium">Payment Schedule</Label>
-                <p className="text-sm text-gray-600 mt-1">
-                  Define payment milestones with amounts and percentages
-                </p>
-              </div>
-              <Button type="button" onClick={addScheduleItem} size="sm" className="gap-2">
-                <Plus className="h-4 w-4" />
-                Add Schedule
-              </Button>
-            </div>
-
-            {/* Errors */}
-            {financialTerms.scheduleError && (
-              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
-                <AlertCircle className="h-4 w-4 text-red-600" />
-                <p className="text-sm text-red-700">{financialTerms.scheduleError}</p>
-              </div>
-            )}
-
-            {financialTerms.scheduleDateError && (
-              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
-                <AlertCircle className="h-4 w-4 text-red-600" />
-                <p className="text-sm text-red-700">{financialTerms.scheduleDateError}</p>
-              </div>
-            )}
-
-            {/* Schedule Items */}
-            <div className="space-y-3">
-              {schedule.map((item: any, index: number) => (
-                <ScheduleItem
-                  key={index}
-                  item={item}
-                  index={index}
-                  onUpdate={updateScheduleItem}
-                  onRemove={removeScheduleItem}
-                  type={formData.type}
-                  hasError={!!financialTerms.scheduleError}
-                  hasDateError={!!financialTerms.scheduleDateError}
-                />
-              ))}
-            </div>
-
-            {/* Schedule Summary */}
-            {schedule.length > 0 && (
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-blue-900">Schedule Total:</span>
-                  <span className="font-bold text-blue-900">
-                    {formatNumber(calculateScheduleTotal())} VND
-                  </span>
-                </div>
-
-                {(formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR") &&
-                  financialTerms.totalCost && (
-                    <div className="flex justify-between items-center mt-2">
-                      <span className="font-medium text-blue-900">Total Cost:</span>
-                      <span className="font-bold text-blue-900">
-                        {formatNumber(financialTerms.totalCost || 0)} VND
-                      </span>
-                    </div>
-                  )}
-
-                <div className="mt-3">
-                  <div className="flex justify-between items-center text-xs text-blue-700 mb-1">
-                    <span>Percentage Total:</span>
-                    <span>{totalPercent}%</span>
-                  </div>
-                  <div className="w-full bg-blue-200 rounded-full h-2">
-                    <div
-                      className={`h-2 rounded-full transition-all duration-300 ${
-                        totalPercent === 100
-                          ? "bg-green-500"
-                          : totalPercent > 100
-                            ? "bg-red-500"
-                            : "bg-blue-500"
-                      }`}
-                      style={{ width: `${Math.min(100, totalPercent)}%` }}
-                    />
-                  </div>
-                  {totalPercent !== 100 && (
-                    <p
-                      className={`text-xs mt-1 ${totalPercent > 100 ? "text-red-700" : "text-yellow-700"}`}
-                    >
-                      Total percentage should equal 100%
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
         )}
       </CardContent>

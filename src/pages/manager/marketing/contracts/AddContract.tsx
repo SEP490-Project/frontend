@@ -3,15 +3,28 @@ import {
   ContractActions,
   ContractInformation,
   FinancialTerms,
-  Representative,
   LegalTerms,
   ScopeOfWork,
 } from "@/components/manage/marketing/contract";
-import { FaCheck } from "react-icons/fa6";
+import {
+  FaCheck,
+  FaArrowLeft,
+  FaArrowRight,
+  FaRotateLeft,
+  FaTriangleExclamation,
+} from "react-icons/fa6";
 import { validateContract, validateField } from "@/libs/validation/contractValidation";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const CONTRACT_TYPE_OPTIONS = [
   { value: "ADVERTISING", label: "Advertising Contract" },
@@ -32,12 +45,11 @@ const CONTRACT_TYPE_COLORS = {
 } as const;
 
 const INITIAL_TABS = [
-  { id: "contract-info", label: "Contract Information", isRequired: true },
-  { id: "scope-of-work", label: "Scope of Work", isRequired: true },
-  { id: "representative", label: "Representative Info", isRequired: true },
-  { id: "financial-terms", label: "Financial Terms", isRequired: true },
-  { id: "legal-terms", label: "Legal Terms", isRequired: true },
-  { id: "contract-actions", label: "Documents & Actions", isRequired: true },
+  { id: "contract-info", label: "Contract Information", isRequired: true, step: 1 },
+  { id: "scope-of-work", label: "Scope of Work", isRequired: true, step: 2 },
+  { id: "financial-terms", label: "Financial Terms", isRequired: true, step: 3 },
+  { id: "legal-terms", label: "Legal Terms", isRequired: true, step: 4 },
+  { id: "contract-actions", label: "Documents & Actions", isRequired: true, step: 5 },
 ];
 
 const INITIAL_FORM_DATA = {
@@ -63,7 +75,6 @@ const INITIAL_FORM_DATA = {
   webRepresentativePhone: "",
   webRepresentativeEmail: "",
   webRepresentativeTaxNumber: "",
-  currency: "VND",
   financialTerms: {},
   scopeOfWork: {},
   legalTerms: {},
@@ -121,7 +132,6 @@ const getDefaultFinancialTerms = (type: string) => {
 const TAB_COMPONENTS: Record<string, React.FC<any>> = {
   "contract-info": ContractInformation,
   "scope-of-work": ScopeOfWork,
-  representative: Representative,
   "financial-terms": FinancialTerms,
   "legal-terms": LegalTerms,
   "contract-actions": ContractActions,
@@ -134,16 +144,20 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
         formData.type &&
         formData.contractNumber &&
         formData.signedDate &&
-        formData.startDate &&
+        formData.startDate && // This should now be auto-filled from signedDate
         formData.endDate &&
-        formData.signedLocation
+        formData.signedLocation &&
+        formData.brandBankName &&
+        formData.brandBankAccountNumber &&
+        formData.brandBankAccountHolder
       );
     case "scope-of-work": {
       if (!formData.type) return false;
       const scopeOfWork = formData.scopeOfWork || {};
+      console.log("Scope of Work:", scopeOfWork); // Debugging line
 
       if (formData.type === "ADVERTISING") {
-        return !!(scopeOfWork.contents?.length > 0 && scopeOfWork.products?.length > 0);
+        return !!(scopeOfWork.contents?.length > 0);
       }
       if (formData.type === "AFFILIATE") {
         return !!(scopeOfWork.contents?.length > 0);
@@ -155,14 +169,6 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
         return !!(scopeOfWork.events?.length > 0);
       }
       return false;
-    }
-    case "representative": {
-      return !!(
-        formData.brandRepresentativeName &&
-        formData.brandRepresentativeEmail &&
-        formData.webRepresentativeName &&
-        formData.webRepresentativeEmail
-      );
     }
     case "financial-terms": {
       if (!formData.type) return false;
@@ -212,7 +218,13 @@ const AddContractPage: React.FC = () => {
   const [formData, setFormData] = useState<any>(INITIAL_FORM_DATA);
   const [errors, setErrors] = useState<any>({});
   const [activeTab, setActiveTab] = useState(INITIAL_TABS[0].id);
+  const [currentStep, setCurrentStep] = useState(1);
   const [tabs, setTabs] = useState(INITIAL_TABS.map((tab) => ({ ...tab, isCompleted: false })));
+
+  // Modal states
+  const [showTypeChangeModal, setShowTypeChangeModal] = useState(false);
+  const [pendingNewType, setPendingNewType] = useState("");
+  const [showResetModal, setShowResetModal] = useState(false);
 
   // Check completion status for each tab
   useEffect(() => {
@@ -229,6 +241,136 @@ const AddContractPage: React.FC = () => {
   const completedRequiredTabs = requiredTabs.filter((tab) => tab.isCompleted);
   const progressPercentage = (completedRequiredTabs.length / requiredTabs.length) * 100;
   const canSubmit = progressPercentage === 100;
+
+  // Check if contract type should be locked (after step 1 and when there's data in subsequent steps)
+  const hasDataBeyondStep1 = () => {
+    return (
+      Object.keys(formData.scopeOfWork || {}).length > 0 ||
+      Object.keys(formData.financialTerms || {}).length > 0 ||
+      Object.keys(formData.legalTerms || {}).length > 0 ||
+      formData.contractFiles?.length > 0 ||
+      formData.proposalFiles?.length > 0
+    );
+  };
+
+  const isTypeLockedMode = formData.type && hasDataBeyondStep1();
+
+  // Navigation functions
+  const getCurrentTab = () => tabs.find((tab) => tab.step === currentStep);
+  const canGoNext = () => {
+    const currentTab = getCurrentTab();
+    return currentTab ? currentTab.isCompleted && currentStep < INITIAL_TABS.length : false;
+  };
+  const canGoPrevious = () => currentStep > 1;
+
+  const handleNext = () => {
+    if (canGoNext()) {
+      const nextStep = currentStep + 1;
+      setCurrentStep(nextStep);
+      const nextTab = tabs.find((tab) => tab.step === nextStep);
+      if (nextTab) {
+        setActiveTab(nextTab.id);
+      }
+    }
+  };
+
+  const handlePrevious = () => {
+    if (canGoPrevious()) {
+      const prevStep = currentStep - 1;
+      setCurrentStep(prevStep);
+      const prevTab = tabs.find((tab) => tab.step === prevStep);
+      if (prevTab) {
+        setActiveTab(prevTab.id);
+      }
+    }
+  };
+
+  const handleTabChange = (tabId: string) => {
+    const selectedTab = tabs.find((tab) => tab.id === tabId);
+    if (!selectedTab) return;
+
+    // Allow access to all completed steps + next step
+    const completedSteps = tabs.filter((tab) => tab.isCompleted).length;
+    const maxAllowedStep = Math.min(completedSteps + 1, INITIAL_TABS.length);
+
+    if (selectedTab.step <= maxAllowedStep) {
+      setCurrentStep(selectedTab.step);
+      setActiveTab(tabId);
+    }
+  };
+
+  const handleReset = () => {
+    setShowResetModal(true);
+  };
+
+  const confirmReset = () => {
+    setFormData(INITIAL_FORM_DATA);
+    setErrors({});
+    setCurrentStep(1);
+    setActiveTab(INITIAL_TABS[0].id);
+    setShowResetModal(false);
+  };
+
+  const cancelReset = () => {
+    setShowResetModal(false);
+  };
+
+  // Contract type change handlers
+  const handleTypeChangeRequest = (newType: string) => {
+    if (isTypeLockedMode) {
+      setPendingNewType(newType);
+      setShowTypeChangeModal(true);
+    } else {
+      handleContractTypeChange(newType);
+    }
+  };
+
+  const confirmTypeChange = () => {
+    // Clear all data from step 2 onwards
+    const clearedFormData = {
+      ...INITIAL_FORM_DATA,
+      // Keep step 1 data except type
+      brandId: formData.brandId,
+      parentContractId: formData.parentContractId,
+      contractNumber: formData.contractNumber,
+      signedDate: formData.signedDate,
+      signedLocation: formData.signedLocation,
+      startDate: formData.startDate,
+      endDate: formData.endDate,
+      brandRepresentativeName: formData.brandRepresentativeName,
+      brandRepresentativePosition: formData.brandRepresentativePosition,
+      brandRepresentativePhone: formData.brandRepresentativePhone,
+      brandRepresentativeEmail: formData.brandRepresentativeEmail,
+      brandTaxNumber: formData.brandTaxNumber,
+      brandBankName: formData.brandBankName,
+      brandBankAccountNumber: formData.brandBankAccountNumber,
+      brandBankAccountHolder: formData.brandBankAccountHolder,
+      webRepresentativeStaffId: formData.webRepresentativeStaffId,
+      webRepresentativeName: formData.webRepresentativeName,
+      webRepresentativePosition: formData.webRepresentativePosition,
+      webRepresentativePhone: formData.webRepresentativePhone,
+      webRepresentativeEmail: formData.webRepresentativeEmail,
+      webRepresentativeTaxNumber: formData.webRepresentativeTaxNumber,
+      currency: formData.currency,
+      // Set new type and its defaults
+      type: pendingNewType,
+      financialTerms: getDefaultFinancialTerms(pendingNewType),
+      scopeOfWork:
+        pendingNewType === "CO_PRODUCING" ? { coProductionRoles: { company: "", kol: "" } } : {},
+    };
+
+    setFormData(clearedFormData);
+    setErrors({});
+
+    // Close modal
+    setShowTypeChangeModal(false);
+    setPendingNewType("");
+  };
+
+  const cancelTypeChange = () => {
+    setShowTypeChangeModal(false);
+    setPendingNewType("");
+  };
 
   // Handlers
   const handleFieldValidation = (fieldPath: string, error: string | null) => {
@@ -319,16 +461,6 @@ const AddContractPage: React.FC = () => {
     }
   };
 
-  const handleSaveDraft = async () => {
-    try {
-      console.log("Saving draft:", formData);
-      alert("Draft saved successfully!");
-    } catch (error) {
-      console.error("Save draft failed:", error);
-      alert("Failed to save draft. Please try again.");
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) {
@@ -360,7 +492,7 @@ const AddContractPage: React.FC = () => {
       formData,
       onInputChange: handleInputChange,
       errors,
-      onContractTypeChange: handleContractTypeChange,
+      onContractTypeChange: handleTypeChangeRequest, // Use the new handler
       onUpdateScopeOfWork: updateScopeOfWork,
       onFieldValidation: handleFieldValidation,
       contractTypeOptions: CONTRACT_TYPE_OPTIONS,
@@ -370,6 +502,7 @@ const AddContractPage: React.FC = () => {
       onContractUpload: handleContractUpload,
       onProposalUpload: handleProposalUpload,
       onSubmit: handleSubmit,
+      isTypeLockedMode, // Pass the lock status to components
     };
     const TabComponent = TAB_COMPONENTS[tabId];
     return TabComponent ? <TabComponent {...componentProps} /> : null;
@@ -382,7 +515,18 @@ const AddContractPage: React.FC = () => {
       <div className="max-w-7xl mx-auto pb-10">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-xl sm:text-2xl font-semibold">Add New Contract</h1>
+          <div className="flex items-center gap-4">
+            <h1 className="text-xl sm:text-2xl font-semibold">Add New Contract</h1>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleReset}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <FaRotateLeft className="h-4 w-4 mr-2" />
+              Reset
+            </Button>
+          </div>
           {formData.type && (
             <span
               className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${contractTypeColor.bg} ${contractTypeColor.text} ${contractTypeColor.border}`}
@@ -392,27 +536,47 @@ const AddContractPage: React.FC = () => {
             </span>
           )}
         </div>
-        {/* Progress Bar */}
+
+        {/* Step Indicator */}
         <div className="mb-6">
           <div className="flex justify-between text-sm text-gray-600 mb-2">
-            <span>Progress</span>
+            <span>
+              Step {currentStep} of {INITIAL_TABS.length}
+            </span>
             <span>{Math.round(progressPercentage)}% Complete</span>
           </div>
           <Progress value={progressPercentage} className="h-2" />
         </div>
+
         {/* Tabs Navigation */}
         <div className="border-b border-gray-200 mb-8">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <Tabs value={activeTab} onValueChange={handleTabChange}>
             <TabsList className="flex w-full">
-              {tabs.map((tab) => (
-                <TabsTrigger key={tab.id} value={tab.id} className="flex-1 justify-center">
-                  {tab.label}
-                  {tab.isCompleted && <FaCheck className="ml-2 h-3 w-3 text-green-500" />}
-                  {tab.isRequired && !tab.isCompleted && (
-                    <span className="ml-1 text-red-500">*</span>
-                  )}
-                </TabsTrigger>
-              ))}
+              {tabs.map((tab) => {
+                const completedSteps = tabs.filter((t) => t.isCompleted).length;
+                const maxAllowedStep = Math.min(completedSteps + 1, INITIAL_TABS.length);
+                const isAccessible = tab.step <= maxAllowedStep;
+
+                return (
+                  <TabsTrigger
+                    key={tab.id}
+                    value={tab.id}
+                    className={`flex-1 justify-center ${
+                      !isAccessible ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
+                    disabled={!isAccessible}
+                  >
+                    <span className="mr-2 text-xs bg-gray-200 text-gray-700 rounded-full w-5 h-5 flex items-center justify-center">
+                      {tab.step}
+                    </span>
+                    {tab.label}
+                    {tab.isCompleted && <FaCheck className="ml-2 h-3 w-3 text-green-500" />}
+                    {tab.isRequired && !tab.isCompleted && (
+                      <span className="ml-1 text-red-500">*</span>
+                    )}
+                  </TabsTrigger>
+                );
+              })}
             </TabsList>
             {tabs.map((tab) => (
               <TabsContent key={tab.id} value={tab.id}>
@@ -421,23 +585,135 @@ const AddContractPage: React.FC = () => {
             ))}
           </Tabs>
         </div>
+
         {errors.general && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
             <p className="text-red-600">{errors.general}</p>
           </div>
         )}
       </div>
+
       {/* Fixed Action Bar */}
       <div className="sticky bottom-0 -mx-2 bg-white/80 border-t rounded-xl border-gray-200 shadow-lg z-40">
-        <div className="flex justify-end gap-4 px-4 py-3">
-          <Button type="button" onClick={handleSaveDraft} variant="outline">
-            Save Draft
-          </Button>
-          <Button type="button" disabled={!canSubmit} onClick={handleSubmit}>
-            Request Contract Approval
+        <div className="flex justify-between items-center px-4 py-3">
+          {/* Navigation Buttons */}
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handlePrevious}
+              disabled={!canGoPrevious()}
+            >
+              <FaArrowLeft className="h-4 w-4 mr-2" />
+              Previous
+            </Button>
+            {currentStep < INITIAL_TABS.length && (
+              <Button type="button" onClick={handleNext} disabled={!canGoNext()}>
+                Next
+                <FaArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            )}
+          </div>
+
+          {/* Submit Button */}
+          <Button
+            type="button"
+            disabled={!canSubmit}
+            onClick={handleSubmit}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            Create Draft Contract
           </Button>
         </div>
       </div>
+
+      {/* Reset Confirmation Modal */}
+      <Dialog open={showResetModal} onOpenChange={setShowResetModal}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FaTriangleExclamation className="h-5 w-5 text-red-500" />
+              Reset All Data
+            </DialogTitle>
+            <DialogDescription className="text-left">
+              <div className="space-y-3">
+                <p>Are you sure you want to reset all data? This action cannot be undone.</p>
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-red-800 text-sm font-medium">
+                    ⚠️ Warning: All the following data will be permanently deleted:
+                  </p>
+                  <ul className="mt-2 text-red-700 text-sm list-disc list-inside space-y-1">
+                    <li>Contract Information</li>
+                    <li>Scope of Work</li>
+                    <li>Financial Terms</li>
+                    <li>Legal Terms</li>
+                    <li>Uploaded Documents</li>
+                  </ul>
+                  <p className="mt-2 text-red-800 text-sm">
+                    You will be returned to Step 1 and need to start over.
+                  </p>
+                </div>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={cancelReset}>
+              Cancel
+            </Button>
+            <Button onClick={confirmReset} className="bg-red-600 hover:bg-red-700 text-white">
+              Reset All Data
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Contract Type Change Confirmation Modal */}
+      <Dialog open={showTypeChangeModal} onOpenChange={setShowTypeChangeModal}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FaTriangleExclamation className="h-5 w-5 text-amber-500" />
+              Change Contract Type
+            </DialogTitle>
+            <DialogDescription className="text-left">
+              <div className="space-y-3">
+                <p>
+                  Are you sure you want to change the contract type from{" "}
+                  <span className="font-semibold">
+                    {CONTRACT_TYPE_OPTIONS.find((opt) => opt.value === formData.type)?.label}
+                  </span>{" "}
+                  to{" "}
+                  <span className="font-semibold">
+                    {CONTRACT_TYPE_OPTIONS.find((opt) => opt.value === pendingNewType)?.label}
+                  </span>{" "}
+                  ?
+                </p>
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-red-800 text-sm font-medium">
+                    ⚠️ Warning: If you change the type, all data you have entered in the subsequent
+                    steps will be deleted:
+                  </p>
+                  <ul className="mt-2 text-red-700 text-sm list-disc list-inside space-y-1">
+                    <li>Scope of Work</li>
+                    <li>Financial Terms</li>
+                    <li>Legal Terms</li>
+                    <li>Uploaded Documents</li>
+                  </ul>
+                  <p className="mt-2 text-red-800 text-sm">Step 1 data will be preserved.</p>
+                </div>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={cancelTypeChange}>
+              Cancel
+            </Button>
+            <Button onClick={confirmTypeChange} className="bg-red-600 hover:bg-red-700 text-white">
+              Confirm Change
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

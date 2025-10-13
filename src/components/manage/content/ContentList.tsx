@@ -9,6 +9,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import {
   Eye,
@@ -20,12 +26,16 @@ import {
   User,
   ChevronLeft,
   ChevronRight,
+  FileText,
+  Video,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import type { Content } from "@/libs/types/content";
 
+type ContentType = "blog" | "video";
+
 interface ContentListProps {
-  onCreateNew?: () => void;
+  onCreateNew?: (contentType: ContentType) => void;
   onEdit?: (content: Content) => void;
   onView?: (content: Content) => void;
 }
@@ -112,10 +122,6 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-semibold">Recent contents</h2>
-        <Button onClick={onCreateNew} className="bg-[#FF9DB0] hover:bg-pink-600">
-          <Plus className="w-4 h-4 mr-2" />
-          Create New
-        </Button>
       </div>
 
       {/* Filters */}
@@ -147,6 +153,28 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
           </div>
         </CardContent>
       </Card>
+
+      {/* Create New Button */}
+      <div className="flex justify-end">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button className="bg-[#FF9DB0] hover:bg-pink-600">
+              <Plus className="w-4 h-4 mr-2" />
+              Create New
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => onCreateNew?.("blog")}>
+              <FileText className="w-4 h-4 mr-2" />
+              Create Blog
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onCreateNew?.("video")}>
+              <Video className="w-4 h-4 mr-2" />
+              Create Video
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
       {/* Content Table */}
       <Card>

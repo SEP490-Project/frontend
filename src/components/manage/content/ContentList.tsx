@@ -28,6 +28,7 @@ import {
   ChevronRight,
   FileText,
   Video,
+  Settings,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import type { Content } from "@/libs/types/content";
@@ -192,10 +193,11 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
             <>
               {/* Table Header */}
               <div className="grid grid-cols-12 gap-4 p-4 bg-gray-50 border-b font-medium text-sm text-gray-600">
-                <div className="col-span-3">Title</div>
+                <div className="col-span-2">Title</div>
                 <div className="col-span-2">Actor</div>
-                <div className="col-span-2">Date - Time</div>
+                <div className="col-span-2">Time Created</div>
                 <div className="col-span-1">Views</div>
+                <div className="col-span-1">Type</div>
                 <div className="col-span-2">Action</div>
                 <div className="col-span-2">Status</div>
               </div>
@@ -211,7 +213,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                     key={content.id}
                     className="grid grid-cols-12 gap-4 p-4 border-b hover:bg-gray-50 transition-colors"
                   >
-                    <div className="col-span-3">
+                    <div className="col-span-2">
                       <h4 className="font-medium text-gray-900 truncate">{content.title}</h4>
                     </div>
 
@@ -231,31 +233,48 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                       <span className="text-gray-600">{content.views}</span>
                     </div>
 
-                    <div className="col-span-2 flex items-center space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onView?.(content)}
-                        className="p-1 h-8 w-8"
-                      >
-                        <Eye className="w-4 h-4 text-blue-500" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onEdit?.(content)}
-                        className="p-1 h-8 w-8"
-                      >
-                        <Edit className="w-4 h-4 text-green-500" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(content.id)}
-                        className="p-1 h-8 w-8"
-                      >
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </Button>
+                    <div className="col-span-1 flex items-center">
+                      <div className="flex items-center">
+                        {content.content_type === "video" ? (
+                          <Video className="w-4 h-4 mr-1 text-purple-500" />
+                        ) : (
+                          <FileText className="w-4 h-4 mr-1 text-blue-500" />
+                        )}
+                        <span className="text-gray-600 capitalize">
+                          {content.content_type || "blog"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="col-span-2 flex items-center">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="p-1 h-8 w-8 hover:bg-gray-100"
+                          >
+                            <Settings className="w-4 h-4 text-gray-600" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start">
+                          <DropdownMenuItem onClick={() => onView?.(content)}>
+                            <Eye className="w-4 h-4 mr-2" />
+                            Show Content Detail
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onEdit?.(content)}>
+                            <Edit className="w-4 h-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDelete(content.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
 
                     <div className="col-span-2 flex items-center">

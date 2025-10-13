@@ -5,6 +5,7 @@ export interface Content {
   date_time: string;
   views: number;
   status: "posted" | "draft" | "pending";
+  content_type?: "blog" | "video";
   html_content: string;
   json_content: object;
   created_at: string;

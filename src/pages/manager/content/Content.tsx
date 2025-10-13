@@ -45,10 +45,6 @@ const ManageContent = () => {
     setEditingContent(null);
   };
 
-  const handleContentTypeChange = (contentType: ContentType) => {
-    setCurrentContentType(contentType);
-  };
-
   return (
     <div className="min-h-screen p-5">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -62,14 +58,12 @@ const ManageContent = () => {
             editingContent={editingContent}
             onSave={handleSave}
             onBack={handleBackToList}
-            onContentTypeChange={handleContentTypeChange}
           />
         ) : (
           <VideoEditor
             editingContent={editingContent}
             onSave={handleSave}
             onBack={handleBackToList}
-            onContentTypeChange={handleContentTypeChange}
           />
         )}
       </div>

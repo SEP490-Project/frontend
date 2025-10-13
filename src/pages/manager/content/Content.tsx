@@ -33,11 +33,9 @@ const ManageContent = () => {
   };
 
   const handleView = (contentItem: Content) => {
-    setEditingContent(contentItem);
-    // Determine content type based on the json_content
-    const contentType = (contentItem.json_content as any)?.type === "video" ? "video" : "blog";
-    setCurrentContentType(contentType);
-    setViewMode("editor");
+    // Don't navigate away - let ContentList handle the view with its modal
+    console.log("Viewing content:", contentItem.title);
+    // The ContentList component will handle showing the modal
   };
 
   const handleBackToList = () => {

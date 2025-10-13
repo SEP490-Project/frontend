@@ -31,6 +31,7 @@ import {
   Settings,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import ContentDetailModal from "./ContentDetailModal";
 import type { Content } from "@/libs/types/content";
 
 type ContentType = "blog" | "video";
@@ -60,6 +61,9 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     status: "",
     actor: "",
   });
+
+  const [selectedContent, setSelectedContent] = useState<Content | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   useEffect(() => {
     fetchContents(filters);
@@ -92,6 +96,27 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
       await publishExistingContent(content.id);
     }
     fetchContents(filters);
+  };
+
+  const handleViewContent = (content: Content) => {
+    setSelectedContent(content);
+    setIsDetailModalOpen(true);
+    // Also call the parent onView if provided
+    onView?.(content);
+  };
+
+  const handleCloseDetailModal = () => {
+    setIsDetailModalOpen(false);
+    setSelectedContent(null);
+  };
+
+  const handleRequestApproval = async (contentId: string) => {
+    // TODO: Implement request approval logic
+    // For now, we'll change status to pending
+    console.log("Requesting approval for content:", contentId);
+    // You can implement the actual API call here
+    fetchContents(filters);
+    handleCloseDetailModal();
   };
 
   const getStatusBadge = (status: string) => {
@@ -258,9 +283,9 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start">
-                          <DropdownMenuItem onClick={() => onView?.(content)}>
+                          <DropdownMenuItem onClick={() => handleViewContent(content)}>
                             <Eye className="w-4 h-4 mr-2" />
-                            Show Content Detail
+                            View
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => onEdit?.(content)}>
                             <Edit className="w-4 h-4 mr-2" />
@@ -323,6 +348,14 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
           </div>
         </div>
       )}
+
+      {/* Content Detail Modal */}
+      <ContentDetailModal
+        content={selectedContent}
+        isOpen={isDetailModalOpen}
+        onClose={handleCloseDetailModal}
+        onRequestApproval={handleRequestApproval}
+      />
     </div>
   );
 };

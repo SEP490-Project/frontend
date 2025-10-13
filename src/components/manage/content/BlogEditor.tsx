@@ -2,13 +2,7 @@ import TiptapEditor from "@/components/global/Editor";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import type { Content } from "@/libs/types/content";
 import { ArrowLeft } from "lucide-react";
 
@@ -18,10 +12,9 @@ interface BlogEditorProps {
   editingContent?: Content | null;
   onSave: (content: { html: string; json: object }, contentType: ContentType) => void;
   onBack: () => void;
-  onContentTypeChange?: (contentType: ContentType) => void;
 }
 
-const BlogEditor = ({ editingContent, onSave, onBack, onContentTypeChange }: BlogEditorProps) => {
+const BlogEditor = ({ editingContent, onSave, onBack }: BlogEditorProps) => {
   const [content, setContent] = useState<{ html: string; json: object } | null>(
     editingContent
       ? {
@@ -30,7 +23,7 @@ const BlogEditor = ({ editingContent, onSave, onBack, onContentTypeChange }: Blo
         }
       : null,
   );
-  const [contentType, setContentType] = useState<ContentType>("blog");
+  const contentType = "blog";
   const [showPreview, setShowPreview] = useState(false);
 
   const handleSave = () => {
@@ -50,24 +43,6 @@ const BlogEditor = ({ editingContent, onSave, onBack, onContentTypeChange }: Blo
           <ArrowLeft className="w-4 h-4" />
           <span>Back to List</span>
         </Button>
-        <Select
-          value={contentType}
-          onValueChange={(value) => {
-            const newContentType = value as ContentType;
-            setContentType(newContentType);
-            if (newContentType !== "blog" && onContentTypeChange) {
-              onContentTypeChange(newContentType);
-            }
-          }}
-        >
-          <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder="Content Type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="blog">Blog</SelectItem>
-            <SelectItem value="video">Video</SelectItem>
-          </SelectContent>
-        </Select>
         <Button onClick={handleSave} className="bg-[#FF9DB0] hover:bg-pink-600">
           {editingContent ? "Update Content" : "Save Content"}
         </Button>

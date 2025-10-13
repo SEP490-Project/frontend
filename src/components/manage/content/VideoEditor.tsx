@@ -4,13 +4,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import type { Content } from "@/libs/types/content";
 import { ArrowLeft, Upload, X } from "lucide-react";
 
@@ -20,7 +14,6 @@ interface VideoEditorProps {
   editingContent?: Content | null;
   onSave: (content: { html: string; json: object }, contentType: ContentType) => void;
   onBack: () => void;
-  onContentTypeChange?: (contentType: ContentType) => void;
 }
 
 interface VideoContent {
@@ -30,8 +23,8 @@ interface VideoContent {
   videoUrl: string;
 }
 
-const VideoEditor = ({ editingContent, onSave, onBack, onContentTypeChange }: VideoEditorProps) => {
-  const [contentType, setContentType] = useState<ContentType>("video");
+const VideoEditor = ({ editingContent, onSave, onBack }: VideoEditorProps) => {
+  const contentType = "video";
   const [showPreview, setShowPreview] = useState(false);
   const [videoContent, setVideoContent] = useState<VideoContent>({
     title: editingContent?.title || "",
@@ -98,24 +91,6 @@ const VideoEditor = ({ editingContent, onSave, onBack, onContentTypeChange }: Vi
           <ArrowLeft className="w-4 h-4" />
           <span>Back to List</span>
         </Button>
-        <Select
-          value={contentType}
-          onValueChange={(value) => {
-            const newContentType = value as ContentType;
-            setContentType(newContentType);
-            if (newContentType !== "video" && onContentTypeChange) {
-              onContentTypeChange(newContentType);
-            }
-          }}
-        >
-          <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder="Content Type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="blog">Blog</SelectItem>
-            <SelectItem value="video">Video</SelectItem>
-          </SelectContent>
-        </Select>
         <Button onClick={handleSave} className="bg-[#FF9DB0] hover:bg-pink-600">
           {editingContent ? "Update Content" : "Save Content"}
         </Button>

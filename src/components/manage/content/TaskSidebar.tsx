@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 const taskTypes = [
   { name: "Video", color: "#ff88fa", icon: "🎥" },
   { name: "Blog", color: "#f7c06d", icon: "📝" },
-  { name: "Post", color: "#9976ff", icon: "📄" },
 ];
 
 interface TaskSidebarProps {

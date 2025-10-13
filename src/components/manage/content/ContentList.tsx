@@ -32,12 +32,26 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import ContentDetailModal from "./ContentDetailModal";
+import TaskSelectionDialog from "./TaskSelectionDialog";
 import type { Content } from "@/libs/types/content";
 
 type ContentType = "blog" | "video";
 
+interface ContentTask {
+  id: number;
+  title: string;
+  type: "Blog" | "Video";
+  details: {
+    description: string;
+    assignee: string;
+    dueTime: string;
+    priority: "High" | "Medium" | "Low";
+  };
+  color: string;
+}
+
 interface ContentListProps {
-  onCreateNew?: (contentType: ContentType) => void;
+  onCreateNew?: (contentType: ContentType, task?: ContentTask) => void;
   onEdit?: (content: Content) => void;
   onView?: (content: Content) => void;
 }
@@ -64,6 +78,8 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
 
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isTaskSelectionOpen, setIsTaskSelectionOpen] = useState(false);
+  const [selectedContentType, setSelectedContentType] = useState<ContentType>("blog");
 
   useEffect(() => {
     fetchContents(filters);
@@ -117,6 +133,20 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     // You can implement the actual API call here
     fetchContents(filters);
     handleCloseDetailModal();
+  };
+
+  const handleCreateNewClick = (contentType: ContentType) => {
+    setSelectedContentType(contentType);
+    setIsTaskSelectionOpen(true);
+  };
+
+  const handleTaskSelect = (task: ContentTask) => {
+    setIsTaskSelectionOpen(false);
+    onCreateNew?.(selectedContentType, task);
+  };
+
+  const handleTaskSelectionClose = () => {
+    setIsTaskSelectionOpen(false);
   };
 
   const getStatusBadge = (status: string) => {
@@ -190,11 +220,11 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onCreateNew?.("blog")}>
+            <DropdownMenuItem onClick={() => handleCreateNewClick("blog")}>
               <FileText className="w-4 h-4 mr-2" />
               Create Blog
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onCreateNew?.("video")}>
+            <DropdownMenuItem onClick={() => handleCreateNewClick("video")}>
               <Video className="w-4 h-4 mr-2" />
               Create Video
             </DropdownMenuItem>
@@ -355,6 +385,14 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
         isOpen={isDetailModalOpen}
         onClose={handleCloseDetailModal}
         onRequestApproval={handleRequestApproval}
+      />
+
+      {/* Task Selection Dialog */}
+      <TaskSelectionDialog
+        isOpen={isTaskSelectionOpen}
+        onClose={handleTaskSelectionClose}
+        contentType={selectedContentType}
+        onTaskSelect={handleTaskSelect}
       />
     </div>
   );

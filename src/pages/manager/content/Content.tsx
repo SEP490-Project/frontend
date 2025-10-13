@@ -11,6 +11,7 @@ const ManageContent = () => {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [editingContent, setEditingContent] = useState<Content | null>(null);
   const [currentContentType, setCurrentContentType] = useState<ContentType>("blog");
+  const [selectedTask, setSelectedTask] = useState<any>(null);
 
   const handleSave = (content: { html: string; json: object }, contentType: "blog" | "video") => {
     console.log("Saving content:", content);
@@ -18,9 +19,13 @@ const ManageContent = () => {
     // Here you would typically send the content to your API
   };
 
-  const handleCreateNew = (contentType: ContentType = "blog") => {
+  const handleCreateNew = (contentType: ContentType = "blog", task?: any) => {
     setEditingContent(null);
     setCurrentContentType(contentType);
+    setSelectedTask(task);
+    if (task) {
+      console.log("Creating content for task:", task);
+    }
     setViewMode("editor");
   };
 
@@ -41,6 +46,7 @@ const ManageContent = () => {
   const handleBackToList = () => {
     setViewMode("list");
     setEditingContent(null);
+    setSelectedTask(null);
   };
 
   return (
@@ -54,12 +60,14 @@ const ManageContent = () => {
         currentContentType === "blog" ? (
           <BlogEditor
             editingContent={editingContent}
+            selectedTask={selectedTask}
             onSave={handleSave}
             onBack={handleBackToList}
           />
         ) : (
           <VideoEditor
             editingContent={editingContent}
+            selectedTask={selectedTask}
             onSave={handleSave}
             onBack={handleBackToList}
           />

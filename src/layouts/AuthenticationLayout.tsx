@@ -8,7 +8,7 @@ export const AuthenticationLayout = () => {
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 max-h-screen min-w-full rounded-2xl overflow-hidden bg-white">
+      <div className="grid grid-cols-1 md:grid-cols-2 max-h-screen min-w-full overflow-hidden bg-white">
         <div className="hidden md:block">
           <img
             src={LoginBanner}

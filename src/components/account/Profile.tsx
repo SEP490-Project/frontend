@@ -6,14 +6,12 @@ import { InformationForm } from "./ProfileForm";
 
 export const Profile = () => {
   const dispatch = useAppDispatch();
-  const userProfile = useSelector((state: any) => state.manageUser.userProfile?.data);
-  // const loading = useSelector((state: any) => state.manageUser.loading);
+  const userProfile = useSelector((state: any) => state.manageUserProfile.userProfile?.data);
 
   React.useEffect(() => {
     dispatch(getProfileThunk());
   }, [dispatch]);
 
-  console.log("User Profile:", userProfile);
   return (
     <>
       {/* {loading && <div>Loading...</div>} */}

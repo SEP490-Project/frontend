@@ -30,7 +30,6 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const { user } = useAuth();
-  console.log("User in Header:", user);
 
   const notifications = [
     { id: 1, text: "You have a meeting at 10 AM today" },

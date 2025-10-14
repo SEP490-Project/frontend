@@ -1,48 +1,166 @@
-import React from "react";
-import { AiOutlineSetting, AiOutlineMail, AiOutlinePhone, AiOutlineLogout } from "react-icons/ai";
+import { PaginationTable } from "@/components/global";
+import { StatusModal } from "@/components/modal/StatusModal";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useAppDispatch } from "@/libs/stores";
+import { getAllUsersThunk, updateUserStatusThunk } from "@/libs/stores/userManager/thunk";
+import type { UserParams } from "@/libs/types/user";
+import { useEffect, useState } from "react";
+
+import { FaFilter } from "react-icons/fa6";
+import { useSelector } from "react-redux";
+import { toast } from "sonner";
 
 const UserPage: React.FC = () => {
-  // Giả lập thông tin user
-  const user = {
-    name: "Nguyen Van A",
-    email: "nguyenvana@example.com",
-    phone: "+84 123 456 789",
-    avatar: "https://i.pravatar.cc/150?img=3",
-    role: "Administrator",
+  const dispatch = useAppDispatch();
+  const users = useSelector((state: any) => state?.manageUser?.users?.data);
+  const pagination = useSelector((state: any) => state?.manageUser?.users?.pagination);
+
+  const [params, setParams] = useState<UserParams>({
+    page: 1,
+    limit: 7,
+  });
+
+  const onUpdateUserStatus = async (is_active: boolean, userId: string) => {
+    const result = await dispatch(updateUserStatusThunk({ is_active, userId }));
+
+    if (updateUserStatusThunk.fulfilled.match(result)) {
+      dispatch(getAllUsersThunk(params));
+      toast.success("User status updated successfully");
+    } else {
+      toast.error("Failed to update user status");
+    }
   };
 
+  useEffect(() => {
+    dispatch(getAllUsersThunk(params));
+  }, [dispatch, params]);
+
   return (
-    <div className="min-h-screen pt-6 flex flex-col items-center">
-      <div className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-2xl">
-        {/* Avatar + Name */}
-        <div className="flex flex-col items-center">
-          <img src={user.avatar} alt="avatar" className="w-24 h-24 rounded-full shadow-md mb-4" />
-          <h2 className="text-2xl font-bold text-gray-800">{user.name}</h2>
-          <p className="text-gray-500">{user.role}</p>
-        </div>
+    <div className="min-h-fit p-4 sm:p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-xl sm:text-2xl font-semibold">Users</h1>
+      </div>
 
-        {/* User Info */}
-        <div className="mt-8 space-y-4">
-          <div className="flex items-center gap-3 text-gray-700">
-            <AiOutlineMail size={20} className="text-gray-500" />
-            <span>{user.email}</span>
+      <div className="bg-white rounded-lg shadow mb-4 p-4">
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <FaFilter className="text-gray-500" />
+            <span className="text-sm font-medium">Filters:</span>
           </div>
-          <div className="flex items-center gap-3 text-gray-700">
-            <AiOutlinePhone size={20} className="text-gray-500" />
-            <span>{user.phone}</span>
+
+          <div className="flex-1 min-w-[200px]">
+            <Input
+              placeholder="Search by username or email"
+              // value={searchTerm}
+              // onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full"
+            />
+          </div>
+
+          <div className="min-w-[150px]">
+            <Select
+              value={params.role || ""}
+              onValueChange={(value) => {
+                setParams({ ...params, role: value });
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value=" ">All</SelectItem>
+                <SelectItem value="CUSTOMER">Customer</SelectItem>
+                <SelectItem value="BRAND_PARTNER">Brand</SelectItem>
+                <SelectItem value="SALES_STAFF">Sale staff</SelectItem>
+                <SelectItem value="MARKETING_STAFF">Marketing staff</SelectItem>
+                <SelectItem value="CONTENT_STAFF">Content staff</SelectItem>
+                <SelectItem value="ADMIN">Admin</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="min-w-[150px]">
+            <Select
+              value={params.is_active == null ? undefined : String(params.is_active)}
+              onValueChange={(value) => {
+                setParams({ ...params, is_active: value === "true" });
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="true">Active</SelectItem>
+                <SelectItem value="false">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
+      </div>
 
-        {/* Action buttons */}
-        <div className="mt-8 flex flex-col sm:flex-row gap-4">
-          <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary/90 transition">
-            <AiOutlineSetting size={18} />
-            <span>Settings</span>
-          </button>
-          <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition">
-            <AiOutlineLogout size={18} />
-            <span>Logout</span>
-          </button>
+      <div className="bg-white rounded-lg overflow-hidden shadow">
+        <div className="hidden md:block">
+          <Table>
+            <TableHeader className="px-4">
+              <TableRow className="border-b bg-gray-50">
+                <TableHead>User</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Created Date</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users &&
+                users.map((user: any) => (
+                  <TableRow key={user.id}>
+                    <TableCell>{user.username}</TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>{user.role.toLowerCase()}</TableCell>
+                    <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <Dialog>
+                        <DialogTrigger>
+                          <Switch checked={user.is_active} disabled={user.role === "ADMIN"} />
+                        </DialogTrigger>
+                        <StatusModal
+                          name={user.username}
+                          status={user.is_active ? "Inactive" : "Active"}
+                          onConfirm={() => {
+                            onUpdateUserStatus(!user.is_active, user.id);
+                          }}
+                        />
+                      </Dialog>
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+          {pagination && (
+            <PaginationTable
+              page={pagination.page}
+              totalItems={pagination.total}
+              pageSize={pagination.limit}
+              onPageChange={(page) => setParams({ ...params, page })}
+            />
+          )}
         </div>
       </div>
     </div>

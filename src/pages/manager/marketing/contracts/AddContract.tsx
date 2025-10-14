@@ -6,25 +6,12 @@ import {
   LegalTerms,
   ScopeOfWork,
 } from "./component/add";
-import {
-  FaCheck,
-  FaArrowLeft,
-  FaArrowRight,
-  FaRotateLeft,
-  FaTriangleExclamation,
-} from "react-icons/fa6";
+import { FaCheck, FaArrowLeft, FaArrowRight, FaRotateLeft } from "react-icons/fa6";
 import { validateContract, validateField } from "./validation";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { WarningDialog } from "@/components/global";
 
 const CONTRACT_TYPE_OPTIONS = [
   { value: "ADVERTISING", label: "Advertising Contract" },
@@ -628,92 +615,42 @@ const AddContractPage: React.FC = () => {
       </div>
 
       {/* Reset Confirmation Modal */}
-      <Dialog open={showResetModal} onOpenChange={setShowResetModal}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FaTriangleExclamation className="h-5 w-5 text-red-500" />
-              Reset All Data
-            </DialogTitle>
-            <DialogDescription className="text-left">
-              <div className="space-y-3">
-                <p>Are you sure you want to reset all data? This action cannot be undone.</p>
-                <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                  <p className="text-red-800 text-sm font-medium">
-                    ⚠️ Warning: All the following data will be permanently deleted:
-                  </p>
-                  <ul className="mt-2 text-red-700 text-sm list-disc list-inside space-y-1">
-                    <li>Contract Information</li>
-                    <li>Scope of Work</li>
-                    <li>Financial Terms</li>
-                    <li>Legal Terms</li>
-                    <li>Uploaded Documents</li>
-                  </ul>
-                  <p className="mt-2 text-red-800 text-sm">
-                    You will be returned to Step 1 and need to start over.
-                  </p>
-                </div>
-              </div>
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={cancelReset}>
-              Cancel
-            </Button>
-            <Button onClick={confirmReset} className="bg-red-600 hover:bg-red-700 text-white">
-              Reset All Data
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <WarningDialog
+        isOpen={showResetModal}
+        onOpenChange={setShowResetModal}
+        title="Reset All Data"
+        description="Are you sure you want to reset all data? This action cannot be undone."
+        warningMessage="Warning: All the following data will be permanently deleted:"
+        warningItems={[
+          "Contract Information",
+          "Scope of Work",
+          "Financial Terms",
+          "Legal Terms",
+          "Uploaded Documents",
+        ]}
+        additionalInfo="You will be returned to Step 1 and need to start over."
+        onConfirm={confirmReset}
+        onCancel={cancelReset}
+        confirmText="Reset All Data"
+        cancelText="Cancel"
+      />
 
       {/* Contract Type Change Confirmation Modal */}
-      <Dialog open={showTypeChangeModal} onOpenChange={setShowTypeChangeModal}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FaTriangleExclamation className="h-5 w-5 text-amber-500" />
-              Change Contract Type
-            </DialogTitle>
-            <DialogDescription className="text-left">
-              <div className="space-y-3">
-                <p>
-                  Are you sure you want to change the contract type from{" "}
-                  <span className="font-semibold">
-                    {CONTRACT_TYPE_OPTIONS.find((opt) => opt.value === formData.type)?.label}
-                  </span>{" "}
-                  to{" "}
-                  <span className="font-semibold">
-                    {CONTRACT_TYPE_OPTIONS.find((opt) => opt.value === pendingNewType)?.label}
-                  </span>{" "}
-                  ?
-                </p>
-                <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                  <p className="text-red-800 text-sm font-medium">
-                    ⚠️ Warning: If you change the type, all data you have entered in the subsequent
-                    steps will be deleted:
-                  </p>
-                  <ul className="mt-2 text-red-700 text-sm list-disc list-inside space-y-1">
-                    <li>Scope of Work</li>
-                    <li>Financial Terms</li>
-                    <li>Legal Terms</li>
-                    <li>Uploaded Documents</li>
-                  </ul>
-                  <p className="mt-2 text-red-800 text-sm">Step 1 data will be preserved.</p>
-                </div>
-              </div>
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={cancelTypeChange}>
-              Cancel
-            </Button>
-            <Button onClick={confirmTypeChange} className="bg-red-600 hover:bg-red-700 text-white">
-              Confirm Change
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <WarningDialog
+        isOpen={showTypeChangeModal}
+        onOpenChange={setShowTypeChangeModal}
+        title="Change Contract Type"
+        description={`Are you sure you want to change the contract type from ${
+          CONTRACT_TYPE_OPTIONS.find((opt) => opt.value === formData.type)?.label
+        } to ${CONTRACT_TYPE_OPTIONS.find((opt) => opt.value === pendingNewType)?.label}?`}
+        warningMessage="Warning: If you change the type, all data you have entered in the subsequent steps will be deleted:"
+        warningItems={["Scope of Work", "Financial Terms", "Legal Terms", "Uploaded Documents"]}
+        additionalInfo="Step 1 data will be preserved."
+        onConfirm={confirmTypeChange}
+        onCancel={cancelTypeChange}
+        confirmText="Confirm Change"
+        cancelText="Cancel"
+      />
     </div>
   );
 };

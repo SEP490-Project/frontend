@@ -281,33 +281,6 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
 
   return (
     <div className="space-y-8">
-      <motion.div
-        initial={{ opacity: 0, y: -6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35 }}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="text-sm text-slate-600">Progress</div>
-            <div className="w-48 h-2 bg-slate-100 rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all"
-                style={{
-                  width: formData.type
-                    ? formData.brandId
-                      ? formData.contractNumber
-                        ? "100%"
-                        : "75%"
-                      : "50%"
-                    : "10%",
-                  background: "linear-gradient(90deg,#7c3aed,#06b6d4)",
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      </motion.div>
-
       {/* Contract Type */}
       <motion.div
         initial={{ opacity: 0, y: 6 }}

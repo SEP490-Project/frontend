@@ -253,6 +253,11 @@ const BrandPage: React.FC = () => {
                           <StatusModal
                             name={partner.name}
                             status={partner.isActive ? "Inactive" : "Active"}
+                            onConfirm={() => {
+                              // TODO: Implement status change logic here
+                              // Example: dispatch an action to update status
+                              // dispatch(updateBrandStatus(partner.id, partner.isActive ? "INACTIVE" : "ACTIVE"));
+                            }}
                           />
                         </Dialog>
                       </TableCell>

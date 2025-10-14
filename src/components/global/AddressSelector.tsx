@@ -95,7 +95,7 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
           value={addressInput}
           onChange={handleAddressChange}
           placeholder={placeholder}
-          className={`pl-10 pr-9 ${error ? "border-red-500" : ""}`}
+          className={`h-11 pl-10 pr-9 text-sm ${error ? "border-red-500" : ""}`}
           autoComplete="off"
           onFocus={() => {
             if (!hasSelected && predictions?.length) setShowPredictions(true);

@@ -1,5 +1,4 @@
-// ScopeOfWork.tsx
-import React, { memo, useState } from "react";
+import React, { memo, useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FaFileLines } from "react-icons/fa6";
@@ -18,12 +17,72 @@ interface ScopeOfWorkProps {
 }
 
 const ScopeOfWork: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork }) => {
-  // const CONTRACT_TYPE: CONTRACT_TYPE = "BRAND_AMBASSADOR";
   const CONTRACT_TYPE: CONTRACT_TYPE | undefined = formData?.type;
-
-  // ✅ Tạo state thực sự cho scope để phản ứng với thay đổi
   const [scope, setScope] = useState<ScopeOfWorkShape>(formData?.scopeOfWork || {});
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [validationStatus, setValidationStatus] = useState<{
+    isValid: boolean;
+    issues: string[];
+  }>({ isValid: false, issues: [] });
+
+  // Validation logic
+  const validateScope = (currentScope: any, contractType: string) => {
+    const issues: string[] = [];
+    let isValid = false;
+
+    if (!contractType) {
+      issues.push("Contract type is required");
+      return { isValid: false, issues };
+    }
+
+    const deliverables = currentScope.deliverables || {};
+
+    switch (contractType) {
+      case "ADVERTISING": {
+        const advertisingItems = deliverables.advertising_items || [];
+        if (advertisingItems.length === 0) {
+          issues.push("At least one advertising item is required");
+        } else {
+          advertisingItems.forEach((item: any, index: number) => {
+            if (!item.name?.trim()) issues.push(`Ad #${index + 1}: Name is required`);
+            if (!item.description?.trim()) issues.push(`Ad #${index + 1}: Description is required`);
+            if (!item.platform?.trim()) issues.push(`Ad #${index + 1}: Platform is required`);
+            if (!item.tagline?.trim()) issues.push(`Ad #${index + 1}: Tagline is required`);
+          });
+        }
+
+        // Check general requirements
+        const generalReqs = currentScope.general_requirements || [];
+        if (generalReqs.some((req: string) => !req.trim())) {
+          issues.push("Empty general requirements should be removed");
+        }
+
+        isValid =
+          advertisingItems.length > 0 &&
+          advertisingItems.every(
+            (item: any) =>
+              item.name?.trim() &&
+              item.description?.trim() &&
+              item.platform?.trim() &&
+              item.tagline?.trim(),
+          ) &&
+          (generalReqs.length === 0 || generalReqs.every((req: string) => req.trim()));
+        break;
+      }
+
+      // Add other contract types validation here...
+      default:
+        issues.push("Unknown contract type");
+    }
+
+    return { isValid, issues };
+  };
+
+  // Update validation when scope changes
+  useEffect(() => {
+    const status = validateScope(scope, CONTRACT_TYPE || "");
+    setValidationStatus(status);
+  }, [scope, CONTRACT_TYPE]);
 
   // Cập nhật scope + gọi callback cha
   const updateScope = (partial: Partial<ScopeOfWorkShape>) => {
@@ -107,7 +166,7 @@ const ScopeOfWork: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork
           </CardHeader>
           <CardContent>
             <pre className="text-xs max-h-96 overflow-auto bg-gray-900 text-green-400 p-4 rounded-lg font-mono">
-              {JSON.stringify({ ...scope, CONTRACT_TYPE }, null, 2)}
+              {JSON.stringify({ ...scope, CONTRACT_TYPE, validation: validationStatus }, null, 2)}
             </pre>
           </CardContent>
         </Card>

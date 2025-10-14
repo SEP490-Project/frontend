@@ -7,7 +7,7 @@ import {
   ScopeOfWork,
 } from "./component/add";
 import { FaCheck, FaArrowLeft, FaArrowRight, FaRotateLeft } from "react-icons/fa6";
-import { validateContract, validateField } from "./validation";
+import { validateField } from "./validation";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -131,7 +131,7 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
         formData.type &&
         formData.contractNumber &&
         formData.signedDate &&
-        formData.startDate && // This should now be auto-filled from signedDate
+        formData.startDate &&
         formData.endDate &&
         formData.signedLocation &&
         formData.brandBankName &&
@@ -140,60 +140,192 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
       );
     case "scope-of-work": {
       if (!formData.type) return false;
+
       const scopeOfWork = formData.scopeOfWork || {};
-      console.log("Scope of Work:", scopeOfWork); // Debugging line
+      const deliverables = scopeOfWork.deliverables || {};
+
+      console.log("Checking scope completion:", {
+        type: formData.type,
+        scopeOfWork,
+        deliverables,
+      });
 
       if (formData.type === "ADVERTISING") {
-        return !!(scopeOfWork.contents?.length > 0);
+        const advertisingItems = deliverables.advertising_items || [];
+        const hasValidItems =
+          advertisingItems.length > 0 &&
+          advertisingItems.every((item: any) => {
+            return !!(
+              item.name?.trim() &&
+              item.description?.trim() &&
+              item.platform?.trim() &&
+              item.tagline?.trim()
+            );
+          });
+
+        const hasGeneralReqs =
+          !scopeOfWork.general_requirements ||
+          scopeOfWork.general_requirements.length === 0 ||
+          scopeOfWork.general_requirements.every((req: any) => req.trim());
+
+        return hasValidItems && hasGeneralReqs;
       }
+
       if (formData.type === "AFFILIATE") {
-        return !!(scopeOfWork.contents?.length > 0);
+        const affiliateItems = deliverables.affiliate_items || [];
+        const hasValidItems =
+          affiliateItems.length > 0 &&
+          affiliateItems.every((item: any) => {
+            return !!(item.name?.trim() && item.description?.trim() && item.commission_rate > 0);
+          });
+
+        const hasGeneralReqs =
+          !scopeOfWork.general_requirements ||
+          scopeOfWork.general_requirements.length === 0 ||
+          scopeOfWork.general_requirements.every((req: any) => req.trim());
+
+        return hasValidItems && hasGeneralReqs;
       }
-      if (formData.type === "CO_PRODUCING") {
-        return !!(scopeOfWork.products?.length > 0);
-      }
+
       if (formData.type === "BRAND_AMBASSADOR") {
-        return !!(scopeOfWork.events?.length > 0);
+        const ambassadorItems = deliverables.ambassador_items || [];
+        const hasValidItems =
+          ambassadorItems.length > 0 &&
+          ambassadorItems.every((item: any) => {
+            return !!(item.name?.trim() && item.description?.trim() && item.duration?.trim());
+          });
+
+        const hasGeneralReqs =
+          !scopeOfWork.general_requirements ||
+          scopeOfWork.general_requirements.length === 0 ||
+          scopeOfWork.general_requirements.every((req: any) => req.trim());
+
+        return hasValidItems && hasGeneralReqs;
       }
+
+      if (formData.type === "CO_PRODUCING") {
+        const coProducingItems = deliverables.coproducing_items || [];
+        const hasValidItems =
+          coProducingItems.length > 0 &&
+          coProducingItems.every((item: any) => {
+            return !!(item.name?.trim() && item.description?.trim() && item.timeline?.trim());
+          });
+
+        const hasRoles =
+          scopeOfWork.coProductionRoles &&
+          scopeOfWork.coProductionRoles.company?.trim() &&
+          scopeOfWork.coProductionRoles.kol?.trim();
+
+        const hasGeneralReqs =
+          !scopeOfWork.general_requirements ||
+          scopeOfWork.general_requirements.length === 0 ||
+          scopeOfWork.general_requirements.every((req: any) => req.trim());
+
+        return hasValidItems && hasRoles && hasGeneralReqs;
+      }
+
       return false;
     }
     case "financial-terms": {
       if (!formData.type) return false;
-      const hasSchedule =
-        formData.financialTerms?.schedule?.length > 0 &&
-        formData.financialTerms.schedule.every((item: any) => item.milestone && item.amount > 0);
+
+      const financialTerms = formData.financialTerms || {};
+
+      console.log("Checking financial terms completion:", {
+        type: formData.type,
+        financialTerms,
+      });
+
+      // Kiểm tra payment schedule - bắt buộc cho tất cả loại hợp đồng
+      const hasValidSchedule =
+        financialTerms.schedule?.length > 0 &&
+        financialTerms.schedule.every(
+          (item: any) => item.milestone?.trim() && item.amount > 0 && item.due_date,
+        );
+
       if (formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR") {
-        const totalCost = formData.financialTerms?.totalCost || 0;
-        const scheduleTotal = (formData.financialTerms?.schedule || []).reduce(
+        // Kiểm tra các field bắt buộc cho ADVERTISING/BRAND_AMBASSADOR
+        const hasBasicInfo = !!(financialTerms.payment_method && financialTerms.total_cost > 0);
+
+        // Kiểm tra payment schedule có tổng bằng total cost
+        const scheduleTotal = (financialTerms.schedule || []).reduce(
           (sum: number, item: any) => sum + (item.amount || 0),
           0,
         );
-        return totalCost > 0 && hasSchedule && Math.abs(totalCost - scheduleTotal) < 0.01;
+
+        const isScheduleBalanced =
+          Math.abs((financialTerms.total_cost || 0) - scheduleTotal) < 0.01;
+
+        return hasBasicInfo && hasValidSchedule && isScheduleBalanced;
       }
+
       if (formData.type === "AFFILIATE") {
-        return !!(
-          formData.financialTerms?.basePerClick > 0 &&
-          formData.financialTerms?.paymentCycle &&
-          formData.financialTerms?.levels?.length > 0 &&
-          hasSchedule
+        // Kiểm tra các field bắt buộc cho AFFILIATE
+        const hasBasicInfo = !!(
+          financialTerms.payment_method &&
+          financialTerms.base_per_click > 0 &&
+          financialTerms.payment_cycle &&
+          financialTerms.payment_date
         );
+
+        // Kiểm tra commission levels
+        const hasValidLevels =
+          financialTerms.commission_levels?.length > 0 &&
+          financialTerms.commission_levels.every(
+            (level: any) => level.min_clicks > 0 && level.rate_per_click > 0,
+          );
+
+        return hasBasicInfo && hasValidLevels && hasValidSchedule;
       }
+
       if (formData.type === "CO_PRODUCING") {
+        // Kiểm tra các field bắt buộc cho CO_PRODUCING
+        const hasBasicInfo = !!(
+          financialTerms.payment_method &&
+          financialTerms.profit_distribution_cycle &&
+          financialTerms.profit_distribution_date
+        );
+
+        // Kiểm tra profit split (phải tổng = 100%)
         const validProfitSplit =
-          formData.financialTerms?.profitSplitCompanyPercent > 0 &&
-          formData.financialTerms?.profitSplitKolPercent > 0 &&
-          formData.financialTerms.profitSplitCompanyPercent +
-            formData.financialTerms.profitSplitKolPercent ===
+          financialTerms.profit_split_company_percent > 0 &&
+          financialTerms.profit_split_kol_percent > 0 &&
+          financialTerms.profit_split_company_percent + financialTerms.profit_split_kol_percent ===
             100;
+
+        // Kiểm tra capital contribution
         const validCapital =
-          formData.financialTerms?.capitalContribution?.company?.value > 0 &&
-          formData.financialTerms?.capitalContribution?.kol?.value > 0;
-        return validProfitSplit && validCapital && hasSchedule;
+          financialTerms.capital_contribution?.company?.value > 0 &&
+          financialTerms.capital_contribution?.kol?.value > 0 &&
+          financialTerms.capital_contribution?.company?.description?.trim() &&
+          financialTerms.capital_contribution?.kol?.description?.trim();
+
+        return hasBasicInfo && validProfitSplit && validCapital && hasValidSchedule;
       }
+
       return false;
     }
-    case "legal-terms":
-      return !!formData.legalTerms?.compensationPercent;
+    case "legal-terms": {
+      // Kiểm tra compensationPercent không được rỗng và phải là số hợp lệ (0-100)
+      const compensationPercent = formData.legalTerms?.compensationPercent;
+
+      console.log("Checking legal terms completion:", {
+        compensationPercent,
+        legalTerms: formData.legalTerms,
+      });
+
+      // Kiểm tra:
+      // 1. Không được undefined/null/empty string
+      // 2. Phải là số >= 0 và <= 100
+      return !!(
+        compensationPercent !== undefined &&
+        compensationPercent !== null &&
+        compensationPercent !== "" &&
+        !isNaN(Number(compensationPercent)) &&
+        Number(compensationPercent) >= 0 &&
+        Number(compensationPercent) <= 100
+      );
+    }
     case "contract-actions":
       return formData.contractFiles?.length > 0 && formData.proposalFiles?.length > 0;
     default:
@@ -450,26 +582,258 @@ const AddContractPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canSubmit) {
-      alert("Please complete all required sections before submitting.");
-      return;
-    }
+
     try {
-      const validation = await validateContract(formData);
-      if (!validation.isValid) {
-        setErrors(validation.errors);
-        document.querySelector(".border-red-500")?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-        return;
-      }
-      // Log JSON gửi backend
-      console.log("JSON gửi backend:", JSON.stringify(formData, null, 2));
-      alert("Contract submitted successfully!");
+      console.log("Starting submission process...");
+      console.log("Current form data:", formData);
+
+      // BỎ QUA TẤT CẢ VALIDATION - CHỈ TẠO JSON
+      console.log("Skipping all validation, creating payload directly...");
+
+      // Tạo JSON payload hoàn chỉnh để gửi backend
+      const contractPayload = {
+        // Contract Basic Information
+        contract_info: {
+          contract_number: formData.contractNumber,
+          type: formData.type,
+          signed_date: formData.signedDate,
+          signed_location: formData.signedLocation,
+          start_date: formData.startDate,
+          end_date: formData.endDate,
+          status: "DRAFT",
+        },
+
+        // Brand Information
+        brand_info: {
+          brand_id: formData.brandId,
+          representative: {
+            name: formData.brandRepresentativeName,
+            position: formData.brandRepresentativePosition,
+            phone: formData.brandRepresentativePhone,
+            email: formData.brandRepresentativeEmail,
+            tax_number: formData.brandTaxNumber,
+          },
+          banking: {
+            bank_name: formData.brandBankName,
+            account_number: formData.brandBankAccountNumber,
+            account_holder: formData.brandBankAccountHolder,
+          },
+        },
+
+        // Web Representative (KOL/Content Creator)
+        web_representative: {
+          staff_id: formData.webRepresentativeStaffId,
+          name: formData.webRepresentativeName,
+          position: formData.webRepresentativePosition,
+          phone: formData.webRepresentativePhone,
+          email: formData.webRepresentativeEmail,
+          tax_number: formData.webRepresentativeTaxNumber,
+        },
+
+        // Scope of Work
+        scope_of_work: {
+          general_requirements: formData.scopeOfWork?.general_requirements || [],
+          deliverables: formData.scopeOfWork?.deliverables || {},
+          ...(formData.type === "CO_PRODUCING" && {
+            co_production_roles: formData.scopeOfWork?.coProductionRoles || {},
+          }),
+        },
+
+        // Financial Terms
+        financial_terms: {
+          payment_method: formData.financialTerms?.payment_method || "BANK_TRANSFER",
+          deposit_info: {
+            deposit_paid: formData.financialTerms?.deposit_paid || false,
+            deposit_amount: formData.financialTerms?.deposit_amount || 0,
+          },
+          schedule: formData.financialTerms?.schedule || [],
+
+          // Contract type specific terms
+          ...(formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR"
+            ? {
+                total_cost: formData.financialTerms?.total_cost || 0,
+                cost_breakdown: formData.financialTerms?.cost_breakdown || {},
+              }
+            : {}),
+
+          ...(formData.type === "AFFILIATE"
+            ? {
+                base_per_click: formData.financialTerms?.base_per_click || 0,
+                commission_levels: formData.financialTerms?.commission_levels || [],
+                payment_cycle: formData.financialTerms?.payment_cycle,
+                payment_date: formData.financialTerms?.payment_date,
+                tax_withholding: formData.financialTerms?.tax_withholding || {},
+              }
+            : {}),
+
+          ...(formData.type === "CO_PRODUCING"
+            ? {
+                capital_contribution: formData.financialTerms?.capital_contribution || {},
+                profit_split_company_percent:
+                  formData.financialTerms?.profit_split_company_percent || 0,
+                profit_split_kol_percent: formData.financialTerms?.profit_split_kol_percent || 0,
+                profit_distribution_cycle: formData.financialTerms?.profit_distribution_cycle,
+                profit_distribution_date: formData.financialTerms?.profit_distribution_date,
+              }
+            : {}),
+        },
+
+        // Legal Terms
+        legal_terms: {
+          compensation_percent: formData.legalTerms?.compensationPercent || 0,
+          breach_conditions: {
+            brand_breach: {
+              consequences: ["immediate_termination", "forfeit_deposit"],
+            },
+            service_provider_breach: {
+              consequences: ["immediate_termination", "refund_deposit", "pay_compensation"],
+              compensation_percent: formData.legalTerms?.compensationPercent || 0,
+            },
+            mutual_termination: {
+              consequences: ["no_penalty"],
+            },
+          },
+          standard_terms: {
+            confidentiality: true,
+            dispute_resolution: "court_jurisdiction",
+            contract_effectiveness: "signature_to_completion",
+            force_majeure: true,
+          },
+        },
+
+        // File References
+        documents: {
+          contract_files:
+            formData.contractFiles?.map((file: File) => ({
+              name: file.name,
+              size: file.size,
+              type: file.type,
+            })) || [],
+          proposal_files:
+            formData.proposalFiles?.map((file: File) => ({
+              name: file.name,
+              size: file.size,
+              type: file.type,
+            })) || [],
+        },
+
+        // Metadata
+        metadata: {
+          created_at: new Date().toISOString(),
+          created_by: "current_user_id",
+          version: "1.0",
+          last_modified: new Date().toISOString(),
+        },
+      };
+
+      console.log("Payload created successfully!");
+      console.log("=== CONTRACT PAYLOAD FOR BACKEND ===");
+      console.log(JSON.stringify(contractPayload, null, 2));
+
+      // Hiển thị JSON trong modal
+      const jsonString = JSON.stringify(contractPayload, null, 2);
+
+      const modal = document.createElement("div");
+      modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        z-index: 10000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      `;
+
+      modal.innerHTML = `
+        <div style="
+          background: white;
+          padding: 20px;
+          border-radius: 8px;
+          max-width: 90%;
+          max-height: 90%;
+          overflow: auto;
+        ">
+          <h3 style="margin-bottom: 15px; font-size: 18px; font-weight: bold;">
+            Contract JSON Payload (No Validation)
+          </h3>
+          <div style="margin-bottom: 15px; padding: 10px; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 4px;">
+            <p style="color: #92400e; font-size: 14px; margin: 0;">
+              ⚠️ Validation was skipped. This is the raw JSON data from your form.
+            </p>
+          </div>
+          <pre style="
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            overflow: auto;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 500px;
+          ">${jsonString}</pre>
+          <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: flex-end;">
+            <button id="copyJson" style="
+              background: #3b82f6;
+              color: white;
+              border: none;
+              padding: 8px 16px;
+              border-radius: 4px;
+              cursor: pointer;
+            ">Copy JSON</button>
+            <button id="closeModal" style="
+              background: #6b7280;
+              color: white;
+              border: none;
+              padding: 8px 16px;
+              border-radius: 4px;
+              cursor: pointer;
+            ">Close</button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+
+      // Copy function
+      document.getElementById("copyJson")?.addEventListener("click", () => {
+        navigator.clipboard
+          .writeText(jsonString)
+          .then(() => {
+            alert("JSON copied to clipboard!");
+          })
+          .catch(() => {
+            const textarea = document.createElement("textarea");
+            textarea.value = jsonString;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand("copy");
+            document.body.removeChild(textarea);
+            alert("JSON copied to clipboard (fallback method)!");
+          });
+      });
+
+      // Close modal
+      const closeModal = () => {
+        if (modal.parentNode) {
+          document.body.removeChild(modal);
+        }
+      };
+      document.getElementById("closeModal")?.addEventListener("click", closeModal);
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) closeModal();
+      });
+
+      console.log("Modal displayed successfully!");
     } catch (error) {
-      console.error("Submission failed:", error);
-      setErrors({ general: "Failed to submit contract. Please try again." });
+      console.error("Draft creation failed:", error);
+      if (typeof error === "object" && error !== null && "message" in error) {
+        alert(`Error: ${(error as { message?: string }).message}`);
+      } else {
+        alert(`Error: ${String(error)}`);
+      }
     }
   };
 
@@ -503,7 +867,12 @@ const AddContractPage: React.FC = () => {
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-4">
-            <h1 className="text-xl sm:text-2xl font-semibold">Add New Contract</h1>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-semibold">Add New Contract</h1>
+              <p className="text-gray-600 mt-1">
+                Add a new contract with defined terms and details.
+              </p>
+            </div>
             <Button
               variant="outline"
               size="sm"

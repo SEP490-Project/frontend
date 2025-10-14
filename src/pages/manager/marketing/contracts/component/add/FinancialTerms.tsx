@@ -127,83 +127,6 @@ const DepositPayment: React.FC<{
 
 // JSON Preview Component
 const JsonPreview: React.FC<{ data: any }> = ({ data }) => {
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
-
-  const toggleCollapse = (key: string) => {
-    setCollapsed((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  const renderValue = (value: any, key = "", depth = 0): React.ReactNode => {
-    if (value === null || value === undefined) {
-      return <span className="text-gray-400">null</span>;
-    }
-
-    if (typeof value === "boolean") {
-      return <span className="text-blue-600">{value.toString()}</span>;
-    }
-
-    if (typeof value === "number") {
-      return <span className="text-purple-600">{value.toLocaleString()}</span>;
-    }
-
-    if (typeof value === "string") {
-      return <span className="text-green-600">"{value}"</span>;
-    }
-
-    if (Array.isArray(value)) {
-      const isCollapsed = collapsed[`${key}-${depth}`];
-
-      return (
-        <div>
-          <span
-            className="cursor-pointer text-blue-500 hover:bg-blue-50 px-1 rounded"
-            onClick={() => toggleCollapse(`${key}-${depth}`)}
-          >
-            [{value.length} items] {isCollapsed ? "▶" : "▼"}
-          </span>
-          {!isCollapsed && (
-            <div className="ml-4 border-l border-gray-200 pl-2 mt-1">
-              {value.map((item, index) => (
-                <div key={index} className="py-1">
-                  <span className="text-gray-500">[{index}]:</span>{" "}
-                  {renderValue(item, `${key}-${index}`, depth + 1)}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    if (typeof value === "object") {
-      const keys = Object.keys(value);
-      const isCollapsed = collapsed[`${key}-${depth}`];
-
-      return (
-        <div>
-          <span
-            className="cursor-pointer text-blue-500 hover:bg-blue-50 px-1 rounded"
-            onClick={() => toggleCollapse(`${key}-${depth}`)}
-          >
-            {`{${keys.length} keys}`} {isCollapsed ? "▶" : "▼"}
-          </span>
-          {!isCollapsed && (
-            <div className="ml-4 border-l border-gray-200 pl-2 mt-1">
-              {keys.map((objKey) => (
-                <div key={objKey} className="py-1">
-                  <span className="text-orange-600 font-medium">"{objKey}":</span>{" "}
-                  {renderValue(value[objKey], `${key}-${objKey}`, depth + 1)}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    return <span>{String(value)}</span>;
-  };
-
   return (
     <Card className="h-full">
       <CardHeader className="pb-3">
@@ -215,49 +138,11 @@ const JsonPreview: React.FC<{ data: any }> = ({ data }) => {
       <CardContent>
         <div className="bg-gray-50 p-4 rounded-lg font-mono text-sm max-h-[600px] overflow-y-auto">
           {data.financialTerms && Object.keys(data.financialTerms).length > 0 ? (
-            <div>
-              <div className="text-orange-600 font-bold mb-2">"financialTerms":</div>
-              <div className="ml-2">{renderValue(data.financialTerms, "financialTerms", 0)}</div>
-            </div>
+            <pre className="text-xs">{JSON.stringify(data.financialTerms, null, 2)}</pre>
           ) : (
             <div className="text-gray-400 text-center py-8">No financial terms data available</div>
           )}
         </div>
-
-        {/* Summary Stats - Updated to include simplified deposit info */}
-        {data.financialTerms && (
-          <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-            <h4 className="font-medium text-blue-900 mb-2">Summary</h4>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="font-medium">Total Cost:</span>{" "}
-                {data.financialTerms.total_cost
-                  ? `${data.financialTerms.total_cost.toLocaleString()} VND`
-                  : "Not set"}
-              </div>
-              <div>
-                <span className="font-medium">Deposit:</span>{" "}
-                {data.financialTerms.deposit_paid
-                  ? "Already paid"
-                  : data.financialTerms.deposit_amount && data.financialTerms.deposit_amount > 0
-                    ? `${data.financialTerms.deposit_amount.toLocaleString()} VND required`
-                    : "Not required"}
-              </div>
-              <div>
-                <span className="font-medium">Payment Schedule:</span>{" "}
-                {data.financialTerms.schedule && data.financialTerms.schedule.length > 0
-                  ? `${data.financialTerms.schedule.length} milestones`
-                  : "Not set"}
-              </div>
-              <div>
-                <span className="font-medium">Payment Cycle:</span>{" "}
-                {data.financialTerms.payment_cycle ||
-                  data.financialTerms.profit_distribution_cycle ||
-                  "Not set"}
-              </div>
-            </div>
-          </div>
-        )}
       </CardContent>
     </Card>
   );
@@ -341,7 +226,7 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({
       <div className={`grid gap-6 ${showPreview ? "lg:grid-cols-2" : "grid-cols-1"}`}>
         {/* Financial Terms Form */}
         <div className="space-y-6">
-          {/* Deposit Payment Section - Always show first */}
+          {/* Deposit Payment Section */}
           <DepositPayment
             financialTerms={financialTerms}
             onUpdate={onUpdateFinancialTerms}

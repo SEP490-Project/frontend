@@ -43,10 +43,10 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
 
   return (
     <div className="space-y-6">
-      <Card className="shadow-sm">
-        <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50">
-          <CardTitle className="flex items-center gap-2">
-            <FaLink className="w-5 h-5 text-green-600" />
+      <Card className="shadow-sm border border-pink-200">
+        <CardHeader className="bg-gradient-to-r from-pink-50 via-rose-50 to-pink-100">
+          <CardTitle className="flex items-center gap-2 text-pink-900">
+            <FaLink className="w-5 h-5" style={{ color: "#ff9fb2" }} />
             Affiliate Marketing Program
           </CardTitle>
         </CardHeader>
@@ -55,7 +55,7 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
           <CollapsibleSection title="Affiliate Link & Target Platforms" defaultOpen={true}>
             <div className="space-y-4">
               <div>
-                <Label className="text-sm font-medium mb-2 flex items-center gap-2">
+                <Label className="text-sm font-medium mb-2 flex items-center gap-2 text-pink-800">
                   <FaLink className="w-4 h-4" />
                   Tracking Link
                 </Label>
@@ -63,7 +63,7 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
                   placeholder="https://www.shopee.com/s/xxxxxxxxxx"
                   value={deliverables.tracking_link || ""}
                   onChange={(e) => updateDeliverables({ tracking_link: e.target.value })}
-                  className="bg-white"
+                  className="bg-white border-pink-200 focus:border-pink-400"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   The main affiliate link that should be promoted across all platforms
@@ -94,10 +94,14 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
                   return (
                     <div
                       key={i}
-                      className="border-2 border-green-100 rounded-xl p-4 bg-gradient-to-br from-green-25 to-white"
+                      className="border-2 rounded-xl p-4 bg-gradient-to-br from-pink-25 to-white"
+                      style={{ borderColor: "#ff9fb2" }}
                     >
                       <div className="flex justify-between items-center mb-4">
-                        <Label className="font-semibold text-green-800 flex items-center gap-2">
+                        <Label
+                          className="font-semibold flex items-center gap-2"
+                          style={{ color: "#d6336c" }}
+                        >
                           <FaBullhorn className="w-4 h-4" />
                           Content #{i + 1}
                         </Label>
@@ -125,7 +129,7 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
                               updated[i] = { ...updated[i], name: e.target.value };
                               updateDeliverables({ advertised_items: updated });
                             }}
-                            className="bg-white"
+                            className="bg-white border-pink-200 focus:border-pink-400"
                           />
                           <Select
                             value={item.platform || ""}
@@ -135,7 +139,7 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
                               updateDeliverables({ advertised_items: updated });
                             }}
                           >
-                            <SelectTrigger className="bg-white">
+                            <SelectTrigger className="bg-white border-pink-200 focus:border-pink-400">
                               <SelectValue placeholder="Select platform" />
                             </SelectTrigger>
                             <SelectContent>
@@ -156,7 +160,7 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
                             updated[i] = { ...updated[i], tagline: e.target.value };
                             updateDeliverables({ advertised_items: updated });
                           }}
-                          className="bg-white"
+                          className="bg-white border-pink-200 focus:border-pink-400"
                         />
 
                         <Textarea
@@ -167,7 +171,7 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
                             updated[i] = { ...updated[i], description: e.target.value };
                             updateDeliverables({ advertised_items: updated });
                           }}
-                          className="bg-white"
+                          className="bg-white border-pink-200 focus:border-pink-400"
                         />
 
                         <Textarea
@@ -178,7 +182,7 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
                             updated[i] = { ...updated[i], creative_notes: e.target.value };
                             updateDeliverables({ advertised_items: updated });
                           }}
-                          className="bg-white"
+                          className="bg-white border-pink-200 focus:border-pink-400"
                         />
 
                         <DynamicListInput
@@ -245,24 +249,25 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
                     ],
                   })
                 }
-                className="w-full py-6 border-2 border-dashed border-green-200 hover:border-green-300 hover:bg-green-50"
+                className="w-full py-6 border-2 border-dashed hover:bg-pink-50"
+                style={{ borderColor: "#ff9fb2" }}
               >
-                <Plus className="w-5 h-5 mr-2" /> Add New Content
+                <Plus className="w-5 h-5 mr-2" style={{ color: "#ff9fb2" }} /> Add New Content
               </Button>
             </div>
           </CollapsibleSection>
 
           {/* Quick Actions */}
           {deliverables.platform && deliverables.platform.length > 0 && (
-            <Card className="bg-gradient-to-r from-blue-50 to-green-50 border-blue-200">
+            <Card className="bg-gradient-to-r from-pink-50 to-rose-50 border-pink-200">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="font-medium text-blue-900 flex items-center gap-2">
+                    <h4 className="font-medium text-pink-900 flex items-center gap-2">
                       <FaChartLine className="w-4 h-4" />
                       Quick Actions
                     </h4>
-                    <p className="text-sm text-blue-700">
+                    <p className="text-sm text-pink-700">
                       Create content for each platform automatically
                     </p>
                   </div>
@@ -282,7 +287,7 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
                         ],
                       });
                     }}
-                    className="bg-white hover:bg-blue-50 border-blue-300"
+                    className="bg-white hover:bg-pink-50 border-pink-300"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Add Content for Each Platform

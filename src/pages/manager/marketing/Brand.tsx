@@ -19,8 +19,7 @@ import {
 } from "@/components/ui/select";
 import { FaEye, FaPenToSquare, FaGlobe, FaFilter } from "react-icons/fa6";
 import { Switch } from "@/components/ui/switch";
-import { Trash, Loader2 } from "lucide-react";
-import { DeleteModal } from "@/components/modal/DeleteModal";
+import { Loader2 } from "lucide-react";
 import { StatusModal } from "@/components/modal/StatusModal";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -34,7 +33,6 @@ import { useNavigate } from "react-router";
 
 // Chuyển interface Partner thành type từ API
 interface Partner extends Brands {
-  total_contracts: number;
   isActive: boolean;
 }
 
@@ -78,7 +76,6 @@ const BrandPage: React.FC = () => {
   const partners: Partner[] = useMemo(() => {
     return brands.map((brandItem) => ({
       ...brandItem,
-      total_contracts: Math.floor(Math.random() * 20), // Mock data for contracts
       isActive: brandItem.status === "ACTIVE",
     }));
   }, [brands]);
@@ -157,7 +154,8 @@ const BrandPage: React.FC = () => {
                     <TableHead className="font-semibold">Email</TableHead>
                     <TableHead className="font-semibold">Phone</TableHead>
                     <TableHead className="font-semibold">Website</TableHead>
-                    <TableHead className="font-semibold">Contracts</TableHead>
+                    <TableHead className="font-semibold">Total Contracts</TableHead>
+                    <TableHead className="font-semibold">Active Contracts</TableHead>
                     <TableHead className="font-semibold">Status</TableHead>
                     <TableHead className="font-semibold">Actions</TableHead>
                   </TableRow>
@@ -237,10 +235,17 @@ const BrandPage: React.FC = () => {
                         )}
                       </TableCell>
 
-                      {/* Contracts */}
+                      {/* Total Contracts */}
                       <TableCell className="py-4">
                         <span className="font-semibold text-lg text-gray-900">
-                          {partner.total_contracts}
+                          {partner.number_of_contracts || 0}
+                        </span>
+                      </TableCell>
+
+                      {/* Active Contracts */}
+                      <TableCell className="py-4">
+                        <span className="font-semibold text-lg text-green-600">
+                          {partner.number_of_active_contracts || 0}
                         </span>
                       </TableCell>
 
@@ -276,7 +281,7 @@ const BrandPage: React.FC = () => {
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>View partner</p>
+                              <p>View brand</p>
                             </TooltipContent>
                           </Tooltip>
 
@@ -286,34 +291,17 @@ const BrandPage: React.FC = () => {
                                 variant="ghost"
                                 size="sm"
                                 className="h-8 w-8 p-0 hover:bg-yellow-50"
+                                onClick={() =>
+                                  navigate(`/manage/marketing/brands/edit/${partner.id}`)
+                                }
                               >
                                 <FaPenToSquare className="text-yellow-600" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>Edit partner</p>
+                              <p>Edit brand</p>
                             </TooltipContent>
                           </Tooltip>
-
-                          <Dialog>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <DialogTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 w-8 p-0 hover:bg-red-50"
-                                  >
-                                    <Trash className="text-red-600" />
-                                  </Button>
-                                </DialogTrigger>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Delete partner</p>
-                              </TooltipContent>
-                            </Tooltip>
-                            <DeleteModal name={partner.name} />
-                          </Dialog>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -353,8 +341,14 @@ const BrandPage: React.FC = () => {
                       </Badge>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm text-gray-500">Contracts</div>
-                      <div className="font-semibold text-lg">{partner.total_contracts}</div>
+                      <div className="text-sm text-gray-500">Total Contracts</div>
+                      <div className="font-semibold text-lg">
+                        {partner.number_of_contracts || 0}
+                      </div>
+                      <div className="text-sm text-gray-500">Active</div>
+                      <div className="font-semibold text-green-600">
+                        {partner.number_of_active_contracts || 0}
+                      </div>
                     </div>
                   </div>
 
@@ -411,7 +405,7 @@ const BrandPage: React.FC = () => {
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>View partner</p>
+                        <p>View brand</p>
                       </TooltipContent>
                     </Tooltip>
 
@@ -421,34 +415,15 @@ const BrandPage: React.FC = () => {
                           variant="ghost"
                           size="sm"
                           className="h-8 w-8 p-0 hover:bg-yellow-50"
+                          onClick={() => navigate(`/manage/marketing/brands/edit/${partner.id}`)}
                         >
                           <FaPenToSquare className="text-yellow-600" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Edit partner</p>
+                        <p>Edit brand</p>
                       </TooltipContent>
                     </Tooltip>
-
-                    <Dialog>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 hover:bg-red-50"
-                            >
-                              <Trash className="text-red-600" />
-                            </Button>
-                          </DialogTrigger>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Delete partner</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      <DeleteModal name={partner.name} />
-                    </Dialog>
                   </div>
                 </div>
               ))}
@@ -457,7 +432,7 @@ const BrandPage: React.FC = () => {
             {/* No results message */}
             {partners.length === 0 && (
               <div className="text-center py-8 text-gray-500">
-                No partners found matching your criteria.
+                No brands found matching your criteria.
               </div>
             )}
 

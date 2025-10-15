@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Review, CreateTask, CreateCampaign } from "@/components/manage/marketing/workflow";
+import { Review, CreateTask, CreateCampaign } from "./component";
 
 interface Assignee {
   id: string;
@@ -39,7 +39,6 @@ const AddCampaignPage: React.FC = () => {
     start_date: "", // YYYY-MM-DD
     end_date: "",
     contract_id: "",
-    budget_projected: "" as string | number,
   });
 
   // Milestones array
@@ -77,8 +76,6 @@ const AddCampaignPage: React.FC = () => {
       start_date: formatToISO(campaignData.start_date) || null,
       end_date: formatToISO(campaignData.end_date) || null,
       contract_id: campaignData.contract_id || null,
-      budget_projected:
-        campaignData.budget_projected === "" ? null : Number(campaignData.budget_projected),
       milestones: milestones.map((m) => ({
         description: m.description,
         due_date: formatToISO(m.due_date) || null,
@@ -108,7 +105,6 @@ const AddCampaignPage: React.FC = () => {
       start_date: "",
       end_date: "",
       contract_id: "",
-      budget_projected: "",
     });
     setMilestones([]);
     setSelectedContract(null);

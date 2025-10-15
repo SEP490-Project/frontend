@@ -39,10 +39,10 @@ const BrandAmbassadorScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateSc
 
   return (
     <div className="space-y-6">
-      <Card className="shadow-sm">
-        <CardHeader className="bg-gradient-to-r from-orange-50 to-amber-50">
-          <CardTitle className="flex items-center gap-2">
-            <FaCrown className="w-5 h-5 text-orange-600" />
+      <Card className="shadow-sm border border-pink-200">
+        <CardHeader className="bg-gradient-to-r from-pink-50 via-rose-50 to-pink-100">
+          <CardTitle className="flex items-center gap-2 text-pink-900">
+            <FaCrown className="w-5 h-5" style={{ color: "#ff9fb2" }} />
             Brand Ambassador Events & Appearances
           </CardTitle>
         </CardHeader>
@@ -59,10 +59,14 @@ const BrandAmbassadorScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateSc
                 return (
                   <div
                     key={i}
-                    className="border-2 border-orange-100 rounded-xl p-4 bg-gradient-to-br from-orange-25 to-white"
+                    className="border-2 rounded-xl p-4 bg-gradient-to-br from-pink-25 to-white"
+                    style={{ borderColor: "#ff9fb2" }}
                   >
                     <div className="flex justify-between items-center mb-4">
-                      <Label className="font-semibold text-orange-800 flex items-center gap-2">
+                      <Label
+                        className="font-semibold flex items-center gap-2"
+                        style={{ color: "#d6336c" }}
+                      >
                         <FaCalendarDay className="w-4 h-4" />
                         Event #{i + 1}
                       </Label>
@@ -81,7 +85,7 @@ const BrandAmbassadorScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateSc
                     <div className="space-y-4">
                       {/* Event Basic Info */}
                       <div>
-                        <Label className="text-sm font-medium mb-2 flex items-center gap-2">
+                        <Label className="text-sm font-medium mb-2 flex items-center gap-2 text-pink-800">
                           <FaCalendarDay className="w-4 h-4" />
                           Event Name
                         </Label>
@@ -93,13 +97,13 @@ const BrandAmbassadorScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateSc
                             updated[i] = { ...updated[i], name: e.target.value };
                             updateDeliverables({ events: updated });
                           }}
-                          className="bg-white"
+                          className="bg-white border-pink-200 focus:border-pink-400"
                         />
                       </div>
 
                       <div className="grid md:grid-cols-3 gap-4">
                         <div>
-                          <Label className="text-sm font-medium mb-2 flex items-center gap-2">
+                          <Label className="text-sm font-medium mb-2 flex items-center gap-2 text-pink-800">
                             <FaLocationDot className="w-4 h-4" />
                             Location
                           </Label>
@@ -111,7 +115,7 @@ const BrandAmbassadorScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateSc
                               updated[i] = { ...updated[i], location: e.target.value };
                               updateDeliverables({ events: updated });
                             }}
-                            className="bg-white"
+                            className="bg-white border-pink-200 focus:border-pink-400"
                           />
                           <p className="text-xs text-gray-500 mt-1">
                             Details will be aggregated with location API
@@ -119,7 +123,7 @@ const BrandAmbassadorScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateSc
                         </div>
 
                         <div>
-                          <Label className="text-sm font-medium mb-2 flex items-center gap-2">
+                          <Label className="text-sm font-medium mb-2 flex items-center gap-2 text-pink-800">
                             <FaCalendarDay className="w-4 h-4" />
                             Date & Time
                           </Label>
@@ -131,12 +135,12 @@ const BrandAmbassadorScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateSc
                               updated[i] = { ...updated[i], date: e.target.value };
                               updateDeliverables({ events: updated });
                             }}
-                            className="bg-white"
+                            className="bg-white border-pink-200 focus:border-pink-400"
                           />
                         </div>
 
                         <div>
-                          <Label className="text-sm font-medium mb-2 flex items-center gap-2">
+                          <Label className="text-sm font-medium mb-2 flex items-center gap-2 text-pink-800">
                             <FaClock className="w-4 h-4" />
                             Expected Duration
                           </Label>
@@ -148,7 +152,7 @@ const BrandAmbassadorScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateSc
                               updated[i] = { ...updated[i], expected_duration: e.target.value };
                               updateDeliverables({ events: updated });
                             }}
-                            className="bg-white"
+                            className="bg-white border-pink-200 focus:border-pink-400"
                           />
                         </div>
                       </div>
@@ -185,7 +189,7 @@ const BrandAmbassadorScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateSc
 
                       {/* KPIs */}
                       <div className="border-t pt-4">
-                        <Label className="text-sm font-medium mb-3 flex items-center gap-2">
+                        <Label className="text-sm font-medium mb-3 flex items-center gap-2 text-pink-800">
                           <FaChartLine className="w-4 h-4" />
                           Key Performance Indicators
                         </Label>
@@ -211,17 +215,21 @@ const BrandAmbassadorScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateSc
                     events: [...ensureArray(deliverables.events), newEvent()],
                   })
                 }
-                className="w-full py-6 border-2 border-dashed border-orange-200 hover:border-orange-300 hover:bg-orange-50"
+                className="w-full py-6 border-2 border-dashed hover:bg-pink-50"
+                style={{ borderColor: "#ff9fb2" }}
               >
-                <Plus className="w-5 h-5 mr-2" /> Add New Event
+                <Plus className="w-5 h-5 mr-2" style={{ color: "#ff9fb2" }} /> Add New Event
               </Button>
 
               {/* Empty State */}
               {ensureArray(deliverables.events).length === 0 && (
-                <div className="text-center py-12 bg-orange-50 rounded-lg border-2 border-dashed border-orange-200">
-                  <FaCalendarDay className="w-12 h-12 mx-auto text-orange-300 mb-4" />
-                  <h3 className="text-lg font-medium text-orange-900 mb-2">No Events Scheduled</h3>
-                  <p className="text-orange-700 mb-4">
+                <div
+                  className="text-center py-12 bg-pink-50 rounded-lg border-2 border-dashed"
+                  style={{ borderColor: "#ff9fb2" }}
+                >
+                  <FaCalendarDay className="w-12 h-12 mx-auto mb-4" style={{ color: "#ff9fb2" }} />
+                  <h3 className="text-lg font-medium text-pink-900 mb-2">No Events Scheduled</h3>
+                  <p className="text-pink-700 mb-4">
                     Add brand ambassador events like talk shows, photo shoots, or special
                     appearances.
                   </p>
@@ -232,7 +240,7 @@ const BrandAmbassadorScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateSc
                         events: [newEvent()],
                       })
                     }
-                    className="border-orange-300 text-orange-700 hover:bg-orange-100"
+                    className="border-pink-300 text-pink-700 hover:bg-pink-100"
                   >
                     <Plus className="w-4 h-4 mr-2" /> Create First Event
                   </Button>
@@ -243,21 +251,21 @@ const BrandAmbassadorScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateSc
 
           {/* Event Summary */}
           {ensureArray(deliverables.events).length > 0 && (
-            <Card className="bg-gradient-to-r from-blue-50 to-orange-50 border-blue-200">
+            <Card className="bg-gradient-to-r from-pink-50 to-rose-50 border-pink-200">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="font-medium text-blue-900 flex items-center gap-2">
+                    <h4 className="font-medium text-pink-900 flex items-center gap-2">
                       <FaChartLine className="w-4 h-4" />
                       Event Summary
                     </h4>
-                    <p className="text-sm text-blue-700">
+                    <p className="text-sm text-pink-700">
                       {ensureArray(deliverables.events).length} event(s) scheduled for brand
                       ambassador
                     </p>
                   </div>
                   <div className="text-right">
-                    <div className="text-2xl font-bold text-orange-600">
+                    <div className="text-2xl font-bold" style={{ color: "#ff9fb2" }}>
                       {ensureArray(deliverables.events).length}
                     </div>
                     <div className="text-xs text-gray-600">Total Events</div>

@@ -6,7 +6,6 @@ import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { DatePicker } from "@/components/date-picker";
-import { NumberInput } from "@/components/number-input";
 import { DataSelector } from "@/components/global";
 import { useAppDispatch } from "@/libs/stores";
 import { useContract } from "@/libs/hooks/useContract";
@@ -21,7 +20,6 @@ interface CampaignData {
   start_date: string;
   end_date: string;
   contract_id: string;
-  budget_projected: string | number;
 }
 
 interface CreateCampaignProps {
@@ -119,11 +117,6 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
     onContractSelect(selectedContract || null);
   };
 
-  // Handle budget change using the same format as FinancialTerms
-  const handleBudgetChange = (value: number) => {
-    setCampaignData((s) => ({ ...s, budget_projected: value }));
-  };
-
   // Handle date changes
   const handleStartDateChange = (date: string) => {
     setCampaignData((s) => ({ ...s, start_date: date }));
@@ -182,24 +175,6 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
                   Type automatically set from selected contract
                 </p>
               )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 shadow-sm">
-          <CardHeader>
-            <CardTitle>Budget</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <NumberInput
-              label="Projected Budget"
-              value={campaignData.budget_projected}
-              onChange={handleBudgetChange}
-              placeholder="10.000.000"
-              currency="VND"
-            />
-            <div className="text-xs text-gray-500">
-              <p>Enter the projected budget for this campaign</p>
             </div>
           </CardContent>
         </Card>

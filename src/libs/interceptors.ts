@@ -13,6 +13,13 @@ export const requestInterceptor = (
   if (token) {
     config.headers.set("Authorization", `Bearer ${token}`);
   }
+
+  if (config.data instanceof FormData) {
+    delete config.headers["Content-Type"];
+  } else {
+    config.headers.set("Content-Type", "application/json");
+  }
+
   return config;
 };
 

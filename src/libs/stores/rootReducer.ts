@@ -8,6 +8,7 @@ import { manageGoongReducer } from "./goongManager/slice";
 import { manageCampaignReducer } from "./campaignManager/slice";
 import { productManagerReducer } from "./productManager/slice";
 import { manageBankReducer } from "./bankManager/slice";
+import { manageFileReducer } from "./fileManager/slice";
 
 export const rootReducer = combineReducers({
   manageAuthen: manageAuthenReducer,
@@ -20,4 +21,5 @@ export const rootReducer = combineReducers({
   manageProduct: productManagerReducer,
   manageUserProfile: userProfileReducer,
   manageBank: manageBankReducer,
+  manageFile: manageFileReducer,
 });

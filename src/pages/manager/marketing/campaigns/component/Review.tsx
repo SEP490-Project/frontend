@@ -32,7 +32,6 @@ interface CampaignData {
   start_date: string;
   end_date: string;
   contract_id: string;
-  budget_projected: string | number;
 }
 
 interface ReviewProps {
@@ -79,10 +78,6 @@ const Review: React.FC<ReviewProps> = ({
                 {campaignData.start_date ? campaignData.start_date : "—"} →{" "}
                 {campaignData.end_date ? campaignData.end_date : "—"}
               </span>
-            </div>
-            <div className="flex justify-between border-b py-2">
-              <span className="text-sm text-gray-600">Projected Budget</span>
-              <span className="font-medium">{campaignData.budget_projected || "—"}</span>
             </div>
           </CardContent>
         </Card>

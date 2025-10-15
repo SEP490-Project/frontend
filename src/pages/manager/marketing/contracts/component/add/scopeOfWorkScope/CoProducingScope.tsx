@@ -77,10 +77,10 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
 
   return (
     <div className="space-y-6">
-      <Card className="shadow-sm">
-        <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50">
-          <CardTitle className="flex items-center gap-2">
-            <FaHandshake className="w-5 h-5 text-purple-600" />
+      <Card className="shadow-sm border border-pink-200">
+        <CardHeader className="bg-gradient-to-r from-pink-50 via-rose-50 to-pink-100">
+          <CardTitle className="flex items-center gap-2 text-pink-900">
+            <FaHandshake className="w-5 h-5" style={{ color: "#ff9fb2" }} />
             Co-Producing Deliverables
           </CardTitle>
         </CardHeader>
@@ -97,11 +97,15 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                 return (
                   <div
                     key={i}
-                    className="border-2 border-purple-100 rounded-xl p-4 bg-gradient-to-br from-purple-25 to-white"
+                    className="border-2 rounded-xl p-4 bg-gradient-to-br from-pink-25 to-white"
+                    style={{ borderColor: "#ff9fb2" }}
                   >
                     <div className="flex justify-between items-center mb-4">
                       <div className="flex items-center gap-2">
-                        <Label className="font-semibold text-purple-800 flex items-center gap-2">
+                        <Label
+                          className="font-semibold flex items-center gap-2"
+                          style={{ color: "#d6336c" }}
+                        >
                           <FaBullseye className="w-4 h-4" />
                           Product #{i + 1}
                         </Label>
@@ -133,7 +137,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                           updated[i] = { ...updated[i], name: e.target.value, id: i + 1 };
                           updateDeliverables({ products: updated });
                         }}
-                        className="bg-white"
+                        className="bg-white border-pink-200 focus:border-pink-400"
                       />
 
                       <Textarea
@@ -144,7 +148,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                           updated[i] = { ...updated[i], description: e.target.value };
                           updateDeliverables({ products: updated });
                         }}
-                        className="bg-white"
+                        className="bg-white border-pink-200 focus:border-pink-400"
                       />
 
                       <DynamicListInput
@@ -194,9 +198,10 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                     products: [...products, { ...newProduct(), id: products.length + 1 }],
                   })
                 }
-                className="w-full py-6 border-2 border-dashed border-purple-200 hover:border-purple-300 hover:bg-purple-50"
+                className="w-full py-6 border-2 border-dashed hover:bg-pink-50"
+                style={{ borderColor: "#ff9fb2" }}
               >
-                <Plus className="w-5 h-5 mr-2" /> Add New Product
+                <Plus className="w-5 h-5 mr-2" style={{ color: "#ff9fb2" }} /> Add New Product
               </Button>
             </div>
           </CollapsibleSection>
@@ -223,18 +228,22 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                 return (
                   <div
                     key={i}
-                    className="border-2 border-pink-100 rounded-xl p-4 bg-gradient-to-br from-pink-25 to-white"
+                    className="border-2 rounded-xl p-4 bg-gradient-to-br from-pink-25 to-white"
+                    style={{ borderColor: "#ff9fb2" }}
                   >
                     <div className="flex justify-between items-center mb-4">
                       <div className="flex items-center gap-2">
-                        <Label className="font-semibold text-pink-800 flex items-center gap-2">
+                        <Label
+                          className="font-semibold flex items-center gap-2"
+                          style={{ color: "#d6336c" }}
+                        >
                           <FaLightbulb className="w-4 h-4" />
                           Concept #{i + 1}
                         </Label>
                         {linkedProduct && (
                           <Badge
                             variant="outline"
-                            className="bg-purple-50 text-purple-700 border-purple-200"
+                            className="bg-pink-50 text-pink-700 border-pink-200"
                           >
                             <Link2 className="w-3 h-3 mr-1" />
                             {getProductDisplayName(linkedProduct, (c.product_id || 1) - 1)}
@@ -257,7 +266,9 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                       {/* Product Selection & Basic Info */}
                       <div className="grid md:grid-cols-2 gap-4">
                         <div>
-                          <Label className="text-sm font-medium mb-2 block">Linked Product</Label>
+                          <Label className="text-sm font-medium mb-2 block text-pink-800">
+                            Linked Product
+                          </Label>
                           <Select
                             value={c.product_id?.toString() || ""}
                             onValueChange={(value) => {
@@ -266,7 +277,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                               updateDeliverables({ concept: updated });
                             }}
                           >
-                            <SelectTrigger className="bg-white">
+                            <SelectTrigger className="bg-white border-pink-200 focus:border-pink-400">
                               <SelectValue placeholder="Select a product" />
                             </SelectTrigger>
                             <SelectContent>
@@ -283,7 +294,9 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                         </div>
 
                         <div>
-                          <Label className="text-sm font-medium mb-2 block">Platform</Label>
+                          <Label className="text-sm font-medium mb-2 block text-pink-800">
+                            Platform
+                          </Label>
                           <Select
                             value={c.platform || ""}
                             onValueChange={(value) => {
@@ -292,7 +305,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                               updateDeliverables({ concept: updated });
                             }}
                           >
-                            <SelectTrigger className="bg-white">
+                            <SelectTrigger className="bg-white border-pink-200 focus:border-pink-400">
                               <SelectValue placeholder="Select platform" />
                             </SelectTrigger>
                             <SelectContent>
@@ -314,7 +327,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                           updated[i] = { ...updated[i], name: e.target.value };
                           updateDeliverables({ concept: updated });
                         }}
-                        className="bg-white"
+                        className="bg-white border-pink-200 focus:border-pink-400"
                       />
 
                       <Input
@@ -325,7 +338,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                           updated[i] = { ...updated[i], tagline: e.target.value };
                           updateDeliverables({ concept: updated });
                         }}
-                        className="bg-white"
+                        className="bg-white border-pink-200 focus:border-pink-400"
                       />
 
                       <Textarea
@@ -336,7 +349,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                           updated[i] = { ...updated[i], description: e.target.value };
                           updateDeliverables({ concept: updated });
                         }}
-                        className="bg-white"
+                        className="bg-white border-pink-200 focus:border-pink-400"
                       />
 
                       <Textarea
@@ -347,7 +360,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                           updated[i] = { ...updated[i], creative_notes: e.target.value };
                           updateDeliverables({ concept: updated });
                         }}
-                        className="bg-white"
+                        className="bg-white border-pink-200 focus:border-pink-400"
                       />
 
                       <DynamicListInput
@@ -408,9 +421,10 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                   })
                 }
                 disabled={products.length === 0}
-                className="w-full py-6 border-2 border-dashed border-pink-200 hover:border-pink-300 hover:bg-pink-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-6 border-2 border-dashed hover:bg-pink-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ borderColor: "#ff9fb2" }}
               >
-                <Plus className="w-5 h-5 mr-2" /> Add New Concept
+                <Plus className="w-5 h-5 mr-2" style={{ color: "#ff9fb2" }} /> Add New Concept
               </Button>
 
               {products.length === 0 && (
@@ -423,12 +437,12 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
 
           {/* Quick Actions */}
           {products.length > 0 && (
-            <Card className="bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200">
+            <Card className="bg-gradient-to-r from-pink-50 to-rose-50 border-pink-200">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="font-medium text-indigo-900">Quick Actions</h4>
-                    <p className="text-sm text-indigo-700">
+                    <h4 className="font-medium text-pink-900">Quick Actions</h4>
+                    <p className="text-sm text-pink-700">
                       Create concepts for all products at once
                     </p>
                   </div>
@@ -445,7 +459,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                         concept: [...concepts, ...newConcepts],
                       });
                     }}
-                    className="bg-white hover:bg-indigo-50 border-indigo-300"
+                    className="bg-white hover:bg-pink-50 border-pink-300"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Add Concept for Each Product

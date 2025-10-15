@@ -43,10 +43,10 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
 
   return (
     <div className="space-y-6">
-      <Card className="shadow-sm">
-        <CardHeader className="bg-gradient-to-r from-blue-50 to-cyan-50">
-          <CardTitle className="flex items-center gap-2">
-            <FaBullhorn className="w-5 h-5 text-blue-600" />
+      <Card className="shadow-sm border border-pink-200">
+        <CardHeader className="bg-gradient-to-r from-pink-50 via-rose-50 to-pink-100">
+          <CardTitle className="flex items-center gap-2 text-pink-900">
+            <FaBullhorn className="w-5 h-5" style={{ color: "#ff9fb2" }} />
             Advertising Campaign Deliverables
           </CardTitle>
         </CardHeader>
@@ -64,10 +64,14 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                   return (
                     <div
                       key={i}
-                      className="border-2 border-blue-100 rounded-xl p-4 bg-gradient-to-br from-blue-25 to-white"
+                      className="border-2 rounded-xl p-4 bg-gradient-to-br from-pink-25 to-white"
+                      style={{ borderColor: "#ff9fb2" }}
                     >
                       <div className="flex justify-between items-center mb-4">
-                        <Label className="font-semibold text-blue-800 flex items-center gap-2">
+                        <Label
+                          className="font-semibold flex items-center gap-2"
+                          style={{ color: "#d6336c" }}
+                        >
                           <FaBullseye className="w-4 h-4" />
                           Ad Content #{i + 1}
                         </Label>
@@ -95,7 +99,7 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                               updated[i] = { ...updated[i], name: e.target.value };
                               updateDeliverables({ advertising_items: updated });
                             }}
-                            className="bg-white"
+                            className="bg-white border-pink-200 focus:border-pink-400"
                           />
                           <Select
                             value={item.platform || ""}
@@ -105,7 +109,7 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                               updateDeliverables({ advertising_items: updated });
                             }}
                           >
-                            <SelectTrigger className="bg-white">
+                            <SelectTrigger className="bg-white border-pink-200 focus:border-pink-400">
                               <SelectValue placeholder="Select platform" />
                             </SelectTrigger>
                             <SelectContent>
@@ -126,7 +130,7 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                             updated[i] = { ...updated[i], tagline: e.target.value };
                             updateDeliverables({ advertising_items: updated });
                           }}
-                          className="bg-white"
+                          className="bg-white border-pink-200 focus:border-pink-400"
                         />
 
                         <Textarea
@@ -137,7 +141,7 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                             updated[i] = { ...updated[i], description: e.target.value };
                             updateDeliverables({ advertising_items: updated });
                           }}
-                          className="bg-white"
+                          className="bg-white border-pink-200 focus:border-pink-400"
                         />
 
                         <Textarea
@@ -148,7 +152,7 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                             updated[i] = { ...updated[i], creative_notes: e.target.value };
                             updateDeliverables({ advertising_items: updated });
                           }}
-                          className="bg-white"
+                          className="bg-white border-pink-200 focus:border-pink-400"
                         />
 
                         <DynamicListInput
@@ -215,9 +219,10 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                     ],
                   })
                 }
-                className="w-full py-6 border-2 border-dashed border-blue-200 hover:border-blue-300 hover:bg-blue-50"
+                className="w-full py-6 border-2 border-dashed hover:bg-pink-50"
+                style={{ borderColor: "#ff9fb2" }}
               >
-                <Plus className="w-5 h-5 mr-2" /> Add New Advertisement
+                <Plus className="w-5 h-5 mr-2" style={{ color: "#ff9fb2" }} /> Add New Advertisement
               </Button>
             </div>
           </CollapsibleSection>

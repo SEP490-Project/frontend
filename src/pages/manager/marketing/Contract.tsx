@@ -18,11 +18,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FaEye, FaPenToSquare, FaFilter } from "react-icons/fa6";
-import { Trash, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import PaginationTable from "@/components/global/PaginationTable";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { DeleteModal } from "@/components/modal/DeleteModal";
 import { useNavigate } from "react-router";
 import { useContract } from "@/libs/hooks/useContract";
 import { useAppDispatch } from "@/libs/stores";
@@ -243,25 +241,6 @@ const ContractPage: React.FC = () => {
                               <p>Edit contract</p>
                             </TooltipContent>
                           </Tooltip>
-                          <Dialog>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <DialogTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 w-8 p-0 hover:bg-red-50"
-                                  >
-                                    <Trash className="text-red-600" />
-                                  </Button>
-                                </DialogTrigger>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Delete contract</p>
-                              </TooltipContent>
-                            </Tooltip>
-                            <DeleteModal name={contract.contract_number} />
-                          </Dialog>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -332,25 +311,6 @@ const ContractPage: React.FC = () => {
                         <p>Edit contract</p>
                       </TooltipContent>
                     </Tooltip>
-                    <Dialog>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 hover:bg-red-50"
-                            >
-                              <Trash className="text-red-600" />
-                            </Button>
-                          </DialogTrigger>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Delete contract</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      <DeleteModal name={contract.contract_number} />
-                    </Dialog>
                   </div>
                 </div>
               ))}

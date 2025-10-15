@@ -912,14 +912,11 @@ const AddContractPage: React.FC = () => {
                 const completedSteps = tabs.filter((t) => t.isCompleted).length;
                 const maxAllowedStep = Math.min(completedSteps + 1, INITIAL_TABS.length);
                 const isAccessible = tab.step <= maxAllowedStep;
-
                 return (
                   <TabsTrigger
                     key={tab.id}
                     value={tab.id}
-                    className={`flex-1 justify-center ${
-                      !isAccessible ? "opacity-50 cursor-not-allowed" : ""
-                    }`}
+                    className={`flex-1 justify-center ${!isAccessible ? "opacity-50 cursor-not-allowed" : ""}`}
                     disabled={!isAccessible}
                   >
                     <span className="mr-2 text-xs bg-gray-200 text-gray-700 rounded-full w-5 h-5 flex items-center justify-center">

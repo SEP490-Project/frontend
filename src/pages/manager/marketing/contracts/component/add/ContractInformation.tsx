@@ -12,16 +12,17 @@ import {
 } from "@/components/ui/select";
 import { DatePicker } from "@/components/date-picker";
 import { validateField } from "../../validation";
-import { DataSelector } from "@/components/global";
-import AddressSelector from "@/components/global/AddressSelector";
+import { DataSelector, AddressSelector } from "@/components/global";
 import { useAppDispatch } from "@/libs/stores";
 import { useBrand } from "@/libs/hooks/useBrand";
+import { useBank } from "@/libs/hooks/useBank";
 import {
   brand as fetchBrands,
   brandDetail as fetchBrandDetail,
 } from "@/libs/stores/brandManager/thunk";
+import { bankList } from "@/libs/stores/bankManager/thunk";
 import { useDebounce } from "@/libs/hooks/useDebounce";
-import { Mail, Phone, Globe, User, Building, FileText } from "lucide-react";
+import { Mail, Phone, Globe, User, Building, FileText, Landmark } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface ContractInformationProps {
@@ -86,7 +87,7 @@ const BrandCard = ({ brand }: { brand: any }) => {
         <img
           src={brand.logo_url}
           alt={brand.name}
-          className="h-12 w-12 rounded-lg object-cover border"
+          className="h-12 w-12 rounded-lg object-contain border"
         />
       ) : (
         <div className="h-12 w-12 rounded-lg bg-slate-100 flex items-center justify-center border">
@@ -114,6 +115,29 @@ const BrandCard = ({ brand }: { brand: any }) => {
   );
 };
 
+const BankCard = ({ bank }: { bank: any }) => {
+  if (!bank) return null;
+  return (
+    <div className="flex gap-3 items-center">
+      {bank.logo ? (
+        <img
+          src={bank.logo}
+          alt={bank.name}
+          className="h-12 w-12 rounded-lg object-contain border"
+        />
+      ) : (
+        <div className="h-8 w-8 rounded bg-slate-100 flex items-center justify-center border">
+          <Landmark className="h-4 w-4 text-slate-500" />
+        </div>
+      )}
+      <div className="flex-1">
+        <div className="font-medium text-sm text-slate-900">{bank.name}</div>
+        <div className="text-xs text-slate-500">{bank.code}</div>
+      </div>
+    </div>
+  );
+};
+
 const ContractInformation: React.FC<ContractInformationProps> = ({
   formData,
   onContractTypeChange,
@@ -123,12 +147,17 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
 }) => {
   const dispatch = useAppDispatch();
   const { brands, loading: brandLoading, pagination, brand } = useBrand();
+  const { bank: banks, loading: bankLoading } = useBank(); // Add this line
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 400);
   const [page, setPage] = useState(1);
   const [allBrands, setAllBrands] = useState<any[]>([]);
   const [brandDetailsOpen, setBrandDetailsOpen] = useState(false);
+
+  // Add bank search states
+  const [bankSearch, setBankSearch] = useState("");
+  const [filteredBanks, setFilteredBanks] = useState<any[]>([]);
 
   useEffect(() => {
     setAllBrands([]);
@@ -154,6 +183,25 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
     if (pagination?.has_next && !brandLoading) setPage((p) => p + 1);
   }, [pagination, brandLoading]);
 
+  // Add useEffect to fetch banks on component mount
+  useEffect(() => {
+    dispatch(bankList());
+  }, [dispatch]);
+
+  // Add useEffect to filter banks based on search
+  useEffect(() => {
+    if (!bankSearch) {
+      setFilteredBanks(banks);
+    } else {
+      const filtered = banks.filter(
+        (bank: any) =>
+          bank.name.toLowerCase().includes(bankSearch.toLowerCase()) ||
+          bank.code.toLowerCase().includes(bankSearch.toLowerCase()),
+      );
+      setFilteredBanks(filtered);
+    }
+  }, [banks, bankSearch]);
+
   // Handle brand selection with clear functionality
   const handleBrandSelect = (brandId: string | null) => {
     onInputChange("brandId", brandId || "");
@@ -162,6 +210,13 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
     if (!brandId) {
       setBrandDetailsOpen(false);
     }
+  };
+
+  // Add handler for bank selection
+  const handleBankSelect = (bankId: string | null) => {
+    const selectedBank = banks.find((bank: any) => bank.id.toString() === bankId);
+    onInputChange("brandBankName", selectedBank ? selectedBank.name : "");
+    onInputChange("selectedBankId", bankId || ""); // Store bank ID for reference
   };
 
   // fetch brand detail when brandId changes
@@ -533,7 +588,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                 <div className="space-y-3">
                   <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                     <div className="flex items-center gap-2">
-                      <Building className="h-5 w-5 text-slate-600" />
+                      <Landmark className="h-5 w-5 text-slate-600" />
                       <h4 className="text-sm font-semibold">Brand Banking Information</h4>
                     </div>
                     <Badge variant="outline" className="text-xs">
@@ -541,31 +596,51 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                     </Badge>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {[
-                      { label: "Bank Name", field: "brandBankName", placeholder: "Bank name" },
-                      {
-                        label: "Account Number",
-                        field: "brandBankAccountNumber",
-                        placeholder: "Account number",
-                      },
-                      {
-                        label: "Account Holder",
-                        field: "brandBankAccountHolder",
-                        placeholder: "Account holder full name",
-                      },
-                    ].map((field) => (
-                      <div key={field.field} className="space-y-1">
-                        <Label className="text-sm">{field.label}</Label>
-                        <Input
-                          value={formData[field.field] || ""}
-                          onChange={(e) => handleFieldChange(field.field, e.target.value)}
-                          placeholder={field.placeholder}
-                          className="h-11"
-                        />
-                        <FieldError message={errors[field.field]} />
-                      </div>
-                    ))}
+                  <div className="space-y-4">
+                    {/* Bank Selection using DataSelector */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Bank Name</Label>
+                      <DataSelector
+                        data={filteredBanks}
+                        selectedId={formData.selectedBankId}
+                        onSelect={handleBankSelect}
+                        renderItem={(bank) => <BankCard bank={bank} />}
+                        getLabel={(bank) => bank.name}
+                        title="Banks"
+                        placeholder="Search bank name..."
+                        onSearch={setBankSearch}
+                        searchValue={bankSearch}
+                        loading={bankLoading}
+                      />
+                      <FieldError message={errors.brandBankName} />
+                    </div>
+
+                    {/* Other banking fields */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {[
+                        {
+                          label: "Account Number",
+                          field: "brandBankAccountNumber",
+                          placeholder: "Account number",
+                        },
+                        {
+                          label: "Account Holder",
+                          field: "brandBankAccountHolder",
+                          placeholder: "Account holder full name",
+                        },
+                      ].map((field) => (
+                        <div key={field.field} className="space-y-1">
+                          <Label className="text-sm">{field.label}</Label>
+                          <Input
+                            value={formData[field.field] || ""}
+                            onChange={(e) => handleFieldChange(field.field, e.target.value)}
+                            placeholder={field.placeholder}
+                            className="h-11"
+                          />
+                          <FieldError message={errors[field.field]} />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
 

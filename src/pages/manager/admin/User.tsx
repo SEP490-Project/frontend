@@ -19,7 +19,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAppDispatch } from "@/libs/stores";
-import { getAllUsersThunk, updateUserStatusThunk } from "@/libs/stores/userManager/thunk";
+import {
+  activateBrandThunk,
+  getAllUsersThunk,
+  updateUserStatusThunk,
+} from "@/libs/stores/userManager/thunk";
 import type { UserParams } from "@/libs/types/user";
 import { useEffect, useState } from "react";
 
@@ -37,14 +41,22 @@ const UserPage: React.FC = () => {
     limit: 7,
   });
 
-  const onUpdateUserStatus = async (is_active: boolean, userId: string) => {
-    const result = await dispatch(updateUserStatusThunk({ is_active, userId }));
-
-    if (updateUserStatusThunk.fulfilled.match(result)) {
-      dispatch(getAllUsersThunk(params));
-      toast.success("User status updated successfully");
+  const onUpdateUserStatus = async (is_active: boolean, userId: string, userRole: string) => {
+    if (userRole === "BRAND_PARTNER") {
+      const activateResult = await dispatch(activateBrandThunk(userId));
+      if (activateBrandThunk.fulfilled.match(activateResult)) {
+        toast.success("Brand activated successfully");
+      } else {
+        toast.error("Failed to activate brand");
+      }
     } else {
-      toast.error("Failed to update user status");
+      const result = await dispatch(updateUserStatusThunk({ is_active, userId }));
+      if (updateUserStatusThunk.fulfilled.match(result)) {
+        dispatch(getAllUsersThunk(params));
+        toast.success("User status updated successfully");
+      } else {
+        toast.error("Failed to update user status");
+      }
     }
   };
 
@@ -144,7 +156,7 @@ const UserPage: React.FC = () => {
                           name={user.username}
                           status={user.is_active ? "Inactive" : "Active"}
                           onConfirm={() => {
-                            onUpdateUserStatus(!user.is_active, user.id);
+                            onUpdateUserStatus(!user.is_active, user.id, user.role);
                           }}
                         />
                       </Dialog>

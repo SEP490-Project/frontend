@@ -32,6 +32,7 @@ import {
   Review,
   Transaction,
 } from "@/pages/manager/sale";
+import { ContentApproval } from "@/pages/manager/marketing/content-approval";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -98,6 +99,7 @@ const AppRoutes = () => (
           <Route path="contracts/:id" element={<ContractDetail />} />
           <Route path="campaigns" element={<MarketingCampaign />} />
           <Route path="campaigns/add" element={<AddCampaign />} />
+          <Route path="contents" element={<ContentApproval />} />
         </Route>
       </Route>
 

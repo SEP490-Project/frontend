@@ -46,4 +46,20 @@ export const manageContent = {
     // Uncomment below for real API call
     // return api.patch(`/contents/${id}/unpublish`);
   },
+
+  approveContent: (id: string) => {
+    // Mock implementation for development - approve by updating status to 'posted'
+    console.log("Mock approve content:", id);
+    return Promise.resolve({ data: { success: true, message: "Content approved successfully" } });
+    // Uncomment below for real API call
+    // return api.patch(`/contents/${id}/approve`);
+  },
+
+  rejectContent: (id: string) => {
+    // Mock implementation for development - reject by updating status to 'draft'
+    console.log("Mock reject content:", id);
+    return Promise.resolve({ data: { success: true, message: "Content rejected successfully" } });
+    // Uncomment below for real API call
+    // return api.patch(`/contents/${id}/reject`);
+  },
 };

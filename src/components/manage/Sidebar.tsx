@@ -187,7 +187,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         icon: <FaListCheck size={18} />,
       },
       {
-        href: "/manage/marketing/contents",
+        href: "/manage/marketing/content-approval",
         label: "Contents",
         icon: <FaClipboardList size={18} />,
       },

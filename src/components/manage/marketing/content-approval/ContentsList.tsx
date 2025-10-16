@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -18,22 +19,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Eye, Check, X, Filter } from "lucide-react";
+import { Eye, Filter } from "lucide-react";
 import { PaginationTable } from "@/components/global";
 import type { Content, ContentListParams } from "@/libs/types/content";
 import { manageContent } from "@/libs/services/manageContent";
 
 interface ContentsListProps {
   onViewContent?: (content: Content) => void;
-  onApproveContent?: (content: Content) => void;
-  onRejectContent?: (content: Content) => void;
 }
 
-const ContentsList: React.FC<ContentsListProps> = ({
-  onViewContent,
-  onApproveContent,
-  onRejectContent,
-}) => {
+const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
   const [contents, setContents] = useState<Content[]>([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({
@@ -44,6 +39,8 @@ const ContentsList: React.FC<ContentsListProps> = ({
     has_next: false,
     has_prev: false,
   });
+
+  const navigate = useNavigate();
 
   // Filter states
   const [filters, setFilters] = useState<ContentListParams>({
@@ -63,7 +60,9 @@ const ContentsList: React.FC<ContentsListProps> = ({
       const response = await manageContent.contents(filters);
       // Type assertion to ensure proper typing
       const contentData = response.data.data as Content[];
-      setContents(contentData);
+      // Filter to only show blog content
+      const blogContent = contentData.filter((content) => content.content_type === "blog");
+      setContents(blogContent);
       setPagination(response.data.pagination);
     } catch (error) {
       console.error("Error fetching contents:", error);
@@ -86,14 +85,6 @@ const ContentsList: React.FC<ContentsListProps> = ({
   };
 
   // Handle filter changes
-  const handleStatusFilter = (status: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      status: status === "all" ? "" : status,
-      page: 1,
-    }));
-  };
-
   const handleActorFilter = (actor: string) => {
     setFilters((prev) => ({
       ...prev,
@@ -119,30 +110,14 @@ const ContentsList: React.FC<ContentsListProps> = ({
     setSearchInput("");
   };
 
-  // Get status badge variant
-  const getStatusVariant = (status: string) => {
-    switch (status) {
-      case "posted":
-        return "default";
-      case "pending":
-        return "secondary";
-      case "draft":
-        return "outline";
-      default:
-        return "outline";
-    }
+  // Get channel - only Website for blog content
+  const getChannel = () => {
+    return "Website";
   };
 
-  // Get content type badge variant
-  const getContentTypeVariant = (type: string) => {
-    switch (type) {
-      case "blog":
-        return "secondary";
-      case "video":
-        return "default";
-      default:
-        return "outline";
-    }
+  // Get channel badge variant - only Website variant needed
+  const getChannelVariant = (): "default" | "destructive" | "outline" | "secondary" => {
+    return "default";
   };
 
   // Format date
@@ -155,12 +130,53 @@ const ContentsList: React.FC<ContentsListProps> = ({
     });
   };
 
-  // Format views
-  const formatViews = (views: number) => {
-    if (views >= 1000) {
-      return `${(views / 1000).toFixed(1)}k`;
+  // Format status badge
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "posted":
+        return (
+          <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+            Published
+          </Badge>
+        );
+      case "pending":
+        return (
+          <Badge variant="default" className="bg-yellow-100 text-yellow-800 border-yellow-200">
+            Pending
+          </Badge>
+        );
+      case "draft":
+        return (
+          <Badge variant="default" className="bg-gray-100 text-gray-800 border-gray-200">
+            Draft
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="outline" className="text-gray-600">
+            {status}
+          </Badge>
+        );
     }
-    return views.toString();
+  };
+
+  // Format published date
+  const formatPublishedDate = (dateString: string | null) => {
+    if (!dateString) {
+      return "Not published";
+    }
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  // Handle view content
+  const handleViewContent = (content: Content) => {
+    navigate(`/manage/marketing/content-approval/preview/${content.id}`);
+    onViewContent?.(content);
   };
 
   return (
@@ -168,21 +184,17 @@ const ContentsList: React.FC<ContentsListProps> = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Content Approval</h1>
-          <p className="text-gray-600">Review and approve marketing content</p>
+          <h1 className="text-2xl font-semibold text-gray-900">Blog Content Approval</h1>
+          <p className="text-gray-600">Review and approve blog content for website publication</p>
         </div>
         <div className="flex items-center gap-3 text-sm text-gray-500">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-            <span>Pending Review</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span>Approved</span>
+            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+            <span>Blog Content</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-            <span>Draft</span>
+            <span>Website Channel</span>
           </div>
         </div>
       </div>
@@ -212,14 +224,23 @@ const ContentsList: React.FC<ContentsListProps> = ({
               </div>
 
               {/* Status Filter */}
-              <Select value={filters.status || "all"} onValueChange={handleStatusFilter}>
+              <Select
+                value={filters.status || "all"}
+                onValueChange={(status) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    status: status === "all" ? "" : status,
+                    page: 1,
+                  }))
+                }
+              >
                 <SelectTrigger className="w-32 h-9">
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="posted">Published</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="posted">Posted</SelectItem>
                   <SelectItem value="draft">Draft</SelectItem>
                 </SelectContent>
               </Select>
@@ -251,9 +272,9 @@ const ContentsList: React.FC<ContentsListProps> = ({
             <TableHeader>
               <TableRow className="bg-gray-50">
                 <TableHead className="font-semibold">Content</TableHead>
-                <TableHead className="font-semibold hidden sm:table-cell">Type</TableHead>
+                <TableHead className="font-semibold">Channel</TableHead>
                 <TableHead className="font-semibold">Status</TableHead>
-                <TableHead className="font-semibold hidden md:table-cell">Views</TableHead>
+                <TableHead className="font-semibold hidden md:table-cell">Date Published</TableHead>
                 <TableHead className="font-semibold hidden lg:table-cell">Author</TableHead>
                 <TableHead className="font-semibold hidden lg:table-cell">Created</TableHead>
                 <TableHead className="font-semibold text-right">Actions</TableHead>
@@ -265,14 +286,14 @@ const ContentsList: React.FC<ContentsListProps> = ({
                   <TableCell colSpan={7} className="text-center py-8">
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                      <span className="ml-2">Loading contents...</span>
+                      <span className="ml-2">Loading blog content...</span>
                     </div>
                   </TableCell>
                 </TableRow>
               ) : contents.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                    No content found
+                    No blog content found
                   </TableCell>
                 </TableRow>
               ) : (
@@ -300,21 +321,14 @@ const ContentsList: React.FC<ContentsListProps> = ({
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <Badge
-                        variant={getContentTypeVariant(content.content_type || "blog")}
-                        className="capitalize"
-                      >
-                        {content.content_type || "blog"}
-                      </Badge>
-                    </TableCell>
                     <TableCell>
-                      <Badge variant={getStatusVariant(content.status)} className="capitalize">
-                        {content.status}
+                      <Badge variant={getChannelVariant()} className="capitalize">
+                        {getChannel()}
                       </Badge>
                     </TableCell>
+                    <TableCell>{getStatusBadge(content.status)}</TableCell>
                     <TableCell className="text-sm text-gray-600 hidden md:table-cell">
-                      {formatViews(content.views)}
+                      {formatPublishedDate(content.status === "posted" ? content.date_time : null)}
                     </TableCell>
                     <TableCell className="text-sm text-gray-600 hidden lg:table-cell">
                       {content.actor}
@@ -323,38 +337,16 @@ const ContentsList: React.FC<ContentsListProps> = ({
                       {formatDate(content.created_at)}
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {/* View Button */}
+                      <div className="flex items-center justify-end">
+                        {/* View Button - Only Eye Icon */}
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => onViewContent?.(content)}
+                          onClick={() => handleViewContent(content)}
                           className="h-8 w-8 p-0"
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-
-                        {/* Approval Actions - only show for pending content */}
-                        {content.status === "pending" && (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => onApproveContent?.(content)}
-                              className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-                            >
-                              <Check className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => onRejectContent?.(content)}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
                       </div>
                     </TableCell>
                   </TableRow>

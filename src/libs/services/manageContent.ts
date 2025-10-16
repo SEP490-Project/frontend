@@ -19,7 +19,28 @@ export const manageContent = {
 
   createContent: (data: CreateContentRequest) => api.post("/contents", data),
 
-  contentDetail: (id: string) => api.get(`/contents/${id}`),
+  contentDetail: (id: string) => {
+    // Mock implementation for development
+    console.log("Using mock data for content detail, ID:", id);
+    const content = mockData.data.find((item) => item.id === id);
+    if (content) {
+      // Ensure proper typing for Content interface
+      const typedContent = {
+        ...content,
+        status: content.status as "posted" | "draft" | "pending",
+        content_type: content.content_type as "blog" | "video",
+      };
+      return Promise.resolve({
+        data: {
+          data: typedContent,
+        },
+      });
+    } else {
+      return Promise.reject(new Error("Content not found"));
+    }
+    // Uncomment below for real API call
+    // return api.get(`/contents/${id}`);
+  },
 
   updateContent: (data: UpdateContentRequest) => api.put(`/contents/${data.id}`, data),
 

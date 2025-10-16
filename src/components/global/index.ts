@@ -5,3 +5,4 @@ export { default as AvatarUploader } from "./AvatarUploader";
 export { default as AddressSelector } from "./AddressSelector";
 export { default as Editor } from "./Editor";
 export { default as WarningDialog } from "./WarningDialog";
+export { default as KPISelector } from "./KPISelector";

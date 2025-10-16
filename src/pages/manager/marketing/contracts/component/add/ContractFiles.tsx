@@ -8,6 +8,8 @@ interface ContractFilesProps {
   formData: any;
   onContractFilesChange: (files: File[]) => void;
   onProposalFilesChange: (files: File[]) => void;
+  onContractUrlsChange?: (urls: string[]) => void; // <-- Added
+  onProposalUrlsChange?: (urls: string[]) => void; // <-- Added
   onSubmit?: (e: React.FormEvent) => void;
 }
 
@@ -15,6 +17,8 @@ const ContractFiles: React.FC<ContractFilesProps> = ({
   formData,
   onContractFilesChange,
   onProposalFilesChange,
+  onContractUrlsChange, // <-- Thêm
+  onProposalUrlsChange, // <-- Thêm
 }) => {
   return (
     <div className="space-y-8">
@@ -34,6 +38,17 @@ const ContractFiles: React.FC<ContractFilesProps> = ({
               maxFiles={1}
               allowedTypes={["pdf", "doc", "docx"]}
               onFilesChange={onContractFilesChange}
+              onUploadComplete={(urls) => {
+                // Thêm URLs mới vào contract_file_url
+                const currentUrls = formData?.contract_file_url || [];
+                onContractUrlsChange?.([...currentUrls, ...urls]);
+              }}
+              onFilesRemove={(removedUrls) => {
+                // Xóa URLs khỏi contract_file_url
+                const currentUrls = formData?.contract_file_url || [];
+                const updatedUrls = currentUrls.filter((url: string) => !removedUrls.includes(url));
+                onContractUrlsChange?.(updatedUrls);
+              }}
               showPreview={false}
               title="Contract Files"
               showSummary
@@ -58,6 +73,17 @@ const ContractFiles: React.FC<ContractFilesProps> = ({
               maxFiles={1}
               allowedTypes={["pdf", "doc", "docx", "ppt", "pptx"]}
               onFilesChange={onProposalFilesChange}
+              onUploadComplete={(urls) => {
+                // Thêm URLs mới vào proposal_file_url
+                const currentUrls = formData?.proposal_file_url || [];
+                onProposalUrlsChange?.([...currentUrls, ...urls]);
+              }}
+              onFilesRemove={(removedUrls) => {
+                // Xóa URLs khỏi proposal_file_url
+                const currentUrls = formData?.proposal_file_url || [];
+                const updatedUrls = currentUrls.filter((url: string) => !removedUrls.includes(url));
+                onProposalUrlsChange?.(updatedUrls);
+              }}
               showPreview={false}
               title="Proposal Files"
               showSummary

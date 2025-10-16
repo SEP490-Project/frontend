@@ -219,6 +219,9 @@ const ContractPage: React.FC = () => {
                                 variant="ghost"
                                 size="sm"
                                 className="h-8 w-8 p-0 hover:bg-blue-50"
+                                onClick={() =>
+                                  navigate(`/manage/marketing/contracts/${contract.id}`)
+                                }
                               >
                                 <FaEye className="text-blue-600" />
                               </Button>
@@ -227,20 +230,27 @@ const ContractPage: React.FC = () => {
                               <p>View contract</p>
                             </TooltipContent>
                           </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 hover:bg-yellow-50"
-                              >
-                                <FaPenToSquare className="text-yellow-600" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Edit contract</p>
-                            </TooltipContent>
-                          </Tooltip>
+
+                          {/* Chỉ hiển thị nút edit khi status là DRAFT */}
+                          {contract.status === "DRAFT" && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 hover:bg-yellow-50"
+                                  onClick={() =>
+                                    navigate(`/manage/marketing/contracts/edit/${contract.id}`)
+                                  }
+                                >
+                                  <FaPenToSquare className="text-yellow-600" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Edit contract</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -289,7 +299,12 @@ const ContractPage: React.FC = () => {
                   <div className="flex gap-1 pt-2">
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-blue-50">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 hover:bg-blue-50"
+                          onClick={() => navigate(`/manage/marketing/contracts/${contract.id}`)}
+                        >
                           <FaEye className="text-blue-600" />
                         </Button>
                       </TooltipTrigger>
@@ -297,20 +312,27 @@ const ContractPage: React.FC = () => {
                         <p>View contract</p>
                       </TooltipContent>
                     </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 hover:bg-yellow-50"
-                        >
-                          <FaPenToSquare className="text-yellow-600" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Edit contract</p>
-                      </TooltipContent>
-                    </Tooltip>
+
+                    {/* Chỉ hiển thị nút edit khi status là DRAFT */}
+                    {contract.status === "DRAFT" && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-yellow-50"
+                            onClick={() =>
+                              navigate(`/manage/marketing/contracts/edit/${contract.id}`)
+                            }
+                          >
+                            <FaPenToSquare className="text-yellow-600" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Edit contract</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
                   </div>
                 </div>
               ))}

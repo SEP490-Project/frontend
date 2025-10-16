@@ -13,7 +13,7 @@ export const uploadFilesThunk = createAsyncThunk<UploadResponse, FilePayload>(
       });
 
       const response = await manageFile.uploadFiles(formData);
-      return response.data; // UploadResponse
+      return response.data.urls;
     } catch (error) {
       console.error("Upload error:", error);
       return rejectWithValue(error);

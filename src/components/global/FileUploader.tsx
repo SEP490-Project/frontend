@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import type { ReactElement } from "react";
 import { useAppDispatch } from "@/libs/stores";
 import { uploadFilesThunk } from "@/libs/stores/fileManager/thunk";
@@ -83,6 +83,8 @@ interface FileUploaderProps {
   title?: string;
   showSummary?: boolean;
   initialFiles?: File[];
+  onUploadComplete?: (urls: string[], fileItemId?: string) => void; // <--- added
+  onFilesRemove?: (removedUrls: string[]) => void; // <-- Thêm này
 }
 
 // Component
@@ -100,6 +102,8 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   title,
   showSummary = true,
   initialFiles = [],
+  onUploadComplete,
+  onFilesRemove, // <-- Thêm này
 }) => {
   const dispatch = useAppDispatch();
 
@@ -117,30 +121,33 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   const [error, setError] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const allowed =
-    allowedTypes.length > 0
-      ? allowedTypes
-      : [
-          "pdf",
-          "doc",
-          "docx",
-          "xls",
-          "xlsx",
-          "jpg",
-          "jpeg",
-          "png",
-          "gif",
-          "webp",
-          "mp4",
-          "avi",
-          "mov",
-          "wmv",
-          "mp3",
-          "wav",
-          "flac",
-          "zip",
-          "rar",
-        ];
+  const allowed = useMemo(
+    () =>
+      allowedTypes.length > 0
+        ? allowedTypes
+        : [
+            "pdf",
+            "doc",
+            "docx",
+            "xls",
+            "xlsx",
+            "jpg",
+            "jpeg",
+            "png",
+            "gif",
+            "webp",
+            "mp4",
+            "avi",
+            "mov",
+            "wmv",
+            "mp3",
+            "wav",
+            "flac",
+            "zip",
+            "rar",
+          ],
+    [allowedTypes],
+  );
 
   const validateFile = useCallback(
     (file: File) => {
@@ -153,29 +160,58 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     [maxSize, allowed],
   );
 
+  // Store uploaded URLs to track removals
+  const [uploadedUrls, setUploadedUrls] = useState<Record<string, string>>({});
+
   const handleUpload = useCallback(
     async (filesToUpload: FileItem[]) => {
-      for (const f of filesToUpload) {
-        try {
-          await dispatch(uploadFilesThunk({ userId, files: [f.file] })).unwrap();
+      try {
+        // Gom tất cả files lại gửi 1 lần
+        const allFiles = filesToUpload.map((f) => f.file);
+        const result = await dispatch(uploadFilesThunk({ userId, files: allFiles })).unwrap();
 
-          setFiles((prev) =>
-            prev.map((fileItem) =>
-              fileItem.id === f.id ? { ...fileItem, progress: 100, status: "completed" } : fileItem,
-            ),
-          );
-        } catch (error) {
-          console.error("Upload failed:", error);
-          setFiles((prev) =>
-            prev.map((fileItem) =>
-              fileItem.id === f.id ? { ...fileItem, status: "error" } : fileItem,
-            ),
-          );
-          setError("Upload failed. Please try again.");
-        }
+        const extractUrls = (res: any): string[] => {
+          if (!res) return [];
+          if (Array.isArray(res)) return res.map((r) => r?.url || r);
+          if (typeof res === "object") return [res.url || JSON.stringify(res)];
+          if (typeof res === "string") return [res];
+          return [];
+        };
+
+        const urls = extractUrls(result);
+
+        // Store mapping of file ID to URL
+        const urlMapping: Record<string, string> = {};
+        filesToUpload.forEach((file, index) => {
+          if (urls[index]) {
+            urlMapping[file.id] = urls[index];
+          }
+        });
+        setUploadedUrls((prev) => ({ ...prev, ...urlMapping }));
+
+        onUploadComplete?.(urls);
+
+        // Cập nhật trạng thái tất cả thành completed
+        setFiles((prev) =>
+          prev.map((fileItem) =>
+            filesToUpload.some((f) => f.id === fileItem.id)
+              ? { ...fileItem, progress: 100, status: "completed" }
+              : fileItem,
+          ),
+        );
+      } catch (error) {
+        console.error("Upload failed:", error);
+        setError("Upload failed. Please try again.");
+        setFiles((prev) =>
+          prev.map((fileItem) =>
+            filesToUpload.some((f) => f.id === fileItem.id)
+              ? { ...fileItem, status: "error" }
+              : fileItem,
+          ),
+        );
       }
     },
-    [dispatch, userId],
+    [dispatch, userId, onUploadComplete],
   );
 
   const processFiles = useCallback(
@@ -216,6 +252,20 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       if (fileToRemove?.preview && fileToRemove.preview.startsWith("blob:")) {
         URL.revokeObjectURL(fileToRemove.preview);
       }
+
+      // Get the URL for this file and notify parent
+      const removedUrl = uploadedUrls[fileId];
+      if (removedUrl && onFilesRemove) {
+        onFilesRemove([removedUrl]);
+      }
+
+      // Remove from uploadedUrls tracking
+      setUploadedUrls((prev) => {
+        const updated = { ...prev };
+        delete updated[fileId];
+        return updated;
+      });
+
       const newFiles = prev.filter((f) => f.id !== fileId);
       onFilesChange?.(newFiles.map((f) => f.file));
       return newFiles;

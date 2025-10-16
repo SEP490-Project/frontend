@@ -5,46 +5,47 @@ export interface KPI {
 }
 
 export interface Product {
-  id?: number;
+  id: number;
   name: string;
-  description?: string;
-  promotion_plan?: string[];
-  material?: string[];
+  description: string;
+  material_url: string[];
   kpis?: KPI[];
 }
 
 export interface Concept {
-  product_id?: number;
-  platform?: string;
-  name?: string;
-  description?: string;
-  tagline?: string;
-  hashtags?: string[];
+  product_id: number;
+  platform: string;
+  name: string;
+  description: string;
+  tagline: string;
+  hash_tag: string[];
   creative_notes?: string;
   content_requirements?: string[];
-  materials?: string[];
+  material_url: string[];
   kpis?: KPI[];
 }
 
 export interface AdvertisingItem {
-  name?: string;
-  description?: string;
-  materials?: string[];
-  tagline?: string;
-  platform?: string;
-  hashtags?: string[];
+  id: number;
+  name: string;
+  description: string;
+  material_url: string[];
+  tagline: string;
+  platform: string;
+  hash_tag: string[];
   creative_notes?: string;
   content_requirements?: string[];
   kpis?: KPI[];
 }
 
 export interface EventItem {
-  name?: string;
-  date?: string;
-  location?: string;
-  expected_duration?: string;
-  activities?: string[];
-  representation_rules?: string[];
+  id: number;
+  name: string;
+  location: string;
+  date: string;
+  expected_duration: string;
+  activities: string[];
+  representation_rules: string[];
   kpis?: KPI[];
 }
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -51,14 +51,6 @@ const CONTRACT_TYPE_COLORS = {
   },
   CO_PRODUCING: { bg: "bg-violet-100", text: "text-violet-800", border: "border-violet-200" },
 } as const;
-
-const SAMPLE_BRAND_REPRESENTATIVE = {
-  brandRepresentativeName: "Nguyễn Văn A",
-  brandRepresentativePosition: "Marketing Manager",
-  brandRepresentativePhone: "+84 901 234 567",
-  brandRepresentativeEmail: "marketing@brand.com",
-  brandTaxNumber: "0123456789",
-};
 
 const SAMPLE_WEB_REPRESENTATIVE = {
   webRepresentativeName: "Nguyễn Minh Anh",
@@ -169,6 +161,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
       fetchBrands({
         page,
         limit: 10,
+        status: "ACTIVE",
         ...(debouncedSearch ? { keywords: debouncedSearch } : {}),
       }),
     );
@@ -214,9 +207,8 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
 
   // Add handler for bank selection
   const handleBankSelect = (bankId: string | null) => {
-    const selectedBank = banks.find((bank: any) => bank.id.toString() === bankId);
+    const selectedBank = banks.find((bank) => String(bank.id) === String(bankId));
     onInputChange("brandBankName", selectedBank ? selectedBank.name : "");
-    onInputChange("selectedBankId", bankId || ""); // Store bank ID for reference
   };
 
   // fetch brand detail when brandId changes
@@ -229,11 +221,21 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
     setBrandDetailsOpen(true);
   }, [formData.brandId, dispatch]);
 
-  // Autofill sample reps on mount (if empty)
+  // Add new useEffect to populate brand representative data
+  const brandRepData = useMemo(() => {
+    if (!formData.brandId || !brand) return {};
+    return {
+      brandRepresentativeName: brand.representative_name || "",
+      brandRepresentativePosition: brand.representative_role || "",
+      brandRepresentativePhone: brand.contact_phone || "",
+      brandRepresentativeEmail: brand.contact_email || "",
+      brandTaxNumber: brand.tax_number || "",
+    };
+  }, [formData.brandId, brand]);
+
+  // Autofill sample reps on mount (if empty) - Remove brand rep sample data
   useEffect(() => {
-    Object.entries(SAMPLE_BRAND_REPRESENTATIVE).forEach(([key, value]) => {
-      if (!formData[key]) onInputChange(key, value);
-    });
+    // Only autofill web representative sample data
     Object.entries(SAMPLE_WEB_REPRESENTATIVE).forEach(([key, value]) => {
       if (!formData[key]) onInputChange(key, value);
     });
@@ -553,7 +555,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
               </CardHeader>
 
               <CardContent className="space-y-6">
-                {/* Brand Representative (disabled) */}
+                {/* Brand Representative (now populated from brand data) */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                     <div className="flex items-center gap-2">
@@ -561,7 +563,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                       <h4 className="text-sm font-semibold">Brand Representative (Party A)</h4>
                     </div>
                     <Badge variant="secondary" className="text-xs">
-                      Auto-filled
+                      {formData.brandId ? "From Brand Data" : "Auto-filled"}
                     </Badge>
                   </div>
 
@@ -574,7 +576,11 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                         </Label>
                         <Input
                           disabled
-                          value={formData[f.field] || ""}
+                          value={
+                            formData[f.field] ||
+                            (brandRepData as Record<string, string>)[f.field] ||
+                            ""
+                          }
                           placeholder={f.placeholder}
                           className="h-11 bg-slate-50"
                         />
@@ -602,7 +608,12 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                       <Label className="text-sm font-medium">Bank Name</Label>
                       <DataSelector
                         data={filteredBanks}
-                        selectedId={formData.selectedBankId}
+                        selectedId={
+                          // Find bank ID based on stored bank name
+                          banks
+                            .find((bank: any) => bank.name === formData.brandBankName)
+                            ?.id?.toString() || ""
+                        }
                         onSelect={handleBankSelect}
                         renderItem={(bank) => <BankCard bank={bank} />}
                         getLabel={(bank) => bank.name}

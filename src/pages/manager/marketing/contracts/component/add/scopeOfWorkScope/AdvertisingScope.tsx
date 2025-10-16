@@ -12,9 +12,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Trash2 } from "lucide-react";
-import { FaBullhorn, FaBullseye, FaHashtag, FaPalette } from "react-icons/fa6";
-import { CollapsibleSection, KPIFields, DynamicListInput } from "../shared/SharedComponents";
+import { FaBullhorn, FaBullseye, FaHashtag, FaPalette, FaChartLine } from "react-icons/fa6";
+import { CollapsibleSection, DynamicListInput } from "../shared/SharedComponents";
 import type { AdvertisingItem, ScopeOfWorkProps } from "../types/scopeTypes";
+import FileUploader from "@/components/global/FileUploader";
+import { KPISelector } from "@/components/global";
 
 const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork }) => {
   const scope = formData?.scopeOfWork || {};
@@ -28,12 +30,13 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
   };
 
   const newAdvertisingItem = (): AdvertisingItem => ({
+    id: 0,
     name: "",
     description: "",
-    materials: [],
+    material_url: [],
     tagline: "",
     platform: "",
-    hashtags: [],
+    hash_tag: [],
     creative_notes: "",
     content_requirements: [],
     kpis: [],
@@ -91,79 +94,96 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
 
                       <div className="space-y-4">
                         <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <Label className="text-sm font-medium mb-2 block">Content Name</Label>
+                            <Input
+                              placeholder="Content name (e.g., Summer Sale Post)"
+                              value={item.name || ""}
+                              onChange={(e) => {
+                                const updated = [...items];
+                                updated[i] = { ...updated[i], name: e.target.value, id: i + 1 };
+                                updateDeliverables({ advertising_items: updated });
+                              }}
+                              className="bg-white border-pink-200 focus:border-pink-400"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium mb-2 block">Platform</Label>
+                            <Select
+                              value={item.platform || ""}
+                              onValueChange={(value) => {
+                                const updated = [...items];
+                                updated[i] = { ...updated[i], platform: value };
+                                updateDeliverables({ advertising_items: updated });
+                              }}
+                            >
+                              <SelectTrigger className="bg-white border-pink-200 focus:border-pink-400">
+                                <SelectValue placeholder="Select platform" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {platformOptions.map((platform) => (
+                                  <SelectItem key={platform} value={platform}>
+                                    {platform}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label className="text-sm font-medium mb-2 block">Tagline</Label>
                           <Input
-                            placeholder="Content name (e.g., Summer Sale Post)"
-                            value={item.name || ""}
+                            placeholder="Tagline"
+                            value={item.tagline || ""}
                             onChange={(e) => {
                               const updated = [...items];
-                              updated[i] = { ...updated[i], name: e.target.value };
+                              updated[i] = { ...updated[i], tagline: e.target.value };
                               updateDeliverables({ advertising_items: updated });
                             }}
                             className="bg-white border-pink-200 focus:border-pink-400"
                           />
-                          <Select
-                            value={item.platform || ""}
-                            onValueChange={(value) => {
-                              const updated = [...items];
-                              updated[i] = { ...updated[i], platform: value };
-                              updateDeliverables({ advertising_items: updated });
-                            }}
-                          >
-                            <SelectTrigger className="bg-white border-pink-200 focus:border-pink-400">
-                              <SelectValue placeholder="Select platform" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {platformOptions.map((platform) => (
-                                <SelectItem key={platform} value={platform}>
-                                  {platform}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
                         </div>
 
-                        <Input
-                          placeholder="Tagline / Call to Action"
-                          value={item.tagline || ""}
-                          onChange={(e) => {
-                            const updated = [...items];
-                            updated[i] = { ...updated[i], tagline: e.target.value };
-                            updateDeliverables({ advertising_items: updated });
-                          }}
-                          className="bg-white border-pink-200 focus:border-pink-400"
-                        />
+                        <div>
+                          <Label className="text-sm font-medium mb-2 block">
+                            Content Description
+                          </Label>
+                          <Textarea
+                            placeholder="Content description and messaging"
+                            value={item.description || ""}
+                            onChange={(e) => {
+                              const updated = [...items];
+                              updated[i] = { ...updated[i], description: e.target.value };
+                              updateDeliverables({ advertising_items: updated });
+                            }}
+                            className="bg-white border-pink-200 focus:border-pink-400"
+                          />
+                        </div>
 
-                        <Textarea
-                          placeholder="Content description and messaging"
-                          value={item.description || ""}
-                          onChange={(e) => {
-                            const updated = [...items];
-                            updated[i] = { ...updated[i], description: e.target.value };
-                            updateDeliverables({ advertising_items: updated });
-                          }}
-                          className="bg-white border-pink-200 focus:border-pink-400"
-                        />
-
-                        <Textarea
-                          placeholder="Creative notes, tone, style guidelines..."
-                          value={item.creative_notes || ""}
-                          onChange={(e) => {
-                            const updated = [...items];
-                            updated[i] = { ...updated[i], creative_notes: e.target.value };
-                            updateDeliverables({ advertising_items: updated });
-                          }}
-                          className="bg-white border-pink-200 focus:border-pink-400"
-                        />
+                        <div>
+                          <Label className="text-sm font-medium mb-2 block">Creative Notes</Label>
+                          <Textarea
+                            placeholder="Creative notes, tone, style guidelines..."
+                            value={item.creative_notes || ""}
+                            onChange={(e) => {
+                              const updated = [...items];
+                              updated[i] = { ...updated[i], creative_notes: e.target.value };
+                              updateDeliverables({ advertising_items: updated });
+                            }}
+                            className="bg-white border-pink-200 focus:border-pink-400"
+                          />
+                        </div>
 
                         <DynamicListInput
                           label="Hashtags"
                           icon={<FaHashtag className="w-4 h-4" />}
-                          items={item.hashtags || []}
+                          items={item.hash_tag || []}
                           placeholder="#sale #discount #limited"
                           helpText="Relevant hashtags for this advertising content"
-                          onChange={(hashtags) => {
+                          onChange={(hash_tag) => {
                             const updated = [...items];
-                            updated[i] = { ...updated[i], hashtags };
+                            updated[i] = { ...updated[i], hash_tag };
                             updateDeliverables({ advertising_items: updated });
                           }}
                         />
@@ -182,27 +202,66 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                           }}
                         />
 
-                        <DynamicListInput
-                          label="Creative Assets"
-                          icon={<FaPalette className="w-4 h-4" />}
-                          items={item.materials || []}
-                          placeholder="https://drive.google.com/..."
-                          helpText="Links to images, videos, graphics, or other creative materials"
-                          onChange={(materials) => {
-                            const updated = [...items];
-                            updated[i] = { ...updated[i], materials };
-                            updateDeliverables({ advertising_items: updated });
-                          }}
-                        />
+                        <div>
+                          <Label className="text-sm font-medium mb-2 flex items-center gap-2 text-pink-800">
+                            <FaPalette className="w-4 h-4" />
+                            Creative Assets
+                          </Label>
+                          <FileUploader
+                            userId={formData?.brand_id || "unknown"}
+                            accept="image/*,video/*"
+                            multiple={true}
+                            maxFiles={10}
+                            maxSize={100}
+                            allowedTypes={["jpg", "jpeg", "png", "webp", "mp4", "mov", "avi"]}
+                            title="Upload creative assets"
+                            onUploadComplete={(urls) => {
+                              const updated = [...items];
+                              updated[i] = {
+                                ...updated[i],
+                                material_url: [...(updated[i].material_url || []), ...urls],
+                              };
+                              updateDeliverables({ advertising_items: updated });
+                            }}
+                            onFilesRemove={(removedUrls) => {
+                              const updated = [...items];
+                              const currentUrls = updated[i].material_url || [];
+                              updated[i] = {
+                                ...updated[i],
+                                material_url: currentUrls.filter(
+                                  (url: string) => !removedUrls.includes(url),
+                                ),
+                              };
+                              updateDeliverables({ advertising_items: updated });
+                            }}
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Upload images / videos. Uploaded file links will be added to
+                            material_url.
+                          </p>
+                        </div>
 
-                        <KPIFields
-                          kpis={item.kpis || []}
-                          onChange={(kpis) => {
-                            const updated = [...items];
-                            updated[i] = { ...updated[i], kpis };
-                            updateDeliverables({ advertising_items: updated });
-                          }}
-                        />
+                        {/* KPIs */}
+                        <div className="border-t pt-4">
+                          <Label className="text-sm font-medium mb-3 flex items-center gap-2 text-pink-800">
+                            <FaChartLine className="w-4 h-4" />
+                            Key Performance Indicators
+                          </Label>
+                          <KPISelector
+                            kpis={(item.kpis || []).map((kpi: any) => ({
+                              id: kpi.id ?? "",
+                              type: kpi.type ?? "",
+                              target_value: kpi.target_value ?? "",
+                              unit: kpi.unit ?? "",
+                              ...kpi,
+                            }))}
+                            onChange={(kpis) => {
+                              const updated = [...items];
+                              updated[i] = { ...updated[i], kpis };
+                              updateDeliverables({ advertising_items: updated });
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
                   );
@@ -215,7 +274,10 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                   updateDeliverables({
                     advertising_items: [
                       ...ensureArray(deliverables.advertising_items),
-                      newAdvertisingItem(),
+                      {
+                        ...newAdvertisingItem(),
+                        id: ensureArray(deliverables.advertising_items).length + 1,
+                      },
                     ],
                   })
                 }

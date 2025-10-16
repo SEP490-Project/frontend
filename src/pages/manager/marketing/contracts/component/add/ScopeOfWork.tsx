@@ -2,14 +2,7 @@ import React, { memo, useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  FaFileLines,
-  FaEye,
-  FaEyeSlash,
-  FaFloppyDisk,
-  FaTriangleExclamation,
-  FaCircleCheck,
-} from "react-icons/fa6";
+import { FaFileLines, FaEye, FaEyeSlash, FaFloppyDisk, FaCircleCheck } from "react-icons/fa6";
 import { GeneralRequirements } from "./shared/SharedComponents";
 import {
   AdvertisingScope,
@@ -33,7 +26,7 @@ const ScopeOfWork: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork
     issues: string[];
   }>({ isValid: false, issues: [] });
 
-  // Validation logic
+  // Validation logic (giữ nguyên)
   const validateScope = (currentScope: any, contractType: string) => {
     const issues: string[] = [];
     let isValid = false;
@@ -59,7 +52,6 @@ const ScopeOfWork: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork
           });
         }
 
-        // Check general requirements
         const generalReqs = currentScope.general_requirements || [];
         if (generalReqs.some((req: string) => !req.trim())) {
           issues.push("Empty general requirements should be removed");
@@ -150,17 +142,24 @@ const ScopeOfWork: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork
     return { isValid, issues };
   };
 
-  // Update validation when scope changes
   useEffect(() => {
     const status = validateScope(scope, CONTRACT_TYPE || "");
     setValidationStatus(status);
   }, [scope, CONTRACT_TYPE]);
 
-  // Cập nhật scope + gọi callback cha
   const updateScope = (partial: Partial<ScopeOfWorkShape>) => {
-    const updated = { ...scope, ...partial };
-    setScope(updated);
-    onUpdateScopeOfWork(updated);
+    setScope((prev) => {
+      const updated = {
+        ...prev,
+        ...partial,
+        deliverables: {
+          ...prev.deliverables,
+          ...partial.deliverables,
+        },
+      };
+      onUpdateScopeOfWork(updated);
+      return updated;
+    });
   };
 
   if (!CONTRACT_TYPE) {
@@ -179,15 +178,13 @@ const ScopeOfWork: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork
   const renderContractSpecificContent = () => {
     switch (CONTRACT_TYPE) {
       case "CO_PRODUCING":
-        return <CoProducingScope formData={formData} onUpdateScopeOfWork={onUpdateScopeOfWork} />;
+        return <CoProducingScope formData={formData} onUpdateScopeOfWork={updateScope} />;
       case "ADVERTISING":
-        return <AdvertisingScope formData={formData} onUpdateScopeOfWork={onUpdateScopeOfWork} />;
+        return <AdvertisingScope formData={formData} onUpdateScopeOfWork={updateScope} />;
       case "AFFILIATE":
-        return <AffiliateScope formData={formData} onUpdateScopeOfWork={onUpdateScopeOfWork} />;
+        return <AffiliateScope formData={formData} onUpdateScopeOfWork={updateScope} />;
       case "BRAND_AMBASSADOR":
-        return (
-          <BrandAmbassadorScope formData={formData} onUpdateScopeOfWork={onUpdateScopeOfWork} />
-        );
+        return <BrandAmbassadorScope formData={formData} onUpdateScopeOfWork={updateScope} />;
       default:
         return null;
     }
@@ -195,28 +192,6 @@ const ScopeOfWork: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork
 
   return (
     <div className="space-y-6">
-      {/* Validation Status Bar */}
-      {validationStatus.issues.length > 0 && (
-        <Card className="border-amber-200 bg-amber-50">
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-3">
-              <FaTriangleExclamation className="w-5 h-5 text-amber-600 mt-0.5" />
-              <div className="flex-1">
-                <h4 className="font-medium text-amber-800 mb-2">Validation Issues</h4>
-                <ul className="text-sm text-amber-700 space-y-1">
-                  {validationStatus.issues.map((issue, index) => (
-                    <li key={index} className="flex items-center gap-2">
-                      <span className="w-1 h-1 bg-amber-500 rounded-full"></span>
-                      {issue}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Success Status */}
       {validationStatus.isValid && (
         <Card className="border-green-200 bg-green-50">
@@ -247,29 +222,25 @@ const ScopeOfWork: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork
       <Card className="bg-gradient-to-r from-pink-50 to-rose-50 border-pink-200">
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div>
-                <h4 className="font-medium text-pink-900 flex items-center gap-2">
-                  <FaFileLines className="w-4 h-4" />
-                  Scope of Work Status
-                </h4>
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge
-                    variant={validationStatus.isValid ? "default" : "secondary"}
-                    className={
-                      validationStatus.isValid
-                        ? "bg-green-100 text-green-800"
-                        : "bg-amber-100 text-amber-800"
-                    }
-                  >
-                    {validationStatus.isValid
-                      ? "Complete"
-                      : `${validationStatus.issues.length} Issue${validationStatus.issues.length > 1 ? "s" : ""}`}
-                  </Badge>
-                  <span className="text-sm text-pink-700">
-                    Contract Type: {CONTRACT_TYPE.replace("_", " ")}
-                  </span>
-                </div>
+            <div>
+              <h4 className="font-medium text-pink-900 flex items-center gap-2">
+                <FaFileLines className="w-4 h-4" />
+                Scope of Work Status
+              </h4>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge
+                  variant={validationStatus.isValid ? "default" : "secondary"}
+                  className={
+                    validationStatus.isValid
+                      ? "bg-green-100 text-green-800"
+                      : "bg-amber-100 text-amber-800"
+                  }
+                >
+                  {validationStatus.isValid ? "Complete" : "Incomplete"}
+                </Badge>
+                <span className="text-sm text-pink-700">
+                  Contract Type: {CONTRACT_TYPE.replace("_", " ")}
+                </span>
               </div>
             </div>
 
@@ -313,7 +284,7 @@ const ScopeOfWork: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork
         </CardContent>
       </Card>
 
-      {/* Preview Section */}
+      {/* JSON Preview */}
       {previewOpen && (
         <Card className="border-pink-200">
           <CardHeader className="bg-gradient-to-r from-pink-50 via-rose-50 to-pink-100">

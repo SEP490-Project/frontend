@@ -16,18 +16,22 @@ import { Plus, Trash2, Link2, AlertCircle } from "lucide-react";
 import {
   FaHandshake,
   FaBullseye,
-  FaBullhorn,
   FaPalette,
   FaHashtag,
   FaLightbulb,
   FaNewspaper,
+  FaChartLine,
 } from "react-icons/fa6";
-import { CollapsibleSection, KPIFields, DynamicListInput } from "../shared/SharedComponents";
+import { CollapsibleSection, DynamicListInput } from "../shared/SharedComponents";
 import type { Product, Concept, ScopeOfWorkProps } from "../types/scopeTypes";
+import FileUploader from "@/components/global/FileUploader";
+import { KPISelector } from "@/components/global";
+import { useAuth } from "@/libs/hooks/useAuth";
 
 const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork }) => {
   const scope = formData?.scopeOfWork || {};
   const deliverables = scope.deliverables || {};
+  const { user } = useAuth();
 
   const ensureArray = (arr: any) => (Array.isArray(arr) ? arr : []);
 
@@ -37,23 +41,23 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
   };
 
   const newProduct = (): Product => ({
+    id: 0,
     name: "",
     description: "",
-    promotion_plan: [],
-    material: [],
+    material_url: [],
     kpis: [],
   });
 
   const newConcept = (): Concept => ({
-    product_id: undefined,
+    product_id: 0,
     platform: "",
     name: "",
     description: "",
     tagline: "",
-    hashtags: [],
+    hash_tag: [],
     creative_notes: "",
     content_requirements: [],
-    materials: [],
+    material_url: [],
     kpis: [],
   });
 
@@ -129,63 +133,96 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                     </div>
 
                     <div className="space-y-4">
-                      <Input
-                        placeholder="Product name"
-                        value={p.name || ""}
-                        onChange={(e) => {
-                          const updated = [...products];
-                          updated[i] = { ...updated[i], name: e.target.value, id: i + 1 };
-                          updateDeliverables({ products: updated });
-                        }}
-                        className="bg-white border-pink-200 focus:border-pink-400"
-                      />
+                      <div>
+                        <Label className="text-sm font-medium mb-2 block">Product Name</Label>
+                        <Input
+                          placeholder="Product name"
+                          value={p.name || ""}
+                          onChange={(e) => {
+                            const updated = [...products];
+                            updated[i] = { ...updated[i], name: e.target.value, id: i + 1 };
+                            updateDeliverables({ products: updated });
+                          }}
+                          className="bg-white border-pink-200 focus:border-pink-400"
+                        />
+                      </div>
 
-                      <Textarea
-                        placeholder="Product description"
-                        value={p.description || ""}
-                        onChange={(e) => {
-                          const updated = [...products];
-                          updated[i] = { ...updated[i], description: e.target.value };
-                          updateDeliverables({ products: updated });
-                        }}
-                        className="bg-white border-pink-200 focus:border-pink-400"
-                      />
+                      <div>
+                        <Label className="text-sm font-medium mb-2 block">
+                          Product Description
+                        </Label>
+                        <Textarea
+                          placeholder="Product description"
+                          value={p.description || ""}
+                          onChange={(e) => {
+                            const updated = [...products];
+                            updated[i] = { ...updated[i], description: e.target.value };
+                            updateDeliverables({ products: updated });
+                          }}
+                          className="bg-white border-pink-200 focus:border-pink-400"
+                        />
+                      </div>
 
-                      <DynamicListInput
-                        label="Promotion Plan"
-                        icon={<FaBullhorn className="w-4 h-4" />}
-                        items={p.promotion_plan || []}
-                        placeholder="e.g., 1 teaser post on Instagram"
-                        helpText="Define specific promotional activities for this product"
-                        multiline
-                        onChange={(items) => {
-                          const updated = [...products];
-                          updated[i] = { ...updated[i], promotion_plan: items };
-                          updateDeliverables({ products: updated });
-                        }}
-                      />
+                      <div>
+                        <Label className="text-sm font-medium mb-2 flex items-center gap-2 text-pink-800">
+                          <FaPalette className="w-4 h-4" />
+                          Product Materials
+                        </Label>
 
-                      <DynamicListInput
-                        label="Materials"
-                        icon={<FaPalette className="w-4 h-4" />}
-                        items={p.material || []}
-                        placeholder="https://drive.google.com/..."
-                        helpText="Links to images, videos, or other creative materials"
-                        onChange={(items) => {
-                          const updated = [...products];
-                          updated[i] = { ...updated[i], material: items };
-                          updateDeliverables({ products: updated });
-                        }}
-                      />
+                        <FileUploader
+                          userId={user?.id || "unknown"}
+                          accept="image/*,video/*"
+                          multiple={true}
+                          maxFiles={20}
+                          maxSize={200}
+                          allowedTypes={["jpg", "jpeg", "png", "webp", "mp4", "mov", "avi"]}
+                          title="Upload product materials"
+                          onUploadComplete={(urls) => {
+                            const updated = [...products];
+                            updated[i] = {
+                              ...updated[i],
+                              material_url: [...(updated[i].material_url || []), ...urls],
+                            };
+                            updateDeliverables({ products: updated });
+                          }}
+                          onFilesRemove={(removedUrls) => {
+                            const updated = [...products];
+                            const currentUrls = updated[i].material_url || [];
+                            updated[i] = {
+                              ...updated[i],
+                              material_url: currentUrls.filter(
+                                (url: string) => !removedUrls.includes(url),
+                              ),
+                            };
+                            updateDeliverables({ products: updated });
+                          }}
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Upload images / videos. Uploaded file links will be added to material_url.
+                        </p>
+                      </div>
 
-                      <KPIFields
-                        kpis={p.kpis || []}
-                        onChange={(v) => {
-                          const updated = [...products];
-                          updated[i] = { ...updated[i], kpis: v };
-                          updateDeliverables({ products: updated });
-                        }}
-                      />
+                      {/* KPIs */}
+                      <div className="border-t pt-4">
+                        <Label className="text-sm font-medium mb-3 flex items-center gap-2 text-pink-800">
+                          <FaChartLine className="w-4 h-4" />
+                          Key Performance Indicators
+                        </Label>
+                        <KPISelector
+                          kpis={(p.kpis || []).map((kpi: any) => ({
+                            id: kpi.id ?? "",
+                            type: kpi.type ?? "",
+                            target_value: kpi.target_value ?? "",
+                            unit: kpi.unit ?? "",
+                            ...kpi,
+                          }))}
+                          onChange={(kpis) => {
+                            const updated = [...products];
+                            updated[i] = { ...updated[i], kpis };
+                            updateDeliverables({ products: updated });
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
                 );
@@ -266,9 +303,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                       {/* Product Selection & Basic Info */}
                       <div className="grid md:grid-cols-2 gap-4">
                         <div>
-                          <Label className="text-sm font-medium mb-2 block text-pink-800">
-                            Linked Product
-                          </Label>
+                          <Label className="text-sm font-medium mb-2 block">Linked Product</Label>
                           <Select
                             value={c.product_id?.toString() || ""}
                             onValueChange={(value) => {
@@ -294,9 +329,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                         </div>
 
                         <div>
-                          <Label className="text-sm font-medium mb-2 block text-pink-800">
-                            Platform
-                          </Label>
+                          <Label className="text-sm font-medium mb-2 block">Platform</Label>
                           <Select
                             value={c.platform || ""}
                             onValueChange={(value) => {
@@ -319,58 +352,72 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                         </div>
                       </div>
 
-                      <Input
-                        placeholder="Concept name"
-                        value={c.name || ""}
-                        onChange={(e) => {
-                          const updated = [...concepts];
-                          updated[i] = { ...updated[i], name: e.target.value };
-                          updateDeliverables({ concept: updated });
-                        }}
-                        className="bg-white border-pink-200 focus:border-pink-400"
-                      />
+                      <div>
+                        <Label className="text-sm font-medium mb-2 block">Concept Name</Label>
+                        <Input
+                          placeholder="Concept name"
+                          value={c.name || ""}
+                          onChange={(e) => {
+                            const updated = [...concepts];
+                            updated[i] = { ...updated[i], name: e.target.value };
+                            updateDeliverables({ concept: updated });
+                          }}
+                          className="bg-white border-pink-200 focus:border-pink-400"
+                        />
+                      </div>
 
-                      <Input
-                        placeholder="Tagline"
-                        value={c.tagline || ""}
-                        onChange={(e) => {
-                          const updated = [...concepts];
-                          updated[i] = { ...updated[i], tagline: e.target.value };
-                          updateDeliverables({ concept: updated });
-                        }}
-                        className="bg-white border-pink-200 focus:border-pink-400"
-                      />
+                      <div>
+                        <Label className="text-sm font-medium mb-2 block">Tagline</Label>
+                        <Input
+                          placeholder="Tagline"
+                          value={c.tagline || ""}
+                          onChange={(e) => {
+                            const updated = [...concepts];
+                            updated[i] = { ...updated[i], tagline: e.target.value };
+                            updateDeliverables({ concept: updated });
+                          }}
+                          className="bg-white border-pink-200 focus:border-pink-400"
+                        />
+                      </div>
 
-                      <Textarea
-                        placeholder="Concept description"
-                        value={c.description || ""}
-                        onChange={(e) => {
-                          const updated = [...concepts];
-                          updated[i] = { ...updated[i], description: e.target.value };
-                          updateDeliverables({ concept: updated });
-                        }}
-                        className="bg-white border-pink-200 focus:border-pink-400"
-                      />
+                      <div>
+                        <Label className="text-sm font-medium mb-2 block">
+                          Concept Description
+                        </Label>
+                        <Textarea
+                          placeholder="Concept description"
+                          value={c.description || ""}
+                          onChange={(e) => {
+                            const updated = [...concepts];
+                            updated[i] = { ...updated[i], description: e.target.value };
+                            updateDeliverables({ concept: updated });
+                          }}
+                          className="bg-white border-pink-200 focus:border-pink-400"
+                        />
+                      </div>
 
-                      <Textarea
-                        placeholder="Creative notes and guidelines"
-                        value={c.creative_notes || ""}
-                        onChange={(e) => {
-                          const updated = [...concepts];
-                          updated[i] = { ...updated[i], creative_notes: e.target.value };
-                          updateDeliverables({ concept: updated });
-                        }}
-                        className="bg-white border-pink-200 focus:border-pink-400"
-                      />
+                      <div>
+                        <Label className="text-sm font-medium mb-2 block">Creative Notes</Label>
+                        <Textarea
+                          placeholder="Creative notes and guidelines"
+                          value={c.creative_notes || ""}
+                          onChange={(e) => {
+                            const updated = [...concepts];
+                            updated[i] = { ...updated[i], creative_notes: e.target.value };
+                            updateDeliverables({ concept: updated });
+                          }}
+                          className="bg-white border-pink-200 focus:border-pink-400"
+                        />
+                      </div>
 
                       <DynamicListInput
                         label="Hashtags"
                         icon={<FaHashtag className="w-4 h-4" />}
-                        items={c.hashtags || []}
+                        items={c.hash_tag || []}
                         placeholder="#example"
                         onChange={(items) => {
                           const updated = [...concepts];
-                          updated[i] = { ...updated[i], hashtags: items };
+                          updated[i] = { ...updated[i], hash_tag: items };
                           updateDeliverables({ concept: updated });
                         }}
                       />
@@ -388,26 +435,66 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                         }}
                       />
 
-                      <DynamicListInput
-                        label="Materials"
-                        icon={<FaPalette className="w-4 h-4" />}
-                        items={c.materials || []}
-                        placeholder="https://..."
-                        onChange={(items) => {
-                          const updated = [...concepts];
-                          updated[i] = { ...updated[i], materials: items };
-                          updateDeliverables({ concept: updated });
-                        }}
-                      />
+                      <div>
+                        <Label className="text-sm font-medium mb-2 flex items-center gap-2 text-pink-800">
+                          <FaPalette className="w-4 h-4" />
+                          Concept Materials
+                        </Label>
 
-                      <KPIFields
-                        kpis={c.kpis || []}
-                        onChange={(v) => {
-                          const updated = [...concepts];
-                          updated[i] = { ...updated[i], kpis: v };
-                          updateDeliverables({ concept: updated });
-                        }}
-                      />
+                        <FileUploader
+                          userId={formData?.brand_id || "unknown"}
+                          accept="image/*,video/*"
+                          multiple={true}
+                          maxFiles={20}
+                          maxSize={200}
+                          allowedTypes={["jpg", "jpeg", "png", "webp", "mp4", "mov", "avi"]}
+                          title="Upload concept materials"
+                          onUploadComplete={(urls) => {
+                            const updated = [...concepts];
+                            updated[i] = {
+                              ...updated[i],
+                              material_url: [...(updated[i].material_url || []), ...urls],
+                            };
+                            updateDeliverables({ concept: updated });
+                          }}
+                          onFilesRemove={(removedUrls) => {
+                            const updated = [...concepts];
+                            const currentUrls = updated[i].material_url || [];
+                            updated[i] = {
+                              ...updated[i],
+                              material_url: currentUrls.filter(
+                                (url: string) => !removedUrls.includes(url),
+                              ),
+                            };
+                            updateDeliverables({ concept: updated });
+                          }}
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Upload images / videos. Uploaded file links will be added to material_url.
+                        </p>
+                      </div>
+
+                      {/* KPIs */}
+                      <div className="border-t pt-4">
+                        <Label className="text-sm font-medium mb-3 flex items-center gap-2 text-pink-800">
+                          <FaChartLine className="w-4 h-4" />
+                          Key Performance Indicators
+                        </Label>
+                        <KPISelector
+                          kpis={(c.kpis || []).map((kpi: any) => ({
+                            id: kpi.id ?? "",
+                            type: kpi.type ?? "",
+                            target_value: kpi.target_value ?? "",
+                            unit: kpi.unit ?? "",
+                            ...kpi,
+                          }))}
+                          onChange={(kpis) => {
+                            const updated = [...concepts];
+                            updated[i] = { ...updated[i], kpis };
+                            updateDeliverables({ concept: updated });
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
                 );
@@ -434,40 +521,6 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
               )}
             </div>
           </CollapsibleSection>
-
-          {/* Quick Actions */}
-          {products.length > 0 && (
-            <Card className="bg-gradient-to-r from-pink-50 to-rose-50 border-pink-200">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium text-pink-900">Quick Actions</h4>
-                    <p className="text-sm text-pink-700">
-                      Create concepts for all products at once
-                    </p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      const newConcepts = products.map((product, index) => ({
-                        ...newConcept(),
-                        product_id: index + 1,
-                        name: `${getProductDisplayName(product, index)} Concept`,
-                        platform: "Website", // Default platform
-                      }));
-                      updateDeliverables({
-                        concept: [...concepts, ...newConcepts],
-                      });
-                    }}
-                    className="bg-white hover:bg-pink-50 border-pink-300"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Concept for Each Product
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </CardContent>
       </Card>
     </div>

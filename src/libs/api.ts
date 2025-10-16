@@ -53,11 +53,7 @@ api.interceptors.response.use(successInterceptor, async (error) => {
     }
 
     try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}auth/refresh`,
-        { refresh_token: refreshToken },
-        { headers: { "Content-Type": "application/json" } },
-      );
+      const response = await api.post("/auth/refresh", { refresh_token: refreshToken });
 
       const newAccessToken = response.data?.data?.access_token;
       setRaw("access_token", newAccessToken);

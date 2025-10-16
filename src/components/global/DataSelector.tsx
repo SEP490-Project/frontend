@@ -45,7 +45,7 @@ const DataSelector = <T extends { id: string }>({
   loading,
 }: DataSelectorProps<T>) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const selectedItem = data.find((item) => item.id === selectedId) || null;
+  const selectedItem = data.find((item) => String(item.id) === String(selectedId)) || null;
   const listRef = useRef<HTMLDivElement>(null);
 
   // Infinite scroll handler

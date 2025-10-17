@@ -47,4 +47,22 @@ const updateUserStatusThunk = createAsyncThunk(
   },
 );
 
-export { getProfileThunk, updateProfileThunk, getAllUsersThunk, updateUserStatusThunk };
+const activateBrandThunk = createAsyncThunk(
+  "userManager/activateBrand",
+  async (userId: string, thunkAPI) => {
+    try {
+      const response = await manageUser.activateBrand(userId);
+      return response.data as UserResponse<UserData>;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error);
+    }
+  },
+);
+
+export {
+  getProfileThunk,
+  updateProfileThunk,
+  getAllUsersThunk,
+  updateUserStatusThunk,
+  activateBrandThunk,
+};

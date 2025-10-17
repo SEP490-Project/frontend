@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { getAllUsersThunk, getProfileThunk, updateProfileThunk } from "./thunk";
+import { activateBrandThunk, getAllUsersThunk, getProfileThunk, updateProfileThunk } from "./thunk";
 import type { UserData, UserResponse } from "@/libs/types/user";
 
 const userProfileSlice = createSlice({
@@ -63,6 +63,16 @@ const userManagerSlice = createSlice({
       state.loading = false;
     });
     builder.addCase(updateProfileThunk.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string | null;
+    });
+    builder.addCase(activateBrandThunk.pending, (state) => {
+      state.loading = true;
+    });
+    builder.addCase(activateBrandThunk.fulfilled, (state) => {
+      state.loading = false;
+    });
+    builder.addCase(activateBrandThunk.rejected, (state, action) => {
       state.loading = false;
       state.error = action.payload as string | null;
     });

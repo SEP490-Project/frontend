@@ -136,7 +136,7 @@ const Product: React.FC = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-xl sm:text-2xl font-semibold">Products</h1>
         <Dialog>
-          <DialogTrigger>
+          <DialogTrigger asChild>
             <Button className="bg-primary hover:bg-[#f794a8] text-white">Add product</Button>
           </DialogTrigger>
           <TodayTaskDisplay tasks={mockTasks} />
@@ -250,6 +250,9 @@ const Product: React.FC = () => {
                       <StatusModal
                         name={product.name}
                         status={product.isActive ? "Inactive" : "Active"}
+                        onConfirm={() => {
+                          console.log("Hello world");
+                        }}
                       />
                     </Dialog>
                   </TableCell>

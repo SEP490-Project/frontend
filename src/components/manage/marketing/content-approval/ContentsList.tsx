@@ -84,15 +84,6 @@ const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
     }));
   };
 
-  // Handle filter changes
-  const handleActorFilter = (actor: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      actor: actor === "all" ? "" : actor,
-      page: 1,
-    }));
-  };
-
   // Handle pagination
   const handlePageChange = (page: number) => {
     setFilters((prev) => ({ ...prev, page }));
@@ -184,18 +175,7 @@ const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Blog Content Approval</h1>
-          <p className="text-gray-600">Review and approve blog content for website publication</p>
-        </div>
-        <div className="flex items-center gap-3 text-sm text-gray-500">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-            <span>Blog Content</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-            <span>Website Channel</span>
-          </div>
+          <h1 className="text-2xl font-semibold text-gray-900">Content</h1>
         </div>
       </div>
 
@@ -242,17 +222,6 @@ const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
                   <SelectItem value="posted">Published</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="draft">Draft</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Actor Filter */}
-              <Select value={filters.actor || "all"} onValueChange={handleActorFilter}>
-                <SelectTrigger className="w-36 h-9">
-                  <SelectValue placeholder="All Authors" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Authors</SelectItem>
-                  <SelectItem value="Content Staff">Content Staff</SelectItem>
                 </SelectContent>
               </Select>
 

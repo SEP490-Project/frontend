@@ -120,8 +120,8 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Header with Back Button */}
-      <div className="flex items-center gap-4">
+      {/* Header with Back Button and Approval Actions */}
+      <div className="flex items-center justify-between gap-4">
         <Button
           variant="ghost"
           onClick={onBack}
@@ -130,6 +130,27 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
           <ArrowLeft className="h-4 w-4" />
           Back
         </Button>
+
+        {/* Approval Actions in Header - Only show for pending content */}
+        {content && content.status === "pending" && (
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={() => onRejectContent?.(content)}
+              className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 px-4"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Reject
+            </Button>
+            <Button
+              onClick={() => onApproveContent?.(content)}
+              className="bg-pink-600 hover:bg-pink-700 text-white px-4"
+            >
+              <Check className="h-4 w-4 mr-2" />
+              Approve for Publication
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Content Preview */}
@@ -173,37 +194,6 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
           <div className="prose prose-base max-w-none text-gray-700 leading-relaxed mb-8">
             <div dangerouslySetInnerHTML={{ __html: content.html_content }} />
           </div>
-
-          {/* Approval Actions - Currently using mock handlers */}
-          {content.status === "pending" && (
-            <Card className="bg-gray-50 border-gray-200">
-              <CardContent className="p-4">
-                <div className="text-center">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Review This Content</h3>
-                  <p className="text-gray-600 mb-4">
-                    This blog post is pending your approval for publication.
-                  </p>
-                  <div className="flex items-center justify-center gap-3">
-                    <Button
-                      variant="outline"
-                      onClick={() => onRejectContent?.(content)}
-                      className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 px-4"
-                    >
-                      <X className="h-4 w-4 mr-2" />
-                      Reject
-                    </Button>
-                    <Button
-                      onClick={() => onApproveContent?.(content)}
-                      className="bg-green-600 hover:bg-green-700 text-white px-4"
-                    >
-                      <Check className="h-4 w-4 mr-2" />
-                      Approve for Publication
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </CardContent>
       </Card>
     </div>

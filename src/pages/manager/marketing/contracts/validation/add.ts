@@ -215,6 +215,11 @@ const contractSchema = yup.object({
     .array()
     .min(1, "Please upload at least one proposal file")
     .required("Proposal files are required"),
+  title: yup
+    .string()
+    .required("Contract title is required")
+    .min(5, "Contract title must be at least 5 characters long")
+    .max(200, "Contract title must not exceed 200 characters"),
 });
 
 // Real-time field validation

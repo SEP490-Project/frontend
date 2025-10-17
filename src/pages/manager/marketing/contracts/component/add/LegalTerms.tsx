@@ -9,6 +9,66 @@ interface LegalTermsProps {
 }
 
 const LegalTerms: React.FC<LegalTermsProps> = ({ formData, onInputChange }) => {
+  // Generate the legal terms JSON structure based on current form data
+  const generateLegalTermsJSON = () => {
+    const compensationPercent = formData.legalTerms?.compensationPercent || 0;
+
+    return {
+      legal_terms: {
+        breach_of_contract: {
+          label: "Breach of Contract",
+          items: [
+            {
+              title: "Party A (Brand) breaks the rules",
+              details: ["Contract terminates immediately", "Party A forfeits the deposit"],
+            },
+            {
+              title: "Party B (Service Provider) breaks the rules",
+              details: [
+                "Contract terminates immediately",
+                "Party B must refund the deposit",
+                `Party B pays additional ${compensationPercent}% compensation`,
+              ],
+              compensation_percent: Number(compensationPercent) || 0,
+            },
+            {
+              title: "Mutual agreement to terminate",
+              details: [
+                "Contract stops with no penalties",
+                "No compensation required from either party",
+              ],
+            },
+          ],
+        },
+        standard_terms: {
+          label: "Standard Terms",
+          items: [
+            {
+              title: "Confidentiality",
+              description:
+                "Both parties must keep all contract information confidential and cannot disclose to third parties without written consent",
+            },
+            {
+              title: "Dispute Resolution",
+              description:
+                "Disputes will be resolved through negotiation first, then legal proceedings if necessary",
+            },
+            {
+              title: "Contract Effectiveness",
+              description:
+                "Contract is effective from signature date until all obligations are fulfilled",
+            },
+            {
+              title: "Force Majeure",
+              description:
+                "Neither party is liable for failure to perform due to circumstances beyond their control, including natural disasters or government actions",
+            },
+          ],
+        },
+      },
+    };
+  };
+
   return (
     <div className="space-y-8">
       <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
@@ -131,6 +191,43 @@ const LegalTerms: React.FC<LegalTermsProps> = ({ formData, onInputChange }) => {
                 government
               </div>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* JSON Preview */}
+      <Card className="border-2 border-dashed border-blue-300 bg-blue-50/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg text-blue-800 flex items-center gap-2">
+            📋 Legal Terms JSON Preview
+          </CardTitle>
+          <p className="text-sm text-blue-600">
+            This is how the legal terms will be structured in the final contract
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="bg-gray-900 text-gray-100 p-4 rounded-lg font-mono text-xs overflow-auto max-h-96">
+            <pre>{JSON.stringify(generateLegalTermsJSON(), null, 2)}</pre>
+          </div>
+
+          {/* Key Information */}
+          <div className="mt-4 p-3 bg-blue-100 rounded-lg">
+            <h4 className="font-medium text-blue-900 mb-2">Key Information:</h4>
+            <ul className="text-sm text-blue-800 space-y-1">
+              <li>
+                • <strong>Compensation Percentage:</strong>{" "}
+                {formData.legalTerms?.compensationPercent || 0}% (adjustable above)
+              </li>
+              <li>
+                • <strong>Breach Scenarios:</strong> 3 predefined scenarios
+              </li>
+              <li>
+                • <strong>Standard Terms:</strong> 4 standard clauses
+              </li>
+              <li>
+                • <strong>Structure:</strong> Follows the required JSON format
+              </li>
+            </ul>
           </div>
         </CardContent>
       </Card>

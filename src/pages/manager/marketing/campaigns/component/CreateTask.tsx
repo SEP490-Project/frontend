@@ -11,20 +11,22 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { DatePicker } from "@/components/date-picker";
+import { FileUploader } from "@/components/global";
 import { Plus, Trash2 } from "lucide-react";
 
-interface Assignee {
-  id: string;
-  name: string;
+interface TaskDescription {
+  description: string;
+  material_url?: string;
 }
 
 interface Task {
   id: string;
   name: string;
   type: string;
-  description: string;
+  description: TaskDescription;
   deadline: string;
-  assigned_to: string;
+  materialFiles?: File[];
 }
 
 interface Milestone {
@@ -37,36 +39,55 @@ interface Milestone {
 interface CreateTaskProps {
   milestones: Milestone[];
   setMilestones: React.Dispatch<React.SetStateAction<Milestone[]>>;
-  mockAssignees: Assignee[];
+  selectedContract: any;
   onBack: () => void;
   onNext: () => void;
 }
 
+const getTaskTypeOptions = (contractType: string) => {
+  switch (contractType) {
+    case "ADVERTISING":
+    case "AFFILIATE":
+      return [{ value: "CONTENT", label: "Content" }];
+    case "BRAND_AMBASSADOR":
+      return [{ value: "EVENT", label: "Event" }];
+    case "CO_PRODUCING":
+      return [
+        { value: "CONTENT", label: "Content" },
+        { value: "PRODUCT", label: "Product" },
+      ];
+    default:
+      return [
+        { value: "CONTENT", label: "Content" },
+        { value: "PRODUCT", label: "Product" },
+        { value: "EVENT", label: "Event" },
+      ];
+  }
+};
+
 const CreateTask: React.FC<CreateTaskProps> = ({
   milestones,
   setMilestones,
-  mockAssignees,
+  selectedContract,
   onBack,
   onNext,
 }) => {
+  const taskTypeOptions = getTaskTypeOptions(selectedContract?.type || "");
+
   const addMilestone = () => {
     setMilestones((prev) => [
       ...prev,
-      {
-        id: crypto.randomUUID(),
-        description: "",
-        due_date: "",
-        tasks: [],
-      },
+      { id: crypto.randomUUID(), description: "", due_date: "", tasks: [] },
     ]);
   };
 
   const removeMilestone = (id: string) => setMilestones((prev) => prev.filter((m) => m.id !== id));
 
-  const updateMilestone = (id: string, patch: Partial<any>) =>
+  const updateMilestone = (id: string, patch: Partial<Milestone>) =>
     setMilestones((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)));
 
-  const addTask = (milestoneId: string) =>
+  const addTask = (milestoneId: string) => {
+    const defaultType = taskTypeOptions.length === 1 ? taskTypeOptions[0].value : "";
     setMilestones((prev) =>
       prev.map((m) =>
         m.id === milestoneId
@@ -77,16 +98,17 @@ const CreateTask: React.FC<CreateTaskProps> = ({
                 {
                   id: crypto.randomUUID(),
                   name: "",
-                  type: "",
-                  description: "",
+                  type: defaultType,
+                  description: { description: "", material_url: "" },
                   deadline: "",
-                  assigned_to: "",
+                  materialFiles: [],
                 },
               ],
             }
           : m,
       ),
     );
+  };
 
   const removeTask = (milestoneId: string, taskId: string) =>
     setMilestones((prev) =>
@@ -95,7 +117,7 @@ const CreateTask: React.FC<CreateTaskProps> = ({
       ),
     );
 
-  const updateTask = (milestoneId: string, taskId: string, patch: Partial<any>) =>
+  const updateTask = (milestoneId: string, taskId: string, patch: Partial<Task>) =>
     setMilestones((prev) =>
       prev.map((m) =>
         m.id === milestoneId
@@ -107,176 +129,181 @@ const CreateTask: React.FC<CreateTaskProps> = ({
       ),
     );
 
+  const handleTaskMaterialUpload = (milestoneId: string, taskId: string, urls: string[]) => {
+    const material_url = urls[0] || "";
+    const task = milestones.find((m) => m.id === milestoneId)?.tasks.find((t) => t.id === taskId);
+    if (task) {
+      updateTask(milestoneId, taskId, {
+        description: { ...task.description, material_url },
+      });
+    }
+  };
+
+  const handleTaskMaterialFilesChange = (milestoneId: string, taskId: string, files: File[]) => {
+    updateTask(milestoneId, taskId, { materialFiles: files });
+  };
+
+  const handleTaskMaterialRemove = (milestoneId: string, taskId: string) => {
+    const task = milestones.find((m) => m.id === milestoneId)?.tasks.find((t) => t.id === taskId);
+    if (task) {
+      updateTask(milestoneId, taskId, {
+        description: { ...task.description, material_url: "" },
+        materialFiles: [],
+      });
+    }
+  };
+
   return (
-    <div className="pt-6">
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-semibold">Milestones</h3>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" onClick={addMilestone} className="flex items-center gap-2">
-              <Plus size={14} /> Add Milestone
-            </Button>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          {milestones.length === 0 && (
-            <Card className="border-0">
-              <CardContent>
-                <p className="text-sm text-gray-600">
-                  No milestones yet. Click "Add Milestone" to start.
-                </p>
-              </CardContent>
-            </Card>
+    <div className="pt-6 space-y-4">
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="text-lg font-semibold">Milestones & Tasks</h3>
+          {selectedContract && (
+            <p className="text-sm text-gray-600 mt-1">
+              Contract: <span className="font-medium">{selectedContract.title}</span>{" "}
+              <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                {selectedContract.type.replace(/_/g, " ")}
+              </span>
+            </p>
           )}
-
-          {milestones.map((m, mi) => (
-            <Card key={m.id} className="border border-gray-200/60 shadow-sm">
-              <CardHeader className="flex justify-between items-center bg-gray-50 p-4">
-                <div>
-                  <CardTitle className="text-sm font-semibold">Milestone {mi + 1}</CardTitle>
-                  <p className="text-xs text-gray-500 mt-1">Due: {m.due_date || "Not set"}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeMilestone(m.id)}
-                    className="hover:text-red-600"
-                  >
-                    <Trash2 size={16} />
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4 p-4">
-                <div>
-                  <Label className="text-sm">Description</Label>
-                  <Textarea
-                    placeholder="Milestone description..."
-                    value={m.description}
-                    onChange={(e) => updateMilestone(m.id, { description: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm">Due Date</Label>
-                  <Input
-                    type="date"
-                    value={m.due_date}
-                    onChange={(e) => updateMilestone(m.id, { due_date: e.target.value })}
-                    className="h-11"
-                  />
-                </div>
-
-                {/* Tasks */}
-                <div className="space-y-3 mt-3">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm">Tasks</Label>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => addTask(m.id)}
-                      className="flex items-center gap-2"
-                    >
-                      <Plus size={12} /> Add Task
-                    </Button>
-                  </div>
-
-                  <div className="space-y-3">
-                    {m.tasks.map((t) => (
-                      <Card key={t.id} className="border rounded-md">
-                        <CardContent className="p-4">
-                          <div className="grid md:grid-cols-3 gap-3">
-                            <div>
-                              <Label className="text-sm">Task Name</Label>
-                              <Input
-                                placeholder="Design Banner Ads"
-                                value={t.name}
-                                onChange={(e) => updateTask(m.id, t.id, { name: e.target.value })}
-                              />
-                            </div>
-                            <div>
-                              <Label className="text-sm">Type</Label>
-                              <Input
-                                placeholder="e.g. PRODUCT"
-                                value={t.type}
-                                onChange={(e) => updateTask(m.id, t.id, { type: e.target.value })}
-                              />
-                            </div>
-                            <div>
-                              <Label className="text-sm">Deadline</Label>
-                              <Input
-                                type="date"
-                                value={t.deadline}
-                                onChange={(e) =>
-                                  updateTask(m.id, t.id, { deadline: e.target.value })
-                                }
-                                className="h-11"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="grid md:grid-cols-2 gap-3 mt-3">
-                            <div>
-                              <Label className="text-sm">Assigned To</Label>
-                              <Select
-                                onValueChange={(v) => updateTask(m.id, t.id, { assigned_to: v })}
-                                value={t.assigned_to || undefined}
-                              >
-                                <SelectTrigger className="h-11">
-                                  <SelectValue placeholder="Select assignee..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {mockAssignees.map((a) => (
-                                    <SelectItem key={a.id} value={a.id}>
-                                      {a.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            <div>
-                              <Label className="text-sm">Description</Label>
-                              <Textarea
-                                placeholder="Task details..."
-                                value={t.description}
-                                onChange={(e) =>
-                                  updateTask(m.id, t.id, { description: e.target.value })
-                                }
-                                className="min-h-[72px]"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="flex justify-end mt-3">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeTask(m.id, t.id)}
-                            >
-                              Remove Task
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
         </div>
+        <Button variant="ghost" onClick={addMilestone} className="flex items-center gap-2">
+          <Plus size={14} /> Add Milestone
+        </Button>
+      </div>
 
-        <div className="flex justify-between mt-4">
-          <Button variant="outline" onClick={onBack}>
-            Back
-          </Button>
-          <div className="flex gap-3">
-            <Button onClick={onNext} disabled={milestones.length === 0}>
-              Next
+      {milestones.map((m, mi) => (
+        <Card key={m.id} className="border border-gray-200/60 shadow-sm">
+          <CardHeader className="flex justify-between items-start bg-gray-50 p-4">
+            <div className="flex-1">
+              <CardTitle className="text-base font-semibold">Milestone {mi + 1}</CardTitle>
+              <p className="text-xs text-gray-500 mt-1">Due: {m.due_date || "Not set"}</p>
+              <p className="text-xs text-gray-500">Tasks: {m.tasks.length}</p>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => removeMilestone(m.id)}
+              className="hover:text-red-600 shrink-0"
+            >
+              <Trash2 size={16} />
             </Button>
-          </div>
-        </div>
+          </CardHeader>
+          <CardContent className="space-y-4 p-4">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm font-medium">Description *</Label>
+                <Textarea
+                  placeholder="Milestone description..."
+                  value={m.description}
+                  onChange={(e) => updateMilestone(m.id, { description: e.target.value })}
+                />
+              </div>
+              <DatePicker
+                label="Due Date"
+                value={m.due_date}
+                onChange={(date) => updateMilestone(m.id, { due_date: date })}
+              />
+            </div>
+
+            <div className="space-y-3 mt-6">
+              <div className="flex justify-between items-center">
+                <Label className="text-sm font-medium">Tasks</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => addTask(m.id)}
+                  className="flex items-center gap-2"
+                >
+                  <Plus size={12} /> Add Task
+                </Button>
+              </div>
+
+              {m.tasks.map((t, ti) => (
+                <Card key={t.id} className="border border-gray-100 bg-gray-50/50">
+                  <CardContent className="p-4">
+                    <div className="flex justify-between mb-3">
+                      <h5 className="text-sm font-medium">Task {ti + 1}</h5>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeTask(m.id, t.id)}
+                        className="hover:text-red-600"
+                      >
+                        <Trash2 size={14} />
+                      </Button>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-3">
+                      <Input
+                        placeholder="Task Name"
+                        value={t.name}
+                        onChange={(e) => updateTask(m.id, t.id, { name: e.target.value })}
+                      />
+                      <Select
+                        onValueChange={(v) => updateTask(m.id, t.id, { type: v })}
+                        value={t.type || undefined}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select task type..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {taskTypeOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <DatePicker
+                      label="Deadline"
+                      value={t.deadline}
+                      onChange={(date) => updateTask(m.id, t.id, { deadline: date })}
+                      maxDate={m.due_date || undefined}
+                    />
+                    <Textarea
+                      placeholder="Task Description"
+                      value={t.description?.description || ""}
+                      onChange={(e) =>
+                        updateTask(m.id, t.id, {
+                          description: { ...t.description, description: e.target.value },
+                        })
+                      }
+                    />
+                    <FileUploader
+                      userId="demo"
+                      multiple={false}
+                      maxFiles={1}
+                      onFilesChange={(files) => handleTaskMaterialFilesChange(m.id, t.id, files)}
+                      onUploadComplete={(urls) => handleTaskMaterialUpload(m.id, t.id, urls)}
+                      onFilesRemove={() => handleTaskMaterialRemove(m.id, t.id)}
+                    />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+
+      <div className="flex justify-between mt-6">
+        <Button variant="outline" onClick={onBack}>
+          Back
+        </Button>
+        <Button
+          onClick={onNext}
+          disabled={
+            milestones.length === 0 ||
+            milestones.some(
+              (m) =>
+                !m.description ||
+                !m.due_date ||
+                m.tasks.some((t) => !t.name || !t.type || !t.deadline),
+            )
+          }
+        >
+          Review & Submit
+        </Button>
       </div>
     </div>
   );

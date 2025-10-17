@@ -467,6 +467,21 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
 
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Contract Title - THÊM FIELD MỚI */}
+                  <div className="space-y-2 md:col-span-2">
+                    <Label className="text-sm font-medium">Contract Title *</Label>
+                    <Input
+                      value={formData.title || ""}
+                      onChange={(e) => handleFieldChange("title", e.target.value)}
+                      placeholder="Enter contract title (e.g. 'Brand Partnership Agreement for Digital Marketing Campaign')"
+                      className={`h-11 ${errors.title ? "border-red-500" : ""}`}
+                    />
+                    <p className="text-xs text-slate-500">
+                      A descriptive title that summarizes the purpose of this contract
+                    </p>
+                    <FieldError message={errors.title} />
+                  </div>
+
                   <AddressSelector
                     value={formData.signedLocation || ""}
                     onChange={(address) => handleFieldChange("signedLocation", address)}

@@ -1,8 +1,6 @@
 import React, { memo, useState, useEffect } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { FaFileLines, FaEye, FaEyeSlash, FaFloppyDisk, FaCircleCheck } from "react-icons/fa6";
+import { Card, CardContent } from "@/components/ui/card";
+import { FaFileLines, FaCircleCheck } from "react-icons/fa6";
 import { GeneralRequirements } from "./shared/SharedComponents";
 import {
   AdvertisingScope,
@@ -20,7 +18,6 @@ interface ScopeOfWorkProps {
 const ScopeOfWork: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork }) => {
   const CONTRACT_TYPE: CONTRACT_TYPE | undefined = formData?.type;
   const [scope, setScope] = useState<ScopeOfWorkShape>(formData?.scopeOfWork || {});
-  const [previewOpen, setPreviewOpen] = useState(false);
   const [validationStatus, setValidationStatus] = useState<{
     isValid: boolean;
     issues: string[];
@@ -217,99 +214,6 @@ const ScopeOfWork: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork
 
       {/* Contract-Specific Content */}
       {renderContractSpecificContent()}
-
-      {/* Action Bar */}
-      <Card className="bg-gradient-to-r from-pink-50 to-rose-50 border-pink-200">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-medium text-pink-900 flex items-center gap-2">
-                <FaFileLines className="w-4 h-4" />
-                Scope of Work Status
-              </h4>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge
-                  variant={validationStatus.isValid ? "default" : "secondary"}
-                  className={
-                    validationStatus.isValid
-                      ? "bg-green-100 text-green-800"
-                      : "bg-amber-100 text-amber-800"
-                  }
-                >
-                  {validationStatus.isValid ? "Complete" : "Incomplete"}
-                </Badge>
-                <span className="text-sm text-pink-700">
-                  Contract Type: {CONTRACT_TYPE.replace("_", " ")}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setPreviewOpen(!previewOpen)}
-                className="flex items-center gap-2 border-pink-200 text-pink-700 hover:bg-pink-50"
-              >
-                {previewOpen ? (
-                  <>
-                    <FaEyeSlash className="w-4 h-4" />
-                    Hide Preview
-                  </>
-                ) : (
-                  <>
-                    <FaEye className="w-4 h-4" />
-                    Preview JSON
-                  </>
-                )}
-              </Button>
-
-              <Button
-                onClick={() => {
-                  const normalized = {
-                    ...scope,
-                    CONTRACT_TYPE,
-                    deliverables: scope.deliverables || {},
-                  };
-                  onUpdateScopeOfWork(normalized);
-                  setPreviewOpen(true);
-                }}
-                className="flex items-center gap-2 bg-pink-600 hover:bg-pink-700 text-white"
-                style={{ backgroundColor: "#ff9fb2" }}
-              >
-                <FaFloppyDisk className="w-4 h-4" />
-                Save & Preview
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* JSON Preview */}
-      {previewOpen && (
-        <Card className="border-pink-200">
-          <CardHeader className="bg-gradient-to-r from-pink-50 via-rose-50 to-pink-100">
-            <CardTitle className="flex items-center gap-2 text-pink-900">
-              <FaFileLines className="w-5 h-5" style={{ color: "#ff9fb2" }} />
-              Scope of Work JSON Preview
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="relative">
-              <pre
-                className="text-xs max-h-96 overflow-auto bg-gray-900 text-green-400 p-4 rounded-lg font-mono border-2"
-                style={{ borderColor: "#ff9fb2" }}
-              >
-                {JSON.stringify({ ...scope, CONTRACT_TYPE, validation: validationStatus }, null, 2)}
-              </pre>
-              <div className="absolute top-2 right-2">
-                <Badge className="bg-pink-100 text-pink-800 border border-pink-200">
-                  {validationStatus.isValid ? "Valid" : "Invalid"}
-                </Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };

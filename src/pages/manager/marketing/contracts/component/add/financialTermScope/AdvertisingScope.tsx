@@ -4,20 +4,16 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FaDollarSign, FaPlus, FaTrash } from "react-icons/fa6";
-import { CurrencyInput, SelectField, PaymentSchedule } from "../shared/FinancialSharedComponent";
+import { CurrencyInput, PaymentSchedule } from "../shared/FinancialSharedComponent"; // Đã bỏ SelectField
 
-const PAYMENT_METHOD_OPTIONS = [
-  { value: "BANK_TRANSFER", label: "Bank Transfer" },
-  { value: "CREDIT_CARD", label: "Credit Card" },
-];
-
+// Khai báo lại type để tránh lỗi
 interface AdvertisingScopeProps {
   formData: any;
   onUpdate: (updates: any) => void;
   errors?: any;
 }
 
-// Cost Breakdown Component
+// Cost Breakdown Component - ĐÃ CHỈNH FONT CHỮ
 const CostBreakdown: React.FC<{
   costBreakdown: any;
   onUpdate: (breakdown: any) => void;
@@ -135,27 +131,30 @@ const CostBreakdown: React.FC<{
         )}
       </div>
 
-      {/* Summary */}
+      {/* Summary - Đã chỉnh font chữ */}
       {entries.length > 0 && (
         <Card className="p-3 bg-gray-50 border-gray-200">
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="font-medium">Breakdown Total:</span>
-              <span className="font-mono">{formatCurrency(breakdownTotal)} VND</span>
+              <span className="font-semibold">{formatCurrency(breakdownTotal)} VND</span>{" "}
+              {/* Đã sửa */}
             </div>
 
             {totalCost > 0 && (
               <>
                 <div className="flex justify-between">
                   <span className="font-medium">Contract Total:</span>
-                  <span className="font-mono">{formatCurrency(totalCost)} VND</span>
+                  <span className="font-semibold">{formatCurrency(totalCost)} VND</span>{" "}
+                  {/* Đã sửa */}
                 </div>
                 <div className="flex justify-between border-t pt-2">
-                  <span className="font-medium">
+                  <span className="font-bold">
                     {remaining === 0 ? "Balance:" : remaining > 0 ? "Remaining:" : "Over budget:"}
                   </span>
                   <span
-                    className={`font-mono ${
+                    className={`font-bold ${
+                      // Đã sửa
                       remaining === 0
                         ? "text-green-600"
                         : remaining > 0
@@ -179,6 +178,24 @@ const AdvertisingScope: React.FC<AdvertisingScopeProps> = ({ formData, onUpdate,
   const financialTerms = formData?.financialTerms || {};
   const startDate = formData?.startDate;
   const endDate = formData?.endDate;
+
+  // Cập nhật giá trị mặc định khi component render lần đầu
+  React.useEffect(() => {
+    const updates: any = {};
+    // Mặc định Payment Method là BANK_TRANSFER
+    if (financialTerms.payment_method !== "BANK_TRANSFER") {
+      updates.payment_method = "BANK_TRANSFER";
+    }
+    // Mặc định Model là FIXED
+    if (financialTerms.model !== "FIXED") {
+      updates.model = "FIXED";
+    }
+    // Chỉ gọi onUpdate nếu có sự khác biệt
+    if (Object.keys(updates).length > 0) {
+      onUpdate(updates);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleCostBreakdownUpdate = (breakdown: any) => {
     onUpdate({ cost_breakdown: breakdown });
@@ -216,16 +233,18 @@ const AdvertisingScope: React.FC<AdvertisingScopeProps> = ({ formData, onUpdate,
           </Card>
         )}
 
-        {/* Payment Method & Total Cost */}
+        {/* Payment Method (Read-only) & Total Cost */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <SelectField
-            label="Payment Method"
-            value={financialTerms.payment_method || "BANK_TRANSFER"}
-            onChange={(value) => onUpdate({ payment_method: value })}
-            options={PAYMENT_METHOD_OPTIONS}
-            placeholder="Select payment method"
-            error={errors.payment_method}
-          />
+          {/* Read-only Payment Method (Thay thế SelectField) */}
+          <div>
+            <Label className="text-sm font-medium mb-2 block">Payment Method</Label>
+            <div className="p-2.5 bg-gray-100 border border-gray-300 rounded-md text-sm text-gray-700">
+              Bank Transfer (Default)
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Payment method is fixed as Bank Transfer for this contract type.
+            </p>
+          </div>
 
           <CurrencyInput
             label="Total Contract Cost (VND)"
@@ -236,7 +255,7 @@ const AdvertisingScope: React.FC<AdvertisingScopeProps> = ({ formData, onUpdate,
           />
         </div>
 
-        {/* Cost Breakdown - Updated Component */}
+        {/* Cost Breakdown */}
         <CostBreakdown
           costBreakdown={financialTerms.cost_breakdown}
           onUpdate={handleCostBreakdownUpdate}

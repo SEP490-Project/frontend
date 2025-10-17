@@ -11,6 +11,7 @@ import { useAppDispatch } from "@/libs/stores";
 import { useContract } from "@/libs/hooks/useContract";
 import { contract } from "@/libs/stores/contractManager/thunk";
 import { useDebounce } from "@/libs/hooks/useDebounce";
+import { format, parseISO } from "date-fns";
 import type { ContractBase } from "@/libs/types/contract";
 
 interface CampaignData {
@@ -32,7 +33,6 @@ interface CreateCampaignProps {
   onContractSelect: (contract: ContractBase | null) => void;
 }
 
-// Helper component for contract item display
 const ContractItem = ({ contract }: { contract: any }) => (
   <div className="flex items-center justify-between w-full p-2">
     <div>
@@ -52,7 +52,6 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
   onReset,
   onContractSelect,
 }) => {
-  // Contract selection state & hooks
   const dispatch = useAppDispatch();
   const { contracts, loading, pagination } = useContract();
   const [search, setSearch] = useState("");
@@ -60,13 +59,11 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
   const [page, setPage] = useState(1);
   const [allContracts, setAllContracts] = useState<ContractBase[]>([]);
 
-  // Reset contracts when search changes
   useEffect(() => {
     setAllContracts([]);
     setPage(1);
   }, [debouncedSearch]);
 
-  // Fetch contracts
   useEffect(() => {
     dispatch(
       contract({
@@ -79,45 +76,37 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
     );
   }, [dispatch, page, debouncedSearch]);
 
-  // Update allContracts when contracts change
   useEffect(() => {
     if (page === 1) setAllContracts(contracts);
     else setAllContracts((prev) => [...prev, ...contracts]);
   }, [contracts, page]);
 
-  // Load more contracts
   const loadMore = useCallback(() => {
     if (pagination?.has_next && !loading) setPage((p) => p + 1);
   }, [pagination, loading]);
 
-  // Helper function to format date from ISO to YYYY-MM-DD
-  const formatDateForInput = (dateString: string | null | undefined): string => {
+  // Format date theo local timezone (Việt Nam)
+  const formatDateForInput = (dateString?: string | null) => {
     if (!dateString) return "";
     try {
-      const date = new Date(dateString);
-      return date.toISOString().split("T")[0]; // Get YYYY-MM-DD format
+      return format(parseISO(dateString), "yyyy-MM-dd");
     } catch {
       return "";
     }
   };
 
-  // Handle contract selection and auto-populate type and dates
   const handleContractSelect = (contractId: string | null) => {
     const selectedContract = allContracts.find((c) => c.id === contractId);
     setCampaignData((s) => ({
       ...s,
       contract_id: contractId || "",
-      type: selectedContract?.type || "",
-      // Auto-populate start and end dates from contract
+      type: selectedContract?.type || s.type, // Keep campaign type as contract type
       start_date: selectedContract ? formatDateForInput(selectedContract.start_date) : s.start_date,
       end_date: selectedContract ? formatDateForInput(selectedContract.end_date) : s.end_date,
     }));
-
-    // Pass selected contract to parent
     onContractSelect(selectedContract || null);
   };
 
-  // Handle date changes
   const handleStartDateChange = (date: string) => {
     setCampaignData((s) => ({ ...s, start_date: date }));
   };
@@ -126,7 +115,6 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
     setCampaignData((s) => ({ ...s, end_date: date }));
   };
 
-  // Get selected contract for displaying type
   const selectedContract = allContracts.find((c) => c.id === campaignData.contract_id);
 
   return (
@@ -221,7 +209,7 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
                 value={campaignData.start_date}
                 onChange={handleStartDateChange}
                 placeholder="Pick start date"
-                required={true}
+                required
               />
               {selectedContract && (
                 <p className="text-xs text-gray-500 mt-1">
@@ -234,7 +222,7 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
                 value={campaignData.end_date}
                 onChange={handleEndDateChange}
                 placeholder="Pick end date"
-                required={true}
+                required
               />
               {selectedContract && (
                 <p className="text-xs text-gray-500 mt-1">

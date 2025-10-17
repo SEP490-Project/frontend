@@ -27,19 +27,15 @@ const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, err
   const startDate = formData?.startDate;
   const endDate = formData?.endDate;
 
-  // Handle schedule generation from PaymentDateSelector - NO automatic amount calculation
+  // Handle schedule generation from PaymentDateSelector - For PREVIEW ONLY
   const handleScheduleGenerated = React.useCallback(
     (newSchedule: any[]) => {
-      console.log("Schedule generated:", newSchedule); // Debug log
-
-      // Just store the schedule as-is, without calculating amounts
+      console.log("Schedule generated for preview:", newSchedule);
+      // Lưu schedule vào formData để hiển thị preview
       onUpdate({ schedule: newSchedule });
     },
     [onUpdate],
   );
-
-  const estimatedTotalEarnings =
-    (financialTerms.base_per_click || 0) * (financialTerms.target_clicks || 0);
 
   return (
     <Card className="shadow-sm">
@@ -83,14 +79,6 @@ const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, err
             error={errors.base_per_click}
           />
 
-          <CurrencyInput
-            label="Target Clicks"
-            value={financialTerms.target_clicks || 0}
-            onChange={(value) => onUpdate({ target_clicks: value })}
-            placeholder="10,000"
-            error={errors.target_clicks}
-          />
-
           <SelectField
             label="Payment Cycle"
             value={financialTerms.payment_cycle || ""}
@@ -98,7 +86,6 @@ const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, err
               onUpdate({
                 payment_cycle: value,
                 payment_date: null,
-                schedule: [], // Clear existing schedule when cycle changes
               })
             }
             options={PAYMENT_CYCLE_OPTIONS}
@@ -107,23 +94,6 @@ const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, err
             error={errors.payment_cycle}
           />
         </div>
-
-        {/* Estimated Total Earnings Display */}
-        {estimatedTotalEarnings > 0 && (
-          <Card className="p-4 bg-purple-50 border-purple-200">
-            <h4 className="font-medium text-purple-900 mb-2">Estimated Total Earnings</h4>
-            <div className="text-2xl font-bold text-purple-600">
-              {estimatedTotalEarnings.toLocaleString("vi-VN")} VND
-            </div>
-            <p className="text-sm text-purple-700 mt-1">
-              Based on {(financialTerms.target_clicks || 0).toLocaleString()} clicks ×{" "}
-              {(financialTerms.base_per_click || 0).toLocaleString()} VND per click
-            </p>
-            <p className="text-xs text-purple-600 mt-2">
-              Use this as a reference when setting up your payment schedule below.
-            </p>
-          </Card>
-        )}
 
         {/* Payment Date Selector - Only show when cycle is selected */}
         {financialTerms.payment_cycle && (
@@ -183,11 +153,11 @@ const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, err
           onUpdate={(levels) => onUpdate({ levels })}
         />
 
-        {/* Generated Payment Schedule Display - Simple version without amounts */}
+        {/* Generated Payment Schedule Display - PREVIEW ONLY, NOT VALIDATED */}
         {financialTerms.schedule && financialTerms.schedule.length > 0 && (
-          <Card className="p-4 bg-green-50 border-green-200">
-            <h4 className="font-medium text-green-900 mb-3">
-              Generated Payment Dates ({financialTerms.schedule.length} payments)
+          <Card className="p-4 bg-blue-50 border-blue-200">
+            <h4 className="font-medium text-blue-900 mb-3">
+              Payment Schedule Preview ({financialTerms.schedule.length} payments)
             </h4>
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {financialTerms.schedule.map((item: any, index: number) => (
@@ -205,9 +175,10 @@ const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, err
               ))}
             </div>
 
-            <div className="mt-3 p-2 bg-green-100 rounded text-xs text-green-800">
-              <strong>Note:</strong> Payment dates are generated based on your selected cycle. Set
-              specific amounts and percentages in the detailed Payment Schedule section below.
+            <div className="mt-3 p-2 bg-blue-100 rounded text-xs text-blue-800">
+              <strong>Note:</strong> This is a preview of payment dates based on your selected
+              cycle. Actual payments will be calculated based on performance metrics and commission
+              levels.
             </div>
           </Card>
         )}

@@ -43,6 +43,7 @@ const INITIAL_FORM_DATA = {
   brandId: "",
   parentContractId: "",
   contractNumber: "",
+  title: "", // THÊM FIELD TITLE
   type: "",
   signedDate: "",
   signedLocation: "",
@@ -64,9 +65,61 @@ const INITIAL_FORM_DATA = {
   webRepresentativeTaxNumber: "",
   financialTerms: {},
   scopeOfWork: {},
-  legalTerms: {},
+  legalTerms: {
+    breach_of_contract: {
+      label: "Breach of Contract",
+      items: [
+        {
+          title: "Party A (Brand) breaks the rules",
+          details: ["Contract terminates immediately", "Party A forfeits the deposit"],
+        },
+        {
+          title: "Party B (Service Provider) breaks the rules",
+          details: [
+            "Contract terminates immediately",
+            "Party B must refund the deposit",
+            "Party B pays additional compensation",
+          ],
+        },
+        {
+          title: "Mutual agreement to terminate",
+          details: [
+            "Contract stops with no penalties",
+            "No compensation required from either party",
+          ],
+        },
+      ],
+    },
+    standard_terms: {
+      label: "Standard Terms",
+      items: [
+        {
+          title: "Confidentiality",
+          description:
+            "Both parties must keep all contract information confidential and cannot disclose to third parties without written consent",
+        },
+        {
+          title: "Dispute Resolution",
+          description:
+            "Disputes will be resolved through negotiation first, then legal proceedings if necessary",
+        },
+        {
+          title: "Contract Effectiveness",
+          description:
+            "Contract is effective from signature date until all obligations are fulfilled",
+        },
+        {
+          title: "Force Majeure",
+          description:
+            "Neither party is liable for failure to perform due to circumstances beyond their control, including natural disasters or government actions",
+        },
+      ],
+    },
+  },
   contractFiles: [],
   proposalFiles: [],
+  contract_file_url: "",
+  proposal_file_url: "",
 };
 
 // Helper functions
@@ -78,39 +131,50 @@ const getContractTypeColor = (type: string) =>
   };
 
 const getDefaultFinancialTerms = (type: string) => {
-  const baseTerms = { paymentMethod: "Chuyển khoản", schedule: [] };
+  const baseTerms = {
+    payment_method: "BANK_TRANSFER", // khớp với mẫu JSON
+  };
+
   switch (type) {
     case "ADVERTISING":
+      return {
+        ...baseTerms,
+        model: "FIXED",
+        total_cost: 0,
+        cost_breakdown: {},
+        schedule: [],
+      };
+
     case "BRAND_AMBASSADOR":
       return {
         ...baseTerms,
-        model: "fixed",
-        totalCost: 0,
-        costBreakdown: { serviceFee: 0, otherFees: 0 },
+        model: "FIXED",
+        total_cost: 0,
+        cost_breakdown: [],
+        schedule: [],
       };
+
     case "AFFILIATE":
       return {
         ...baseTerms,
-        model: "levels",
-        basePerClick: 0,
+        model: "LEVELS",
+        base_per_click: 0,
         levels: [],
-        paymentCycle: "",
-        paymentDate: "",
-        taxWithholding: { threshold: 2000000, ratePercent: 10 },
+        payment_cycle: "",
+        payment_date: "",
+        tax_withholding: { threshold: 0, rate_percent: 0 },
       };
+
     case "CO_PRODUCING":
       return {
         ...baseTerms,
-        model: "share",
-        capitalContribution: {
-          company: { description: "", value: 0 },
-          kol: { description: "", value: 0 },
-        },
-        profitSplitCompanyPercent: 0,
-        profitSplitKolPercent: 0,
-        profitDistributionCycle: "",
-        profitDistributionDate: "",
+        model: "SHARE",
+        profit_split_company_percent: 0,
+        profit_split_kol_percent: 0,
+        profit_distribution_cycle: "",
+        profit_distribution_date: [],
       };
+
     default:
       return baseTerms;
   }
@@ -130,6 +194,7 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
       return !!(
         formData.type &&
         formData.contractNumber &&
+        formData.title && // THÊM VALIDATION CHO TITLE
         formData.signedDate &&
         formData.startDate &&
         formData.endDate &&
@@ -138,6 +203,7 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
         formData.brandBankAccountNumber &&
         formData.brandBankAccountHolder
       );
+
     case "scope-of-work": {
       if (!formData.type) return false;
 
@@ -163,65 +229,59 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
             );
           });
 
-        const hasGeneralReqs =
-          !scopeOfWork.general_requirements ||
-          scopeOfWork.general_requirements.length === 0 ||
-          scopeOfWork.general_requirements.every((req: any) => req.trim());
+        const generalReqs = scopeOfWork.general_requirements || [];
+        const hasValidGeneralReqs =
+          generalReqs.length === 0 || generalReqs.every((req: any) => req.trim());
 
-        return hasValidItems && hasGeneralReqs;
+        return hasValidItems && hasValidGeneralReqs;
       }
 
       if (formData.type === "AFFILIATE") {
-        const affiliateItems = deliverables.affiliate_items || [];
+        const affiliateItems = deliverables.advertised_items || [];
+        const trackingLink = deliverables.tracking_link;
+
         const hasValidItems =
           affiliateItems.length > 0 &&
           affiliateItems.every((item: any) => {
-            return !!(item.name?.trim() && item.description?.trim() && item.commission_rate > 0);
+            return !!(item.name?.trim() && item.description?.trim());
           });
 
-        const hasGeneralReqs =
-          !scopeOfWork.general_requirements ||
-          scopeOfWork.general_requirements.length === 0 ||
-          scopeOfWork.general_requirements.every((req: any) => req.trim());
+        const hasTrackingLink = trackingLink?.trim();
+        const generalReqs = scopeOfWork.general_requirements || [];
+        const hasValidGeneralReqs =
+          generalReqs.length === 0 || generalReqs.every((req: any) => req.trim());
 
-        return hasValidItems && hasGeneralReqs;
+        return hasValidItems && hasTrackingLink && hasValidGeneralReqs;
       }
 
       if (formData.type === "BRAND_AMBASSADOR") {
-        const ambassadorItems = deliverables.ambassador_items || [];
+        const events = deliverables.events || [];
         const hasValidItems =
-          ambassadorItems.length > 0 &&
-          ambassadorItems.every((item: any) => {
-            return !!(item.name?.trim() && item.description?.trim() && item.duration?.trim());
+          events.length > 0 &&
+          events.every((event: any) => {
+            return !!(event.name?.trim() && event.location?.trim() && event.date?.trim());
           });
 
-        const hasGeneralReqs =
-          !scopeOfWork.general_requirements ||
-          scopeOfWork.general_requirements.length === 0 ||
-          scopeOfWork.general_requirements.every((req: any) => req.trim());
+        const generalReqs = scopeOfWork.general_requirements || [];
+        const hasValidGeneralReqs =
+          generalReqs.length === 0 || generalReqs.every((req: any) => req.trim());
 
-        return hasValidItems && hasGeneralReqs;
+        return hasValidItems && hasValidGeneralReqs;
       }
 
       if (formData.type === "CO_PRODUCING") {
-        const coProducingItems = deliverables.coproducing_items || [];
+        const products = deliverables.products || [];
         const hasValidItems =
-          coProducingItems.length > 0 &&
-          coProducingItems.every((item: any) => {
-            return !!(item.name?.trim() && item.description?.trim() && item.timeline?.trim());
+          products.length > 0 &&
+          products.every((product: any) => {
+            return !!(product.name?.trim() && product.description?.trim());
           });
 
-        const hasRoles =
-          scopeOfWork.coProductionRoles &&
-          scopeOfWork.coProductionRoles.company?.trim() &&
-          scopeOfWork.coProductionRoles.kol?.trim();
+        const generalReqs = scopeOfWork.general_requirements || [];
+        const hasValidGeneralReqs =
+          generalReqs.length === 0 || generalReqs.every((req: any) => req.trim());
 
-        const hasGeneralReqs =
-          !scopeOfWork.general_requirements ||
-          scopeOfWork.general_requirements.length === 0 ||
-          scopeOfWork.general_requirements.every((req: any) => req.trim());
-
-        return hasValidItems && hasRoles && hasGeneralReqs;
+        return hasValidItems && hasValidGeneralReqs;
       }
 
       return false;
@@ -236,18 +296,20 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
         financialTerms,
       });
 
-      // Kiểm tra payment schedule - bắt buộc cho tất cả loại hợp đồng
-      const hasValidSchedule =
-        financialTerms.schedule?.length > 0 &&
-        financialTerms.schedule.every(
-          (item: any) => item.milestone?.trim() && item.amount > 0 && item.due_date,
-        );
+      // Kiểm tra payment method - bắt buộc cho tất cả
+      const hasPaymentMethod = financialTerms.payment_method?.trim();
 
       if (formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR") {
         // Kiểm tra các field bắt buộc cho ADVERTISING/BRAND_AMBASSADOR
-        const hasBasicInfo = !!(financialTerms.payment_method && financialTerms.total_cost > 0);
+        const hasBasicInfo = !!(hasPaymentMethod && financialTerms.total_cost > 0);
 
-        // Kiểm tra payment schedule có tổng bằng total cost
+        // Kiểm tra payment schedule - CHỈ validate cho ADVERTISING và BRAND_AMBASSADOR
+        const hasValidSchedule =
+          financialTerms.schedule?.length > 0 &&
+          financialTerms.schedule.every(
+            (item: any) => item.milestone?.trim() && item.amount > 0 && item.due_date,
+          );
+
         const scheduleTotal = (financialTerms.schedule || []).reduce(
           (sum: number, item: any) => sum + (item.amount || 0),
           0,
@@ -256,57 +318,111 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
         const isScheduleBalanced =
           Math.abs((financialTerms.total_cost || 0) - scheduleTotal) < 0.01;
 
+        console.log("ADVERTISING/BRAND_AMBASSADOR validation:", {
+          hasBasicInfo,
+          hasValidSchedule,
+          isScheduleBalanced,
+          totalCost: financialTerms.total_cost,
+          scheduleTotal,
+        });
+
         return hasBasicInfo && hasValidSchedule && isScheduleBalanced;
       }
 
       if (formData.type === "AFFILIATE") {
-        // Kiểm tra các field bắt buộc cho AFFILIATE
+        // Kiểm tra các field bắt buộc cho AFFILIATE - KHÔNG cần schedule
         const hasBasicInfo = !!(
-          financialTerms.payment_method &&
+          hasPaymentMethod &&
           financialTerms.base_per_click > 0 &&
-          financialTerms.payment_cycle &&
-          financialTerms.payment_date
+          financialTerms.payment_cycle
         );
 
-        // Kiểm tra commission levels
+        // Kiểm tra levels - SỬA LẠI LOGIC VALIDATION
         const hasValidLevels =
-          financialTerms.commission_levels?.length > 0 &&
-          financialTerms.commission_levels.every(
-            (level: any) => level.min_clicks > 0 && level.rate_per_click > 0,
-          );
+          financialTerms.levels?.length > 0 &&
+          financialTerms.levels.every((level: any) => {
+            // Kiểm tra các field thực tế có trong data
+            const hasLevel = level.level > 0;
+            const hasMaxClicks = level.max_clicks > 0;
+            const hasMultiplier = level.multiplier > 0;
 
-        return hasBasicInfo && hasValidLevels && hasValidSchedule;
+            console.log("Level validation:", {
+              level: level.level,
+              max_clicks: level.max_clicks,
+              multiplier: level.multiplier,
+              hasLevel,
+              hasMaxClicks,
+              hasMultiplier,
+            });
+
+            return hasLevel && hasMaxClicks && hasMultiplier;
+          });
+
+        // Kiểm tra payment_date - có thể là string, number, hoặc array
+        const hasPaymentDate = !!(
+          financialTerms.payment_date !== undefined &&
+          financialTerms.payment_date !== null &&
+          financialTerms.payment_date !== ""
+        );
+
+        console.log("AFFILIATE validation:", {
+          hasBasicInfo,
+          hasValidLevels,
+          hasPaymentDate,
+          levels: financialTerms.levels,
+          payment_date: financialTerms.payment_date,
+          payment_cycle: financialTerms.payment_cycle,
+          base_per_click: financialTerms.base_per_click,
+        });
+
+        return hasBasicInfo && hasValidLevels && hasPaymentDate;
       }
 
       if (formData.type === "CO_PRODUCING") {
-        // Kiểm tra các field bắt buộc cho CO_PRODUCING
+        // Kiểm tra các field bắt buộc cho CO_PRODUCING - KHÔNG cần schedule
         const hasBasicInfo = !!(
-          financialTerms.payment_method &&
+          hasPaymentMethod &&
           financialTerms.profit_distribution_cycle &&
-          financialTerms.profit_distribution_date
+          financialTerms.profit_distribution_date?.length > 0
         );
 
         // Kiểm tra profit split (phải tổng = 100%)
-        const validProfitSplit =
+        const validProfitSplit = !!(
           financialTerms.profit_split_company_percent > 0 &&
           financialTerms.profit_split_kol_percent > 0 &&
-          financialTerms.profit_split_company_percent + financialTerms.profit_split_kol_percent ===
-            100;
+          Math.abs(
+            (financialTerms.profit_split_company_percent || 0) +
+              (financialTerms.profit_split_kol_percent || 0) -
+              100,
+          ) < 0.01
+        );
 
         // Kiểm tra capital contribution
-        const validCapital =
+        const validCapital = !!(
           financialTerms.capital_contribution?.company?.value > 0 &&
           financialTerms.capital_contribution?.kol?.value > 0 &&
           financialTerms.capital_contribution?.company?.description?.trim() &&
-          financialTerms.capital_contribution?.kol?.description?.trim();
+          financialTerms.capital_contribution?.kol?.description?.trim()
+        );
 
-        return hasBasicInfo && validProfitSplit && validCapital && hasValidSchedule;
+        console.log("CO_PRODUCING validation:", {
+          hasBasicInfo,
+          validProfitSplit,
+          validCapital,
+          profitSplitCompany: financialTerms.profit_split_company_percent,
+          profitSplitKol: financialTerms.profit_split_kol_percent,
+          capitalContribution: financialTerms.capital_contribution,
+          profit_distribution_cycle: financialTerms.profit_distribution_cycle,
+          profit_distribution_date: financialTerms.profit_distribution_date,
+        });
+
+        return hasBasicInfo && validProfitSplit && validCapital;
       }
 
       return false;
     }
     case "legal-terms": {
-      // Kiểm tra compensationPercent không được rỗng và phải là số hợp lệ (0-100)
+      // Kiểm tra compensationPercent - PHẢI được user nhập thực sự
       const compensationPercent = formData.legalTerms?.compensationPercent;
 
       console.log("Checking legal terms completion:", {
@@ -314,10 +430,11 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
         legalTerms: formData.legalTerms,
       });
 
-      // Kiểm tra:
-      // 1. Không được undefined/null/empty string
-      // 2. Phải là số >= 0 và <= 100
-      return !!(
+      // Kiểm tra chặt chẽ hơn:
+      // 1. Không được undefined/null
+      // 2. Phải khác empty string
+      // 3. Phải là số hợp lệ >= 0 và <= 100
+      const isValid = !!(
         compensationPercent !== undefined &&
         compensationPercent !== null &&
         compensationPercent !== "" &&
@@ -325,9 +442,26 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
         Number(compensationPercent) >= 0 &&
         Number(compensationPercent) <= 100
       );
+
+      console.log("Legal terms validation result:", isValid);
+      return isValid;
     }
-    case "contract-actions":
-      return formData.contractFiles?.length > 0 && formData.proposalFiles?.length > 0;
+    case "contract-actions": {
+      // Kiểm tra cả files và URLs
+      const hasContractFile = formData.contractFiles?.length > 0 || formData.contract_file_url;
+      const hasProposalFile = formData.proposalFiles?.length > 0 || formData.proposal_file_url;
+
+      console.log("Checking contract-actions completion:", {
+        contractFiles: formData.contractFiles?.length || 0,
+        proposalFiles: formData.proposalFiles?.length || 0,
+        contract_file_url: formData.contract_file_url,
+        proposal_file_url: formData.proposal_file_url,
+        hasContractFile,
+        hasProposalFile,
+      });
+
+      return hasContractFile && hasProposalFile;
+    }
     default:
       return false;
   }
@@ -452,6 +586,7 @@ const AddContractPage: React.FC = () => {
       brandId: formData.brandId,
       parentContractId: formData.parentContractId,
       contractNumber: formData.contractNumber,
+      title: formData.title, // GIỮ LẠI TITLE KHI CHANGE TYPE
       signedDate: formData.signedDate,
       signedLocation: formData.signedLocation,
       startDate: formData.startDate,
@@ -558,26 +693,30 @@ const AddContractPage: React.FC = () => {
     }));
   };
 
-  // File handlers (simplified)
-  const handleContractFilesChange = (files: File[]) => handleInputChange("contractFiles", files);
-  const handleProposalFilesChange = (files: File[]) => handleInputChange("proposalFiles", files);
-
-  const handleContractUpload = async (files: File[]) => {
-    try {
-      console.log("Uploading contract files:", files);
-    } catch (error) {
-      console.error("Contract upload failed:", error);
-      throw error;
-    }
+  // Handlers cho file URLs
+  const handleContractUrlsChange = (urls: string[]) => {
+    // Chỉ lấy URL đầu tiên vì chỉ cho phép 1 file
+    const url = urls.length > 0 ? urls[0] : "";
+    console.log("Contract URL updated:", url);
+    handleInputChange("contract_file_url", url);
   };
 
-  const handleProposalUpload = async (files: File[]) => {
-    try {
-      console.log("Uploading proposal files:", files);
-    } catch (error) {
-      console.error("Proposal upload failed:", error);
-      throw error;
-    }
+  const handleProposalUrlsChange = (urls: string[]) => {
+    // Chỉ lấy URL đầu tiên vì chỉ cho phép 1 file
+    const url = urls.length > 0 ? urls[0] : "";
+    console.log("Proposal URL updated:", url);
+    handleInputChange("proposal_file_url", url);
+  };
+
+  // File handlers (simplified)
+  const handleContractFilesChange = (files: File[]) => {
+    console.log("Contract files changed:", files);
+    handleInputChange("contractFiles", files);
+  };
+
+  const handleProposalFilesChange = (files: File[]) => {
+    console.log("Proposal files changed:", files);
+    handleInputChange("proposalFiles", files);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -593,42 +732,32 @@ const AddContractPage: React.FC = () => {
       // Tạo JSON payload hoàn chỉnh để gửi backend
       const contractPayload = {
         // Contract Basic Information
-        contract_info: {
-          contract_number: formData.contractNumber,
-          type: formData.type,
-          signed_date: formData.signedDate,
-          signed_location: formData.signedLocation,
-          start_date: formData.startDate,
-          end_date: formData.endDate,
-          status: "DRAFT",
-        },
+        parent_contract_id: null,
+        contract_number: formData.contractNumber,
+        title: formData.title,
+        type: formData.type,
+        status: "DRAFT",
 
         // Brand Information
-        brand_info: {
-          brand_id: formData.brandId,
-          representative: {
-            name: formData.brandRepresentativeName,
-            position: formData.brandRepresentativePosition,
-            phone: formData.brandRepresentativePhone,
-            email: formData.brandRepresentativeEmail,
-            tax_number: formData.brandTaxNumber,
-          },
-          banking: {
-            bank_name: formData.brandBankName,
-            account_number: formData.brandBankAccountNumber,
-            account_holder: formData.brandBankAccountHolder,
-          },
-        },
+        brand_id: formData.brandId,
+        brand_bank_name: formData.brandBankName,
+        brand_bank_account_number: formData.brandBankAccountNumber,
+        brand_bank_account_holder: formData.brandBankAccountHolder,
 
-        // Web Representative (KOL/Content Creator)
-        web_representative: {
-          staff_id: formData.webRepresentativeStaffId,
-          name: formData.webRepresentativeName,
-          position: formData.webRepresentativePosition,
-          phone: formData.webRepresentativePhone,
-          email: formData.webRepresentativeEmail,
-          tax_number: formData.webRepresentativeTaxNumber,
-        },
+        // Web Representative
+        representative_name: formData.webRepresentativeName,
+        representative_role: formData.webRepresentativeRole,
+        representative_phone: formData.webRepresentativePhone,
+        representative_email: formData.webRepresentativeEmail,
+        representative_tax_number: formData.webRepresentativeTaxNumber,
+        representative_bank_name: formData.webRepresentativeBankName,
+        // representative_bank_account_number: formData.representativeBankAccountNumber,
+        // representative_bank_account_holder: formData.representativeBankAccountHolder,
+        signed_date: formData.signedDate,
+        signed_location: formData.signedLocation,
+        start_date: formData.startDate,
+        end_date: formData.endDate,
+        currency: "VND",
 
         // Scope of Work
         scope_of_work: {
@@ -643,23 +772,23 @@ const AddContractPage: React.FC = () => {
         financial_terms: {
           payment_method: formData.financialTerms?.payment_method || "BANK_TRANSFER",
           deposit_info: {
-            deposit_paid: formData.financialTerms?.deposit_paid || false,
+            deposit_percent: formData.financialTerms?.deposit_percent || 0,
             deposit_amount: formData.financialTerms?.deposit_amount || 0,
           },
-          schedule: formData.financialTerms?.schedule || [],
 
           // Contract type specific terms
           ...(formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR"
             ? {
                 total_cost: formData.financialTerms?.total_cost || 0,
                 cost_breakdown: formData.financialTerms?.cost_breakdown || {},
+                schedule: formData.financialTerms?.schedule || {},
               }
             : {}),
 
           ...(formData.type === "AFFILIATE"
             ? {
                 base_per_click: formData.financialTerms?.base_per_click || 0,
-                commission_levels: formData.financialTerms?.commission_levels || [],
+                levels: formData.financialTerms?.levels || [],
                 payment_cycle: formData.financialTerms?.payment_cycle,
                 payment_date: formData.financialTerms?.payment_date,
                 tax_withholding: formData.financialTerms?.tax_withholding || {},
@@ -668,7 +797,6 @@ const AddContractPage: React.FC = () => {
 
           ...(formData.type === "CO_PRODUCING"
             ? {
-                capital_contribution: formData.financialTerms?.capital_contribution || {},
                 profit_split_company_percent:
                   formData.financialTerms?.profit_split_company_percent || 0,
                 profit_split_kol_percent: formData.financialTerms?.profit_split_kol_percent || 0,
@@ -678,52 +806,61 @@ const AddContractPage: React.FC = () => {
             : {}),
         },
 
-        // Legal Terms
+        // Legal Terms - SỬA LẠI ĐỂ SỬ DỤNG DEFAULT 10% NẾU USER KHÔNG NHẬP
         legal_terms: {
-          compensation_percent: formData.legalTerms?.compensationPercent || 0,
-          breach_conditions: {
-            brand_breach: {
-              consequences: ["immediate_termination", "forfeit_deposit"],
-            },
-            service_provider_breach: {
-              consequences: ["immediate_termination", "refund_deposit", "pay_compensation"],
-              compensation_percent: formData.legalTerms?.compensationPercent || 0,
-            },
-            mutual_termination: {
-              consequences: ["no_penalty"],
-            },
+          breach_of_contract: {
+            label: formData.legalTerms?.breach_of_contract?.label || "Breach of Contract",
+            items: [
+              {
+                title: "Party A (Brand) breaks the rules",
+                details: ["Contract terminates immediately", "Party A forfeits the deposit"],
+              },
+              {
+                title: "Party B (Service Provider) breaks the rules",
+                details: [
+                  "Contract terminates immediately",
+                  "Party B must refund the deposit",
+                  `Party B pays additional ${formData.legalTerms?.compensationPercent || 10}% compensation`,
+                ],
+                compensation_percent: formData.legalTerms?.compensationPercent,
+              },
+              {
+                title: "Mutual agreement to terminate",
+                details: [
+                  "Contract stops with no penalties",
+                  "No compensation required from either party",
+                ],
+              },
+            ],
           },
           standard_terms: {
-            confidentiality: true,
-            dispute_resolution: "court_jurisdiction",
-            contract_effectiveness: "signature_to_completion",
-            force_majeure: true,
+            label: formData.legalTerms?.standard_terms?.label || "Standard Terms",
+            items: [
+              {
+                title: "Confidentiality",
+                description:
+                  "Both parties must keep all contract information confidential and cannot disclose to third parties without written consent",
+              },
+              {
+                title: "Dispute Resolution",
+                description:
+                  "Disputes will be resolved through negotiation first, then legal proceedings if necessary",
+              },
+              {
+                title: "Contract Effectiveness",
+                description:
+                  "Contract is effective from signature date until all obligations are fulfilled",
+              },
+              {
+                title: "Force Majeure",
+                description:
+                  "Neither party is liable for failure to perform due to circumstances beyond their control, including natural disasters or government actions",
+              },
+            ],
           },
         },
-
-        // File References
-        documents: {
-          contract_files:
-            formData.contractFiles?.map((file: File) => ({
-              name: file.name,
-              size: file.size,
-              type: file.type,
-            })) || [],
-          proposal_files:
-            formData.proposalFiles?.map((file: File) => ({
-              name: file.name,
-              size: file.size,
-              type: file.type,
-            })) || [],
-        },
-
-        // Metadata
-        metadata: {
-          created_at: new Date().toISOString(),
-          created_by: "current_user_id",
-          version: "1.0",
-          last_modified: new Date().toISOString(),
-        },
+        contract_file_url: formData.contract_file_url || "",
+        proposal_file_url: formData.proposal_file_url || "",
       };
 
       console.log("Payload created successfully!");
@@ -735,65 +872,65 @@ const AddContractPage: React.FC = () => {
 
       const modal = document.createElement("div");
       modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.8);
-        z-index: 10000;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-      `;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 10000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    `;
 
       modal.innerHTML = `
-        <div style="
-          background: white;
-          padding: 20px;
-          border-radius: 8px;
-          max-width: 90%;
-          max-height: 90%;
-          overflow: auto;
-        ">
-          <h3 style="margin-bottom: 15px; font-size: 18px; font-weight: bold;">
-            Contract JSON Payload (No Validation)
-          </h3>
-          <div style="margin-bottom: 15px; padding: 10px; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 4px;">
-            <p style="color: #92400e; font-size: 14px; margin: 0;">
-              ⚠️ Validation was skipped. This is the raw JSON data from your form.
-            </p>
-          </div>
-          <pre style="
-            background: #f5f5f5;
-            padding: 15px;
-            border-radius: 4px;
-            overflow: auto;
-            font-size: 12px;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            max-height: 500px;
-          ">${jsonString}</pre>
-          <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: flex-end;">
-            <button id="copyJson" style="
-              background: #3b82f6;
-              color: white;
-              border: none;
-              padding: 8px 16px;
-              border-radius: 4px;
-              cursor: pointer;
-            ">Copy JSON</button>
-            <button id="closeModal" style="
-              background: #6b7280;
-              color: white;
-              border: none;
-              padding: 8px 16px;
-              border-radius: 4px;
-              cursor: pointer;
-            ">Close</button>
-          </div>
+      <div style="
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        max-width: 90%;
+        max-height: 90%;
+        overflow: auto;
+      ">
+        <h3 style="margin-bottom: 15px; font-size: 18px; font-weight: bold;">
+          Contract JSON Payload (No Validation)
+        </h3>
+        <div style="margin-bottom: 15px; padding: 10px; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 4px;">
+          <p style="color: #92400e; font-size: 14px; margin: 0;">
+            ⚠️ Validation was skipped. This is the raw JSON data from your form.
+          </p>
         </div>
-      `;
+        <pre style="
+          background: #f5f5f5;
+          padding: 15px;
+          border-radius: 4px;
+          overflow: auto;
+          font-size: 12px;
+          white-space: pre-wrap;
+          word-wrap: break-word;
+          max-height: 500px;
+        ">${jsonString}</pre>
+        <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: flex-end;">
+          <button id="copyJson" style="
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+          ">Copy JSON</button>
+          <button id="closeModal" style="
+            background: #6b7280;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+          ">Close</button>
+        </div>
+      </div>
+    `;
 
       document.body.appendChild(modal);
 
@@ -843,17 +980,18 @@ const AddContractPage: React.FC = () => {
       formData,
       onInputChange: handleInputChange,
       errors,
-      onContractTypeChange: handleTypeChangeRequest, // Use the new handler
+      onContractTypeChange: handleTypeChangeRequest,
       onUpdateScopeOfWork: updateScopeOfWork,
       onFieldValidation: handleFieldValidation,
       contractTypeOptions: CONTRACT_TYPE_OPTIONS,
       onUpdateFinancialTerms: updateFinancialTerms,
       onContractFilesChange: handleContractFilesChange,
       onProposalFilesChange: handleProposalFilesChange,
-      onContractUpload: handleContractUpload,
-      onProposalUpload: handleProposalUpload,
+      // THÊM CÁC HANDLERS CHO URLs
+      onContractUrlsChange: handleContractUrlsChange,
+      onProposalUrlsChange: handleProposalUrlsChange,
       onSubmit: handleSubmit,
-      isTypeLockedMode, // Pass the lock status to components
+      isTypeLockedMode,
     };
     const TabComponent = TAB_COMPONENTS[tabId];
     return TabComponent ? <TabComponent {...componentProps} /> : null;

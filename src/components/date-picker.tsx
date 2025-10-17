@@ -31,6 +31,16 @@ const parseDate = (dateString?: string): Date | undefined => {
   }
 };
 
+// Safe format function
+const safeFormat = (date: Date | undefined, formatStr: string): string | null => {
+  if (!date) return null;
+  try {
+    return format(date, formatStr);
+  } catch {
+    return null;
+  }
+};
+
 export const DatePicker: React.FC<DatePickerProps> = ({
   label,
   value,
@@ -60,6 +70,13 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     setIsOpen(false);
   };
 
+  // Safe display text
+  const getDisplayText = () => {
+    if (!value) return placeholder;
+    const formattedDate = safeFormat(selectedDate, dateFormat);
+    return formattedDate || placeholder;
+  };
+
   return (
     <div className={`space-y-2 ${className}`}>
       {label && (
@@ -72,7 +89,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           <Button
-            variant="outline2"
+            variant="outline"
             disabled={disabled}
             className={`h-11 w-full justify-start text-left font-normal ${
               !value ? "text-muted-foreground" : ""
@@ -81,7 +98,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
             }`}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
-            {value ? format(parseDate(value)!, dateFormat) : placeholder}
+            {getDisplayText()}
           </Button>
         </PopoverTrigger>
 
@@ -92,10 +109,11 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               selected={selectedDate}
               onSelect={handleSelect}
               autoFocus
-              hidden={[
-                ...(parseDate(minDate) ? [{ before: parseDate(minDate)! }] : []),
-                ...(parseDate(maxDate) ? [{ after: parseDate(maxDate)! }] : []),
-              ]}
+              disabled={(date) => {
+                if (minDate && date < parseDate(minDate)!) return true;
+                if (maxDate && date > parseDate(maxDate)!) return true;
+                return false;
+              }}
             />
           </PopoverContent>
         )}

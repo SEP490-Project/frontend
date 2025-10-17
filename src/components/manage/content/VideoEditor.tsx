@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,12 @@ import { Badge } from "@/components/ui/badge";
 
 import type { Content } from "@/libs/types/content";
 import { ArrowLeft, Upload, X, User, Calendar, Target, FileText } from "lucide-react";
+import {
+  getTaskStatusDisplay,
+  getTaskCampaignDisplay,
+  getStatusBadgeVariant,
+  getStatusBadgeClassName,
+} from "@/libs/helper/taskUtils";
 
 type ContentType = "blog" | "video";
 
@@ -28,6 +34,15 @@ interface VideoContent {
 const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEditorProps) => {
   const contentType = "video";
   const [showPreview, setShowPreview] = useState(false);
+
+  // Debug logging to verify task data
+  React.useEffect(() => {
+    if (selectedTask) {
+      console.log("VideoEditor received task:", selectedTask);
+      console.log("Task campaign:", selectedTask.campaign);
+      console.log("Task status:", selectedTask.status);
+    }
+  }, [selectedTask]);
   const [videoContent, setVideoContent] = useState<VideoContent>({
     title: editingContent?.title || "",
     description: editingContent ? (editingContent.json_content as any)?.description || "" : "",
@@ -121,7 +136,7 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
                 <Target className="w-4 h-4 text-purple-600" />
                 <span className="text-sm font-medium text-gray-700">Campaign:</span>
                 <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                  {selectedTask.campaign || "No Campaign"}
+                  {getTaskCampaignDisplay(selectedTask)}
                 </Badge>
               </div>
 
@@ -133,24 +148,10 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
                 />
                 <span className="text-sm font-medium text-gray-700">Status:</span>
                 <Badge
-                  variant={
-                    selectedTask.status === "completed"
-                      ? "default"
-                      : selectedTask.status === "in-progress"
-                        ? "secondary"
-                        : "outline"
-                  }
-                  className={
-                    selectedTask.status === "completed"
-                      ? "bg-green-100 text-green-800 border-green-200"
-                      : selectedTask.status === "in-progress"
-                        ? "bg-yellow-100 text-yellow-800 border-yellow-200"
-                        : "bg-gray-100 text-gray-800 border-gray-200"
-                  }
+                  variant={getStatusBadgeVariant(getTaskStatusDisplay(selectedTask))}
+                  className={getStatusBadgeClassName(getTaskStatusDisplay(selectedTask))}
                 >
-                  {selectedTask.status
-                    ? selectedTask.status.replace("-", " ").toUpperCase()
-                    : "UNKNOWN"}
+                  {getTaskStatusDisplay(selectedTask)}
                 </Badge>
               </div>
 

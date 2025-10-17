@@ -41,6 +41,8 @@ interface ContentTask {
   id: number;
   title: string;
   type: "Blog" | "Video";
+  campaign: string;
+  status: "to-do" | "in-progress" | "completed";
   details: {
     description: string;
     assignee: string;

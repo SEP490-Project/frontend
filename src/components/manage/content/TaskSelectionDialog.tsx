@@ -19,6 +19,8 @@ interface ContentTask {
   id: number;
   title: string;
   type: "Blog" | "Video";
+  campaign: string;
+  status: "to-do" | "in-progress" | "completed";
   details: {
     description: string;
     assignee: string;
@@ -60,6 +62,8 @@ const TaskSelectionDialog: React.FC<TaskSelectionDialogProps> = ({
           id: item.id,
           title: item.title,
           type: item.type as "Blog" | "Video",
+          campaign: item.campaign,
+          status: item.status as "to-do" | "in-progress" | "completed",
           details: {
             ...item.details,
             priority: item.details.priority as "High" | "Medium" | "Low",

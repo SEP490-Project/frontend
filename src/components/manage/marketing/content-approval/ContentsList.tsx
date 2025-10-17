@@ -60,8 +60,12 @@ const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
       const response = await manageContent.contents(filters);
       // Type assertion to ensure proper typing
       const contentData = response.data.data as Content[];
-      // Filter to only show blog content
-      const blogContent = contentData.filter((content) => content.content_type === "blog");
+      // Filter to only show blog content and exclude draft status for marketing
+      const blogContent = contentData.filter(
+        (content) =>
+          content.content_type === "blog" &&
+          (content.status === "pending" || content.status === "posted"),
+      );
       setContents(blogContent);
       setPagination(response.data.pagination);
     } catch (error) {
@@ -134,12 +138,6 @@ const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
         return (
           <Badge variant="default" className="bg-yellow-100 text-yellow-800 border-yellow-200">
             Pending
-          </Badge>
-        );
-      case "draft":
-        return (
-          <Badge variant="default" className="bg-gray-100 text-gray-800 border-gray-200">
-            Draft
           </Badge>
         );
       default:
@@ -221,7 +219,6 @@ const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
                   <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="posted">Published</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="draft">Draft</SelectItem>
                 </SelectContent>
               </Select>
 

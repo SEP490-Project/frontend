@@ -144,7 +144,7 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
             </Button>
             <Button
               onClick={() => onApproveContent?.(content)}
-              className="bg-pink-600 hover:bg-pink-700 text-white px-4"
+              className="bg-pink-400 hover:bg-pink-500 text-white px-4"
             >
               <Check className="h-4 w-4 mr-2" />
               Approve for Publication

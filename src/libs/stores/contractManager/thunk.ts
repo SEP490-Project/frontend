@@ -81,3 +81,16 @@ export const getContractById = createAsyncThunk(
     }
   },
 );
+
+export const createContract = createAsyncThunk(
+  "/contracts/create",
+  async (req: any, { rejectWithValue }) => {
+    try {
+      const response = await manageContract.createContract(req);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Thất bại");
+    }
+  },
+);

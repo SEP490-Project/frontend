@@ -45,24 +45,20 @@ export interface CampaignRequest {
   contract_id: string;
   name: string;
   description: string;
-  end_date: string;
   start_date: string;
+  end_date: string;
   type: string;
-  milestones: [
-    {
-      description: string;
-      due_date: string;
-      tasks: [
-        {
-          deadline: string;
-          name: string;
-          type: string;
-          description: {
-            description: string;
-            material_url: string[];
-          };
-        },
-      ];
-    },
-  ];
+  milestones: {
+    description: string;
+    due_date: string;
+    tasks: {
+      deadline: string;
+      name: string;
+      type: string;
+      description: {
+        description: string;
+        material_url: string[];
+      };
+    }[];
+  }[];
 }

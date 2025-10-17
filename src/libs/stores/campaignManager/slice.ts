@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { campaign } from "./thunk";
+import { campaign, createCampaign } from "./thunk";
 import type { CampaignData } from "@/libs/types/campaign";
 
 interface stateType {
@@ -36,6 +36,15 @@ export const manageCampaignSlice = createSlice({
         state.pagination = action.payload.pagination;
       })
       .addCase(campaign.rejected, (state) => {
+        state.loading = false;
+      })
+      .addCase(createCampaign.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(createCampaign.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(createCampaign.rejected, (state) => {
         state.loading = false;
       });
   },

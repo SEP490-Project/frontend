@@ -30,4 +30,6 @@ export const manageContract = {
   approveContract: (contractId: string) => api.patch(`/contracts/${contractId}/approve`),
 
   rejectContract: (contractId: string) => api.patch(`/contracts/${contractId}/reject`),
+
+  createContract: (req: any) => api.post("/contracts/async", req),
 };

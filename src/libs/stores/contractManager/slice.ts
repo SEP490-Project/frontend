@@ -1,6 +1,12 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { contract } from "./thunk";
-import { getContractsByBrand, approveContract, rejectContract, getContractById } from "./thunk";
+import {
+  getContractsByBrand,
+  approveContract,
+  rejectContract,
+  getContractById,
+  createContract,
+} from "./thunk";
 import type { ContractDetail } from "@/libs/types/contract";
 import type { ContractBase } from "@/libs/types/contract";
 
@@ -120,6 +126,16 @@ export const manageContractSlice = createSlice({
         state.contractDetail = action.payload.data;
       })
       .addCase(getContractById.rejected, (state) => {
+        state.detailLoading = false;
+      })
+
+      .addCase(createContract.pending, (state) => {
+        state.detailLoading = true;
+      })
+      .addCase(createContract.fulfilled, (state) => {
+        state.detailLoading = false;
+      })
+      .addCase(createContract.rejected, (state) => {
         state.detailLoading = false;
       });
   },

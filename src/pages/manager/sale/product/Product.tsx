@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Table,
   TableHeader,
@@ -17,119 +17,56 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-import { FaPenToSquare, FaFilter } from "react-icons/fa6";
-import { mockProducts, mockTasks } from "../mock-data/sale-mock-data";
+import { FaPenToSquare, FaFilter, FaEye } from "react-icons/fa6";
 import { Switch } from "@/components/ui/switch";
 import { Trash } from "lucide-react";
 import { DeleteModal } from "@/components/modal/DeleteModal";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { StatusModal } from "@/components/modal/StatusModal";
-import TodayTaskDisplay from "../../shared/TodayTaskDisplay";
 import { useNavigate } from "react-router";
 import { ProductFormMode } from "@/enums/product";
-
-const PAGE_SIZE = 5;
+import { useAppDispatch } from "@/libs/stores";
+import { getAllProductsThunk } from "@/libs/stores/productManager/thunk";
+import { useSelector } from "react-redux";
+import type { ProductData } from "@/libs/types/product";
+import { PaginationTable } from "@/components/global";
+import { SelectAddProductType } from "@/components/manage/sale/product/SelectAddProductType";
 
 const Product: React.FC = () => {
-  const [page, setPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("ALL");
-  const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
+  const dispatch = useAppDispatch();
+  const productResponse = useSelector((state: any) => state?.manageProduct?.products);
+  const products: ProductData[] = productResponse?.data || [];
+  const totalItems = productResponse?.total || 0;
+  const isLoading = useSelector((state: any) => state?.manageProduct?.isLoading);
+  const error = useSelector((state: any) => state?.manageProduct?.error);
+  const [params, setParams] = useState({
+    limit: 10,
+    offset: 0,
+  });
 
   const navigate = useNavigate();
 
-  const filteredproducts = useMemo(() => {
-    return mockProducts.filter((product) => {
-      const matchesSearch =
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.description.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = statusFilter === "ALL" || product.type === statusFilter;
+  useEffect(() => {
+    dispatch(getAllProductsThunk(params));
+  }, [dispatch, params]);
 
-      const matchesCategory = categoryFilter === "ALL" || product.category === categoryFilter;
-
-      return matchesSearch && matchesStatus && matchesCategory;
-    });
-  }, [searchTerm, statusFilter, categoryFilter]);
-
-  const totalPages = Math.ceil(filteredproducts.length / PAGE_SIZE);
-  const paginatedproducts = filteredproducts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-  const startIndex = (page - 1) * PAGE_SIZE + 1;
-  const endIndex = Math.min(page * PAGE_SIZE, filteredproducts.length);
-  const totalItems = filteredproducts.length;
-
-  const handlePageChange = (newPage: number) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      setPage(newPage);
-    }
+  const handlePageChange = (page: number) => {
+    const newOffset = (page - 1) * params.limit;
+    setParams((prev) => ({ ...prev, offset: newOffset }));
   };
 
-  React.useEffect(() => {
-    setPage(1);
-  }, [searchTerm, statusFilter]);
+  const currentPage = Math.floor(params.offset / params.limit) + 1;
 
-  const renderPaginationItems = () => {
-    const items = [];
-    const maxVisiblePages = 5;
-
-    let startPage = Math.max(1, page - Math.floor(maxVisiblePages / 2));
-    const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-    if (endPage - startPage < maxVisiblePages - 1) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-
-    if (startPage > 1) {
-      items.push(
-        <PaginationItem key="1">
-          <PaginationLink onClick={() => handlePageChange(1)}>1</PaginationLink>
-        </PaginationItem>,
-      );
-      if (startPage > 2) {
-        items.push(
-          <PaginationItem key="ellipsis-start">
-            <PaginationEllipsis />
-          </PaginationItem>,
-        );
-      }
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      items.push(
-        <PaginationItem key={i}>
-          <PaginationLink onClick={() => handlePageChange(i)} isActive={page === i}>
-            {i}
-          </PaginationLink>
-        </PaginationItem>,
-      );
-    }
-
-    if (endPage < totalPages) {
-      if (endPage < totalPages - 1) {
-        items.push(
-          <PaginationItem key="ellipsis-end">
-            <PaginationEllipsis />
-          </PaginationItem>,
-        );
-      }
-      items.push(
-        <PaginationItem key={totalPages}>
-          <PaginationLink onClick={() => handlePageChange(totalPages)}>{totalPages}</PaginationLink>
-        </PaginationItem>,
-      );
-    }
-
-    return items;
-  };
+  useEffect(() => {
+    dispatch(getAllProductsThunk(params));
+  }, [dispatch, params]);
 
   return (
     <div className="min-h-fit p-4 sm:p-6">
@@ -139,7 +76,13 @@ const Product: React.FC = () => {
           <DialogTrigger asChild>
             <Button className="bg-primary hover:bg-[#f794a8] text-white">Add product</Button>
           </DialogTrigger>
-          <TodayTaskDisplay tasks={mockTasks} />
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Product</DialogTitle>
+              <DialogDescription>Select the type of product you want to add.</DialogDescription>
+            </DialogHeader>
+            <SelectAddProductType />
+          </DialogContent>
         </Dialog>
       </div>
 
@@ -153,14 +96,19 @@ const Product: React.FC = () => {
           <div className="flex-1 min-w-[200px]">
             <Input
               placeholder="Search by name or description..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              // value={searchTerm}
+              // onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full"
             />
           </div>
 
           <div className="min-w-[150px]">
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <Select
+              value={""}
+              onValueChange={() => {
+                setParams({ ...params, offset: 0 });
+              }}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
@@ -173,7 +121,12 @@ const Product: React.FC = () => {
           </div>
 
           <div className="min-w-[150px]">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select
+              value={""}
+              onValueChange={() => {
+                /* TODO: implement type filter */
+              }}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Type" />
               </SelectTrigger>
@@ -194,7 +147,7 @@ const Product: React.FC = () => {
               <TableRow className="border-b bg-gray-50">
                 <TableHead className="font-semibold">Name</TableHead>
                 <TableHead className="font-semibold">Brand</TableHead>
-                <TableHead className="font-semibold">Stock</TableHead>
+                <TableHead className="font-semibold">Variants</TableHead>
                 <TableHead className="font-semibold">Category</TableHead>
                 <TableHead className="font-semibold">Type</TableHead>
                 <TableHead className="font-semibold">Status</TableHead>
@@ -202,195 +155,147 @@ const Product: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedproducts.map((product, index) => (
-                <TableRow
-                  key={product.id}
-                  className={`border-b hover:bg-gray-50 ${
-                    index % 2 === 0 ? "bg-white" : "bg-gray-25"
-                  }`}
-                >
-                  <TableCell className="py-4 max-w-xs">
-                    <div className="flex items-center">
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="w-12 h-12 object-cover rounded mr-4 float-left"
-                      />
-                      <span className="font-medium text-gray-900 block text-nowrap overflow-hidden text-ellipsis">
-                        {product.name}
-                      </span>
-                    </div>
-                  </TableCell>
-
-                  <TableCell className="py-4">
-                    <div className="text-sm text-gray-600 max-w-xs truncate">{product.brand}</div>
-                  </TableCell>
-
-                  <TableCell className="py-4">{product.current_stock}</TableCell>
-
-                  <TableCell className="py-4">{product.category}</TableCell>
-
-                  <TableCell className="py-4">
-                    <Badge
-                      className={
-                        product.type === "STANDARD"
-                          ? "bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200 "
-                          : "bg-orange-100 text-orange-800 border border-orange-200 hover:bg-orange-200"
-                      }
-                    >
-                      {product.type}
-                    </Badge>
-                  </TableCell>
-
-                  <TableCell className="py-4">
-                    <Dialog>
-                      <DialogTrigger>
-                        <Switch checked={product.isActive} />
-                      </DialogTrigger>
-                      <StatusModal
-                        name={product.name}
-                        status={product.isActive ? "Inactive" : "Active"}
-                        onConfirm={() => {
-                          console.log("Hello world");
-                        }}
-                      />
-                    </Dialog>
-                  </TableCell>
-
-                  <TableCell className="py-4">
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 hover:bg-yellow-50"
-                        title="Edit"
-                        onClick={() => {
-                          navigate(`/manage/sale/product/${product.id}/edit`, {
-                            state: { type: ProductFormMode.EDIT, data: product },
-                          });
-                        }}
-                      >
-                        <FaPenToSquare className="text-yellow-600" />
-                      </Button>
-
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 hover:bg-red-50"
-                            title="Delete"
-                          >
-                            <Trash className="text-red-600" />
-                          </Button>
-                        </DialogTrigger>
-                        <DeleteModal name={product.name} />
-                      </Dialog>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8">
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                      <span className="ml-2">Loading products...</span>
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : error ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8 text-red-600">
+                    Error: {error}
+                  </TableCell>
+                </TableRow>
+              ) : !products || products.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                    No products found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                products.map((product, index) => (
+                  <TableRow
+                    key={product.id}
+                    className={`border-b hover:bg-gray-50 ${
+                      index % 2 === 0 ? "bg-white" : "bg-gray-25"
+                    }`}
+                  >
+                    <TableCell className="py-4 max-w-xs">
+                      <div className="flex items-center">
+                        <img
+                          src={
+                            product.thumbnail_url ||
+                            "https://cdn.shopify.com/s/files/1/0069/4471/8937/products/Chanel-Coco-Mademoiselle-Intense-EDP-W-50ml-2_de2881cf-4ddb-4a2d-a65a-12b75ff4ec7f_1200x1200.jpg?v=1573190789"
+                          }
+                          alt={product.name}
+                          className="w-12 h-12 object-cover rounded mr-4 float-left"
+                        />
+                        <span className="font-medium text-gray-900 block text-nowrap overflow-hidden text-ellipsis">
+                          {product.name}
+                        </span>
+                      </div>
+                    </TableCell>
+
+                    <TableCell className="py-4">
+                      <div className="text-sm text-gray-600 max-w-xs truncate">
+                        {product.brand_name}
+                      </div>
+                    </TableCell>
+
+                    <TableCell className="py-4">{product.variants?.length || 0}</TableCell>
+
+                    <TableCell className="py-4">
+                      {product.category ? product.category : product.category_lv2}
+                    </TableCell>
+
+                    <TableCell className="py-4">
+                      <Badge
+                        className={
+                          product.type === "STANDARD"
+                            ? "bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200 "
+                            : "bg-orange-100 text-orange-800 border border-orange-200 hover:bg-orange-200"
+                        }
+                      >
+                        {product.type}
+                      </Badge>
+                    </TableCell>
+
+                    <TableCell className="py-4">
+                      <Dialog>
+                        <DialogTrigger>
+                          <Switch checked={product.is_active} />
+                        </DialogTrigger>
+                        <StatusModal
+                          name={product.name}
+                          status={product.is_active ? "Inactive" : "Active"}
+                          onConfirm={() => {
+                            console.log("Hello world");
+                          }}
+                        />
+                      </Dialog>
+                    </TableCell>
+
+                    <TableCell className="py-4">
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 hover:bg-blue-50"
+                          title="Edit"
+                          onClick={() => {
+                            navigate(`/manage/sale/product/${product.id}/edit`, {
+                              state: { type: ProductFormMode.EDIT, data: product },
+                            });
+                          }}
+                        >
+                          <FaEye className="text-blue-600" />
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 hover:bg-yellow-50"
+                          title="Edit"
+                          onClick={() => {
+                            navigate(`/manage/sale/product/${product.id}/edit`, {
+                              state: { type: ProductFormMode.EDIT, data: product },
+                            });
+                          }}
+                        >
+                          <FaPenToSquare className="text-yellow-600" />
+                        </Button>
+
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 hover:bg-red-50"
+                              title="Delete"
+                            >
+                              <Trash className="text-red-600" />
+                            </Button>
+                          </DialogTrigger>
+                          <DeleteModal name={product.name} />
+                        </Dialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
+          <PaginationTable
+            page={currentPage}
+            totalItems={totalItems}
+            pageSize={params.limit}
+            onPageChange={handlePageChange}
+          />
         </div>
-
-        <div className="md:hidden divide-y">
-          {paginatedproducts.map((product) => (
-            <div key={product.id} className="p-4 flex flex-col gap-3 bg-white">
-              <div className="flex items-center gap-3">
-                <div className="flex-1">
-                  <div className="font-medium text-gray-900">{product.name}</div>
-                  <Badge
-                    className={
-                      product.type === "STANDARD"
-                        ? "bg-blue-100 text-blue-800 border-blue-200"
-                        : "bg-orange-100 text-orange-800 border-orange-200"
-                    }
-                  >
-                    {product.type}
-                  </Badge>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm text-gray-500">Stock</div>
-                  <div className="font-semibold text-lg">{product.current_stock} units</div>
-                </div>
-              </div>
-
-              <div className="space-y-2 text-sm text-gray-600">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">Brand:</span>
-                  <span>{product.brand}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">Category:</span>
-                  <span>{product.category}</span>
-                </div>
-              </div>
-
-              <div className="flex gap-1 pt-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0 hover:bg-yellow-50"
-                  title="Edit"
-                  onClick={() => {
-                    navigate(`/manage/sale/product/${product.id}/edit`, {
-                      state: { type: ProductFormMode.EDIT, data: product },
-                    });
-                  }}
-                >
-                  <FaPenToSquare className="text-yellow-600" />
-                </Button>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 hover:bg-red-50"
-                      title="Delete"
-                    >
-                      <Trash className="text-red-600" />
-                    </Button>
-                  </DialogTrigger>
-                  <DeleteModal name={product.name} />
-                </Dialog>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {filteredproducts.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            No products found matching your criteria.
-          </div>
-        )}
-
-        {filteredproducts.length > 0 && (
-          <div className="flex justify-between items-center p-4 border-t bg-gray-50">
-            <div className="text-sm text-gray-500 md:text-nowrap">
-              Showing {startIndex}-{endIndex} of {totalItems} products
-            </div>
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    onClick={() => handlePageChange(page - 1)}
-                    className={page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                  />
-                </PaginationItem>
-                {renderPaginationItems()}
-                <PaginationItem>
-                  <PaginationNext
-                    onClick={() => handlePageChange(page + 1)}
-                    className={
-                      page === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"
-                    }
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </div>
-        )}
       </div>
     </div>
   );

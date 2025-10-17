@@ -25,13 +25,16 @@ import PrivateRoute from "./private-route";
 import PublicRoute from "./public-route";
 import {
   Product,
-  ProductDetail,
   Category,
   Order,
   OrderDetail,
   Review,
   Transaction,
+  BasicInfoStep,
+  VariantsStep,
+  DoneStep,
 } from "@/pages/manager/sale";
+import AddProductStep from "@/components/manage/sale/AddProductStep";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -78,9 +81,13 @@ const AppRoutes = () => (
       <Route element={<PrivateRoute allowedRoles={["SALES_STAFF"]} />}>
         <Route path="/manage/sale" element={<ManageLayout />}>
           <Route path="product" element={<Product />} />
-          <Route path="product/create" element={<ProductDetail />} />
-          <Route path="product/:id/edit" element={<ProductDetail />} />
-          <Route path="product/:id" element={<ProductDetail />} />
+          <Route path="product/create" element={<AddProductStep />}>
+            <Route index element={<BasicInfoStep />} />
+            <Route path="variants" element={<VariantsStep />} />
+            <Route path="done" element={<DoneStep />} />
+          </Route>
+          {/* <Route path="product/:id/edit" element={<ProductDetail />} />
+          <Route path="product/:id" element={<ProductDetail />} /> */}
           <Route path="category" element={<Category />} />
           <Route path="order" element={<Order />} />
           <Route path="order/:id" element={<OrderDetail />} />

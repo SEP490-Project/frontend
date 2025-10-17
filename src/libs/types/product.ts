@@ -9,13 +9,17 @@ export interface ProductData {
   id: string;
   brand_id: string;
   brand_logo_url: string;
-  category_lv1: string;
+  brand_name?: string;
+  thumbnail_url?: string;
+  is_active: boolean;
+  category: string;
   category_lv2: string;
   description: string;
   name: string;
   price: number;
   type: string;
-  variant: ProductVariant[];
+  variants?: ProductVariant[];
+  created_at: Date;
 }
 
 export interface ProductVariant {
@@ -45,4 +49,11 @@ export interface ProductAttribute {
   ingredients: string;
   unit: string;
   value: number;
+}
+export interface CreateProductPayload {
+  brand_id: string;
+  category_id: string;
+  description: string;
+  name: string;
+  price: number;
 }

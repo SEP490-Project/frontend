@@ -6,15 +6,39 @@ const productManagerSlice = createSlice({
   name: "productManager",
   initialState: {
     products: null as ProductResponse | null,
+    isLoading: false,
+    error: null as string | null,
   },
   reducers: {},
   extraReducers: (builder) => {
-    builder.addCase(getAllProductsThunk.fulfilled, (state, action) => {
-      state.products = action.payload;
-    });
-    builder.addCase(getProductByTaskIdThunk.fulfilled, (state, action) => {
-      state.products = action.payload;
-    });
+    builder
+      .addCase(getAllProductsThunk.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(getAllProductsThunk.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.products = action.payload;
+        state.error = null;
+        console.log("Products fetched successfully:", action.payload);
+      })
+      .addCase(getAllProductsThunk.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || "Failed to fetch products";
+      })
+      .addCase(getProductByTaskIdThunk.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.products = action.payload;
+        state.error = null;
+      })
+      .addCase(getProductByTaskIdThunk.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(getProductByTaskIdThunk.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || "Failed to fetch product";
+      });
   },
 });
 

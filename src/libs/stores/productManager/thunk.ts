@@ -3,15 +3,18 @@ import type { ProductResponse } from "@/libs/types/product";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import type { AxiosError } from "axios";
 
-const getAllProductsThunk = createAsyncThunk("products/getAll", async (_, { rejectWithValue }) => {
-  try {
-    const response = await manageProduct.getAllProducts();
-    return response.data as ProductResponse;
-  } catch (error: AxiosError | unknown) {
-    const err = error as AxiosError<{ message: string }>;
-    return rejectWithValue(err.response?.data?.message || "Failed to fetch products");
-  }
-});
+const getAllProductsThunk = createAsyncThunk(
+  "products/getAll",
+  async (params: { limit: number; offset: number }, { rejectWithValue }) => {
+    try {
+      const response = await manageProduct.getAllProducts(params);
+      return response.data as ProductResponse;
+    } catch (error: AxiosError | unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Failed to fetch products");
+    }
+  },
+);
 
 const getProductByTaskIdThunk = createAsyncThunk(
   "products/getByTaskId",

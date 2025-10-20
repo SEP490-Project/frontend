@@ -8,7 +8,13 @@ import {
   DialogTitle,
 } from "../ui/dialog";
 
-export const DeleteModal = ({ name }: { name: string }): React.ReactElement => {
+export const DeleteModal = ({
+  name,
+  onDelete,
+}: {
+  name: string;
+  onDelete: () => void;
+}): React.ReactElement => {
   return (
     <DialogContent>
       <DialogHeader>
@@ -29,7 +35,12 @@ export const DeleteModal = ({ name }: { name: string }): React.ReactElement => {
         <DialogClose asChild>
           <button className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Cancel</button>
         </DialogClose>
-        <button className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Delete</button>
+        <button
+          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          onClick={onDelete}
+        >
+          Delete
+        </button>
       </DialogFooter>
     </DialogContent>
   );

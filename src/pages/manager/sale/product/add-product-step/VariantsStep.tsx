@@ -1,19 +1,7 @@
-import { useState } from "react";
-import { useLocation } from "react-router";
+import { useLocation, useOutletContext, type NavigateFunction } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Trash2, Plus, ImageIcon } from "lucide-react";
+import { Trash2, Plus, ImageIcon, Package, Box } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -21,323 +9,219 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { productVariantSchema } from "@/libs/validation/productValidation";
+import { VariationForm } from "@/components/manage/sale/product/form/VariationForm";
 import type { ProductVariant } from "@/libs/types/product";
-
-// Create a form variant interface that includes id for local state
-interface FormVariant extends ProductVariant {
-  id: string;
-}
+import { useEffect, useState } from "react";
+import { useAppDispatch } from "@/libs/stores";
+import { createVariantProductThunk } from "@/libs/stores/productManager/thunk";
+import { getItem } from "@/libs/local-storage";
+import { toast } from "sonner";
+import { convertNumberToCurrency } from "@/libs/helper/helper";
 
 const VariantsStep = () => {
   const { state } = useLocation();
-  const productType = state?.productType || "STANDARD"; // Get product type from navigation state
+  const dispatch = useAppDispatch();
+  const [variants, setVariants] = useState<ProductVariant[]>([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const [variants, setVariants] = useState<FormVariant[]>([]);
-  const [isAddingVariant, setIsAddingVariant] = useState(false);
-  const [newVariant, setNewVariant] = useState<Partial<FormVariant>>({
-    name: "",
-    capacity: 0,
-    capacity_unit: "ml",
-    container_type: "",
-    current_stock: 0,
-    description: "",
-    dispenser_type: "",
-    expiry_date: null,
-    instructions: "",
-    is_default: false,
-    manufacture_date: null,
-    price: 0,
-    story: productType === "LIMITED" ? "" : undefined, // Only include story for LIMITED products
-    type: productType, // Use the productType from navigation state
-    uses: "",
-    attributes: [],
+  const { setOnSubmitStep, steps, currentStep, navigate } = useOutletContext<{
+    setOnSubmitStep: React.Dispatch<React.SetStateAction<null | (() => Promise<void>)>>;
+    steps: { path: string; label: string }[];
+    currentStep: number;
+    navigate: NavigateFunction;
+  }>();
+
+  const form = useForm<ProductVariant>({
+    resolver: yupResolver(productVariantSchema),
+    defaultValues: {
+      name: "",
+      price: null,
+      current_stock: 0,
+      capacity: null,
+      capacity_unit: "ML",
+      container_type: "BOTTLE",
+      dispenser_type: "PUMP",
+      description: "",
+      story: null,
+      uses: "",
+      attributes: [],
+      is_default: false,
+      type: state?.productType || "STANDARD",
+      expiry_date: null,
+      manufacture_date: null,
+      instructions: "",
+    },
   });
 
-  const handleAddVariant = () => {
-    if (newVariant.name && newVariant.price && newVariant.current_stock !== undefined) {
-      const variant: FormVariant = {
-        id: Date.now().toString(),
-        name: newVariant.name || "",
-        price: newVariant.price || 0,
-        capacity: newVariant.capacity || 0,
-        capacity_unit: newVariant.capacity_unit || "ml",
-        container_type: newVariant.container_type || "",
-        current_stock: newVariant.current_stock || 0,
-        description: newVariant.description || "",
-        dispenser_type: newVariant.dispenser_type || "",
-        expiry_date: newVariant.expiry_date || null,
-        instructions: newVariant.instructions || "",
-        is_default: newVariant.is_default || false,
-        manufacture_date: newVariant.manufacture_date || null,
-        story: productType === "LIMITED" ? newVariant.story || "" : "",
-        type: productType, // Use the productType from navigation state
-        uses: newVariant.uses || "",
-        attributes: newVariant.attributes || [],
-        created_at: new Date(),
-        updated_at: new Date(),
-      };
+  const handleDeleteVariant = (variantName: string) => {
+    setVariants(variants.filter((v) => v.name !== variantName));
+  };
 
-      setVariants([...variants, variant]);
-      setNewVariant({
-        name: "",
-        capacity: 0,
-        capacity_unit: "ml",
-        container_type: "",
-        current_stock: 0,
-        description: "",
-        dispenser_type: "",
-        expiry_date: null,
-        instructions: "",
-        is_default: false,
-        manufacture_date: null,
-        price: 0,
-        story: productType === "LIMITED" ? "" : undefined,
-        type: productType,
-        uses: "",
-        attributes: [],
-      });
-      setIsAddingVariant(false);
+  const handleAddVariant = async (data: ProductVariant) => {
+    const productId = getItem("currentProduct");
+
+    if (!productId) {
+      toast.error("No product found. Please create a product first.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await dispatch(
+        createVariantProductThunk({ payload: data, productId: String(productId) }),
+      ).unwrap();
+
+      toast.success("Product variant added successfully!");
+      setVariants([...variants, data]);
+      setIsDialogOpen(false);
+      form.reset();
+    } catch (error) {
+      toast.error((error as string) || "Failed to add product variant");
+      console.error("Error adding variant:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleDeleteVariant = (id: string) => {
-    setVariants(variants.filter((variant) => variant.id !== id));
-  };
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(price);
-  };
+  useEffect(() => {
+    if (variants.length === 0) return;
+    setOnSubmitStep(async () => navigate(steps[currentStep]?.path));
+  }, [dispatch, variants]);
 
   return (
     <div className="bg-white p-6 rounded-lg mt-6 shadow-md">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-lg font-semibold">Product Variants</h2>
-        <Dialog open={isAddingVariant} onOpenChange={setIsAddingVariant}>
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">Product Variants</h2>
+          <p className="text-sm text-gray-500 mt-1">Manage different variations of your product</p>
+        </div>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
+            <Button
+              className="flex items-center gap-2 bg-primary hover:bg-primary/90"
+              disabled={isLoading}
+            >
               <Plus className="w-4 h-4" />
               Add Variant
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Add New Variant</DialogTitle>
+              <DialogTitle className="text-xl font-bold">Add New Variant</DialogTitle>
             </DialogHeader>
-            <div className="grid grid-cols-2 gap-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="variant-name">Variant Name *</Label>
-                <Input
-                  id="variant-name"
-                  placeholder="e.g., Red Rose Serum"
-                  value={newVariant.name}
-                  onChange={(e) => setNewVariant({ ...newVariant, name: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="variant-price">Price (VND) *</Label>
-                <Input
-                  id="variant-price"
-                  type="number"
-                  placeholder="0"
-                  value={newVariant.price}
-                  onChange={(e) => setNewVariant({ ...newVariant, price: Number(e.target.value) })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="variant-stock">Current Stock *</Label>
-                <Input
-                  id="variant-stock"
-                  type="number"
-                  placeholder="0"
-                  value={newVariant.current_stock}
-                  onChange={(e) =>
-                    setNewVariant({ ...newVariant, current_stock: Number(e.target.value) })
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="variant-capacity">Capacity</Label>
-                <Input
-                  id="variant-capacity"
-                  type="number"
-                  placeholder="0"
-                  value={newVariant.capacity}
-                  onChange={(e) =>
-                    setNewVariant({ ...newVariant, capacity: Number(e.target.value) })
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="variant-capacity-unit">Capacity Unit</Label>
-                <Select
-                  value={newVariant.capacity_unit}
-                  onValueChange={(value) => setNewVariant({ ...newVariant, capacity_unit: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select unit" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ml">ml</SelectItem>
-                    <SelectItem value="l">l</SelectItem>
-                    <SelectItem value="g">g</SelectItem>
-                    <SelectItem value="kg">kg</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="variant-container">Container Type</Label>
-                <Input
-                  id="variant-container"
-                  placeholder="e.g., Bottle, Tube, Jar"
-                  value={newVariant.container_type}
-                  onChange={(e) => setNewVariant({ ...newVariant, container_type: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="variant-dispenser">Dispenser Type</Label>
-                <Input
-                  id="variant-dispenser"
-                  placeholder="e.g., Pump, Dropper, Tube"
-                  value={newVariant.dispenser_type}
-                  onChange={(e) => setNewVariant({ ...newVariant, dispenser_type: e.target.value })}
-                />
-              </div>
-              <div className="col-span-2 space-y-2">
-                <Label htmlFor="variant-description">Description</Label>
-                <Textarea
-                  id="variant-description"
-                  placeholder="Product variant description..."
-                  value={newVariant.description}
-                  onChange={(e) => setNewVariant({ ...newVariant, description: e.target.value })}
-                />
-              </div>
-              {productType === "LIMITED" && (
-                <div className="col-span-2 space-y-2">
-                  <Label htmlFor="variant-story">Product Story</Label>
-                  <Textarea
-                    id="variant-story"
-                    placeholder="Tell the story behind this limited edition product..."
-                    value={newVariant.story || ""}
-                    onChange={(e) => setNewVariant({ ...newVariant, story: e.target.value })}
-                  />
-                </div>
-              )}
-              <div className="col-span-2 space-y-2">
-                <Label htmlFor="variant-uses">Uses</Label>
-                <Textarea
-                  id="variant-uses"
-                  placeholder="How to use this product..."
-                  value={newVariant.uses}
-                  onChange={(e) => setNewVariant({ ...newVariant, uses: e.target.value })}
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsAddingVariant(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleAddVariant}>Add Variant</Button>
-            </div>
+            <VariationForm
+              form={form}
+              setOnSubmitStep={setOnSubmitStep}
+              steps={steps}
+              currentStep={currentStep}
+              navigate={navigate}
+              onSubmit={handleAddVariant}
+            />
           </DialogContent>
         </Dialog>
       </div>
 
       {variants.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
+        <div className="text-center py-16 text-gray-500 border-2 border-dashed border-gray-200 rounded-lg">
           <div className="mb-4">
-            <ImageIcon className="w-12 h-12 mx-auto text-gray-300" />
+            <ImageIcon className="w-16 h-16 mx-auto text-gray-300" />
           </div>
-          <p className="text-lg font-medium">No variants created yet</p>
-          <p className="text-sm">Click "Add Variant" to create your first product variant</p>
+          <p className="text-lg font-semibold text-gray-700 mb-2">No variants created yet</p>
+          <p className="text-sm text-gray-500 mb-6">
+            Click "Add Variant" to create your first product variant
+          </p>
+          <Button
+            onClick={() => setIsDialogOpen(true)}
+            className="inline-flex items-center gap-2"
+            variant="outline"
+          >
+            <Plus className="w-4 h-4" />
+            Create First Variant
+          </Button>
         </div>
       ) : (
         <div className="grid gap-4">
-          {variants.map((variant) => (
-            <Card key={variant.id} className="border border-gray-200">
+          {variants.map((variant, index) => (
+            <Card
+              key={`${variant.name}-${index}`}
+              className="border border-gray-200 hover:shadow-md transition-shadow"
+            >
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-base">{variant.name}</CardTitle>
-                    <p className="text-sm text-gray-600">Type: {variant.type}</p>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <CardTitle className="text-lg font-semibold text-gray-900">
+                        {variant.name}
+                      </CardTitle>
+                      {variant.is_default && (
+                        <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
+                          Default
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2 text-sm text-gray-600">
+                      <span className="inline-flex items-center gap-1">
+                        <Package className="w-4 h-4" />
+                        Type: {variant.type}
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        {convertNumberToCurrency(Number(variant?.price?.toFixed(2)))}
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <Box className="w-4 h-4" />
+                        {variant.capacity} {variant.capacity_unit}
+                      </span>
+                    </div>
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleDeleteVariant(variant.id)}
-                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    onClick={() => handleDeleteVariant(variant.name)}
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50 -mt-2"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="flex flex-col">
-                    <span className="text-xs text-gray-500 uppercase tracking-wide">Price</span>
-                    <span className="font-semibold text-green-600">
-                      {formatPrice(variant.price)}
-                    </span>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-gray-500 font-medium mb-1">Container Type</p>
+                    <p className="text-gray-900">{variant.container_type}</p>
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs text-gray-500 uppercase tracking-wide">Stock</span>
-                    <span className="font-semibold">
-                      {variant.current_stock}
-                      <Badge
-                        variant={variant.current_stock > 0 ? "default" : "destructive"}
-                        className="ml-2 text-xs"
-                      >
-                        {variant.current_stock > 0 ? "In Stock" : "Out of Stock"}
-                      </Badge>
-                    </span>
+                  <div>
+                    <p className="text-gray-500 font-medium mb-1">Dispenser Type</p>
+                    <p className="text-gray-900">{variant.dispenser_type}</p>
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs text-gray-500 uppercase tracking-wide">Capacity</span>
-                    <span className="font-semibold">
-                      {variant.capacity} {variant.capacity_unit}
-                    </span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs text-gray-500 uppercase tracking-wide">Image</span>
-                    <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
-                      <ImageIcon className="w-6 h-6 text-gray-400" />
+                  {variant.current_stock !== undefined && (
+                    <div>
+                      <p className="text-gray-500 font-medium mb-1">Current Stock</p>
+                      <p className="text-gray-900">{variant.current_stock} units</p>
                     </div>
-                    <span className="text-xs text-gray-400 mt-1">Will be added in next step</span>
-                  </div>
+                  )}
+                  {variant.attributes.length > 0 && (
+                    <div className="col-span-2">
+                      <p className="text-gray-500 font-medium mb-1">Attributes</p>
+                      <div className="flex flex-wrap gap-2">
+                        {variant.attributes.map((attr, attrIndex) => (
+                          <span
+                            key={attrIndex}
+                            className="px-3 py-1 bg-gray-100 text-gray-700 rounded-md text-xs"
+                          >
+                            {attr.ingredients}: {attr.value} {attr.unit}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                {variant.description && (
-                  <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                    <span className="text-xs text-gray-500 uppercase tracking-wide block mb-1">
-                      Description
-                    </span>
-                    <p className="text-sm text-gray-700">{variant.description}</p>
-                  </div>
-                )}
-                {productType === "LIMITED" && variant.story && (
-                  <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                    <span className="text-xs text-amber-700 uppercase tracking-wide block mb-1 font-semibold">
-                      Limited Edition Story
-                    </span>
-                    <p className="text-sm text-amber-800">{variant.story}</p>
-                  </div>
-                )}
               </CardContent>
             </Card>
           ))}
-        </div>
-      )}
-
-      {variants.length > 0 && (
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-            <p className="text-sm text-blue-700">
-              <strong>{variants.length}</strong> variant{variants.length > 1 ? "s" : ""} created.
-              You"ll be able to add images for each variant in the next step.
-            </p>
-          </div>
         </div>
       )}
     </div>

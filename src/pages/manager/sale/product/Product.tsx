@@ -20,7 +20,6 @@ import {
 import { FaPenToSquare, FaFilter, FaEye } from "react-icons/fa6";
 import { Switch } from "@/components/ui/switch";
 import { Trash } from "lucide-react";
-import { DeleteModal } from "@/components/modal/DeleteModal";
 import {
   Dialog,
   DialogContent,
@@ -35,34 +34,23 @@ import { ProductFormMode } from "@/enums/product";
 import { useAppDispatch } from "@/libs/stores";
 import { getAllProductsThunk } from "@/libs/stores/productManager/thunk";
 import { useSelector } from "react-redux";
-import type { ProductData } from "@/libs/types/product";
+import type { ProductData, ProductParams } from "@/libs/types/product";
 import { PaginationTable } from "@/components/global";
 import { SelectAddProductType } from "@/components/manage/sale/product/SelectAddProductType";
 
 const Product: React.FC = () => {
   const dispatch = useAppDispatch();
   const productResponse = useSelector((state: any) => state?.manageProduct?.products);
+  const pagination = useSelector((state: any) => state?.manageProduct?.products?.pagination);
   const products: ProductData[] = productResponse?.data || [];
-  const totalItems = productResponse?.total || 0;
   const isLoading = useSelector((state: any) => state?.manageProduct?.isLoading);
   const error = useSelector((state: any) => state?.manageProduct?.error);
-  const [params, setParams] = useState({
-    limit: 10,
-    offset: 0,
+  const [params, setParams] = useState<ProductParams>({
+    page: 1,
+    limit: 5,
   });
 
   const navigate = useNavigate();
-
-  useEffect(() => {
-    dispatch(getAllProductsThunk(params));
-  }, [dispatch, params]);
-
-  const handlePageChange = (page: number) => {
-    const newOffset = (page - 1) * params.limit;
-    setParams((prev) => ({ ...prev, offset: newOffset }));
-  };
-
-  const currentPage = Math.floor(params.offset / params.limit) + 1;
 
   useEffect(() => {
     dispatch(getAllProductsThunk(params));
@@ -104,16 +92,16 @@ const Product: React.FC = () => {
 
           <div className="min-w-[150px]">
             <Select
-              value={""}
-              onValueChange={() => {
-                setParams({ ...params, offset: 0 });
+              value={params.category_id || " "}
+              onValueChange={(value) => {
+                setParams({ ...params, category_id: value });
               }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">All Category</SelectItem>
+                <SelectItem value=" ">All Category</SelectItem>
                 <SelectItem value="Perfumes">Perfumes</SelectItem>
                 <SelectItem value="Skincare">Skincare</SelectItem>
               </SelectContent>
@@ -122,16 +110,16 @@ const Product: React.FC = () => {
 
           <div className="min-w-[150px]">
             <Select
-              value={""}
-              onValueChange={() => {
-                /* TODO: implement type filter */
+              value={params.type || " "}
+              onValueChange={(value) => {
+                setParams({ ...params, type: value });
               }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">All Types</SelectItem>
+                <SelectItem value=" ">All Types</SelectItem>
                 <SelectItem value="STANDARD">Standard</SelectItem>
                 <SelectItem value="LIMITED">Limited</SelectItem>
               </SelectContent>
@@ -188,7 +176,7 @@ const Product: React.FC = () => {
                       <div className="flex items-center">
                         <img
                           src={
-                            product.thumbnail_url ||
+                            product.thumbnail_url?.[0] ||
                             "https://cdn.shopify.com/s/files/1/0069/4471/8937/products/Chanel-Coco-Mademoiselle-Intense-EDP-W-50ml-2_de2881cf-4ddb-4a2d-a65a-12b75ff4ec7f_1200x1200.jpg?v=1573190789"
                           }
                           alt={product.name}
@@ -226,8 +214,10 @@ const Product: React.FC = () => {
 
                     <TableCell className="py-4">
                       <Dialog>
-                        <DialogTrigger>
-                          <Switch checked={product.is_active} />
+                        <DialogTrigger asChild>
+                          <div>
+                            <Switch checked={product.is_active} />
+                          </div>
                         </DialogTrigger>
                         <StatusModal
                           name={product.name}
@@ -243,8 +233,8 @@ const Product: React.FC = () => {
                       <div className="flex gap-1">
                         <Button
                           variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 hover:bg-blue-50"
+                          size="icon"
+                          className=" hover:bg-blue-100"
                           title="Edit"
                           onClick={() => {
                             navigate(`/manage/sale/product/${product.id}/edit`, {
@@ -257,8 +247,8 @@ const Product: React.FC = () => {
 
                         <Button
                           variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 hover:bg-yellow-50"
+                          size="icon"
+                          className=" hover:bg-yellow-100"
                           title="Edit"
                           onClick={() => {
                             navigate(`/manage/sale/product/${product.id}/edit`, {
@@ -273,14 +263,14 @@ const Product: React.FC = () => {
                           <DialogTrigger asChild>
                             <Button
                               variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 hover:bg-red-50"
+                              size="icon"
+                              className=" hover:bg-red-100"
                               title="Delete"
                             >
                               <Trash className="text-red-600" />
                             </Button>
                           </DialogTrigger>
-                          <DeleteModal name={product.name} />
+                          {/* <DeleteModal name={product.name} /> */}
                         </Dialog>
                       </div>
                     </TableCell>
@@ -289,12 +279,14 @@ const Product: React.FC = () => {
               )}
             </TableBody>
           </Table>
-          <PaginationTable
-            page={currentPage}
-            totalItems={totalItems}
-            pageSize={params.limit}
-            onPageChange={handlePageChange}
-          />
+          {pagination && (
+            <PaginationTable
+              page={pagination.page}
+              totalItems={pagination.total}
+              pageSize={pagination.limit}
+              onPageChange={(page) => setParams({ ...params, page })}
+            />
+          )}
         </div>
       </div>
     </div>

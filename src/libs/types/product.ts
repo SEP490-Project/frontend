@@ -1,8 +1,37 @@
-export interface ProductResponse {
-  data: ProductData[];
-  limit: number;
-  offset: number;
-  total: number;
+import type { FieldValues, UseFormReturn } from "react-hook-form";
+import type { NavigateFunction } from "react-router";
+import type { Pagination } from "./common";
+
+export type ProductType = "STANDARD" | "LIMITED";
+export type CapacityUnit = "ML" | "L" | "G" | "KG" | "OZ";
+export type ContainerType =
+  | "BOTTLE"
+  | "TUBE"
+  | "JAR"
+  | "STICK"
+  | "PENCIL"
+  | "COMPACT"
+  | "PALLETE"
+  | "SACHET"
+  | "VIAL"
+  | "ROLLER_BOTTLE";
+export type DispenserType =
+  | "PUMP"
+  | "SPRAY"
+  | "DROPPER"
+  | "ROLL_ON"
+  | "TWIST_UP"
+  | "SQUEEZE"
+  | "NONE";
+export type AttributeUnit = "%" | "MG" | "G" | "ML" | "L" | "IU" | "PPM" | "NONE";
+
+export interface ProductResponse<T> {
+  success: boolean;
+  status: string;
+  status_code: number;
+  message: string;
+  data: T;
+  pagination: Pagination;
 }
 
 export interface ProductData {
@@ -10,42 +39,39 @@ export interface ProductData {
   brand_id: string;
   brand_logo_url: string;
   brand_name?: string;
-  thumbnail_url?: string;
+  thumbnail_url?: string[] | null;
   is_active: boolean;
   category: string;
   category_lv2: string;
   description: string;
   name: string;
   price: number;
-  type: string;
+  type: ProductType;
   variants?: ProductVariant[];
   created_at: Date;
 }
 
 export interface ProductVariant {
-  id: string;
   attributes: ProductAttribute[];
-  capacity: number;
-  capacity_unit: string;
-  container_type: string;
-  created_at: Date;
-  current_stock: number;
-  description: string;
-  dispenser_type: string;
+  capacity: number | null;
+  capacity_unit: CapacityUnit;
+  container_type: ContainerType;
+  current_stock?: number | null;
+  description?: string | null;
+  dispenser_type: DispenserType;
   expiry_date: Date | null;
   instructions: string;
   is_default: boolean;
   manufacture_date: Date | null;
   name: string;
-  price: number;
-  story: string;
+  price: number | null;
+  story?: string | null;
   type: string;
-  updated_at: Date;
-  uses: string;
+  uses: string | null;
 }
 
 export interface ProductAttribute {
-  description: string;
+  description?: string | null;
   ingredients: string;
   unit: string;
   value: number;
@@ -53,7 +79,23 @@ export interface ProductAttribute {
 export interface CreateProductPayload {
   brand_id: string;
   category_id: string;
-  description: string;
+  description?: string | null;
   name: string;
-  price: number;
+  price: number | null;
+}
+
+export interface ProductParams {
+  limit?: number;
+  page?: number;
+  search?: string;
+  type?: string;
+  category_id?: string;
+}
+
+export interface ProductFormProps<T extends FieldValues> {
+  form: UseFormReturn<T>;
+  setOnSubmitStep?: React.Dispatch<React.SetStateAction<null | (() => Promise<void>)>>;
+  navigate: NavigateFunction;
+  steps: { path: string; label: string }[];
+  currentStep: number;
 }

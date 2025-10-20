@@ -1,3 +1,5 @@
+import type { Pagination } from "./common";
+
 export interface UserData {
   id: string;
   avatar: string;
@@ -19,14 +21,7 @@ export interface UserResponse<T> {
   status_code: number;
   message: string;
   data?: T;
-  pagination?: {
-    total: number;
-    page: number;
-    limit: number;
-    total_pages: number;
-    has_next: boolean;
-    has_prev: boolean;
-  };
+  pagination?: Pagination;
 }
 
 export interface UserParams {

@@ -1,4 +1,5 @@
 import { AddCategoryForm } from "@/components/manage/sale/category/AddCategoryForm";
+import { AssignParentCategoryForm } from "@/components/manage/sale/category/AssignParentCategoryForm";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -24,126 +25,93 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Eye } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { FaFilter } from "react-icons/fa6";
-
-const mockCategories = [
-  {
-    id: "11111111-1111-1111-1111-111111111111",
-    name: "Electronics",
-    description: "Devices and gadgets like phones, laptops, and accessories",
-  },
-  {
-    id: "22222222-2222-2222-2222-222222222222",
-    name: "Home & Kitchen",
-    description: "Appliances and furniture for household use",
-  },
-  {
-    id: "33333333-3333-3333-3333-333333333333",
-    name: "Clothing",
-    description: "Apparel for men, women, and kids",
-  },
-
-  {
-    id: "44444444-4444-4444-4444-444444444444",
-    name: "Phones",
-    description: "Smartphones and mobile accessories",
-    parent_category: {
-      id: "11111111-1111-1111-1111-111111111111",
-      name: "Electronics",
-      description: "Devices and gadgets like phones, laptops, and accessories",
-    },
-  },
-  {
-    id: "55555555-5555-5555-5555-555555555555",
-    name: "Laptops",
-    description: "Personal and gaming laptops",
-    parent_category: {
-      id: "11111111-1111-1111-1111-111111111111",
-      name: "Electronics",
-      description: "Devices and gadgets like phones, laptops, and accessories",
-    },
-  },
-  {
-    id: "66666666-6666-6666-6666-666666666666",
-    name: "Accessories",
-    description: "Chargers, cables, and earphones",
-    parent_category: {
-      id: "11111111-1111-1111-1111-111111111111",
-      name: "Electronics",
-      description: "Devices and gadgets like phones, laptops, and accessories",
-    },
-  },
-
-  {
-    id: "77777777-7777-7777-7777-777777777777",
-    name: "Furniture",
-    description: "Home and office furniture",
-    parent_category: {
-      id: "22222222-2222-2222-2222-222222222222",
-      name: "Home & Kitchen",
-      description: "Appliances and furniture for household use",
-    },
-  },
-  {
-    id: "88888888-8888-8888-8888-888888888888",
-    name: "Appliances",
-    description: "Kitchen and home appliances",
-    parent_category: {
-      id: "22222222-2222-2222-2222-222222222222",
-      name: "Home & Kitchen",
-      description: "Appliances and furniture for household use",
-    },
-  },
-  {
-    id: "99999999-9999-9999-9999-999999999999",
-    name: "Decor",
-    description: "Home decor and decorative lighting",
-    parent_category: {
-      id: "22222222-2222-2222-2222-222222222222",
-      name: "Home & Kitchen",
-      description: "Appliances and furniture for household use",
-    },
-  },
-
-  {
-    id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-    name: "Men",
-    description: "Men’s clothing and accessories",
-    parent_category: {
-      id: "33333333-3333-3333-3333-333333333333",
-      name: "Clothing",
-      description: "Apparel for men, women, and kids",
-    },
-  },
-  {
-    id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-    name: "Women",
-    description: "Women’s fashion and accessories",
-    parent_category: {
-      id: "33333333-3333-3333-3333-333333333333",
-      name: "Clothing",
-      description: "Apparel for men, women, and kids",
-    },
-  },
-  {
-    id: "cccccccc-cccc-cccc-cccc-cccccccccccc",
-    name: "Kids",
-    description: "Clothing for children and babies",
-    parent_category: {
-      id: "33333333-3333-3333-3333-333333333333",
-      name: "Clothing",
-      description: "Apparel for men, women, and kids",
-    },
-  },
-];
+import { useAppDispatch } from "@/libs/stores";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/libs/stores";
+import { getAllCategoriesThunk, deleteCategoryThunk } from "@/libs/stores/categoryManager/thunk";
+import { useState, useMemo, useEffect } from "react";
+import { toast } from "sonner";
+import { DeleteModal } from "@/components/modal/DeleteModal";
 
 const Category = () => {
+  const dispatch = useAppDispatch();
+  const { categories, loading } = useSelector((state: RootState) => state.manageCategory);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedParentFilter, setSelectedParentFilter] = useState("ALL");
+  const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
+  const [categoryToAssign, setCategoryToAssign] = useState<string | null>(null);
+
+  useEffect(() => {
+    dispatch(getAllCategoriesThunk({ page: 1, limit: 100 }));
+  }, [dispatch]);
+
+  const filteredCategories = useMemo(() => {
+    if (!categories?.data) return [];
+
+    return categories.data.filter((category) => {
+      const matchesSearch =
+        searchTerm === "" ||
+        category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        category.description?.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesParent =
+        selectedParentFilter === "ALL" ||
+        (selectedParentFilter === "NONE" && !category.parent_category) ||
+        category.parent_category?.id === selectedParentFilter;
+
+      return matchesSearch && matchesParent;
+    });
+  }, [categories, searchTerm, selectedParentFilter]);
+
+  const parentCategories = useMemo(() => {
+    if (!categories?.data) return [];
+    return categories.data.filter((cat) => !cat.parent_category);
+  }, [categories]);
+
+  const handleDeleteCategory = async () => {
+    if (!categoryToDelete) return;
+
+    try {
+      await dispatch(deleteCategoryThunk(categoryToDelete)).unwrap();
+      toast.success("Category deleted successfully!");
+      setCategoryToDelete(null);
+      dispatch(getAllCategoriesThunk({ page: 1, limit: 100 }));
+    } catch (error) {
+      toast.error(String(error) || "Failed to delete category");
+    }
+  };
+
+  const handleFormSuccess = () => {
+    setIsDialogOpen(false);
+    dispatch(getAllCategoriesThunk({ page: 1, limit: 100 }));
+  };
+
+  const handleAssignSuccess = () => {
+    setIsAssignDialogOpen(false);
+    setCategoryToAssign(null);
+    dispatch(getAllCategoriesThunk({ page: 1, limit: 100 }));
+  };
+
+  const categoryToDeleteName = useMemo(() => {
+    if (!categoryToDelete || !categories?.data) return "";
+    const category = categories.data.find((cat) => cat.id === categoryToDelete);
+    return category?.name || "";
+  }, [categoryToDelete, categories]);
+
+  const categoryToAssignData = useMemo(() => {
+    if (!categoryToAssign || !categories?.data) return undefined;
+    return categories.data.find((cat) => cat.id === categoryToAssign);
+  }, [categoryToAssign, categories]);
+
   return (
     <div className="min-h-fit p-4 sm:p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-xl sm:text-2xl font-semibold">Category</h1>
-        <Dialog>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button className="bg-primary hover:bg-[#f794a8] text-white">Add Category</Button>
           </DialogTrigger>
@@ -152,7 +120,11 @@ const Category = () => {
               <DialogTitle>Add Category</DialogTitle>
               <DialogDescription>Fill in the form below to add a new category.</DialogDescription>
             </DialogHeader>
-            <AddCategoryForm />
+            <AddCategoryForm
+              onSuccess={handleFormSuccess}
+              categories={categories?.data}
+              loading={loading}
+            />
           </DialogContent>
         </Dialog>
       </div>
@@ -167,26 +139,25 @@ const Category = () => {
           <div className="flex-1 min-w-[200px]">
             <Input
               placeholder="Search by name or description..."
-              // value={searchTerm}
-              // onChange={(e) => setSearchTerm(e.target.value)}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full"
             />
           </div>
 
           <div className="min-w-[150px]">
-            <Select
-              value={""}
-              // onValueChange={() => {
-              //   setParams({ ...params, offset: 0 });
-              // }}
-            >
+            <Select value={selectedParentFilter} onValueChange={setSelectedParentFilter}>
               <SelectTrigger>
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">All Category</SelectItem>
-                <SelectItem value="Perfumes">Perfumes</SelectItem>
-                <SelectItem value="Skincare">Skincare</SelectItem>
+                <SelectItem value="ALL">All Categories</SelectItem>
+                <SelectItem value="NONE">Root Categories</SelectItem>
+                {parentCategories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -202,28 +173,87 @@ const Category = () => {
                 <TableHead className="font-semibold">Description</TableHead>
                 <TableHead className="font-semibold">Parent Category</TableHead>
                 <TableHead className="font-semibold">Created Date</TableHead>
+                <TableHead className="font-semibold">Actions</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
-              {mockCategories.map((category) => (
-                <TableRow key={category.id} className="hover:bg-gray-100">
-                  <TableCell className="font-medium">{category.name}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center">
-                      {category.description}{" "}
-                      <Button size={"icon"} variant={"ghost"}>
-                        <Eye className="w-4 h-4 text-gray-500 " />
-                      </Button>
-                    </div>
-                  </TableCell>
-                  <TableCell>{category.parent_category?.name || "N/A"}</TableCell>
-                  <TableCell>2023-10-01</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-8">
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                    <span className="ml-2">Loading products...</span>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              <TableBody>
+                {filteredCategories.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                      No categories found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredCategories.map((category) => (
+                    <TableRow key={category.id} className="hover:bg-gray-100">
+                      <TableCell className="font-medium">{category.name}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center">{category.description || "N/A"}</div>
+                      </TableCell>
+                      <TableCell>{category.parent_category?.name || "N/A"}</TableCell>
+                      <TableCell>{new Date(category.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell className="flex items-center gap-2">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="hover:bg-blue-100"
+                          onClick={() => {
+                            setCategoryToAssign(category.id);
+                            setIsAssignDialogOpen(true);
+                          }}
+                        >
+                          <Plus className="w-4 h-4 text-blue-500" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="hover:bg-red-100"
+                          onClick={() => setCategoryToDelete(category.id)}
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            )}
           </Table>
         </div>
       </div>
+
+      <Dialog open={!!categoryToDelete} onOpenChange={(open) => !open && setCategoryToDelete(null)}>
+        <DeleteModal name={categoryToDeleteName} onDelete={handleDeleteCategory} />
+      </Dialog>
+
+      <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Parent Category</DialogTitle>
+            <DialogDescription>
+              {categoryToAssignData?.parent_category
+                ? "This category already has a parent category assigned."
+                : "Select a parent category to assign to this category."}
+            </DialogDescription>
+          </DialogHeader>
+          <AssignParentCategoryForm
+            onSuccess={handleAssignSuccess}
+            categories={categories?.data}
+            loading={loading}
+            currentCategory={categoryToAssignData}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

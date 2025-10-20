@@ -2,10 +2,12 @@ import { Outlet, useLocation, useNavigate } from "react-router";
 import { MiniStepper, Stepper } from "./Stepper";
 import { Button } from "@/components/ui/button";
 import { ProductFormMode } from "@/enums/product";
+import { useState } from "react";
 
 const AddProductStep = () => {
   const navigate = useNavigate();
   const { state, pathname } = useLocation();
+  const [onSubmitStep, setOnSubmitStep] = useState<null | (() => Promise<void>)>(null);
 
   const steps = [
     { path: "/manage/sale/product/create", label: "Basic Info" },
@@ -32,17 +34,15 @@ const AddProductStep = () => {
 
   const currentStep = getCurrentStep();
 
-  const handleNext = () => {
-    if (currentStep < steps.length) {
-      navigate(steps[currentStep].path, { state });
-    } else {
-      console.log("Form completed!");
+  const handleNext = async () => {
+    if (onSubmitStep) {
+      await onSubmitStep();
     }
   };
 
   const handleBack = () => {
     if (currentStep > 1) {
-      navigate(steps[currentStep - 2].path, { state });
+      navigate(steps[currentStep - 2]?.path, { state });
     } else {
       navigate("/manage/sale/product");
     }
@@ -75,21 +75,21 @@ const AddProductStep = () => {
   return (
     <div>
       <div className="min-h-screen">
-        <div className="p-4 sm:p-6">
+        <div className=" p-4 sm:p-6">
           <h1 className="text-xl sm:text-2xl font-semibold">{renderForm()}</h1>
           <Stepper steps={steps} currentStep={currentStep} onStepClick={handleStepClick} />
-          <Outlet />
-        </div>
-      </div>
-      <div className="border-gray-200 sticky bottom-0 bg-white min-h-fit border-t flex justify-between items-center px-4 py-2 gap-2">
-        <MiniStepper steps={steps} currentStep={currentStep} onStepClick={handleStepClick} />
-        <div className="space-x-2">
-          <Button variant={"outline"} size={"sm"} onClick={handleBack}>
-            Back
-          </Button>
-          <Button size={"sm"} onClick={handleNext} disabled={currentStep >= steps.length}>
-            {currentStep >= steps.length ? "Finish" : "Next"}
-          </Button>
+          <Outlet context={{ setOnSubmitStep, navigate, steps, currentStep }} />
+          <div className="border-gray-200 absolute min-w-full bottom-0 left-0 bg-white min-h-fit border-t flex justify-between items-center px-4 py-2 gap-2">
+            <MiniStepper steps={steps} currentStep={currentStep} onStepClick={handleStepClick} />
+            <div className="space-x-2">
+              <Button variant={"outline"} size={"sm"} onClick={handleBack}>
+                Back
+              </Button>
+              <Button size={"sm"} onClick={handleNext} disabled={onSubmitStep == null}>
+                {currentStep >= steps.length ? "Finish" : "Next"}
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -176,58 +176,56 @@ const Category = () => {
                 <TableHead className="font-semibold">Actions</TableHead>
               </TableRow>
             </TableHeader>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-8">
-                  <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                    <span className="ml-2">Loading products...</span>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              <TableBody>
-                {filteredCategories.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-gray-500">
-                      No categories found
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8">
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                      <span className="ml-2">Loading products...</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : filteredCategories.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                    No categories found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredCategories.map((category) => (
+                  <TableRow key={category.id} className="hover:bg-gray-100">
+                    <TableCell className="font-medium">{category.name}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center">{category.description || "N/A"}</div>
+                    </TableCell>
+                    <TableCell>{category.parent_category?.name || "N/A"}</TableCell>
+                    <TableCell>{new Date(category.create_at).toLocaleDateString()}</TableCell>
+                    <TableCell className="flex items-center gap-2">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="hover:bg-blue-100"
+                        onClick={() => {
+                          setCategoryToAssign(category.id);
+                          setIsAssignDialogOpen(true);
+                        }}
+                      >
+                        <Plus className="w-4 h-4 text-blue-500" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="hover:bg-red-100"
+                        onClick={() => setCategoryToDelete(category.id)}
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
                     </TableCell>
                   </TableRow>
-                ) : (
-                  filteredCategories.map((category) => (
-                    <TableRow key={category.id} className="hover:bg-gray-100">
-                      <TableCell className="font-medium">{category.name}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center">{category.description || "N/A"}</div>
-                      </TableCell>
-                      <TableCell>{category.parent_category?.name || "N/A"}</TableCell>
-                      <TableCell>{new Date(category.created_at).toLocaleDateString()}</TableCell>
-                      <TableCell className="flex items-center gap-2">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="hover:bg-blue-100"
-                          onClick={() => {
-                            setCategoryToAssign(category.id);
-                            setIsAssignDialogOpen(true);
-                          }}
-                        >
-                          <Plus className="w-4 h-4 text-blue-500" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="hover:bg-red-100"
-                          onClick={() => setCategoryToDelete(category.id)}
-                        >
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            )}
+                ))
+              )}
+            </TableBody>
           </Table>
         </div>
       </div>

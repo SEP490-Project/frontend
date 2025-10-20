@@ -11,7 +11,7 @@ export interface ProductCategory {
   name: string;
   description?: string;
   parent_category?: ProductCategory | null;
-  created_at: Date;
+  create_at: Date;
   updated_at: Date;
 }
 

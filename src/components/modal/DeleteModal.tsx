@@ -24,9 +24,7 @@ export const DeleteModal = ({
           </span>
           Confirm Deletion
         </DialogTitle>
-        <DialogDescription>
-          <p>This action cannot be undone.</p>
-        </DialogDescription>
+        <DialogDescription>This action cannot be undone.</DialogDescription>
       </DialogHeader>
       <p>
         Are you sure you want to delete this <span className="font-semibold">{name}?</span>

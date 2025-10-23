@@ -1,6 +1,7 @@
 import type { ProductData, ProductResponse, ProductVariant } from "@/libs/types/product";
 import { createSlice } from "@reduxjs/toolkit";
 import {
+  createLimitedProductThunk,
   createStandardProductThunk,
   createVariantProductThunk,
   getAllProductsThunk,
@@ -55,10 +56,24 @@ const productManagerSlice = createSlice({
       .addCase(createStandardProductThunk.fulfilled, (state, action) => {
         state.isLoading = false;
         state.createdProduct = action.payload;
-        setItem("currentProduct", action.payload.id);
+        setItem("currentProduct", action.payload);
         state.error = null;
       })
       .addCase(createStandardProductThunk.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || "Failed to create product";
+      })
+      .addCase(createLimitedProductThunk.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(createLimitedProductThunk.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.createdProduct = action.payload;
+        setItem("currentProduct", action.payload);
+        state.error = null;
+      })
+      .addCase(createLimitedProductThunk.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message || "Failed to create product";
       })

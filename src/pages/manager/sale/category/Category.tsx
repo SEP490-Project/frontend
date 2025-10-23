@@ -34,20 +34,24 @@ import { getAllCategoriesThunk, deleteCategoryThunk } from "@/libs/stores/catego
 import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 import { DeleteModal } from "@/components/modal/DeleteModal";
+import { PaginationTable } from "@/components/global";
 
 const Category = () => {
   const dispatch = useAppDispatch();
-  const { categories, loading } = useSelector((state: RootState) => state.manageCategory);
+  const { categories, loading, pagination } = useSelector(
+    (state: RootState) => state.manageCategory,
+  );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedParentFilter, setSelectedParentFilter] = useState("ALL");
   const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
   const [categoryToAssign, setCategoryToAssign] = useState<string | null>(null);
+  const [params, setParams] = useState({ page: 1, limit: 5 });
 
   useEffect(() => {
-    dispatch(getAllCategoriesThunk({ page: 1, limit: 100 }));
-  }, [dispatch]);
+    dispatch(getAllCategoriesThunk(params));
+  }, [dispatch, params]);
 
   const filteredCategories = useMemo(() => {
     if (!categories?.data) return [];
@@ -79,7 +83,7 @@ const Category = () => {
       await dispatch(deleteCategoryThunk(categoryToDelete)).unwrap();
       toast.success("Category deleted successfully!");
       setCategoryToDelete(null);
-      dispatch(getAllCategoriesThunk({ page: 1, limit: 100 }));
+      dispatch(getAllCategoriesThunk(params));
     } catch (error) {
       toast.error(String(error) || "Failed to delete category");
     }
@@ -87,13 +91,13 @@ const Category = () => {
 
   const handleFormSuccess = () => {
     setIsDialogOpen(false);
-    dispatch(getAllCategoriesThunk({ page: 1, limit: 100 }));
+    dispatch(getAllCategoriesThunk(params));
   };
 
   const handleAssignSuccess = () => {
     setIsAssignDialogOpen(false);
     setCategoryToAssign(null);
-    dispatch(getAllCategoriesThunk({ page: 1, limit: 100 }));
+    dispatch(getAllCategoriesThunk(params));
   };
 
   const categoryToDeleteName = useMemo(() => {
@@ -182,7 +186,7 @@ const Category = () => {
                   <TableCell colSpan={5} className="text-center py-8">
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                      <span className="ml-2">Loading products...</span>
+                      <span className="ml-2">Loading categories...</span>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -227,6 +231,14 @@ const Category = () => {
               )}
             </TableBody>
           </Table>
+          {pagination && (
+            <PaginationTable
+              page={pagination.page}
+              totalItems={pagination.total}
+              pageSize={pagination.limit}
+              onPageChange={(page) => setParams({ ...params, page })}
+            />
+          )}
         </div>
       </div>
 

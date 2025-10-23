@@ -77,10 +77,24 @@ const createVariantProductThunk = createAsyncThunk(
   },
 );
 
+const createLimitedProductThunk = createAsyncThunk(
+  "products/createLimited",
+  async (payload: CreateProductPayload, { rejectWithValue }) => {
+    try {
+      const response = await manageProduct.createLimitedProduct(payload);
+      return response.data as ProductData;
+    } catch (error: AxiosError | unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Failed to create product");
+    }
+  },
+);
+
 export {
   getAllProductsThunk,
   getProductByTaskIdThunk,
   createStandardProductThunk,
   createVariantProductThunk,
   getProductDetailThunk,
+  createLimitedProductThunk,
 };

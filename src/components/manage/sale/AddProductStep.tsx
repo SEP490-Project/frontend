@@ -2,18 +2,23 @@ import { Outlet, useLocation, useNavigate } from "react-router";
 import { MiniStepper, Stepper } from "./Stepper";
 import { Button } from "@/components/ui/button";
 import { ProductFormMode } from "@/enums/product";
-import { useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { removeItem } from "@/libs/local-storage";
 
 const AddProductStep = () => {
   const navigate = useNavigate();
   const { state, pathname } = useLocation();
   const [onSubmitStep, setOnSubmitStep] = useState<null | (() => Promise<void>)>(null);
+  const [isDisabled, setIsDisabled] = useState(true);
 
-  const steps = [
-    { path: "/manage/sale/product/create", label: "Basic Info" },
-    { path: "/manage/sale/product/create/variants", label: "Variants" },
-    { path: "/manage/sale/product/create/done", label: "Done" },
-  ];
+  const steps = useMemo(
+    () => [
+      { path: "/manage/sale/product/create", label: "Basic Info" },
+      { path: "/manage/sale/product/create/variants", label: "Variants" },
+      { path: "/manage/sale/product/create/done", label: "Done" },
+    ],
+    [],
+  );
 
   const getCurrentStep = () => {
     const exactMatch = steps.findIndex((step) => pathname === step.path);
@@ -44,9 +49,22 @@ const AddProductStep = () => {
     if (currentStep > 1) {
       navigate(steps[currentStep - 2]?.path, { state });
     } else {
-      navigate("/manage/sale/product");
+      // Clear localStorage when going back from first step
+      removeItem("currentProduct");
+      navigate("/manage/sale/product", { state });
     }
   };
+
+  // Cleanup localStorage when component unmounts (user leaves the flow)
+  useEffect(() => {
+    return () => {
+      // Only clean up if we're navigating away from the product creation flow
+      const isInProductFlow = steps.some((step) => window.location.pathname.startsWith(step.path));
+      if (!isInProductFlow) {
+        removeItem("currentProduct");
+      }
+    };
+  }, [steps]);
 
   const handleStepClick = (stepIndex: number) => {
     if (stepIndex + 1 <= currentStep) {
@@ -78,14 +96,24 @@ const AddProductStep = () => {
         <div className=" p-4 sm:p-6">
           <h1 className="text-xl sm:text-2xl font-semibold">{renderForm()}</h1>
           <Stepper steps={steps} currentStep={currentStep} onStepClick={handleStepClick} />
-          <Outlet context={{ setOnSubmitStep, navigate, steps, currentStep }} />
+          <Outlet
+            context={{
+              setOnSubmitStep,
+              navigate,
+              steps,
+              currentStep,
+              state,
+              setIsDisabled,
+              isDisabled,
+            }}
+          />
           <div className="border-gray-200 absolute min-w-full bottom-0 left-0 bg-white min-h-fit border-t flex justify-between items-center px-4 py-2 gap-2">
             <MiniStepper steps={steps} currentStep={currentStep} onStepClick={handleStepClick} />
             <div className="space-x-2">
               <Button variant={"outline"} size={"sm"} onClick={handleBack}>
                 Back
               </Button>
-              <Button size={"sm"} onClick={handleNext} disabled={onSubmitStep == null}>
+              <Button size={"sm"} onClick={handleNext} disabled={isDisabled}>
                 {currentStep >= steps.length ? "Finish" : "Next"}
               </Button>
             </div>

@@ -4,7 +4,7 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 
 const getAllCategoriesThunk = createAsyncThunk(
   "categories/getAll",
-  async (params: ProductCategoryParams, { rejectWithValue }) => {
+  async (params: ProductCategoryParams | undefined, { rejectWithValue }) => {
     try {
       const response = await manageCategories.getAllCategories(params);
       return response.data as CategoryResponse;

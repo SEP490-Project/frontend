@@ -1,9 +1,12 @@
+import type { Pagination } from "./common";
+
 export interface CategoryResponse {
   success: boolean;
   status: string;
   status_code: number;
   message: string;
   data: ProductCategory[];
+  pagination: Pagination;
 }
 
 export interface ProductCategory {

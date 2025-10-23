@@ -1,4 +1,4 @@
-import { useLocation, useOutletContext, type NavigateFunction } from "react-router";
+import { useOutletContext, type NavigateFunction } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trash2, Plus, ImageIcon, Package, Box } from "lucide-react";
@@ -13,7 +13,7 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { productVariantSchema } from "@/libs/validation/productValidation";
 import { VariationForm } from "@/components/manage/sale/product/form/VariationForm";
-import type { ProductVariant } from "@/libs/types/product";
+import type { ProductData, ProductVariant } from "@/libs/types/product";
 import { useEffect, useState } from "react";
 import { useAppDispatch } from "@/libs/stores";
 import { createVariantProductThunk } from "@/libs/stores/productManager/thunk";
@@ -22,17 +22,18 @@ import { toast } from "sonner";
 import { convertNumberToCurrency } from "@/libs/helper/helper";
 
 const VariantsStep = () => {
-  const { state } = useLocation();
   const dispatch = useAppDispatch();
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const { setOnSubmitStep, steps, currentStep, navigate } = useOutletContext<{
+  const { setOnSubmitStep, steps, currentStep, navigate, state, setIsDisabled } = useOutletContext<{
     setOnSubmitStep: React.Dispatch<React.SetStateAction<null | (() => Promise<void>)>>;
     steps: { path: string; label: string }[];
     currentStep: number;
     navigate: NavigateFunction;
+    state: any;
+    setIsDisabled: React.Dispatch<React.SetStateAction<boolean>>;
   }>();
 
   const form = useForm<ProductVariant>({
@@ -50,7 +51,7 @@ const VariantsStep = () => {
       uses: "",
       attributes: [],
       is_default: false,
-      type: state?.productType || "STANDARD",
+      type: state?.productType,
       expiry_date: null,
       manufacture_date: null,
       instructions: "",
@@ -62,9 +63,9 @@ const VariantsStep = () => {
   };
 
   const handleAddVariant = async (data: ProductVariant) => {
-    const productId = getItem("currentProduct");
+    const currentProduct = getItem<ProductData>("currentProduct");
 
-    if (!productId) {
+    if (!currentProduct) {
       toast.error("No product found. Please create a product first.");
       return;
     }
@@ -72,7 +73,7 @@ const VariantsStep = () => {
     setIsLoading(true);
     try {
       await dispatch(
-        createVariantProductThunk({ payload: data, productId: String(productId) }),
+        createVariantProductThunk({ payload: data, productId: String(currentProduct?.id) }),
       ).unwrap();
 
       toast.success("Product variant added successfully!");
@@ -88,9 +89,14 @@ const VariantsStep = () => {
   };
 
   useEffect(() => {
-    if (variants.length === 0) return;
-    setOnSubmitStep(async () => navigate(steps[currentStep]?.path));
-  }, [dispatch, variants]);
+    // Enable Next button if at least one variant is added, or always enable for standard products
+    if (state?.productType === "STANDARD" || variants.length > 0) {
+      setIsDisabled(false);
+      setOnSubmitStep(() => async () => navigate(steps[currentStep]?.path));
+    } else {
+      setIsDisabled(true);
+    }
+  }, [dispatch, variants, state, setIsDisabled, setOnSubmitStep, navigate, steps, currentStep]);
 
   return (
     <div className="bg-white p-6 rounded-lg mt-6 shadow-md">
@@ -115,11 +121,14 @@ const VariantsStep = () => {
             </DialogHeader>
             <VariationForm
               form={form}
+              onSubmit={handleAddVariant}
               setOnSubmitStep={setOnSubmitStep}
               steps={steps}
               currentStep={currentStep}
               navigate={navigate}
-              onSubmit={handleAddVariant}
+              state={state}
+              isDisabled={false}
+              setIsDisabled={setIsDisabled}
             />
           </DialogContent>
         </Dialog>

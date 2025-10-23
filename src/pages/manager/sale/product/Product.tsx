@@ -197,7 +197,7 @@ const Product: React.FC = () => {
                     <TableCell className="py-4">{product.variants?.length || 0}</TableCell>
 
                     <TableCell className="py-4">
-                      {product.category ? product.category : product.category_lv2}
+                      {product.category ? product.category.name : "N/A"}
                     </TableCell>
 
                     <TableCell className="py-4">

@@ -38,11 +38,14 @@ export interface ProductData {
   id: string;
   brand_id: string;
   brand_logo_url: string;
-  brand_name?: string;
-  thumbnail_url?: string[] | null;
+  brand_name: string;
+  thumbnail_url: string[] | null;
   is_active: boolean;
-  category: string;
-  category_lv2: string;
+  category: {
+    id: string;
+    name: string;
+    description: string;
+  };
   description: string;
   name: string;
   price: number;
@@ -68,6 +71,15 @@ export interface ProductVariant {
   story?: string | null;
   type: string;
   uses: string | null;
+}
+
+export interface ProductVariantImage {
+  id: string;
+  variant_id: string;
+  image_url: string;
+  alt_text: string | null;
+  is_primary: boolean;
+  created_at: Date;
 }
 
 export interface ProductAttribute {
@@ -98,4 +110,7 @@ export interface ProductFormProps<T extends FieldValues> {
   navigate: NavigateFunction;
   steps: { path: string; label: string }[];
   currentStep: number;
+  state: any;
+  isDisabled: boolean;
+  setIsDisabled: React.Dispatch<React.SetStateAction<boolean>>;
 }

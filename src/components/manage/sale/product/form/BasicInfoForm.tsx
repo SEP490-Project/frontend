@@ -12,12 +12,16 @@ import { brand } from "@/libs/stores/brandManager/thunk";
 import { useCallback, useEffect, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Controller } from "react-hook-form";
-import type { CreateProductPayload, ProductFormProps } from "@/libs/types/product";
-import { createStandardProductThunk } from "@/libs/stores/productManager/thunk";
+import type { CreateProductPayload, ProductFormProps, ProductData } from "@/libs/types/product";
+import {
+  createLimitedProductThunk,
+  createStandardProductThunk,
+} from "@/libs/stores/productManager/thunk";
 import { toast } from "sonner";
 import { getAllCategoriesThunk } from "@/libs/stores/categoryManager/thunk";
 import { useSelector } from "react-redux";
 import type { ProductCategory } from "@/libs/types/category";
+import { getItem, setItem } from "@/libs/local-storage";
 
 export const BasicInfoForm = ({
   form,
@@ -25,20 +29,39 @@ export const BasicInfoForm = ({
   steps,
   currentStep,
   navigate,
+  state,
+  setIsDisabled,
 }: ProductFormProps<CreateProductPayload>) => {
   const dispatch = useAppDispatch();
   const categories = useSelector((state: any) => state?.manageCategory?.categories?.data);
   const { brands } = useBrand();
   const [params] = useState({ page: 1, limit: 100 });
-  const { register, handleSubmit, control } = form;
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+    watch,
+  } = form;
+  const productBasicInfos = getItem<ProductData>("currentProduct");
+
+  const [name, category_id, brand_id, price] = watch(["name", "category_id", "brand_id", "price"]);
 
   const onSubmit = useCallback(
     async (payload: CreateProductPayload) => {
-      const result = await dispatch(createStandardProductThunk(payload)).unwrap();
+      const result = await dispatch(
+        state.productType === "STANDARD"
+          ? createStandardProductThunk(payload)
+          : createLimitedProductThunk(payload),
+      ).unwrap();
       console.log("Created product:", result);
-      navigate(steps[currentStep]?.path);
+      if (result) {
+        setItem("currentProduct", result);
+        toast.success("Product created successfully");
+        navigate(steps[currentStep]?.path, { state });
+      }
     },
-    [dispatch],
+    [dispatch, state, navigate, steps, currentStep],
   );
 
   const onError = useCallback((errors: any) => {
@@ -46,28 +69,74 @@ export const BasicInfoForm = ({
   }, []);
 
   useEffect(() => {
+    if (setIsDisabled) {
+      const isFormValid = Boolean(
+        name &&
+          name.trim() !== "" &&
+          category_id &&
+          brand_id &&
+          price &&
+          price >= 1000 &&
+          !errors.name &&
+          !errors.category_id &&
+          !errors.brand_id &&
+          !errors.price,
+      );
+      setIsDisabled(!isFormValid);
+    }
+  }, [name, category_id, brand_id, price, errors, setIsDisabled]);
+
+  useEffect(() => {
     if (setOnSubmitStep) {
+      if (productBasicInfos && productBasicInfos.id) {
+        form.reset(productBasicInfos);
+        setOnSubmitStep(() => async () => {
+          navigate(steps[currentStep]?.path, { state });
+        });
+        return;
+      }
       const submitHandler = async () => {
         await handleSubmit(onSubmit, onError)();
       };
       setOnSubmitStep(() => submitHandler);
     }
-  }, [setOnSubmitStep, handleSubmit, onSubmit, onError]);
+  }, [
+    setOnSubmitStep,
+    handleSubmit,
+    onSubmit,
+    onError,
+    productBasicInfos,
+    form,
+    navigate,
+    steps,
+    currentStep,
+    state,
+  ]);
 
   useEffect(() => {
-    const fetchInitialData = async () => {
+    const fetchCategories = async () => {
       try {
-        await Promise.all([
-          dispatch(getAllCategoriesThunk(params)).unwrap(),
-          dispatch(brand(params)).unwrap(),
-        ]);
+        await dispatch(getAllCategoriesThunk(params)).unwrap();
       } catch (error) {
-        console.error("Failed to fetch initial data:", error);
-        toast.error("Failed to load categories or brands");
+        console.error("Failed to fetch categories:", error);
+        toast.error("Failed to load categories");
       }
     };
 
-    fetchInitialData();
+    fetchCategories();
+  }, [dispatch, params]);
+
+  useEffect(() => {
+    const fetchBrands = async () => {
+      try {
+        await dispatch(brand(params)).unwrap();
+      } catch (error) {
+        console.error("Failed to fetch brands:", error);
+        toast.error("Failed to load brands");
+      }
+    };
+
+    fetchBrands();
   }, [dispatch, params]);
 
   return (

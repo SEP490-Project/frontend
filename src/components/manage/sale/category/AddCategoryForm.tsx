@@ -8,21 +8,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAppDispatch } from "@/libs/stores";
 import { createCategoryThunk } from "@/libs/stores/categoryManager/thunk";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
-import type { ProductCategory } from "@/libs/types/category";
+import manageCategories from "@/libs/services/manageCategories";
+import { useAppDispatch } from "@/libs/stores";
+import type { CategoryResponse } from "@/libs/types/category";
+import { AxiosError } from "axios";
 
 interface AddCategoryFormProps {
   onSuccess?: () => void;
-  categories?: ProductCategory[];
   loading?: boolean;
 }
 
-export const AddCategoryForm = ({ onSuccess, categories, loading }: AddCategoryFormProps) => {
+export const AddCategoryForm = ({ onSuccess, loading }: AddCategoryFormProps) => {
   const dispatch = useAppDispatch();
+  const [allCategories, setAllCategories] = useState<CategoryResponse>({} as CategoryResponse);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -30,7 +32,23 @@ export const AddCategoryForm = ({ onSuccess, categories, loading }: AddCategoryF
     parent_category_id: "",
   });
 
-  const filteredParentCategories = categories?.filter((cat) => !cat.parent_category);
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const resultAction = await manageCategories.getAllCategories();
+        setAllCategories(resultAction.data);
+      } catch (error) {
+        if (error instanceof AxiosError) {
+          toast.error(error.response?.data?.message || "Failed to fetch categories");
+          return;
+        }
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  const filteredParentCategories = allCategories?.data?.filter((cat) => !cat.parent_category);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

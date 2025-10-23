@@ -16,6 +16,20 @@ const getAllCategoriesThunk = createAsyncThunk(
   },
 );
 
+const getAllCategoriesNoParamsThunk = createAsyncThunk(
+  "categories/getAllWithoutParams",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await manageCategories.getAllCategories();
+      return response.data as CategoryResponse;
+    } catch (error) {
+      return rejectWithValue(
+        (error as any).response?.data?.message || "Failed to fetch categories",
+      );
+    }
+  },
+);
+
 const createCategoryThunk = createAsyncThunk(
   "categories/create",
   async (data: any, { rejectWithValue }) => {
@@ -62,4 +76,5 @@ export {
   createCategoryThunk,
   deleteCategoryThunk,
   assignParentCategoryThunk,
+  getAllCategoriesNoParamsThunk,
 };

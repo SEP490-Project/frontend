@@ -62,7 +62,7 @@ const Product: React.FC = () => {
         <h1 className="text-xl sm:text-2xl font-semibold">Products</h1>
         <Dialog>
           <DialogTrigger asChild>
-            <Button className="bg-primary hover:bg-[#f794a8] text-white">Add product</Button>
+            <Button className="bg-primary hover:bg-[#f794a8] text-white">Create product</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>

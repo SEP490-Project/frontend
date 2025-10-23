@@ -117,18 +117,14 @@ const Category = () => {
         <h1 className="text-xl sm:text-2xl font-semibold">Category</h1>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-primary hover:bg-[#f794a8] text-white">Add Category</Button>
+            <Button className="bg-primary hover:bg-[#f794a8] text-white">Create Category</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Add Category</DialogTitle>
               <DialogDescription>Fill in the form below to add a new category.</DialogDescription>
             </DialogHeader>
-            <AddCategoryForm
-              onSuccess={handleFormSuccess}
-              categories={categories?.data}
-              loading={loading}
-            />
+            <AddCategoryForm onSuccess={handleFormSuccess} loading={loading} />
           </DialogContent>
         </Dialog>
       </div>

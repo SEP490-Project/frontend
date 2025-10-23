@@ -32,6 +32,8 @@ import {
   Review,
   Transaction,
 } from "@/pages/manager/sale";
+import { ContentApproval } from "@/pages/manager/marketing/content-approval";
+import ContentPreviewPage from "@/pages/manager/marketing/content-approval/ContentPreviewPage";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -98,6 +100,8 @@ const AppRoutes = () => (
           <Route path="contracts/:id" element={<ContractDetail />} />
           <Route path="campaigns" element={<MarketingCampaign />} />
           <Route path="campaigns/add" element={<AddCampaign />} />
+          <Route path="content-approval" element={<ContentApproval />} />
+          <Route path="content-approval/preview/:id" element={<ContentPreviewPage />} />
         </Route>
       </Route>
 

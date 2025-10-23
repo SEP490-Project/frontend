@@ -231,9 +231,9 @@ const TaskCard: React.FC<{
         </div>
         <div className="flex gap-2">
           {task.type === "Video" ? (
-            <Video className="h-4 w-4 text-purple-500" />
+            <Video className="h-8 w-8 text-purple-500" />
           ) : (
-            <FileText className="h-4 w-4 text-blue-500" />
+            <FileText className="h-8 w-8 text-blue-500" />
           )}
           <Tooltip>
             <TooltipTrigger asChild>
@@ -350,9 +350,6 @@ const TaskDetailView: React.FC<TaskDetailViewProps> = ({ task, onBack, onSelectF
       </div>
 
       <DialogFooter>
-        <Button variant="outline" onClick={onBack}>
-          Back to List
-        </Button>
         <Button className="bg-[#FF9DB0] hover:bg-pink-600 text-white" onClick={onSelectForContent}>
           Create Content for This Task
         </Button>

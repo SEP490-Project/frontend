@@ -1,10 +1,24 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import type { Content } from "@/libs/types/content";
 import { ArrowLeft, Upload, X, User, Calendar, Target, FileText } from "lucide-react";
@@ -25,7 +39,7 @@ interface VideoEditorProps {
 }
 
 interface VideoContent {
-  title: string;
+  platform: string;
   description: string;
   videoFile: File | null;
   videoUrl: string;
@@ -34,6 +48,7 @@ interface VideoContent {
 const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEditorProps) => {
   const contentType = "video";
   const [showPreview, setShowPreview] = useState(false);
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
 
   // Debug logging to verify task data
   React.useEffect(() => {
@@ -44,22 +59,42 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
     }
   }, [selectedTask]);
   const [videoContent, setVideoContent] = useState<VideoContent>({
-    title: editingContent?.title || "",
+    platform: editingContent ? (editingContent.json_content as any)?.platform || "" : "",
     description: editingContent ? (editingContent.json_content as any)?.description || "" : "",
     videoFile: null,
     videoUrl: editingContent ? (editingContent.json_content as any)?.videoUrl || "" : "",
   });
 
+  // Keep track of initial values to detect unsaved changes
+  const initialContent = React.useMemo(
+    () => ({
+      platform: editingContent ? (editingContent.json_content as any)?.platform || "" : "",
+      description: editingContent ? (editingContent.json_content as any)?.description || "" : "",
+      videoUrl: editingContent ? (editingContent.json_content as any)?.videoUrl || "" : "",
+    }),
+    [editingContent],
+  );
+
+  // Check if there are unsaved changes
+  const hasUnsavedChanges = React.useMemo(() => {
+    return (
+      videoContent.platform !== initialContent.platform ||
+      videoContent.description !== initialContent.description ||
+      videoContent.videoUrl !== initialContent.videoUrl ||
+      videoContent.videoFile !== null
+    );
+  }, [videoContent, initialContent]);
+
   const handleSave = () => {
     if (
-      videoContent.title &&
+      videoContent.platform &&
       videoContent.description &&
       (videoContent.videoFile || videoContent.videoUrl)
     ) {
       const content = {
-        html: `<h1>${videoContent.title}</h1><p>${videoContent.description}</p><video src="${videoContent.videoUrl}" controls></video>`,
+        html: `<p>${videoContent.description}</p><video src="${videoContent.videoUrl}" controls></video>`,
         json: {
-          title: videoContent.title,
+          platform: videoContent.platform,
           description: videoContent.description,
           videoUrl: videoContent.videoUrl,
           type: "video",
@@ -67,7 +102,7 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
       };
       onSave(content, contentType);
     } else {
-      alert("Please fill in all required fields (title, description, and video)");
+      alert("Please fill in all required fields (platform, description, and video)");
     }
   };
 
@@ -100,18 +135,42 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
     }));
   };
 
+  // Handle back navigation with unsaved changes check
+  const handleBackClick = () => {
+    if (hasUnsavedChanges) {
+      setShowUnsavedDialog(true);
+    } else {
+      onBack();
+    }
+  };
+
+  // Handle discarding changes and going back
+  const handleDiscardChanges = () => {
+    setShowUnsavedDialog(false);
+    onBack();
+  };
+
+  // Handle keeping changes (close dialog)
+  const handleKeepEditing = () => {
+    setShowUnsavedDialog(false);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <Button variant="default" onClick={onBack} className="flex items-center space-x-2">
+          <Button
+            variant="default"
+            onClick={handleBackClick}
+            className="flex items-center space-x-2"
+          >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to List</span>
           </Button>
           <div>
             <h2 className="text-xl font-semibold text-gray-900">
-              {editingContent ? `Editing: ${editingContent.title}` : "Create New Video Content"}
+              {editingContent ? "Edit Video Content" : "Create New Video Content"}
             </h2>
           </div>
         </div>
@@ -210,20 +269,25 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
       <Card>
         <CardHeader>
           <h3 className="text-lg font-semibold">
-            {editingContent ? `Editing: ${editingContent.title}` : `Create New ${contentType}`}
+            {editingContent ? "Edit Video Content" : `Create New ${contentType}`}
           </h3>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Title Input */}
+          {/* Platform Selector */}
           <div className="space-y-2">
-            <Label htmlFor="title">Title *</Label>
-            <Input
-              id="title"
-              placeholder="Enter video title..."
-              value={videoContent.title}
-              onChange={(e) => handleInputChange("title", e.target.value)}
-              className="w-full"
-            />
+            <Label htmlFor="platform">Platform *</Label>
+            <Select
+              value={videoContent.platform}
+              onValueChange={(value) => handleInputChange("platform", value)}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a platform" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="facebook">Facebook</SelectItem>
+                <SelectItem value="tiktok">TikTok</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Description Input */}
@@ -289,42 +353,71 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
           variant="default"
           onClick={() => setShowPreview(!showPreview)}
           className="w-[200px]"
-          disabled={!videoContent.title || !videoContent.description || !videoContent.videoUrl}
+          disabled={!videoContent.platform || !videoContent.description || !videoContent.videoUrl}
         >
           {showPreview ? "Hide Preview" : "Show Preview"}
         </Button>
       </div>
 
       {/* Preview Section */}
-      {showPreview && videoContent.title && videoContent.description && videoContent.videoUrl && (
-        <Card>
-          <CardHeader>
-            <h3 className="text-lg font-semibold">
-              {editingContent ? `Preview: ${editingContent.title}` : "Video Preview"}
-            </h3>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Title Preview */}
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">{videoContent.title}</h1>
-              </div>
+      {showPreview &&
+        videoContent.platform &&
+        videoContent.description &&
+        videoContent.videoUrl && (
+          <Card>
+            <CardHeader>
+              <h3 className="text-lg font-semibold">Video Preview</h3>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {/* Platform Preview */}
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm font-medium text-gray-700">Platform:</span>
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                    {videoContent.platform.charAt(0).toUpperCase() + videoContent.platform.slice(1)}
+                  </Badge>
+                </div>
 
-              {/* Description Preview */}
-              <div>
-                <p className="text-gray-700 leading-relaxed">{videoContent.description}</p>
-              </div>
+                {/* Description Preview */}
+                <div>
+                  <p className="text-gray-700 leading-relaxed">{videoContent.description}</p>
+                </div>
 
-              {/* Video Preview */}
-              <div className="mt-6">
-                <video src={videoContent.videoUrl} controls className="w-full rounded-lg shadow-lg">
-                  Your browser does not support the video tag.
-                </video>
+                {/* Video Preview */}
+                <div className="mt-6">
+                  <video
+                    src={videoContent.videoUrl}
+                    controls
+                    className="w-full rounded-lg shadow-lg"
+                  >
+                    Your browser does not support the video tag.
+                  </video>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            </CardContent>
+          </Card>
+        )}
+
+      {/* Unsaved Changes Dialog */}
+      <Dialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Unsaved Changes</DialogTitle>
+            <DialogDescription>
+              You have unsaved changes that will be lost if you leave this page. Are you sure you
+              want to continue without saving?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleKeepEditing}>
+              Keep Editing
+            </Button>
+            <Button variant="destructive" onClick={handleDiscardChanges}>
+              Discard Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

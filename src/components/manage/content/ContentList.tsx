@@ -29,6 +29,7 @@ import {
   FileText,
   Video,
   Settings,
+  Globe,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import ContentDetailModal from "./ContentDetailModal";
@@ -175,6 +176,50 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     });
   };
 
+  const getChannelDisplay = (channel: string, contentType?: string) => {
+    switch (channel?.toLowerCase()) {
+      case "facebook":
+        return {
+          name: "Facebook",
+          icon: (
+            <div className="w-4 h-4 bg-blue-600 rounded text-white text-xs flex items-center justify-center font-bold">
+              f
+            </div>
+          ),
+          color: "text-blue-600",
+        };
+      case "tiktok":
+        return {
+          name: "TikTok",
+          icon: (
+            <div className="w-4 h-4 bg-black rounded text-white text-xs flex items-center justify-center font-bold">
+              T
+            </div>
+          ),
+          color: "text-black",
+        };
+      case "website":
+      default:
+        // For video content, default to Facebook if no valid channel is specified
+        if (contentType === "video") {
+          return {
+            name: "Facebook",
+            icon: (
+              <div className="w-4 h-4 bg-blue-600 rounded text-white text-xs flex items-center justify-center font-bold">
+                f
+              </div>
+            ),
+            color: "text-blue-600",
+          };
+        }
+        return {
+          name: "Website",
+          icon: <Globe className="w-4 h-4 text-green-600" />,
+          color: "text-green-600",
+        };
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -250,13 +295,14 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
             <>
               {/* Table Header */}
               <div className="grid grid-cols-12 gap-4 p-4 bg-gray-50 border-b font-medium text-sm text-gray-600">
-                <div className="col-span-2">Title</div>
+                <div className="col-span-3">Title</div>
                 <div className="col-span-2">Actor</div>
                 <div className="col-span-2">Time Created</div>
                 <div className="col-span-1">Views</div>
                 <div className="col-span-1">Type</div>
-                <div className="col-span-2">Action</div>
-                <div className="col-span-2">Status</div>
+                <div className="col-span-1">Channel</div>
+                <div className="col-span-1">Action</div>
+                <div className="col-span-1">Status</div>
               </div>
 
               {/* Table Body */}
@@ -270,7 +316,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                     key={content.id}
                     className="grid grid-cols-12 gap-4 p-4 border-b hover:bg-gray-50 transition-colors"
                   >
-                    <div className="col-span-2">
+                    <div className="col-span-3">
                       <h4 className="font-medium text-gray-900 truncate">{content.title}</h4>
                     </div>
 
@@ -303,7 +349,31 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                       </div>
                     </div>
 
-                    <div className="col-span-2 flex items-center">
+                    <div className="col-span-1 flex items-center">
+                      <div className="flex items-center">
+                        {(() => {
+                          // For video content, ensure channel is either facebook or tiktok
+                          let channel = (content as any).channel || "website";
+                          if (content.content_type === "video") {
+                            // If it's a video and channel is not facebook or tiktok, default to facebook
+                            if (!["facebook", "tiktok"].includes(channel.toLowerCase())) {
+                              channel = "facebook";
+                            }
+                          }
+                          const channelInfo = getChannelDisplay(channel, content.content_type);
+                          return (
+                            <>
+                              <span className="mr-1">{channelInfo.icon}</span>
+                              <span className={`text-sm ${channelInfo.color}`}>
+                                {channelInfo.name}
+                              </span>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </div>
+
+                    <div className="col-span-1 flex items-center">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
@@ -334,7 +404,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                       </DropdownMenu>
                     </div>
 
-                    <div className="col-span-2 flex items-center">
+                    <div className="col-span-1 flex items-center">
                       <div className="cursor-pointer" onClick={() => handleToggleStatus(content)}>
                         {getStatusBadge(content.status)}
                       </div>

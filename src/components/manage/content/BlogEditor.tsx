@@ -3,6 +3,14 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import type { Content } from "@/libs/types/content";
 import { ArrowLeft, User, Calendar, Target, FileText } from "lucide-react";
@@ -33,6 +41,7 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
   );
   const contentType = "blog";
   const [showPreview, setShowPreview] = useState(false);
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
 
   // Debug logging to verify task data
   React.useEffect(() => {
@@ -43,10 +52,48 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
     }
   }, [selectedTask]);
 
+  // Keep track of initial content to detect unsaved changes
+  const initialContent = React.useMemo(
+    () => ({
+      html: editingContent ? editingContent.html_content : "",
+      json: editingContent ? editingContent.json_content : null,
+    }),
+    [editingContent],
+  );
+
+  // Check if there are unsaved changes
+  const hasUnsavedChanges = React.useMemo(() => {
+    if (!content) return false;
+    return (
+      content.html !== initialContent.html ||
+      JSON.stringify(content.json) !== JSON.stringify(initialContent.json)
+    );
+  }, [content, initialContent]);
+
   const handleSave = () => {
     if (content) {
       onSave(content, contentType);
     }
+  };
+
+  // Handle back navigation with unsaved changes check
+  const handleBackClick = () => {
+    if (hasUnsavedChanges) {
+      setShowUnsavedDialog(true);
+    } else {
+      onBack();
+    }
+  };
+
+  // Handle discarding changes and going back
+  const handleDiscardChanges = () => {
+    setShowUnsavedDialog(false);
+    onBack();
+  };
+
+  // Handle keeping changes (close dialog)
+  const handleKeepEditing = () => {
+    setShowUnsavedDialog(false);
   };
 
   const defaultContent =
@@ -57,7 +104,11 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <Button variant="default" onClick={onBack} className="flex items-center space-x-2">
+          <Button
+            variant="default"
+            onClick={handleBackClick}
+            className="flex items-center space-x-2"
+          >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to List</span>
           </Button>
@@ -200,6 +251,27 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
           </CardContent>
         </Card>
       )}
+
+      {/* Unsaved Changes Dialog */}
+      <Dialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Unsaved Changes</DialogTitle>
+            <DialogDescription>
+              You have unsaved changes that will be lost if you leave this page. Are you sure you
+              want to continue without saving?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleKeepEditing}>
+              Keep Editing
+            </Button>
+            <Button variant="destructive" onClick={handleDiscardChanges}>
+              Discard Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

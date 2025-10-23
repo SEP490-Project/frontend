@@ -14,6 +14,7 @@ import {
 import { DatePicker } from "@/components/date-picker";
 import { FileUploader } from "@/components/global";
 import { Plus, Trash2 } from "lucide-react";
+import { format, parseISO } from "date-fns";
 
 interface TaskDescription {
   description: string;
@@ -40,28 +41,41 @@ interface CreateTaskProps {
   milestones: Milestone[];
   setMilestones: React.Dispatch<React.SetStateAction<Milestone[]>>;
   selectedContract: any;
+  campaignType: string;
   onBack: () => void;
   onNext: () => void;
 }
 
-const getTaskTypeOptions = (contractType: string) => {
-  switch (contractType) {
+const getTaskTypeOptions = (campaignType: string) => {
+  switch (campaignType) {
     case "ADVERTISING":
     case "AFFILIATE":
-      return [{ value: "CONTENT", label: "Content" }];
+      return [
+        { value: "CONTENT", label: "Content" },
+        { value: "OTHER", label: "Other" },
+      ];
     case "BRAND_AMBASSADOR":
-      return [{ value: "EVENT", label: "Event" }];
+      return [
+        { value: "EVENT", label: "Event" },
+        { value: "OTHER", label: "Other" },
+      ];
     case "CO_PRODUCING":
       return [
-        { value: "CONTENT", label: "Content" },
         { value: "PRODUCT", label: "Product" },
+        { value: "CONTENT", label: "Content" },
+        { value: "OTHER", label: "Other" },
       ];
     default:
-      return [
-        { value: "CONTENT", label: "Content" },
-        { value: "PRODUCT", label: "Product" },
-        { value: "EVENT", label: "Event" },
-      ];
+      return [{ value: "OTHER", label: "Other" }];
+  }
+};
+
+const formatDateForInput = (dateString?: string | null) => {
+  if (!dateString) return "";
+  try {
+    return format(parseISO(dateString), "yyyy-MM-dd");
+  } catch {
+    return "";
   }
 };
 
@@ -69,10 +83,13 @@ const CreateTask: React.FC<CreateTaskProps> = ({
   milestones,
   setMilestones,
   selectedContract,
+  campaignType,
   onBack,
   onNext,
 }) => {
-  const taskTypeOptions = getTaskTypeOptions(selectedContract?.type || "");
+  const taskTypeOptions = getTaskTypeOptions(campaignType);
+  const contractStart = formatDateForInput(selectedContract?.start_date);
+  const contractEnd = formatDateForInput(selectedContract?.end_date);
 
   const addMilestone = () => {
     setMilestones((prev) => [
@@ -87,7 +104,7 @@ const CreateTask: React.FC<CreateTaskProps> = ({
     setMilestones((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)));
 
   const addTask = (milestoneId: string) => {
-    const defaultType = taskTypeOptions.length === 1 ? taskTypeOptions[0].value : "";
+    const defaultType = taskTypeOptions[0]?.value || "OTHER";
     setMilestones((prev) =>
       prev.map((m) =>
         m.id === milestoneId
@@ -139,9 +156,8 @@ const CreateTask: React.FC<CreateTaskProps> = ({
     }
   };
 
-  const handleTaskMaterialFilesChange = (milestoneId: string, taskId: string, files: File[]) => {
+  const handleTaskMaterialFilesChange = (milestoneId: string, taskId: string, files: File[]) =>
     updateTask(milestoneId, taskId, { materialFiles: files });
-  };
 
   const handleTaskMaterialRemove = (milestoneId: string, taskId: string) => {
     const task = milestones.find((m) => m.id === milestoneId)?.tasks.find((t) => t.id === taskId);
@@ -154,139 +170,186 @@ const CreateTask: React.FC<CreateTaskProps> = ({
   };
 
   return (
-    <div className="pt-6 space-y-4">
+    <div className="pt-6 space-y-6">
+      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h3 className="text-lg font-semibold">Milestones & Tasks</h3>
           {selectedContract && (
             <p className="text-sm text-gray-600 mt-1">
               Contract: <span className="font-medium">{selectedContract.title}</span>{" "}
-              <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                {selectedContract.type.replace(/_/g, " ")}
+              <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs">
+                {campaignType.replace(/_/g, " ")}
               </span>
             </p>
           )}
         </div>
-        <Button variant="ghost" onClick={addMilestone} className="flex items-center gap-2">
+        <Button
+          onClick={addMilestone}
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-1"
+        >
           <Plus size={14} /> Add Milestone
         </Button>
       </div>
 
-      {milestones.map((m, mi) => (
-        <Card key={m.id} className="border border-gray-200/60 shadow-sm">
-          <CardHeader className="flex justify-between items-start bg-gray-50 p-4">
-            <div className="flex-1">
-              <CardTitle className="text-base font-semibold">Milestone {mi + 1}</CardTitle>
-              <p className="text-xs text-gray-500 mt-1">Due: {m.due_date || "Not set"}</p>
-              <p className="text-xs text-gray-500">Tasks: {m.tasks.length}</p>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => removeMilestone(m.id)}
-              className="hover:text-red-600 shrink-0"
-            >
-              <Trash2 size={16} />
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-4 p-4">
-            <div className="grid md:grid-cols-2 gap-4">
+      {/* Milestones */}
+      {milestones.map((m, mi) => {
+        const milestoneMin = contractStart;
+        const milestoneMax = contractEnd;
+
+        return (
+          <Card key={m.id} className="border shadow-sm hover:shadow-md transition">
+            <CardHeader className="flex justify-between items-start bg-gray-50/70 p-4">
               <div>
-                <Label className="text-sm font-medium">Description *</Label>
-                <Textarea
-                  placeholder="Milestone description..."
-                  value={m.description}
-                  onChange={(e) => updateMilestone(m.id, { description: e.target.value })}
+                <CardTitle className="text-base font-semibold">Milestone {mi + 1}</CardTitle>
+                <p className="text-xs text-gray-500 mt-1">
+                  {m.tasks.length} task(s) • Due: {m.due_date || "Not set"}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => removeMilestone(m.id)}
+                className="hover:text-red-600"
+              >
+                <Trash2 size={16} />
+              </Button>
+            </CardHeader>
+
+            <CardContent className="space-y-5 p-5">
+              {/* Milestone fields */}
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Description *</Label>
+                  <Textarea
+                    placeholder="Describe this milestone..."
+                    value={m.description}
+                    onChange={(e) => updateMilestone(m.id, { description: e.target.value })}
+                  />
+                </div>
+                <DatePicker
+                  label="Due Date"
+                  value={m.due_date}
+                  onChange={(date) => updateMilestone(m.id, { due_date: date })}
+                  minDate={milestoneMin}
+                  maxDate={milestoneMax}
                 />
               </div>
-              <DatePicker
-                label="Due Date"
-                value={m.due_date}
-                onChange={(date) => updateMilestone(m.id, { due_date: date })}
-              />
-            </div>
 
-            <div className="space-y-3 mt-6">
-              <div className="flex justify-between items-center">
-                <Label className="text-sm font-medium">Tasks</Label>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => addTask(m.id)}
-                  className="flex items-center gap-2"
-                >
-                  <Plus size={12} /> Add Task
-                </Button>
+              {/* Tasks */}
+              <div className="mt-4 space-y-3">
+                <div className="flex justify-between items-center">
+                  <Label className="text-sm font-medium">Tasks</Label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => addTask(m.id)}
+                    className="text-blue-600"
+                  >
+                    <Plus size={12} /> Add Task
+                  </Button>
+                </div>
+
+                {m.tasks.map((t, ti) => {
+                  const taskMin = contractStart;
+                  const taskMax = m.due_date || contractEnd;
+
+                  return (
+                    <Card key={t.id} className="border border-gray-100 bg-gray-50/70">
+                      <CardContent className="p-4 space-y-4">
+                        <div className="flex justify-between">
+                          <h5 className="text-sm font-medium">Task {ti + 1}</h5>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeTask(m.id, t.id)}
+                            className="hover:text-red-600"
+                          >
+                            <Trash2 size={14} />
+                          </Button>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 gap-3">
+                          <div>
+                            <Label>Task Name *</Label>
+                            <Input
+                              placeholder="Enter task name..."
+                              value={t.name}
+                              onChange={(e) => updateTask(m.id, t.id, { name: e.target.value })}
+                            />
+                          </div>
+
+                          <div>
+                            <Label>Task Type *</Label>
+                            <Select
+                              onValueChange={(v) => updateTask(m.id, t.id, { type: v })}
+                              value={t.type || undefined}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select type..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {taskTypeOptions.map((option) => (
+                                  <SelectItem key={option.value} value={option.value}>
+                                    {option.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <DatePicker
+                          label="Deadline *"
+                          value={t.deadline}
+                          onChange={(date) => updateTask(m.id, t.id, { deadline: date })}
+                          minDate={taskMin}
+                          maxDate={taskMax}
+                        />
+
+                        <div>
+                          <Label>Task Description</Label>
+                          <Textarea
+                            placeholder="Describe what needs to be done..."
+                            value={t.description?.description || ""}
+                            onChange={(e) =>
+                              updateTask(m.id, t.id, {
+                                description: {
+                                  ...t.description,
+                                  description: e.target.value,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+
+                        <div>
+                          <Label>Material Upload (Optional)</Label>
+                          <FileUploader
+                            userId="demo"
+                            multiple={false}
+                            maxFiles={1}
+                            onFilesChange={(files) =>
+                              handleTaskMaterialFilesChange(m.id, t.id, files)
+                            }
+                            onUploadComplete={(urls) => handleTaskMaterialUpload(m.id, t.id, urls)}
+                            onFilesRemove={() => handleTaskMaterialRemove(m.id, t.id)}
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
+            </CardContent>
+          </Card>
+        );
+      })}
 
-              {m.tasks.map((t, ti) => (
-                <Card key={t.id} className="border border-gray-100 bg-gray-50/50">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between mb-3">
-                      <h5 className="text-sm font-medium">Task {ti + 1}</h5>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeTask(m.id, t.id)}
-                        className="hover:text-red-600"
-                      >
-                        <Trash2 size={14} />
-                      </Button>
-                    </div>
-                    <div className="grid md:grid-cols-2 gap-3">
-                      <Input
-                        placeholder="Task Name"
-                        value={t.name}
-                        onChange={(e) => updateTask(m.id, t.id, { name: e.target.value })}
-                      />
-                      <Select
-                        onValueChange={(v) => updateTask(m.id, t.id, { type: v })}
-                        value={t.type || undefined}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select task type..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {taskTypeOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <DatePicker
-                      label="Deadline"
-                      value={t.deadline}
-                      onChange={(date) => updateTask(m.id, t.id, { deadline: date })}
-                      maxDate={m.due_date || undefined}
-                    />
-                    <Textarea
-                      placeholder="Task Description"
-                      value={t.description?.description || ""}
-                      onChange={(e) =>
-                        updateTask(m.id, t.id, {
-                          description: { ...t.description, description: e.target.value },
-                        })
-                      }
-                    />
-                    <FileUploader
-                      userId="demo"
-                      multiple={false}
-                      maxFiles={1}
-                      onFilesChange={(files) => handleTaskMaterialFilesChange(m.id, t.id, files)}
-                      onUploadComplete={(urls) => handleTaskMaterialUpload(m.id, t.id, urls)}
-                      onFilesRemove={() => handleTaskMaterialRemove(m.id, t.id)}
-                    />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-
-      <div className="flex justify-between mt-6">
+      {/* Footer Buttons */}
+      <div className="flex justify-between pt-4">
         <Button variant="outline" onClick={onBack}>
           Back
         </Button>

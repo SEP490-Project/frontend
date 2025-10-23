@@ -11,9 +11,9 @@ import { toast } from "sonner";
 
 const campaignTypes = [
   { value: "ADVERTISING", label: "Advertising" },
-  { value: "MARKETING", label: "Marketing" },
-  { value: "PROMOTION", label: "Promotion" },
-  { value: "OTHER", label: "Other" },
+  { value: "AFFILIATE", label: "Affiliate" },
+  { value: "AMBASSADOR", label: "Ambassador" },
+  { value: "COPRODUCE", label: "Co-Produce" },
 ];
 
 function formatToISO(dateStr?: string | null) {
@@ -207,6 +207,7 @@ const AddCampaignPage: React.FC = () => {
                       milestones={milestones}
                       setMilestones={setMilestones}
                       selectedContract={selectedContract}
+                      campaignType={campaignData.type}
                       onBack={() => setActiveTab("campaign")}
                       onNext={() => setActiveTab("review")}
                     />

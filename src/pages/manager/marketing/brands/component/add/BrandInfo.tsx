@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/libs/hooks/useAuth";
 import AvatarUploader from "@/components/global/AvatarUploader";
 import AddressSelector from "@/components/global/AddressSelector";
+import { PhoneNumberInput } from "@/components/phone-number-input";
 
 interface BrandData {
   name: string;
@@ -88,12 +89,12 @@ const BrandInfoTab: React.FC<BrandInfoTabProps> = ({
           <Label htmlFor="contact-phone" className="text-sm font-medium">
             Contact Phone *
           </Label>
-          <Input
-            id="contact-phone"
-            type="tel"
-            placeholder="0123456789"
+          <PhoneNumberInput
             value={brandData.contact_phone}
-            onChange={(e) => onBrandChange("contact_phone", e.target.value)}
+            onChange={(val) => onBrandChange("contact_phone", val)}
+            placeholder="0123456789"
+            error={errors.contact_phone}
+            required
             className={errors.contact_phone ? "border-red-500" : ""}
           />
           {errors.contact_phone && <p className="text-sm text-red-500">{errors.contact_phone}</p>}

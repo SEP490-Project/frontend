@@ -63,7 +63,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
 
   // Get products for selection
   const products = ensureArray(deliverables.products);
-  const concepts = ensureArray(deliverables.concept);
+  const concepts = ensureArray(deliverables.concepts);
 
   // Helper to get product name by ID
   const getProductById = (id: number | undefined) => {
@@ -197,9 +197,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                             updateDeliverables({ products: updated });
                           }}
                         />
-                        <p className="text-xs text-gray-500 mt-1">
-                          Upload images / videos. Uploaded file links will be added to material_url.
-                        </p>
+                        <p className="text-xs text-gray-500 mt-1">Upload images / videos.</p>
                       </div>
 
                       {/* KPIs */}
@@ -292,7 +290,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                         size="icon"
                         className="text-red-500 hover:bg-red-50"
                         onClick={() =>
-                          updateDeliverables({ concept: concepts.filter((_, idx) => idx !== i) })
+                          updateDeliverables({ concepts: concepts.filter((_, idx) => idx !== i) })
                         }
                       >
                         <Trash2 className="w-4 h-4" />
@@ -309,7 +307,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                             onValueChange={(value) => {
                               const updated = [...concepts];
                               updated[i] = { ...updated[i], product_id: parseInt(value) };
-                              updateDeliverables({ concept: updated });
+                              updateDeliverables({ concepts: updated });
                             }}
                           >
                             <SelectTrigger className="bg-white border-pink-200 focus:border-pink-400">
@@ -331,11 +329,22 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                         <div>
                           <Label className="text-sm font-medium mb-2 block">Platform</Label>
                           <Select
-                            value={c.platform || ""}
+                            value={
+                              // hiển thị option gốc khớp với giá trị đã lưu (case-insensitive)
+                              (c.platform &&
+                                platformOptions.find(
+                                  (p) => p.toUpperCase() === String(c.platform).toUpperCase(),
+                                )) ||
+                              ""
+                            }
                             onValueChange={(value) => {
                               const updated = [...concepts];
-                              updated[i] = { ...updated[i], platform: value };
-                              updateDeliverables({ concept: updated });
+                              // lưu dưới dạng UPPERCASE để chuẩn hoá
+                              updated[i] = {
+                                ...updated[i],
+                                platform: value ? String(value).toUpperCase() : "",
+                              };
+                              updateDeliverables({ concepts: updated });
                             }}
                           >
                             <SelectTrigger className="bg-white border-pink-200 focus:border-pink-400">
@@ -360,7 +369,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                           onChange={(e) => {
                             const updated = [...concepts];
                             updated[i] = { ...updated[i], name: e.target.value };
-                            updateDeliverables({ concept: updated });
+                            updateDeliverables({ concepts: updated });
                           }}
                           className="bg-white border-pink-200 focus:border-pink-400"
                         />
@@ -374,7 +383,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                           onChange={(e) => {
                             const updated = [...concepts];
                             updated[i] = { ...updated[i], tagline: e.target.value };
-                            updateDeliverables({ concept: updated });
+                            updateDeliverables({ concepts: updated });
                           }}
                           className="bg-white border-pink-200 focus:border-pink-400"
                         />
@@ -390,7 +399,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                           onChange={(e) => {
                             const updated = [...concepts];
                             updated[i] = { ...updated[i], description: e.target.value };
-                            updateDeliverables({ concept: updated });
+                            updateDeliverables({ concepts: updated });
                           }}
                           className="bg-white border-pink-200 focus:border-pink-400"
                         />
@@ -404,23 +413,72 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                           onChange={(e) => {
                             const updated = [...concepts];
                             updated[i] = { ...updated[i], creative_notes: e.target.value };
-                            updateDeliverables({ concept: updated });
+                            updateDeliverables({ concepts: updated });
                           }}
                           className="bg-white border-pink-200 focus:border-pink-400"
                         />
                       </div>
 
-                      <DynamicListInput
-                        label="Hashtags"
-                        icon={<FaHashtag className="w-4 h-4" />}
-                        items={c.hash_tag || []}
-                        placeholder="#example"
-                        onChange={(items) => {
-                          const updated = [...concepts];
-                          updated[i] = { ...updated[i], hash_tag: items };
-                          updateDeliverables({ concept: updated });
-                        }}
-                      />
+                      {/* HASHTAGS INLINE - Thay thế DynamicListInput */}
+                      <div>
+                        <Label className="text-sm font-medium mb-2 flex items-center gap-2 text-pink-800">
+                          <FaHashtag className="w-4 h-4" />
+                          Hashtags
+                        </Label>
+                        <div className="flex flex-wrap gap-2">
+                          {ensureArray(c.hash_tag).map((tag, idx) => (
+                            <div key={idx} className="flex items-center gap-1">
+                              <Input
+                                placeholder={`#hashtag${idx + 1}`}
+                                value={tag}
+                                onChange={(e) => {
+                                  const updated = [...concepts];
+                                  const newTags = [...ensureArray(c.hash_tag)];
+                                  newTags[idx] = e.target.value;
+                                  updated[i] = { ...updated[i], hash_tag: newTags };
+                                  updateDeliverables({ concepts: updated });
+                                }}
+                                className="w-32 text-xs border-pink-200 focus:border-pink-400"
+                              />
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-red-500 hover:bg-red-50"
+                                onClick={() => {
+                                  const updated = [...concepts];
+                                  updated[i] = {
+                                    ...updated[i],
+                                    hash_tag: ensureArray(c.hash_tag).filter(
+                                      (_, tIdx) => tIdx !== idx,
+                                    ),
+                                  };
+                                  updateDeliverables({ concepts: updated });
+                                }}
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          ))}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const updated = [...concepts];
+                              updated[i] = {
+                                ...updated[i],
+                                hash_tag: [...ensureArray(c.hash_tag), ""],
+                              };
+                              updateDeliverables({ concepts: updated });
+                            }}
+                            className="border-pink-200 text-pink-700 hover:bg-pink-50"
+                          >
+                            <Plus className="w-3 h-3 mr-1" /> Add Hashtag
+                          </Button>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Each hashtag is an individual field. Example: #creative #concept #brand
+                        </p>
+                      </div>
 
                       <DynamicListInput
                         label="Content Requirements"
@@ -430,8 +488,11 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                         multiline
                         onChange={(items) => {
                           const updated = [...concepts];
-                          updated[i] = { ...updated[i], content_requirements: items };
-                          updateDeliverables({ concept: updated });
+                          updated[i] = {
+                            ...updated[i],
+                            content_requirements: items,
+                          };
+                          updateDeliverables({ concepts: updated });
                         }}
                       />
 
@@ -455,7 +516,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                               ...updated[i],
                               material_url: [...(updated[i].material_url || []), ...urls],
                             };
-                            updateDeliverables({ concept: updated });
+                            updateDeliverables({ concepts: updated });
                           }}
                           onFilesRemove={(removedUrls) => {
                             const updated = [...concepts];
@@ -466,12 +527,10 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                                 (url: string) => !removedUrls.includes(url),
                               ),
                             };
-                            updateDeliverables({ concept: updated });
+                            updateDeliverables({ concepts: updated });
                           }}
                         />
-                        <p className="text-xs text-gray-500 mt-1">
-                          Upload images / videos. Uploaded file links will be added to material_url.
-                        </p>
+                        <p className="text-xs text-gray-500 mt-1">Upload images / videos.</p>
                       </div>
 
                       {/* KPIs */}
@@ -491,8 +550,9 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                           onChange={(kpis) => {
                             const updated = [...concepts];
                             updated[i] = { ...updated[i], kpis };
-                            updateDeliverables({ concept: updated });
+                            updateDeliverables({ concepts: updated });
                           }}
+                          contractType={formData?.type}
                         />
                       </div>
                     </div>
@@ -504,7 +564,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                 variant="outline"
                 onClick={() =>
                   updateDeliverables({
-                    concept: [...concepts, newConcept()],
+                    concepts: [...concepts, newConcept()],
                   })
                 }
                 disabled={products.length === 0}

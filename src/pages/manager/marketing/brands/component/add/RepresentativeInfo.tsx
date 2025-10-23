@@ -1,6 +1,7 @@
 import React from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PhoneNumberInput } from "@/components/phone-number-input";
 
 interface RepresentativeData {
   representative_name: string;
@@ -65,12 +66,12 @@ const RepresentativeInfoTab: React.FC<RepresentativeInfoTabProps> = ({
         <Label htmlFor="rep-phone" className="text-sm font-medium">
           Representative Phone *
         </Label>
-        <Input
-          id="rep-phone"
-          type="tel"
-          placeholder="0123456789"
+        <PhoneNumberInput
           value={representativeData.representative_phone}
-          onChange={(e) => onRepresentativeChange("representative_phone", e.target.value)}
+          onChange={(val) => onRepresentativeChange("representative_phone", val)}
+          placeholder="0123456789"
+          error={errors.representative_phone}
+          required
           className={errors.representative_phone ? "border-red-500" : ""}
         />
         {errors.representative_phone && (

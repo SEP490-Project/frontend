@@ -25,8 +25,30 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
 
   const ensureArray = (arr: any) => (Array.isArray(arr) ? arr : []);
 
+  // normalize platforms to UPPERCASE everywhere (both top-level platforms and each advertised_item.platform)
+  const normalizeAdvertisedItems = (items: any[]) =>
+    Array.isArray(items)
+      ? items.map((it) => ({
+          ...it,
+          platform: it.platform ? String(it.platform).toUpperCase() : "",
+        }))
+      : items;
+
+  const normalizePlatformArray = (arr: any[]) =>
+    Array.isArray(arr) ? arr.map((p) => String(p).toUpperCase()) : arr;
+
   const updateDeliverables = (partialDeliverables: any) => {
-    const updated = { ...deliverables, ...partialDeliverables };
+    const normalized: any = { ...partialDeliverables };
+
+    if (partialDeliverables?.advertised_items) {
+      normalized.advertised_items = normalizeAdvertisedItems(partialDeliverables.advertised_items);
+    }
+
+    if (partialDeliverables?.platform) {
+      normalized.platform = normalizePlatformArray(partialDeliverables.platform);
+    }
+
+    const updated = { ...deliverables, ...normalized };
     onUpdateScopeOfWork({ ...scope, deliverables: updated });
   };
 
@@ -44,33 +66,42 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
   });
 
   const allPlatformOptions = ["Website", "TikTok", "Facebook"];
-  const selectedPlatforms = ensureArray(deliverables.platform);
+  const selectedPlatformsRaw = ensureArray(deliverables.platform); // stored (UPPERCASE)
+  // displayed platforms (original casing) derived from stored values
+  const selectedPlatforms = allPlatformOptions.filter((p) =>
+    selectedPlatformsRaw.includes(p.toUpperCase()),
+  );
 
   // Helper to remove platform from items when removed from main platforms
   const removePlatformFromItems = (
     platformToRemove: string,
     currentAdvertisedItems: AdvertisingItem[],
   ) => {
+    const upperToRemove = String(platformToRemove).toUpperCase();
     // Ensure we're working with a new array reference to trigger update
     const updatedItems = currentAdvertisedItems.map((item: AdvertisingItem) => ({
       ...item,
-      // If the item's platform matches the one being removed, set it to an empty string
-      // This ensures the select dropdown for that item becomes "Select platform" again.
-      platform: item.platform === platformToRemove ? "" : item.platform,
+      // If the item's platform matches the one being removed (case-insensitive), clear it
+      platform:
+        item.platform && String(item.platform).toUpperCase() === upperToRemove ? "" : item.platform,
     }));
     return updatedItems;
   };
 
   const addPlatform = (platform: string) => {
-    const current = ensureArray(deliverables.platform);
-    if (!current.includes(platform)) {
-      updateDeliverables({ platform: [...current, platform] });
+    const current = ensureArray(deliverables.platform).map((p: string) => String(p).toUpperCase());
+    const upper = platform.toUpperCase();
+    if (!current.includes(upper)) {
+      updateDeliverables({ platform: [...current, upper] });
     }
   };
 
   const removePlatform = (platform: string) => {
-    const currentPlatforms = ensureArray(deliverables.platform);
-    const updatedPlatforms = currentPlatforms.filter((p: string) => p !== platform);
+    const upper = platform.toUpperCase();
+    const currentPlatforms = ensureArray(deliverables.platform).map((p: string) =>
+      String(p).toUpperCase(),
+    );
+    const updatedPlatforms = currentPlatforms.filter((p: string) => p !== upper);
 
     const currentAdvertisedItems = ensureArray(deliverables.advertised_items);
     const updatedAdvertisedItems = removePlatformFromItems(platform, currentAdvertisedItems);
@@ -236,10 +267,22 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
                             <div>
                               <Label htmlFor={`platform-select-${i}`}>Platform</Label>
                               <Select
-                                value={item.platform || ""}
+                                value={
+                                  // find the original-cased option that matches stored uppercase value
+                                  (item.platform &&
+                                    allPlatformOptions.find(
+                                      (p) =>
+                                        p.toUpperCase() === String(item.platform).toUpperCase(),
+                                    )) ||
+                                  ""
+                                }
                                 onValueChange={(value) => {
                                   const updated = [...items];
-                                  updated[i] = { ...updated[i], platform: value };
+                                  // store uppercase for consistency
+                                  updated[i] = {
+                                    ...updated[i],
+                                    platform: value ? value.toUpperCase() : "",
+                                  };
                                   updateDeliverables({ advertised_items: updated });
                                 }}
                               >
@@ -419,6 +462,7 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
                                 updateDeliverables({ advertised_items: updated });
                               }}
                             />
+                            <p className="text-xs text-gray-500 mt-1">Upload images / videos.</p>
                           </div>
 
                           {/* KPIs */}
@@ -440,6 +484,7 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
                                 updated[i] = { ...updated[i], kpis };
                                 updateDeliverables({ advertised_items: updated });
                               }}
+                              contractType={formData?.type}
                             />
                           </div>
                         </div>

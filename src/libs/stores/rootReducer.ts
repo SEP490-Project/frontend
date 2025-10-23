@@ -9,6 +9,7 @@ import { manageCampaignReducer } from "./campaignManager/slice";
 import { productManagerReducer } from "./productManager/slice";
 import { manageBankReducer } from "./bankManager/slice";
 import { manageFileReducer } from "./fileManager/slice";
+import { manageConfigReducer } from "./configManager/slice";
 
 export const rootReducer = combineReducers({
   manageAuthen: manageAuthenReducer,
@@ -22,4 +23,5 @@ export const rootReducer = combineReducers({
   manageUserProfile: userProfileReducer,
   manageBank: manageBankReducer,
   manageFile: manageFileReducer,
+  manageConfig: manageConfigReducer,
 });

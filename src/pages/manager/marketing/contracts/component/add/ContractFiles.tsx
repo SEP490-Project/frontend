@@ -88,12 +88,6 @@ const ContractFiles: React.FC<ContractFilesProps> = ({
             <p className="text-xs text-slate-500">
               Upload the main contract document (PDF, DOC, DOCX only, max 1 file, up to 10MB)
             </p>
-            {/* Hiển thị URL hiện tại nếu có */}
-            {formData?.contract_file_url && (
-              <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
-                <strong>Current URL:</strong> {formData.contract_file_url}
-              </div>
-            )}
           </div>
 
           <Separator />
@@ -122,36 +116,7 @@ const ContractFiles: React.FC<ContractFilesProps> = ({
             <p className="text-xs text-slate-500">
               Upload the proposal document (PDF, DOC, DOCX, PPT, PPTX only, max 1 file, up to 10MB)
             </p>
-            {/* Hiển thị URL hiện tại nếu có */}
-            {formData?.proposal_file_url && (
-              <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
-                <strong>Current URL:</strong> {formData.proposal_file_url}
-              </div>
-            )}
           </div>
-
-          {/* Debug Information */}
-          {(formData?.contract_file_url || formData?.proposal_file_url) && (
-            <Card className="bg-gray-50 border-gray-200">
-              <CardContent className="p-4">
-                <h4 className="text-sm font-medium text-gray-700 mb-2">File URLs Status</h4>
-                <div className="space-y-1 text-xs">
-                  <div>
-                    <span className="font-medium">Contract URL:</span>{" "}
-                    <span className="text-green-600">
-                      {formData?.contract_file_url ? "✓ Set" : "✗ Not set"}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="font-medium">Proposal URL:</span>{" "}
-                    <span className="text-green-600">
-                      {formData?.proposal_file_url ? "✓ Set" : "✗ Not set"}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </CardContent>
       </Card>
     </div>

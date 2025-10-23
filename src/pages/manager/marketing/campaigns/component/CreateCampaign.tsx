@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { DatePicker } from "@/components/date-picker";
@@ -70,6 +70,7 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
         page,
         limit: 10,
         sort_by: "created_at",
+        // status: "ACTIVE",
         order: "desc",
         ...(debouncedSearch ? { keyword: debouncedSearch } : {}),
       }),
@@ -85,7 +86,6 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
     if (pagination?.has_next && !loading) setPage((p) => p + 1);
   }, [pagination, loading]);
 
-  // Format date theo local timezone (Việt Nam)
   const formatDateForInput = (dateString?: string | null) => {
     if (!dateString) return "";
     try {
@@ -100,7 +100,7 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
     setCampaignData((s) => ({
       ...s,
       contract_id: contractId || "",
-      type: selectedContract?.type || s.type, // Keep campaign type as contract type
+      type: selectedContract?.type || s.type,
       start_date: selectedContract ? formatDateForInput(selectedContract.start_date) : s.start_date,
       end_date: selectedContract ? formatDateForInput(selectedContract.end_date) : s.end_date,
     }));
@@ -117,132 +117,135 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
 
   const selectedContract = allContracts.find((c) => c.id === campaignData.contract_id);
 
+  const minDate = selectedContract ? formatDateForInput(selectedContract.start_date) : undefined;
+  const maxDate = selectedContract ? formatDateForInput(selectedContract.end_date) : undefined;
+
   return (
-    <div className="pt-6">
-      <div className="grid md:grid-cols-2 gap-6">
-        <Card className="border-0 shadow-sm">
-          <CardHeader>
-            <CardTitle>Contract & Identification</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2 text-sm font-medium">
-                Select Contract *
-              </Label>
-              <DataSelector
-                data={allContracts}
-                selectedId={campaignData.contract_id}
-                onSelect={handleContractSelect}
-                renderItem={(contract) => <ContractItem contract={contract} />}
-                getLabel={(contract) => contract.title}
-                title="Contracts"
-                placeholder="Choose a contract to set up workflow"
-                onSearch={setSearch}
-                searchValue={search}
-                onScrollEnd={pagination?.has_next ? loadMore : undefined}
-                loading={loading}
-              />
-            </div>
+    <div className="pt-8 space-y-8">
+      {/* STEP 1: CONTRACT */}
+      <Card className="border-0 shadow-sm">
+        <CardHeader>
+          <div>
+            <CardTitle className="text-lg font-semibold">1. Select Contract</CardTitle>
+            <CardDescription>Choose an active contract to base your campaign on.</CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Contract *</Label>
+            <DataSelector
+              data={allContracts}
+              selectedId={campaignData.contract_id}
+              onSelect={handleContractSelect}
+              renderItem={(contract) => <ContractItem contract={contract} />}
+              getLabel={(contract) => contract.title}
+              title="Contracts"
+              placeholder="Select an active contract"
+              onSearch={setSearch}
+              searchValue={search}
+              onScrollEnd={pagination?.has_next ? loadMore : undefined}
+              loading={loading}
+            />
+          </div>
 
-            <div>
-              <Label className="text-sm">Campaign Type</Label>
-              <Input
-                value={
-                  selectedContract
-                    ? selectedContract.type
-                        .replace(/_/g, " ")
-                        .toLowerCase()
-                        .replace(/\b\w/g, (l) => l.toUpperCase())
-                    : "Select a contract first"
-                }
-                readOnly
-                className="h-11 bg-gray-50 text-gray-500"
-              />
-              {selectedContract && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Type automatically set from selected contract
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          <div>
+            <Label className="text-sm font-medium">Campaign Type</Label>
+            <Input
+              value={
+                selectedContract
+                  ? selectedContract.type
+                      .replace(/_/g, " ")
+                      .toLowerCase()
+                      .replace(/\b\w/g, (l) => l.toUpperCase())
+                  : "Select a contract first"
+              }
+              readOnly
+              className="h-11 bg-gray-50 text-gray-500"
+            />
+            {selectedContract && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Automatically set based on the selected contract.
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
-      <div className="grid md:grid-cols-3 gap-6 mt-6">
-        <div className="md:col-span-2">
-          <Card className="border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle>Campaign Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label className="text-sm">Campaign Name *</Label>
-                <Input
-                  placeholder="Summer Sale Campaign"
-                  value={campaignData.name}
-                  onChange={(e) => setCampaignData((s) => ({ ...s, name: e.target.value }))}
-                  className="h-11"
-                />
-              </div>
+      {/* STEP 2: INFO */}
+      <Card className="border-0 shadow-sm">
+        <CardHeader>
+          <div>
+            <CardTitle className="text-lg font-semibold">2. Campaign Information</CardTitle>
+            <CardDescription>Provide basic details about your campaign.</CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div>
+            <Label className="text-sm font-medium">Campaign Name *</Label>
+            <Input
+              placeholder="e.g. Summer Sale Campaign"
+              value={campaignData.name}
+              onChange={(e) => setCampaignData((s) => ({ ...s, name: e.target.value }))}
+              className="h-11"
+            />
+          </div>
 
-              <div>
-                <Label className="text-sm">Description</Label>
-                <Textarea
-                  placeholder="A campaign for the summer sale."
-                  value={campaignData.description}
-                  onChange={(e) => setCampaignData((s) => ({ ...s, description: e.target.value }))}
-                  className="min-h-[120px]"
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+          <div>
+            <Label className="text-sm font-medium">Description</Label>
+            <Textarea
+              placeholder="Briefly describe your campaign goal or content..."
+              value={campaignData.description}
+              onChange={(e) => setCampaignData((s) => ({ ...s, description: e.target.value }))}
+              className="min-h-[120px]"
+            />
+          </div>
+        </CardContent>
+      </Card>
 
-        <div>
-          <Card className="border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle>Timeline</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <DatePicker
-                label="Start Date"
-                value={campaignData.start_date}
-                onChange={handleStartDateChange}
-                placeholder="Pick start date"
-                required
-              />
-              {selectedContract && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Auto-filled from contract (can be modified)
-                </p>
-              )}
+      {/* STEP 3: TIMELINE */}
+      <Card className="border-0 shadow-sm">
+        <CardHeader>
+          <div>
+            <CardTitle className="text-lg font-semibold">3. Timeline</CardTitle>
+            <CardDescription>
+              Select start and end dates (must be within the contract period).
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="grid sm:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <DatePicker
+              label="Start Date"
+              value={campaignData.start_date}
+              onChange={handleStartDateChange}
+              placeholder="Select start date"
+              required
+              minDate={minDate}
+              maxDate={maxDate}
+            />
+          </div>
+          <div className="space-y-2">
+            <DatePicker
+              label="End Date"
+              value={campaignData.end_date}
+              onChange={handleEndDateChange}
+              placeholder="Select end date"
+              required
+              minDate={minDate}
+              maxDate={maxDate}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
-              <DatePicker
-                label="End Date"
-                value={campaignData.end_date}
-                onChange={handleEndDateChange}
-                placeholder="Pick end date"
-                required
-              />
-              {selectedContract && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Auto-filled from contract (can be modified)
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      <div className="flex justify-between mt-4">
+      {/* ACTIONS */}
+      <div className="flex justify-between pt-4 border-t">
         <Button variant="outline" onClick={onReset}>
           Reset
         </Button>
-        <div className="flex gap-3">
-          <Button onClick={onNext} disabled={!isCampaignValid}>
-            Next
-          </Button>
-        </div>
+        <Button onClick={onNext} disabled={!isCampaignValid}>
+          Next
+        </Button>
       </div>
     </div>
   );

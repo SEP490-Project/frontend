@@ -180,15 +180,6 @@ export const DynamicListInput: React.FC<{
       )}
       {helpText && <p className="text-xs text-pink-600 mb-2">{helpText}</p>}
 
-      {items.length === 0 && (
-        <div
-          className="text-center py-4 bg-pink-50 rounded-lg border-2 border-dashed"
-          style={{ borderColor: "#ff9fb2" }}
-        >
-          <p className="text-sm text-pink-700">No items added yet</p>
-        </div>
-      )}
-
       <div className="space-y-2">
         {items.map((it, i) => (
           <div key={i} className="flex gap-2 items-start">

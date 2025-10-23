@@ -57,13 +57,13 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
           {/* Advertising Items Section */}
           <CollapsibleSection
             title="Advertising Content"
-            badge={ensureArray(deliverables.advertising_items).length}
+            badge={ensureArray(deliverables.advertised_items).length}
             defaultOpen={true}
           >
             <div className="space-y-4">
-              {ensureArray(deliverables.advertising_items).map(
+              {ensureArray(deliverables.advertised_items).map(
                 (item: AdvertisingItem, i: number) => {
-                  const items = ensureArray(deliverables.advertising_items);
+                  const items = ensureArray(deliverables.advertised_items);
                   return (
                     <div
                       key={i}
@@ -84,7 +84,7 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                           className="text-red-500 hover:bg-red-50"
                           onClick={() =>
                             updateDeliverables({
-                              advertising_items: items.filter((_, idx) => idx !== i),
+                              advertised_items: items.filter((_, idx) => idx !== i),
                             })
                           }
                         >
@@ -102,19 +102,34 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                               onChange={(e) => {
                                 const updated = [...items];
                                 updated[i] = { ...updated[i], name: e.target.value, id: i + 1 };
-                                updateDeliverables({ advertising_items: updated });
+                                updateDeliverables({ advertised_items: updated });
                               }}
                               className="bg-white border-pink-200 focus:border-pink-400"
                             />
                           </div>
                           <div>
                             <Label className="text-sm font-medium mb-2 block">Platform</Label>
+                            {/*
+                              Store platform in UPPERCASE (for backend/normalization)
+                              but display the original casing options to the user.
+                            */}
                             <Select
-                              value={item.platform || ""}
+                              value={
+                                // find the original-cased option that matches stored uppercase value
+                                (item.platform &&
+                                  platformOptions.find(
+                                    (p) => p.toUpperCase() === String(item.platform).toUpperCase(),
+                                  )) ||
+                                ""
+                              }
                               onValueChange={(value) => {
                                 const updated = [...items];
-                                updated[i] = { ...updated[i], platform: value };
-                                updateDeliverables({ advertising_items: updated });
+                                // store uppercase for consistency
+                                updated[i] = {
+                                  ...updated[i],
+                                  platform: value ? value.toUpperCase() : "",
+                                };
+                                updateDeliverables({ advertised_items: updated });
                               }}
                             >
                               <SelectTrigger className="bg-white border-pink-200 focus:border-pink-400">
@@ -139,7 +154,7 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                             onChange={(e) => {
                               const updated = [...items];
                               updated[i] = { ...updated[i], tagline: e.target.value };
-                              updateDeliverables({ advertising_items: updated });
+                              updateDeliverables({ advertised_items: updated });
                             }}
                             className="bg-white border-pink-200 focus:border-pink-400"
                           />
@@ -155,7 +170,7 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                             onChange={(e) => {
                               const updated = [...items];
                               updated[i] = { ...updated[i], description: e.target.value };
-                              updateDeliverables({ advertising_items: updated });
+                              updateDeliverables({ advertised_items: updated });
                             }}
                             className="bg-white border-pink-200 focus:border-pink-400"
                           />
@@ -169,24 +184,72 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                             onChange={(e) => {
                               const updated = [...items];
                               updated[i] = { ...updated[i], creative_notes: e.target.value };
-                              updateDeliverables({ advertising_items: updated });
+                              updateDeliverables({ advertised_items: updated });
                             }}
                             className="bg-white border-pink-200 focus:border-pink-400"
                           />
                         </div>
 
-                        <DynamicListInput
-                          label="Hashtags"
-                          icon={<FaHashtag className="w-4 h-4" />}
-                          items={item.hash_tag || []}
-                          placeholder="#sale #discount #limited"
-                          helpText="Relevant hashtags for this advertising content"
-                          onChange={(hash_tag) => {
-                            const updated = [...items];
-                            updated[i] = { ...updated[i], hash_tag };
-                            updateDeliverables({ advertising_items: updated });
-                          }}
-                        />
+                        {/* HASHTAGS INLINE - Thay thế DynamicListInput */}
+                        <div>
+                          <Label className="text-sm font-medium mb-2 flex items-center gap-2 text-pink-800">
+                            <FaHashtag className="w-4 h-4" />
+                            Hashtags
+                          </Label>
+                          <div className="flex flex-wrap gap-2">
+                            {ensureArray(item.hash_tag).map((tag, idx) => (
+                              <div key={idx} className="flex items-center gap-1">
+                                <Input
+                                  placeholder={`#hashtag${idx + 1}`}
+                                  value={tag}
+                                  onChange={(e) => {
+                                    const updated = [...items];
+                                    const newTags = [...ensureArray(item.hash_tag)];
+                                    newTags[idx] = e.target.value;
+                                    updated[i] = { ...updated[i], hash_tag: newTags };
+                                    updateDeliverables({ advertised_items: updated });
+                                  }}
+                                  className="w-32 text-xs border-pink-200 focus:border-pink-400"
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-red-500 hover:bg-red-50"
+                                  onClick={() => {
+                                    const updated = [...items];
+                                    updated[i] = {
+                                      ...updated[i],
+                                      hash_tag: ensureArray(item.hash_tag).filter(
+                                        (_, tIdx) => tIdx !== idx,
+                                      ),
+                                    };
+                                    updateDeliverables({ advertised_items: updated });
+                                  }}
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            ))}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const updated = [...items];
+                                updated[i] = {
+                                  ...updated[i],
+                                  hash_tag: [...ensureArray(item.hash_tag), ""],
+                                };
+                                updateDeliverables({ advertised_items: updated });
+                              }}
+                              className="border-pink-200 text-pink-700 hover:bg-pink-50"
+                            >
+                              <Plus className="w-3 h-3 mr-1" /> Add Hashtag
+                            </Button>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Each hashtag is an individual field. Example: #sale #discount #limited
+                          </p>
+                        </div>
 
                         <DynamicListInput
                           label="Content Requirements"
@@ -198,7 +261,7 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                           onChange={(content_requirements) => {
                             const updated = [...items];
                             updated[i] = { ...updated[i], content_requirements };
-                            updateDeliverables({ advertising_items: updated });
+                            updateDeliverables({ advertised_items: updated });
                           }}
                         />
 
@@ -221,7 +284,7 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                                 ...updated[i],
                                 material_url: [...(updated[i].material_url || []), ...urls],
                               };
-                              updateDeliverables({ advertising_items: updated });
+                              updateDeliverables({ advertised_items: updated });
                             }}
                             onFilesRemove={(removedUrls) => {
                               const updated = [...items];
@@ -232,13 +295,10 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                                   (url: string) => !removedUrls.includes(url),
                                 ),
                               };
-                              updateDeliverables({ advertising_items: updated });
+                              updateDeliverables({ advertised_items: updated });
                             }}
                           />
-                          <p className="text-xs text-gray-500 mt-1">
-                            Upload images / videos. Uploaded file links will be added to
-                            material_url.
-                          </p>
+                          <p className="text-xs text-gray-500 mt-1">Upload images / videos.</p>
                         </div>
 
                         {/* KPIs */}
@@ -258,8 +318,9 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                             onChange={(kpis) => {
                               const updated = [...items];
                               updated[i] = { ...updated[i], kpis };
-                              updateDeliverables({ advertising_items: updated });
+                              updateDeliverables({ advertised_items: updated });
                             }}
+                            contractType={formData?.type}
                           />
                         </div>
                       </div>
@@ -272,11 +333,11 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                 variant="outline"
                 onClick={() =>
                   updateDeliverables({
-                    advertising_items: [
-                      ...ensureArray(deliverables.advertising_items),
+                    advertised_items: [
+                      ...ensureArray(deliverables.advertised_items),
                       {
                         ...newAdvertisingItem(),
-                        id: ensureArray(deliverables.advertising_items).length + 1,
+                        id: ensureArray(deliverables.advertised_items).length + 1,
                       },
                     ],
                   })

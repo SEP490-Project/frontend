@@ -294,7 +294,7 @@ const Review: React.FC<ReviewProps> = ({
         <div className="flex gap-3">
           <Button
             onClick={onSubmit}
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8"
+            className="bg-gradient-to-r from-primary/70 to-primary/80 hover:from-primary/70 hover:to-primary/50 text-white px-8"
             disabled={loading}
           >
             {loading ? "Creating..." : "Create Campaign"}

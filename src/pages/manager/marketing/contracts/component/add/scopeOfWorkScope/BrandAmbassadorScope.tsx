@@ -230,6 +230,7 @@ const BrandAmbassadorScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateSc
                             updated[i] = { ...updated[i], kpis };
                             updateDeliverables({ events: updated });
                           }}
+                          contractType={formData?.type}
                         />
                       </div>
                     </div>

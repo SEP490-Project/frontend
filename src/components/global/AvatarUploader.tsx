@@ -87,16 +87,15 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
       uploadedUrl: undefined,
     }));
 
-    try {
-      // Simulate upload progress
-      const progressInterval = setInterval(() => {
-        setAvatar((prev) => ({
-          ...prev,
-          progress: Math.min(prev.progress + Math.random() * 30, 90),
-        }));
-      }, 200);
+    // start simulated progress
+    const progressInterval = setInterval(() => {
+      setAvatar((prev) => ({
+        ...prev,
+        progress: Math.min(prev.progress + Math.random() * 30, 90),
+      }));
+    }, 200);
 
-      // Upload file
+    try {
       const result = await dispatch(
         uploadFilesThunk({
           userId: userId,
@@ -104,24 +103,32 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
         }),
       ).unwrap();
 
-      clearInterval(progressInterval);
+      // robust URL extractor (đối chiếu với FileUploader)
+      const extractUrls = (res: any): string[] => {
+        if (!res) return [];
+        if (Array.isArray(res))
+          return res.map((r) => (typeof r === "string" ? r : r?.url || "")).filter(Boolean);
+        if (typeof res === "object") {
+          if (Array.isArray(res.urls))
+            return res.urls
+              .map((u: any) => (typeof u === "string" ? u : u?.url || ""))
+              .filter(Boolean);
+          if (Array.isArray(res.files))
+            return res.files
+              .map((f: any) => (typeof f === "string" ? f : f?.url || ""))
+              .filter(Boolean);
+          if (typeof res.url === "string") return [res.url];
+          // fallback: try to pick string/url-like values
+          return Object.values(res)
+            .map((v: any) => (typeof v === "string" ? v : v?.url || ""))
+            .filter(Boolean);
+        }
+        if (typeof res === "string") return [res];
+        return [];
+      };
 
-      // Extract URL from result
-      let uploadedUrl: string;
-
-      if (result.urls?.length) {
-        uploadedUrl = result.urls[0]; // lấy URL server đầu tiên
-      } else if (result.files?.length) {
-        const firstFile = result.files[0];
-        uploadedUrl =
-          typeof firstFile === "string"
-            ? firstFile
-            : firstFile && typeof firstFile === "object" && "url" in firstFile
-              ? (firstFile as { url: string }).url
-              : "";
-      } else {
-        uploadedUrl = ""; // hoặc throw lỗi
-      }
+      const urls = extractUrls(result);
+      const uploadedUrl = urls[0] ?? "";
 
       if (!uploadedUrl) throw new Error("Upload failed: no URL returned from server");
 
@@ -130,21 +137,15 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
         status: "completed",
         progress: 100,
         uploadedUrl,
-        preview: uploadedUrl, // dùng URL server cho preview
+        preview: uploadedUrl,
       }));
 
-      onImageUpload?.(uploadedUrl);
-
-      // Cleanup blob URL since we have the uploaded URL
+      // Cleanup blob preview if needed
       if (preview.startsWith("blob:")) {
         URL.revokeObjectURL(preview);
-        setAvatar((prev) => ({
-          ...prev,
-          preview: uploadedUrl,
-        }));
       }
 
-      // Notify parent with the uploaded URL
+      // notify parent once with the final URL
       onImageUpload?.(uploadedUrl);
     } catch (err) {
       console.error("Upload error:", err);
@@ -154,6 +155,8 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
         progress: 0,
       }));
       setError("Upload failed. Please try again.");
+    } finally {
+      clearInterval(progressInterval);
     }
   };
 

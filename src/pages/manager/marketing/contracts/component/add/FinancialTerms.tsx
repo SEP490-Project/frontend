@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { FaCode, FaEye, FaEyeSlash, FaMoneyBillWave, FaRotateLeft } from "react-icons/fa6";
+import { FaMoneyBillWave, FaRotateLeft } from "react-icons/fa6";
 import { CurrencyInput } from "./shared/FinancialSharedComponent";
 import {
   AdvertisingScope,
@@ -39,27 +39,20 @@ const DepositPayment: React.FC<{
       case "ADVERTISING":
       case "BRAND_AMBASSADOR":
         return financialTerms.total_cost || 0;
-      case "AFFILIATE": {
-        const levels = financialTerms.levels || [];
-        const base = financialTerms.base_per_click || 0;
-        return levels.reduce(
-          (sum: number, level: any) =>
-            sum + (level.max_clicks || 0) * base * (level.multiplier || 1),
-          0,
-        );
-      }
-      case "CO_PRODUCING":
-        return 0;
       default:
-        return 0;
+        return 0; // affiliate và co-producing không tính theo tổng cost
     }
   };
 
   const totalContractCost = getTotalContractCost();
+
+  // ✅ phân loại đúng: 2 loại đầu dùng %, 2 loại sau dùng amount
   const usePercentage = contractType === "ADVERTISING" || contractType === "BRAND_AMBASSADOR";
+
   const calculatedDepositAmount = usePercentage
     ? (totalContractCost * depositPercent) / 100
     : depositAmount;
+
   const finalDepositAmount = depositPaid ? 0 : calculatedDepositAmount;
 
   const handleDepositPaidToggle = (checked: boolean) => {
@@ -73,32 +66,12 @@ const DepositPayment: React.FC<{
   };
 
   const handleDepositPercentChange = (percent: number) => {
-    onUpdate({ deposit_percent: percent });
+    onUpdate({ deposit_percent: percent, deposit_amount: undefined });
   };
 
   const handleDepositAmountChange = (amount: number) => {
-    onUpdate({ deposit_amount: amount });
+    onUpdate({ deposit_amount: amount, deposit_percent: undefined });
   };
-
-  if (contractType === "CO_PRODUCING") {
-    return (
-      <Card className="p-4 bg-gray-50 border-gray-200">
-        <div className="flex items-center gap-3 mb-3">
-          <FaMoneyBillWave className="w-5 h-5 text-gray-600" />
-          <h4 className="font-semibold text-lg text-gray-800">Deposit Payment</h4>
-        </div>
-        <div className="p-3 bg-gray-100 border border-gray-300 rounded-md">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-            <span className="text-sm font-medium text-gray-700">No Deposit Required</span>
-          </div>
-          <p className="text-xs text-gray-600 mt-1">
-            Co-producing contracts share profits; no upfront payment is required.
-          </p>
-        </div>
-      </Card>
-    );
-  }
 
   return (
     <Card className="p-4 bg-amber-50 border-amber-200">
@@ -127,19 +100,16 @@ const DepositPayment: React.FC<{
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-medium mb-2 block">Deposit Percentage (%)</Label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      min={0}
-                      max={100}
-                      step={0.1}
-                      value={depositPercent === 0 ? "" : depositPercent}
-                      onChange={(e) => handleDepositPercentChange(Number(e.target.value))}
-                      className="w-full px-3 py-2 border border-amber-300 rounded-md bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-                      placeholder="10"
-                    />
-                    <span className="absolute right-8 top-2 text-gray-500 font-semibold">%</span>
-                  </div>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={0.1}
+                    value={depositPercent === 0 ? "" : depositPercent}
+                    onChange={(e) => handleDepositPercentChange(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-amber-300 rounded-md bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                    placeholder="10"
+                  />
                   {errors.deposit_percent && (
                     <p className="text-red-500 text-xs mt-1">{errors.deposit_percent}</p>
                   )}
@@ -151,9 +121,7 @@ const DepositPayment: React.FC<{
                   </Label>
                   <div className="p-2 bg-amber-100 border border-amber-300 rounded-md">
                     <span className="text-sm font-bold text-amber-800">
-                      {totalContractCost > 0
-                        ? totalContractCost.toLocaleString() + " VND"
-                        : "0 VND"}
+                      {totalContractCost.toLocaleString()} VND
                     </span>
                   </div>
                 </div>
@@ -168,7 +136,7 @@ const DepositPayment: React.FC<{
                   error={errors.deposit_amount}
                 />
                 <p className="text-xs text-gray-600 mt-1">
-                  Optional upfront payment before performance-based rewards.
+                  Upfront deposit required before contract execution.
                 </p>
               </div>
             )}
@@ -183,9 +151,6 @@ const DepositPayment: React.FC<{
                 <p className="text-lg font-extrabold text-red-900 mt-1">
                   {finalDepositAmount.toLocaleString()} VND
                 </p>
-                <p className="text-xs text-red-700 mt-1">
-                  Client must pay this deposit before contract execution.
-                </p>
               </div>
             ) : (
               <div className="p-3 bg-gray-100 border border-gray-300 rounded-md">
@@ -193,9 +158,6 @@ const DepositPayment: React.FC<{
                   <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
                   <span className="text-sm font-medium text-gray-700">No Deposit Required</span>
                 </div>
-                <p className="text-xs text-gray-600 mt-1">
-                  Full payment will follow the contract’s payment schedule.
-                </p>
               </div>
             )}
           </div>
@@ -208,9 +170,6 @@ const DepositPayment: React.FC<{
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
               <span className="text-sm font-bold text-green-800">Deposit Already Paid</span>
             </div>
-            <p className="text-xs text-green-700 mt-1">
-              No additional deposit payment required at this stage.
-            </p>
           </div>
         )}
       </div>
@@ -270,29 +229,6 @@ const getDefaultFinancialTerms = (type: string) => {
 };
 
 // ========================
-// JSON Preview
-// ========================
-const JsonPreview: React.FC<{ data: any }> = ({ data }) => (
-  <Card className="h-full">
-    <CardHeader className="pb-3">
-      <CardTitle className="flex items-center gap-2 text-lg">
-        <FaCode className="w-5 h-5" />
-        Financial Terms JSON Preview
-      </CardTitle>
-    </CardHeader>
-    <CardContent>
-      <div className="bg-gray-50 p-4 rounded-lg font-mono text-sm max-h-[600px] overflow-y-auto">
-        {data.financialTerms && Object.keys(data.financialTerms).length > 0 ? (
-          <pre className="text-xs">{JSON.stringify(data.financialTerms, null, 2)}</pre>
-        ) : (
-          <div className="text-gray-400 text-center py-8">No financial terms data available</div>
-        )}
-      </div>
-    </CardContent>
-  </Card>
-);
-
-// ========================
 // Main Component
 // ========================
 const FinancialTerms: React.FC<FinancialTermsProps> = ({
@@ -300,7 +236,6 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({
   onUpdateFinancialTerms,
   errors = {},
 }) => {
-  const [showPreview, setShowPreview] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
 
   const contractType = formData?.type;
@@ -395,29 +330,10 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({
             </Button>
           )}
         </div>
-
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => setShowPreview(!showPreview)}
-          className="flex items-center gap-2"
-        >
-          {showPreview ? (
-            <>
-              <FaEyeSlash className="w-4 h-4" />
-              Hide JSON Preview
-            </>
-          ) : (
-            <>
-              <FaEye className="w-4 h-4" />
-              Show JSON Preview
-            </>
-          )}
-        </Button>
       </div>
 
       {/* Layout */}
-      <div className={`grid gap-6 ${showPreview ? "lg:grid-cols-2" : "grid-cols-1"}`}>
+      <div className={"grid gap-6 grid-cols-1"}>
         <div className="space-y-6">
           <DepositPayment
             financialTerms={financialTerms}
@@ -427,8 +343,6 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({
           />
           {renderContractTypeScope()}
         </div>
-
-        {showPreview && <JsonPreview data={formData} />}
       </div>
 
       {/* Reset Financial Terms Modal */}

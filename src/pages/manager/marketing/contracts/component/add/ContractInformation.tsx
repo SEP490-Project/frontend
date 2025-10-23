@@ -10,17 +10,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PhoneNumberInput } from "@/components/phone-number-input";
+import { BankAccountInput } from "@/components/bank-number-input";
 import { DatePicker } from "@/components/date-picker";
 import { validateField } from "../../validation";
 import { DataSelector, AddressSelector } from "@/components/global";
 import { useAppDispatch } from "@/libs/stores";
 import { useBrand } from "@/libs/hooks/useBrand";
 import { useBank } from "@/libs/hooks/useBank";
+import { useConfig } from "@/libs/hooks/useConfig";
 import {
   brand as fetchBrands,
   brandDetail as fetchBrandDetail,
 } from "@/libs/stores/brandManager/thunk";
 import { bankList } from "@/libs/stores/bankManager/thunk";
+import { getRepresentativeConfig } from "@/libs/stores/configManager/thunk";
 import { useDebounce } from "@/libs/hooks/useDebounce";
 import { Mail, Phone, Globe, User, Building, FileText, Landmark } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -52,12 +56,16 @@ const CONTRACT_TYPE_COLORS = {
   CO_PRODUCING: { bg: "bg-violet-100", text: "text-violet-800", border: "border-violet-200" },
 } as const;
 
-const SAMPLE_WEB_REPRESENTATIVE = {
-  webRepresentativeName: "Nguyễn Minh Anh",
-  webRepresentativePosition: "Content Creator / KOL",
-  webRepresentativePhone: "+84 912 345 678",
-  webRepresentativeEmail: "minhanh.kol@example.com",
-  webRepresentativeTaxNumber: "1234567890",
+// map config keys (snake_case) to form fields (camelCase)
+const REP_CONFIG_TO_FORM_MAP: Record<string, string> = {
+  representative_name: "representativeName",
+  representative_role: "representativeRole",
+  representative_phone: "representativePhone",
+  representative_email: "representativeEmail",
+  representative_tax_number: "representativeTaxNumber",
+  representative_bank_name: "representativeBankName",
+  representative_bank_account_number: "representativeBankAccountNumber",
+  representative_bank_account_holder: "representativeBankAccountHolder",
 };
 
 // Small presentational components
@@ -139,7 +147,8 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
 }) => {
   const dispatch = useAppDispatch();
   const { brands, loading: brandLoading, pagination, brand } = useBrand();
-  const { bank: banks, loading: bankLoading } = useBank(); // Add this line
+  const { bank: banks, loading: bankLoading } = useBank();
+  const { representativeConfig } = useConfig();
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 400);
@@ -179,6 +188,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
   // Add useEffect to fetch banks on component mount
   useEffect(() => {
     dispatch(bankList());
+    dispatch(getRepresentativeConfig());
   }, [dispatch]);
 
   // Add useEffect to filter banks based on search
@@ -189,7 +199,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
       const filtered = banks.filter(
         (bank: any) =>
           bank.name.toLowerCase().includes(bankSearch.toLowerCase()) ||
-          bank.code.toLowerCase().includes(bankSearch.toLowerCase()),
+          bank.shortName.toLowerCase().includes(bankSearch.toLowerCase()),
       );
       setFilteredBanks(filtered);
     }
@@ -226,21 +236,28 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
     if (!formData.brandId || !brand) return {};
     return {
       brandRepresentativeName: brand.representative_name || "",
-      brandRepresentativePosition: brand.representative_role || "",
+      brandRepresentativeRole: brand.representative_role || "",
       brandRepresentativePhone: brand.contact_phone || "",
       brandRepresentativeEmail: brand.contact_email || "",
       brandTaxNumber: brand.tax_number || "",
     };
   }, [formData.brandId, brand]);
 
-  // Autofill sample reps on mount (if empty) - Remove brand rep sample data
+  // Autofill representative data from representativeConfig when it becomes available
   useEffect(() => {
-    // Only autofill web representative sample data
-    Object.entries(SAMPLE_WEB_REPRESENTATIVE).forEach(([key, value]) => {
-      if (!formData[key]) onInputChange(key, value);
+    if (!representativeConfig) return;
+
+    Object.entries(REP_CONFIG_TO_FORM_MAP).forEach(([cfgKey, formKey]) => {
+      // representativeConfig uses snake_case keys according to RepresentativeConfig type
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      const value = representativeConfig[cfgKey];
+      if (value && !formData[formKey]) {
+        onInputChange(formKey, value);
+      }
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    // run whenever representativeConfig changes
+  }, [representativeConfig]);
 
   const handleFieldChange = async (field: string, value: any) => {
     const updatedForm = { ...formData, [field]: value };
@@ -256,11 +273,13 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
       onFieldValidation(field, validation.isValid ? null : validation.error);
 
       if (field === "signedDate") {
-        const startDateValidation = await validateField("startDate", value, updatedForm);
-        onFieldValidation(
-          "startDate",
-          startDateValidation.isValid ? null : startDateValidation.error,
-        );
+        const createdAt = new Date(); // thời điểm hiện tại
+        const signedDate = new Date(value);
+        if (signedDate < createdAt) {
+          onFieldValidation("signedDate", "Ngày ký không thể trước ngày tạo hợp đồng.");
+        } else {
+          onFieldValidation("signedDate", null);
+        }
       }
 
       if (
@@ -278,7 +297,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
     }
   };
 
-  // Representative fields (for rendering)
+  // Representative fields (cập nhật field names)
   const brandRepresentativeFields = [
     {
       label: "Full Name",
@@ -286,7 +305,11 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
       placeholder: "Representative full name",
       required: true,
     },
-    { label: "Position", field: "brandRepresentativePosition", placeholder: "Job title/position" },
+    {
+      label: "Role", // Đổi từ Position thành Role
+      field: "brandRepresentativeRole", // Đổi từ Position thành Role
+      placeholder: "Job title/role",
+    },
     { label: "Phone Number", field: "brandRepresentativePhone", placeholder: "0xxx xxx xxx" },
     {
       label: "Email Address",
@@ -301,27 +324,50 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
   const webRepresentativeFields = [
     {
       label: "Full Name",
-      field: "webRepresentativeName",
+      field: "representativeName", // Đổi từ webRepresentativeName
       placeholder: "KOL/Blogger full name",
       required: true,
     },
     {
-      label: "Position",
-      field: "webRepresentativePosition",
+      label: "Role", // Đổi từ Position thành Role
+      field: "representativeRole", // Đổi từ webRepresentativePosition
       placeholder: "e.g., Content Creator, KOL, Blogger",
     },
-    { label: "Phone Number", field: "webRepresentativePhone", placeholder: "xxx xxx xxx" },
+    {
+      label: "Phone Number",
+      field: "representativePhone", // Đổi từ webRepresentativePhone
+      placeholder: "xxx xxx xxx",
+    },
     {
       label: "Email Address",
-      field: "webRepresentativeEmail",
+      field: "representativeEmail", // Đổi từ webRepresentativeEmail
       placeholder: "email@example.com",
       type: "email",
       required: true,
     },
     {
       label: "Tax Number",
-      field: "webRepresentativeTaxNumber",
+      field: "representativeTaxNumber", // Đổi từ webRepresentativeTaxNumber
       placeholder: "Personal tax identification number",
+    },
+  ];
+
+  // Thêm fields cho web representative banking
+  const webBankingFields = [
+    {
+      label: "Bank Name",
+      field: "representativeBankName",
+      placeholder: "Select bank",
+    },
+    {
+      label: "Account Number",
+      field: "representativeBankAccountNumber",
+      placeholder: "Account number",
+    },
+    {
+      label: "Account Holder",
+      field: "representativeBankAccountHolder",
+      placeholder: "Account holder full name",
     },
   ];
 
@@ -467,7 +513,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
 
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Contract Title - THÊM FIELD MỚI */}
+                  {/* Contract Title */}
                   <div className="space-y-2 md:col-span-2">
                     <Label className="text-sm font-medium">Contract Title *</Label>
                     <Input
@@ -512,6 +558,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                     placeholder="Select signed date"
                     error={errors.signedDate}
                     required
+                    minDate={new Date().toISOString().split("T")[0]}
                   />
 
                   <div className="space-y-2">
@@ -589,16 +636,30 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                           {f.label}
                           {f.required ? " *" : ""}
                         </Label>
-                        <Input
-                          disabled
-                          value={
-                            formData[f.field] ||
-                            (brandRepData as Record<string, string>)[f.field] ||
-                            ""
-                          }
-                          placeholder={f.placeholder}
-                          className="h-11 bg-slate-50"
-                        />
+                        {f.field === "brandRepresentativePhone" ? (
+                          <PhoneNumberInput
+                            value={
+                              formData[f.field] ||
+                              (brandRepData as Record<string, string>)[f.field] ||
+                              ""
+                            }
+                            onChange={(val) => handleFieldChange(f.field, val)}
+                            disabled
+                            placeholder={f.placeholder}
+                            error={errors[f.field]}
+                          />
+                        ) : (
+                          <Input
+                            disabled
+                            value={
+                              formData[f.field] ||
+                              (brandRepData as Record<string, string>)[f.field] ||
+                              ""
+                            }
+                            placeholder={f.placeholder}
+                            className="h-11 bg-slate-50"
+                          />
+                        )}
                         <FieldError message={errors[f.field]} />
                       </div>
                     ))}
@@ -624,14 +685,13 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                       <DataSelector
                         data={filteredBanks}
                         selectedId={
-                          // Find bank ID based on stored bank name
                           banks
                             .find((bank: any) => bank.name === formData.brandBankName)
                             ?.id?.toString() || ""
                         }
                         onSelect={handleBankSelect}
                         renderItem={(bank) => <BankCard bank={bank} />}
-                        getLabel={(bank) => bank.name}
+                        getLabel={(bank) => `${bank.name} - ${bank.shortName}`}
                         title="Banks"
                         placeholder="Search bank name..."
                         onSearch={setBankSearch}
@@ -657,12 +717,43 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                       ].map((field) => (
                         <div key={field.field} className="space-y-1">
                           <Label className="text-sm">{field.label}</Label>
-                          <Input
-                            value={formData[field.field] || ""}
-                            onChange={(e) => handleFieldChange(field.field, e.target.value)}
-                            placeholder={field.placeholder}
-                            className="h-11"
-                          />
+                          {field.field === "brandBankAccountHolder" ? (
+                            <Input
+                              value={formData.brandBankAccountHolder || ""}
+                              onChange={(e) => {
+                                let val = e.target.value;
+
+                                // Chuyển toàn bộ sang in hoa
+                                val = val.toUpperCase();
+
+                                // Loại bỏ dấu tiếng Việt & ký tự đặc biệt
+                                val = val
+                                  .normalize("NFD")
+                                  .replace(/[\u0300-\u036f]/g, "")
+                                  .replace(/[^A-Z\s]/g, "");
+
+                                handleFieldChange("brandBankAccountHolder", val);
+                              }}
+                              placeholder={field.placeholder || "Nhập tên chủ tài khoản"}
+                              className={`h-11 uppercase ${
+                                errors.brandBankAccountHolder ? "border-red-500" : ""
+                              }`}
+                            />
+                          ) : field.field === "brandBankAccountNumber" ? (
+                            <BankAccountInput
+                              value={formData.brandBankAccountNumber || ""}
+                              onChange={(val) => handleFieldChange("brandBankAccountNumber", val)}
+                              placeholder={field.placeholder}
+                              error={errors.brandBankAccountNumber}
+                            />
+                          ) : (
+                            <Input
+                              value={formData[field.field] || ""}
+                              onChange={(e) => handleFieldChange(field.field, e.target.value)}
+                              placeholder={field.placeholder}
+                              className="h-11"
+                            />
+                          )}
                           <FieldError message={errors[field.field]} />
                         </div>
                       ))}
@@ -670,7 +761,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                   </div>
                 </div>
 
-                {/* Web Representative (disabled) */}
+                {/* Web Representative (với banking info) */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                     <div className="flex items-center gap-2">
@@ -682,6 +773,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                     </Badge>
                   </div>
 
+                  {/* Personal Information */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {webRepresentativeFields.map((f) => (
                       <div key={f.field} className="space-y-1">
@@ -689,15 +781,69 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                           {f.label}
                           {f.required ? " *" : ""}
                         </Label>
-                        <Input
-                          disabled
-                          value={formData[f.field] || ""}
-                          placeholder={f.placeholder}
-                          className="h-11 bg-slate-50"
-                        />
+                        {f.field === "representativePhone" ? (
+                          <PhoneNumberInput
+                            value={formData[f.field] || ""}
+                            onChange={(val) => handleFieldChange(f.field, val)}
+                            disabled // vì Party B là auto-filled
+                            placeholder={f.placeholder}
+                            error={errors[f.field]}
+                          />
+                        ) : (
+                          <Input
+                            disabled
+                            value={formData[f.field] || ""}
+                            onChange={(e) => handleFieldChange(f.field, e.target.value)}
+                            placeholder={f.placeholder}
+                            className="h-11 bg-slate-50"
+                          />
+                        )}
                         <FieldError message={errors[f.field]} />
                       </div>
                     ))}
+                  </div>
+
+                  {/* Banking Information */}
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h5 className="text-sm font-medium text-slate-700">Banking Information</h5>
+                      <Badge variant="secondary" className="text-xs">
+                        Auto-filled
+                      </Badge>
+                    </div>
+                    <div className="space-y-4">
+                      {/* Bank Name for Representative - DISABLED */}
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Bank Name</Label>
+                        <Input
+                          disabled // DISABLE BANK NAME
+                          value={formData.representativeBankName || ""}
+                          onChange={(e) =>
+                            handleFieldChange("representativeBankName", e.target.value)
+                          }
+                          placeholder="Bank name"
+                          className="h-11 bg-slate-50" // Thêm bg-slate-50 để thể hiện disabled state
+                        />
+                        <FieldError message={errors.representativeBankName} />
+                      </div>
+
+                      {/* Other banking fields - DISABLED */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {webBankingFields.slice(1).map((field) => (
+                          <div key={field.field} className="space-y-1">
+                            <Label className="text-sm">{field.label}</Label>
+                            <Input
+                              disabled // DISABLE TẤT CẢ BANKING FIELDS CỦA KOL
+                              value={formData[field.field] || ""}
+                              onChange={(e) => handleFieldChange(field.field, e.target.value)}
+                              placeholder={field.placeholder}
+                              className="h-11 bg-slate-50" // Thêm bg-slate-50 để thể hiện disabled state
+                            />
+                            <FieldError message={errors[field.field]} />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </CardContent>

@@ -37,7 +37,7 @@ const ScopeOfWork: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork
 
     switch (contractType) {
       case "ADVERTISING": {
-        const advertisingItems = deliverables.advertising_items || [];
+        const advertisingItems = deliverables.advertised_items || [];
         if (advertisingItems.length === 0) {
           issues.push("At least one advertising item is required");
         } else {
@@ -189,6 +189,15 @@ const ScopeOfWork: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork
 
   return (
     <div className="space-y-6">
+      {/* General Requirements */}
+      <GeneralRequirements
+        requirements={scope.general_requirements || []}
+        onChange={(newReqs) => updateScope({ general_requirements: newReqs })}
+      />
+
+      {/* Contract-Specific Content */}
+      {renderContractSpecificContent()}
+
       {/* Success Status */}
       {validationStatus.isValid && (
         <Card className="border-green-200 bg-green-50">
@@ -205,15 +214,6 @@ const ScopeOfWork: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork
           </CardContent>
         </Card>
       )}
-
-      {/* General Requirements */}
-      <GeneralRequirements
-        requirements={scope.general_requirements || []}
-        onChange={(newReqs) => updateScope({ general_requirements: newReqs })}
-      />
-
-      {/* Contract-Specific Content */}
-      {renderContractSpecificContent()}
     </div>
   );
 };

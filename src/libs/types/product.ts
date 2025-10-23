@@ -55,6 +55,7 @@ export interface ProductData {
 }
 
 export interface ProductVariant {
+  id?: string;
   attributes: ProductAttribute[];
   capacity: number | null;
   capacity_unit: CapacityUnit;
@@ -73,6 +74,10 @@ export interface ProductVariant {
   uses: string | null;
 }
 
+export interface VariantWithImage extends ProductVariant {
+  images: ProductVariantImage[];
+}
+
 export interface ProductVariantImage {
   id: string;
   variant_id: string;
@@ -88,6 +93,16 @@ export interface ProductAttribute {
   unit: string;
   value: number;
 }
+export interface LimitedAttribute {
+  availability_end_date: string;
+  availability_start_date: string;
+  bought_limit: number;
+  concept_id?: string;
+  is_free_shipping: boolean;
+  max_stock: number;
+  premiere_date: string;
+}
+
 export interface CreateProductPayload {
   brand_id: string;
   category_id: string;
@@ -95,6 +110,13 @@ export interface CreateProductPayload {
   name: string;
   price: number | null;
 }
+
+export interface CreateLimitedProductPayload extends CreateProductPayload {
+  task_id?: string;
+  limited_attribute: LimitedAttribute;
+}
+
+export type CreateVariantImagePayload = FormData;
 
 export interface ProductParams {
   limit?: number;

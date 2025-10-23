@@ -20,6 +20,7 @@ const DoneStep = () => {
     setOnSubmitStep(() => async () => {
       // Clear the localStorage
       removeItem("currentProduct");
+      removeItem("currentProductVariants");
       // Navigate to product list
       navigate("/manage/sale/product");
     });
@@ -30,10 +31,10 @@ const DoneStep = () => {
       const currentPath = window.location.pathname;
       if (!currentPath.includes("/manage/sale/product/create")) {
         removeItem("currentProduct");
+        removeItem("currentProductVariants");
       }
     };
   }, [navigate, setIsDisabled, setOnSubmitStep]);
-
   return (
     <div className="bg-white p-6 rounded-lg mt-6 shadow-md">
       <Card className="border-none shadow-none">
@@ -47,12 +48,20 @@ const DoneStep = () => {
             product from the product list.
           </p>
           <div className="flex gap-4">
-            <Button variant="outline" onClick={() => navigate("/manage/sale/product")}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                removeItem("currentProduct");
+                removeItem("currentProductVariants");
+                navigate("/manage/sale/product");
+              }}
+            >
               View Product List
             </Button>
             <Button
               onClick={() => {
                 removeItem("currentProduct");
+                removeItem("currentProductVariants");
                 navigate("/manage/sale/product/create", {
                   state: {
                     formType: "CREATE",

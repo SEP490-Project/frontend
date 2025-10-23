@@ -12,7 +12,12 @@ import { brand } from "@/libs/stores/brandManager/thunk";
 import { useCallback, useEffect, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Controller } from "react-hook-form";
-import type { CreateProductPayload, ProductFormProps, ProductData } from "@/libs/types/product";
+import type {
+  CreateProductPayload,
+  CreateLimitedProductPayload,
+  ProductFormProps,
+  ProductData,
+} from "@/libs/types/product";
 import {
   createLimitedProductThunk,
   createStandardProductThunk,
@@ -31,7 +36,7 @@ export const BasicInfoForm = ({
   navigate,
   state,
   setIsDisabled,
-}: ProductFormProps<CreateProductPayload>) => {
+}: ProductFormProps<CreateProductPayload | CreateLimitedProductPayload>) => {
   const dispatch = useAppDispatch();
   const categories = useSelector((state: any) => state?.manageCategory?.categories?.data);
   const { brands } = useBrand();
@@ -44,21 +49,37 @@ export const BasicInfoForm = ({
     watch,
   } = form;
   const productBasicInfos = getItem<ProductData>("currentProduct");
+  const isLimitedProduct = state?.productType === "LIMITED";
 
   const [name, category_id, brand_id, price] = watch(["name", "category_id", "brand_id", "price"]);
 
+  // Watch limited attributes if it's a limited product
+  const limitedAttributeWatch = isLimitedProduct
+    ? watch([
+        "limited_attribute.premiere_date",
+        "limited_attribute.availability_start_date",
+        "limited_attribute.availability_end_date",
+        "limited_attribute.bought_limit",
+        "limited_attribute.max_stock",
+      ] as any)
+    : [];
+
   const onSubmit = useCallback(
-    async (payload: CreateProductPayload) => {
-      const result = await dispatch(
-        state.productType === "STANDARD"
-          ? createStandardProductThunk(payload)
-          : createLimitedProductThunk(payload),
-      ).unwrap();
-      console.log("Created product:", result);
-      if (result) {
-        setItem("currentProduct", result);
-        toast.success("Product created successfully");
-        navigate(steps[currentStep]?.path, { state });
+    async (payload: CreateProductPayload | CreateLimitedProductPayload) => {
+      try {
+        const result = await dispatch(
+          state.productType === "STANDARD"
+            ? createStandardProductThunk(payload as CreateProductPayload)
+            : createLimitedProductThunk(payload as CreateLimitedProductPayload),
+        ).unwrap();
+        console.log("Created product:", result);
+        if (result) {
+          setItem("currentProduct", result);
+          toast.success("Product created successfully");
+          navigate(steps[currentStep]?.path, { state });
+        }
+      } catch (error) {
+        toast.error((error as string) || "Failed to create product");
       }
     },
     [dispatch, state, navigate, steps, currentStep],
@@ -70,7 +91,8 @@ export const BasicInfoForm = ({
 
   useEffect(() => {
     if (setIsDisabled) {
-      const isFormValid = Boolean(
+      // Base validation for both types
+      const isBasicFormValid = Boolean(
         name &&
           name.trim() !== "" &&
           category_id &&
@@ -82,14 +104,56 @@ export const BasicInfoForm = ({
           !errors.brand_id &&
           !errors.price,
       );
-      setIsDisabled(!isFormValid);
+
+      // Additional validation for LIMITED products
+      if (isLimitedProduct) {
+        const [
+          premiere_date,
+          availability_start_date,
+          availability_end_date,
+          bought_limit,
+          max_stock,
+        ] = limitedAttributeWatch as any[];
+
+        const isLimitedFormValid = Boolean(
+          premiere_date &&
+            availability_start_date &&
+            availability_end_date &&
+            bought_limit >= 1 &&
+            max_stock >= 1,
+        );
+
+        setIsDisabled(!(isBasicFormValid && isLimitedFormValid));
+      } else {
+        setIsDisabled(!isBasicFormValid);
+      }
     }
-  }, [name, category_id, brand_id, price, errors, setIsDisabled]);
+  }, [
+    name,
+    category_id,
+    brand_id,
+    price,
+    errors,
+    setIsDisabled,
+    isLimitedProduct,
+    limitedAttributeWatch,
+  ]);
+
+  useEffect(() => {
+    if (productBasicInfos && productBasicInfos.id) {
+      form.reset({
+        name: productBasicInfos.name,
+        category_id: productBasicInfos.category?.id?.toString() || "",
+        brand_id: productBasicInfos.brand_id?.toString() || "",
+        price: productBasicInfos.price,
+        description: productBasicInfos.description || null,
+      } as any);
+    }
+  }, []);
 
   useEffect(() => {
     if (setOnSubmitStep) {
       if (productBasicInfos && productBasicInfos.id) {
-        form.reset(productBasicInfos);
         setOnSubmitStep(() => async () => {
           navigate(steps[currentStep]?.path, { state });
         });
@@ -100,18 +164,7 @@ export const BasicInfoForm = ({
       };
       setOnSubmitStep(() => submitHandler);
     }
-  }, [
-    setOnSubmitStep,
-    handleSubmit,
-    onSubmit,
-    onError,
-    productBasicInfos,
-    form,
-    navigate,
-    steps,
-    currentStep,
-    state,
-  ]);
+  }, [setOnSubmitStep, productBasicInfos?.id]);
 
   useEffect(() => {
     const fetchCategories = async () => {

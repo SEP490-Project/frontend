@@ -15,7 +15,7 @@ const productManagerSlice = createSlice({
   initialState: {
     products: null as ProductResponse<ProductData[]> | null,
     createdProduct: null as ProductData | null,
-    productDetail: null as ProductResponse<ProductData> | ProductData | null,
+    productDetail: null as ProductResponse<ProductData> | null,
     productVariants: [] as ProductVariant[],
     isLoading: false,
     error: null as string | null,

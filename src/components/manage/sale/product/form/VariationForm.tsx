@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Controller, useFieldArray } from "react-hook-form";
+import { useEffect } from "react";
 import {
   Select,
   SelectContent,
@@ -27,7 +28,7 @@ interface VariationFormProps extends ProductFormProps<ProductVariant> {
   onSubmit?: (data: ProductVariant) => void;
 }
 
-export const VariationForm = ({ form, onSubmit }: VariationFormProps) => {
+export const VariationForm = ({ form, onSubmit, state }: VariationFormProps) => {
   const capacityUnits = ["ML", "L", "G", "KG", "OZ"];
   const containerTypes = [
     "BOTTLE",
@@ -44,12 +45,48 @@ export const VariationForm = ({ form, onSubmit }: VariationFormProps) => {
   const dispenserTypes = ["PUMP", "SPRAY", "DROPPER", "ROLL_ON", "TWIST_UP", "SQUEEZE", "NONE"];
   const attributeUnits = ["%", "MG", "G", "ML", "L", "IU", "PPM", "NONE"];
 
-  const {
-    register,
-    handleSubmit,
-    control,
-    // formState: { errors },
-  } = form;
+  const { register, handleSubmit, control, watch, setError, clearErrors } = form;
+
+  const manufactureDate = watch("manufacture_date");
+  const expiryDate = watch("expiry_date");
+
+  const today = new Date(Date.now() + 86400000).toISOString().split("T")[0];
+
+  const manufactureDateStr =
+    manufactureDate instanceof Date ? manufactureDate.toISOString().split("T")[0] : manufactureDate;
+
+  const expiryDateStr =
+    expiryDate instanceof Date ? expiryDate.toISOString().split("T")[0] : expiryDate;
+
+  useEffect(() => {
+    if (manufactureDate && expiryDate) {
+      const mfgDate = new Date(manufactureDate);
+      const expDate = new Date(expiryDate);
+      const todayDate = new Date(today);
+
+      if (expDate < todayDate) {
+        setError("expiry_date", {
+          type: "manual",
+          message: "Expiry date must be in the future",
+        });
+      } else if (mfgDate >= expDate) {
+        setError("expiry_date", {
+          type: "manual",
+          message: "Expiry date must be after manufacture date",
+        });
+        setError("manufacture_date", {
+          type: "manual",
+          message: "Manufacture date must be before expiry date",
+        });
+      } else {
+        clearErrors("expiry_date");
+        clearErrors("manufacture_date");
+      }
+    } else {
+      clearErrors("expiry_date");
+      clearErrors("manufacture_date");
+    }
+  }, [manufactureDate, expiryDate, today, setError, clearErrors]);
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -78,7 +115,6 @@ export const VariationForm = ({ form, onSubmit }: VariationFormProps) => {
 
   return (
     <form onSubmit={handleSubmit(onFormSubmit, onError)} className="space-y-6">
-      {/* Basic Information */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Basic Information</h3>
 
@@ -121,32 +157,34 @@ export const VariationForm = ({ form, onSubmit }: VariationFormProps) => {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="current_stock" className="text-sm font-medium">
-              Current Stock
-            </Label>
-            <Input
-              id="current_stock"
-              type="number"
-              {...register("current_stock", {
-                valueAsNumber: true,
-                onChange: (e) => {
-                  const number = Number(e.target.value);
+          {state.productType === "LIMITED" && (
+            <div className="space-y-2">
+              <Label htmlFor="current_stock" className="text-sm font-medium">
+                Current Stock
+              </Label>
+              <Input
+                id="current_stock"
+                type="number"
+                {...register("current_stock", {
+                  valueAsNumber: true,
+                  onChange: (e) => {
+                    const number = Number(e.target.value);
+                    if (number < 0) {
+                      e.target.value = "0";
+                    }
+                  },
+                })}
+                onPaste={(e) => {
+                  const pastedData = e.clipboardData.getData("text");
+                  const number = Number(pastedData);
                   if (number < 0) {
-                    e.target.value = "0";
+                    e.preventDefault();
                   }
-                },
-              })}
-              onPaste={(e) => {
-                const pastedData = e.clipboardData.getData("text");
-                const number = Number(pastedData);
-                if (number < 0) {
-                  e.preventDefault();
-                }
-              }}
-              placeholder="0"
-            />
-          </div>
+                }}
+                placeholder="0"
+              />
+            </div>
+          )}
         </div>
 
         <div className="flex items-center space-x-2">
@@ -163,7 +201,6 @@ export const VariationForm = ({ form, onSubmit }: VariationFormProps) => {
         </div>
       </div>
 
-      {/* Capacity & Container */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Capacity & Container</h3>
 
@@ -252,7 +289,6 @@ export const VariationForm = ({ form, onSubmit }: VariationFormProps) => {
         </div>
       </div>
 
-      {/* Dates */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
           Manufacturing & Expiry
@@ -263,19 +299,28 @@ export const VariationForm = ({ form, onSubmit }: VariationFormProps) => {
             <Label htmlFor="manufacture_date" className="text-sm font-medium">
               Manufacture Date
             </Label>
-            <Input id="manufacture_date" type="date" {...register("manufacture_date")} />
+            <Input
+              id="manufacture_date"
+              type="date"
+              max={expiryDateStr || undefined}
+              {...register("manufacture_date")}
+            />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="expiry_date" className="text-sm font-medium">
               Expiry Date
             </Label>
-            <Input id="expiry_date" type="date" {...register("expiry_date")} />
+            <Input
+              id="expiry_date"
+              type="date"
+              min={manufactureDateStr && manufactureDateStr >= today ? manufactureDateStr : today}
+              {...register("expiry_date")}
+            />
           </div>
         </div>
       </div>
 
-      {/* Attributes Table */}
       <div className="space-y-4">
         <div className="flex justify-between items-center border-b pb-2">
           <h3 className="text-lg font-semibold text-gray-900">Product Attributes</h3>
@@ -379,7 +424,6 @@ export const VariationForm = ({ form, onSubmit }: VariationFormProps) => {
         )}
       </div>
 
-      {/* Description & Instructions */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
           Details & Instructions
@@ -421,21 +465,22 @@ export const VariationForm = ({ form, onSubmit }: VariationFormProps) => {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="story" className="text-sm font-medium">
-              Story
-            </Label>
-            <Textarea
-              id="story"
-              {...register("story")}
-              placeholder="Tell the story behind this product..."
-              rows={3}
-            />
-          </div>
+          {state.productType === "LIMITED" && (
+            <div className="space-y-2">
+              <Label htmlFor="story" className="text-sm font-medium">
+                Story
+              </Label>
+              <Textarea
+                id="story"
+                {...register("story")}
+                placeholder="Tell the story behind this product..."
+                rows={3}
+              />
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Form Actions */}
       <div className="flex justify-end gap-3 pt-4 border-t">
         <Button type="button" variant="outline" onClick={() => form.reset()}>
           Reset

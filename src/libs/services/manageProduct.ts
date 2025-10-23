@@ -1,5 +1,10 @@
 import api from "../api";
-import type { CreateProductPayload, ProductParams, ProductVariant } from "../types/product";
+import type {
+  CreateProductPayload,
+  CreateVariantImagePayload,
+  ProductParams,
+  ProductVariant,
+} from "../types/product";
 
 const manageProduct = {
   getAllProducts: (params: ProductParams) => api.get("products/v2", { params }),
@@ -9,8 +14,12 @@ const manageProduct = {
   createLimitedProduct: (data: CreateProductPayload) => api.post("products/limited", data),
   createProductVariants: (data: ProductVariant, productId: string) =>
     api.post(`products/${productId}/variants`, data),
-  createVariantsImage: (data: any, variantId: string) =>
-    api.post(`products/variants/${variantId}/images`, data),
+  createVariantsImage: (variant_id: string, payload: CreateVariantImagePayload) =>
+    api.post(`products/variants/${variant_id}/images`, payload, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }),
 };
 
 export default manageProduct;

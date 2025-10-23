@@ -1,6 +1,7 @@
 import manageProduct from "@/libs/services/manageProduct";
 import type {
   CreateProductPayload,
+  CreateVariantImagePayload,
   ProductData,
   ProductParams,
   ProductResponse,
@@ -90,6 +91,22 @@ const createLimitedProductThunk = createAsyncThunk(
   },
 );
 
+const createVariantImageThunk = createAsyncThunk(
+  "products/createVariantImage",
+  async (
+    { variantId, payload }: { variantId: string; payload: CreateVariantImagePayload },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await manageProduct.createVariantsImage(variantId, payload);
+      return response.data as ProductResponse<ProductData>;
+    } catch (error: AxiosError | unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Failed to upload variant image");
+    }
+  },
+);
+
 export {
   getAllProductsThunk,
   getProductByTaskIdThunk,
@@ -97,4 +114,5 @@ export {
   createVariantProductThunk,
   getProductDetailThunk,
   createLimitedProductThunk,
+  createVariantImageThunk,
 };

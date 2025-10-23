@@ -1,7 +1,14 @@
 import { AdditionalInfoForm } from "@/components/manage/sale/product/form/AdditionalForm";
 import { BasicInfoForm } from "@/components/manage/sale/product/form/BasicInfoForm";
-import type { CreateProductPayload, ProductData } from "@/libs/types/product";
-import { createStandardProductSchema } from "@/libs/validation/productValidation";
+import type {
+  CreateProductPayload,
+  CreateLimitedProductPayload,
+  ProductData,
+} from "@/libs/types/product";
+import {
+  createStandardProductSchema,
+  createLimitedProductSchema,
+} from "@/libs/validation/productValidation";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
@@ -20,7 +27,9 @@ const BasicInfoStep = () => {
       setIsDisabled: React.Dispatch<React.SetStateAction<boolean>>;
     }>();
 
-  const form = useForm<CreateProductPayload>({
+  const isLimitedProduct = state?.productType === "LIMITED";
+
+  const standardForm = useForm<CreateProductPayload>({
     resolver: yupResolver(createStandardProductSchema),
     defaultValues: {
       brand_id: "",
@@ -31,7 +40,29 @@ const BasicInfoStep = () => {
     },
   });
 
-  // Load existing product data from localStorage if available
+  const limitedForm = useForm<CreateLimitedProductPayload>({
+    resolver: yupResolver(createLimitedProductSchema),
+    defaultValues: {
+      brand_id: "",
+      category_id: "",
+      description: null,
+      name: "",
+      price: null,
+      task_id: "",
+      limited_attribute: {
+        premiere_date: "",
+        availability_start_date: "",
+        availability_end_date: "",
+        bought_limit: 1,
+        max_stock: 1,
+        is_free_shipping: false,
+        concept_id: "",
+      },
+    },
+  });
+
+  const form = isLimitedProduct ? limitedForm : standardForm;
+
   useEffect(() => {
     const existingProduct = getItem<ProductData>("currentProduct");
     if (existingProduct) {
@@ -48,7 +79,7 @@ const BasicInfoStep = () => {
   return (
     <>
       <BasicInfoForm
-        form={form}
+        form={form as any}
         setOnSubmitStep={setOnSubmitStep}
         steps={steps}
         currentStep={currentStep}
@@ -57,7 +88,7 @@ const BasicInfoStep = () => {
         setIsDisabled={setIsDisabled}
         isDisabled={isDisabled}
       />
-      {state?.productType === "LIMITED" && <AdditionalInfoForm />}
+      {isLimitedProduct && <AdditionalInfoForm form={limitedForm} />}
     </>
   );
 };

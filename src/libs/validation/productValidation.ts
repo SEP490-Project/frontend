@@ -4,6 +4,7 @@ import type {
   CapacityUnit,
   ContainerType,
   CreateProductPayload,
+  CreateLimitedProductPayload,
   DispenserType,
   ProductVariant,
 } from "../types/product";
@@ -20,7 +21,40 @@ export const createStandardProductSchema: yup.ObjectSchema<CreateProductPayload>
     .required("Price is required"),
 });
 
+export const createLimitedProductSchema: yup.ObjectSchema<CreateLimitedProductPayload> = yup.object(
+  {
+    name: yup.string().required("Product name is required"),
+    category_id: yup.string().required("Category is required"),
+    brand_id: yup.string().required("Brand is required"),
+    description: yup.string().nullable().optional(),
+    price: yup
+      .number()
+      .positive("Price must be a positive number")
+      .min(1000, "Price must be at least 1000")
+      .required("Price is required"),
+    task_id: yup.string().optional(),
+    limited_attribute: yup
+      .object({
+        premiere_date: yup.string().required("Premiere date is required"),
+        availability_start_date: yup.string().required("Start sale date is required"),
+        availability_end_date: yup.string().required("End sale date is required"),
+        bought_limit: yup
+          .number()
+          .min(1, "Purchase limit must be at least 1")
+          .required("Purchase limit is required"),
+        max_stock: yup
+          .number()
+          .min(1, "Max stock must be at least 1")
+          .required("Max stock is required"),
+        is_free_shipping: yup.boolean().required(),
+        concept_id: yup.string().optional(),
+      })
+      .required("Limited attributes are required"),
+  },
+);
+
 export const productVariantSchema: yup.ObjectSchema<ProductVariant> = yup.object({
+  id: yup.string().optional(),
   name: yup.string().required("Name is required"),
   current_stock: yup.number().nullable().optional().min(0, "Current stock must be at least 0"),
   price: yup

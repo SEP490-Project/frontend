@@ -2,7 +2,7 @@ import { Outlet, useLocation, useNavigate } from "react-router";
 import { MiniStepper, Stepper } from "./Stepper";
 import { Button } from "@/components/ui/button";
 import { ProductFormMode } from "@/enums/product";
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { removeItem } from "@/libs/local-storage";
 
 const AddProductStep = () => {
@@ -51,20 +51,10 @@ const AddProductStep = () => {
     } else {
       // Clear localStorage when going back from first step
       removeItem("currentProduct");
+      removeItem("currentProductVariants");
       navigate("/manage/sale/product", { state });
     }
   };
-
-  // Cleanup localStorage when component unmounts (user leaves the flow)
-  useEffect(() => {
-    return () => {
-      // Only clean up if we're navigating away from the product creation flow
-      const isInProductFlow = steps.some((step) => window.location.pathname.startsWith(step.path));
-      if (!isInProductFlow) {
-        removeItem("currentProduct");
-      }
-    };
-  }, [steps]);
 
   const handleStepClick = (stepIndex: number) => {
     if (stepIndex + 1 <= currentStep) {

@@ -10,6 +10,7 @@ export interface UserData {
   date_of_birth: Date | null;
   role: string;
   is_active: boolean;
+  is_brand_account?: boolean;
   last_login: Date;
   created_at: Date;
   updated_at: Date;

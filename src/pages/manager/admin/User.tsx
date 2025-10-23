@@ -41,16 +41,22 @@ const UserPage: React.FC = () => {
     limit: 7,
   });
 
-  const onUpdateUserStatus = async (is_active: boolean, userId: string, userRole: string) => {
-    if (userRole === "BRAND_PARTNER") {
+  const onUpdateUserStatus = async (
+    is_active: boolean,
+    userId: string,
+    userRole: string,
+    is_brand_account: boolean,
+  ) => {
+    if (userRole === "BRAND_PARTNER" && is_brand_account === true && is_active === false) {
       const activateResult = await dispatch(activateBrandThunk(userId));
       if (activateBrandThunk.fulfilled.match(activateResult)) {
+        dispatch(getAllUsersThunk(params));
         toast.success("Brand activated successfully");
       } else {
         toast.error("Failed to activate brand");
       }
     } else {
-      const result = await dispatch(updateUserStatusThunk({ is_active, userId }));
+      const result = await dispatch(updateUserStatusThunk({ is_active: !is_active, userId }));
       if (updateUserStatusThunk.fulfilled.match(result)) {
         dispatch(getAllUsersThunk(params));
         toast.success("User status updated successfully");
@@ -156,7 +162,12 @@ const UserPage: React.FC = () => {
                           name={user.username}
                           status={user.is_active ? "Inactive" : "Active"}
                           onConfirm={() => {
-                            onUpdateUserStatus(!user.is_active, user.id, user.role);
+                            onUpdateUserStatus(
+                              user.is_active,
+                              user.id,
+                              user.role,
+                              user.is_brand_account,
+                            );
                           }}
                         />
                       </Dialog>

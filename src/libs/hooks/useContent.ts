@@ -9,7 +9,10 @@ import {
   updateContent,
   deleteContent,
   publishContent,
-  unpublishContent,
+  // unpublishContent,
+  submitContent,
+  approveContent,
+  rejectContent,
 } from "@/libs/stores/contentManager/thunk";
 import { clearError, clearContent } from "@/libs/stores/contentManager/slice";
 import type {
@@ -64,15 +67,36 @@ export const useContentManager = () => {
   );
 
   const publishExistingContent = useCallback(
-    (id: string) => {
-      return dispatch(publishContent(id));
+    (id: string, publishDate?: string) => {
+      return dispatch(publishContent({ id, publishDate }));
     },
     [dispatch],
   );
 
-  const unpublishExistingContent = useCallback(
+  // const unpublishExistingContent = useCallback(
+  //   (id: string) => {
+  //     return dispatch(unpublishContent(id));
+  //   },
+  //   [dispatch],
+  // );
+
+  const submitExistingContent = useCallback(
     (id: string) => {
-      return dispatch(unpublishContent(id));
+      return dispatch(submitContent(id));
+    },
+    [dispatch],
+  );
+
+  const approveExistingContent = useCallback(
+    (id: string) => {
+      return dispatch(approveContent(id));
+    },
+    [dispatch],
+  );
+
+  const rejectExistingContent = useCallback(
+    (id: string, reason: string) => {
+      return dispatch(rejectContent({ id, reason }));
     },
     [dispatch],
   );
@@ -100,7 +124,10 @@ export const useContentManager = () => {
     updateExistingContent,
     removeContent,
     publishExistingContent,
-    unpublishExistingContent,
+    // unpublishExistingContent,
+    submitExistingContent,
+    approveExistingContent,
+    rejectExistingContent,
     clearErrors,
     clearCurrentContent,
   };

@@ -50,14 +50,6 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
   const [showPreview, setShowPreview] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
 
-  // Debug logging to verify task data
-  React.useEffect(() => {
-    if (selectedTask) {
-      console.log("VideoEditor received task:", selectedTask);
-      console.log("Task campaign:", selectedTask.campaign);
-      console.log("Task status:", selectedTask.status);
-    }
-  }, [selectedTask]);
   const [videoContent, setVideoContent] = useState<VideoContent>({
     platform: editingContent ? (editingContent.json_content as any)?.platform || "" : "",
     description: editingContent ? (editingContent.json_content as any)?.description || "" : "",

@@ -3,6 +3,8 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -12,7 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import type { Content } from "@/libs/types/content";
+import type { Content, CreateContentRequest } from "@/libs/types/content";
 import { ArrowLeft, User, Calendar, Target, FileText } from "lucide-react";
 import {
   getTaskStatusDisplay,
@@ -20,37 +22,79 @@ import {
   getStatusBadgeVariant,
   getStatusBadgeClassName,
 } from "@/libs/helper/taskUtils";
+import { useAuth } from "@/libs/hooks/useAuth";
+import { getBrandIdFromToken } from "@/libs/helper/helper";
 
 type ContentType = "blog" | "video";
 
 interface BlogEditorProps {
   editingContent?: Content | null;
   selectedTask?: any;
-  onSave: (content: { html: string; json: object }, contentType: ContentType) => void;
+  onSave: (content: CreateContentRequest, contentType: ContentType) => void;
   onBack: () => void;
 }
 
 const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditorProps) => {
-  const [content, setContent] = useState<{ html: string; json: object } | null>(
-    editingContent
-      ? {
-          html: editingContent.html_content,
-          json: editingContent.json_content,
-        }
-      : null,
-  );
   const contentType = "blog";
   const [showPreview, setShowPreview] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
 
-  // Debug logging to verify task data
-  React.useEffect(() => {
-    if (selectedTask) {
-      console.log("BlogEditor received task:", selectedTask);
-      console.log("Task campaign:", selectedTask.campaign);
-      console.log("Task status:", selectedTask.status);
+  // Get user from auth state
+  const { user } = useAuth();
+
+  // State for content tracking
+  const [content, setContent] = React.useState<{ html: string; json: any } | null>(
+    editingContent
+      ? {
+          html: editingContent.html_content || "",
+          json: editingContent.json_content || null,
+        }
+      : null,
+  );
+
+  // Local state for title to avoid watch() performance issues
+  const [localTitle, setLocalTitle] = React.useState(editingContent?.title || "");
+
+  // Simple content update handler
+  const handleContentChange = (data: any) => {
+    setContent(data);
+  };
+
+  // Memoized save button disabled state
+  const isSaveDisabled = React.useMemo(() => {
+    return !content || !localTitle.trim() || localTitle.length < 3 || localTitle.length > 200;
+  }, [content, localTitle]);
+
+  // Handle form submission
+  const handleFormSubmit = () => {
+    if (content && localTitle.trim()) {
+      // Create excerpt from content (first 150 characters of plain text)
+      const plainText = content.html.replace(/<[^>]*>/g, "");
+      const excerpt = plainText.substring(0, 150) + (plainText.length > 150 ? "..." : "");
+
+      // Debug: Log user info to understand the issue
+      console.log("Current user from auth:", user);
+      console.log("User ID:", user?.id);
+
+      const apiData: CreateContentRequest = {
+        title: localTitle.trim(),
+        body: content.html,
+        type: "POST",
+        blog_fields: {
+          author_id: user?.id || getBrandIdFromToken() || "",
+          excerpt: excerpt,
+          read_time: calculateReadTime(content.html),
+          tags: [],
+        },
+        channels: ["website"],
+        task_id: selectedTask?.id?.toString() || null,
+        affiliate_link: null,
+        ai_generated_text: null,
+      };
+
+      onSave(apiData, contentType);
     }
-  }, [selectedTask]);
+  };
 
   // Keep track of initial content to detect unsaved changes
   const initialContent = React.useMemo(
@@ -63,18 +107,13 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
 
   // Check if there are unsaved changes
   const hasUnsavedChanges = React.useMemo(() => {
-    if (!content) return false;
+    if (!content) return localTitle !== (editingContent?.title || "");
     return (
+      localTitle !== (editingContent?.title || "") ||
       content.html !== initialContent.html ||
       JSON.stringify(content.json) !== JSON.stringify(initialContent.json)
     );
-  }, [content, initialContent]);
-
-  const handleSave = () => {
-    if (content) {
-      onSave(content, contentType);
-    }
-  };
+  }, [content, initialContent, localTitle, editingContent?.title]);
 
   // Handle back navigation with unsaved changes check
   const handleBackClick = () => {
@@ -96,6 +135,17 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
     setShowUnsavedDialog(false);
   };
 
+  // Calculate estimated read time based on content
+  const calculateReadTime = (htmlContent: string) => {
+    // Remove HTML tags and get plain text
+    const textContent = htmlContent.replace(/<[^>]*>/g, "");
+    // Average reading speed: 200 words per minute
+    const wordsPerMinute = 200;
+    const wordCount = textContent.trim().split(/\s+/).length;
+    const readTime = Math.ceil(wordCount / wordsPerMinute);
+    return readTime > 0 ? readTime : 1; // Minimum 1 minute
+  };
+
   const defaultContent =
     "<h1>Heading1</h1><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quis lobortis nisl cursus bibendum et nulla accumsan sodales ornare. At urna viverra non suspendisse neque, lorem. Pretium condimentum pellentesque id gravida id eiam sit sed orci euismod. Rhoncus proin orci duis scelerisque molestie cursus tincidunt aliguam.</p><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quis lobortis nisl cursus bibendum et nulla accumsan sodales ornare. At urna viverra non suspendisse neque, lorem. Pretium condimentum pellentesque id gravida id eiam sit sed orci euismod. Rhoncus proin orci duis scelerisque molestie cursus tincidunt aliguam.</p>";
 
@@ -114,11 +164,15 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
           </Button>
           <div>
             <h2 className="text-xl font-semibold text-gray-900">
-              {editingContent ? `Editing: ${editingContent.title}` : "Create New Blog Content"}
+              {editingContent ? "Edit Blog Content" : "Create New Blog Content"}
             </h2>
           </div>
         </div>
-        <Button onClick={handleSave} className="bg-[#FF9DB0] hover:bg-pink-600">
+        <Button
+          onClick={handleFormSubmit}
+          className="bg-[#FF9DB0] hover:bg-pink-600"
+          disabled={isSaveDisabled}
+        >
           {editingContent ? "Update Content" : "Save Content"}
         </Button>
       </div>
@@ -213,14 +267,30 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
       <Card>
         <CardHeader>
           <h3 className="text-lg font-semibold">
-            {editingContent ? `Editing: ${editingContent.title}` : `Create New ${contentType}`}
+            {editingContent ? "Edit Blog Content" : `Create New ${contentType}`}
           </h3>
         </CardHeader>
-        <CardContent>
-          <TiptapEditor
-            initialContent={editingContent ? editingContent.html_content : defaultContent}
-            onChange={(data) => setContent(data)}
-          />
+        <CardContent className="space-y-6">
+          {/* Title Input */}
+          <div className="space-y-2">
+            <Label htmlFor="title">Title *</Label>
+            <Input
+              id="title"
+              placeholder="Enter blog title..."
+              value={localTitle}
+              onChange={(e) => setLocalTitle(e.target.value)}
+              className="w-full"
+            />
+          </div>
+
+          {/* Content Editor */}
+          <div className="space-y-2">
+            <Label htmlFor="content">Content *</Label>
+            <TiptapEditor
+              initialContent={editingContent ? editingContent.html_content : defaultContent}
+              onChange={handleContentChange}
+            />
+          </div>
         </CardContent>
       </Card>
 
@@ -230,24 +300,36 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
           variant="default"
           onClick={() => setShowPreview(!showPreview)}
           className="w-[200px]"
+          disabled={!content || !localTitle.trim()}
         >
           {showPreview ? "Hide Preview" : "Show Preview"}
         </Button>
       </div>
 
       {/* Preview Section */}
-      {showPreview && content && (
+      {showPreview && content && localTitle.trim() && (
         <Card>
           <CardHeader>
-            <h3 className="text-lg font-semibold">
-              {editingContent ? `Preview: ${editingContent.title}` : "Content Preview"}
-            </h3>
+            <h3 className="text-lg font-semibold">Blog Preview</h3>
           </CardHeader>
           <CardContent>
-            <div
-              className="ProseMirror prose prose-sm sm:prose-base lg:prose-lg max-w-none prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-blockquote:my-2 p-4 border rounded-md focus:outline-none"
-              dangerouslySetInnerHTML={{ __html: content.html }}
-            />
+            <div className="space-y-4">
+              {/* Title and Read Time */}
+              <div className="border-b pb-4">
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">{localTitle}</h1>
+                <div className="flex items-center text-sm text-gray-500">
+                  <Calendar className="w-4 h-4 mr-1" />
+                  <span className="mr-4">{new Date().toLocaleDateString()}</span>
+                  <span>{calculateReadTime(content.html)} min read</span>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div
+                className="ProseMirror prose prose-sm sm:prose-base lg:prose-lg max-w-none prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-blockquote:my-2"
+                dangerouslySetInnerHTML={{ __html: content.html }}
+              />
+            </div>
           </CardContent>
         </Card>
       )}

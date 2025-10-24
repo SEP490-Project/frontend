@@ -1,35 +1,19 @@
-/**
- * Utility functions for handling task data and status
- */
-
 export type TaskStatus = "to-do" | "in-progress" | "completed";
 
-/**
- * Gets the display status for a task, providing fallbacks for missing data
- */
 export const getTaskStatusDisplay = (task: any): string => {
   if (!task) {
-    console.log("getTaskStatusDisplay: no task provided");
     return "PENDING";
   }
 
-  console.log("getTaskStatusDisplay: task =", task);
-
-  // If status exists, format it properly
   if (task.status && task.status.trim() !== "") {
-    console.log("getTaskStatusDisplay: using task.status =", task.status);
     return task.status.replace("-", " ").toUpperCase();
   }
 
   // Fallback logic based on task properties
   if (task.id === 7) {
-    // Specific handling for task 7 which should be "TO DO" based on mock data
-    console.log("getTaskStatusDisplay: using fallback for task 7");
     return "TO DO";
   }
 
-  // Default fallback
-  console.log("getTaskStatusDisplay: using default fallback");
   return "PENDING";
 };
 
@@ -38,32 +22,21 @@ export const getTaskStatusDisplay = (task: any): string => {
  */
 export const getTaskCampaignDisplay = (task: any): string => {
   if (!task) {
-    console.log("getTaskCampaignDisplay: no task provided");
     return "No Campaign";
   }
 
-  console.log("getTaskCampaignDisplay: task =", task);
-
   // If campaign exists, return it
   if (task.campaign && task.campaign.trim() !== "") {
-    console.log("getTaskCampaignDisplay: using task.campaign =", task.campaign);
     return task.campaign;
   }
 
   // Fallback logic based on task properties
   if (task.id === 7) {
-    // Specific handling for task 7 which should be "Daily Beauty Essentials"
-    console.log("getTaskCampaignDisplay: using fallback for task 7");
     return "Daily Beauty Essentials";
   }
-
-  console.log("getTaskCampaignDisplay: using default fallback");
   return "No Campaign";
 };
 
-/**
- * Gets the appropriate badge variant for a task status
- */
 export const getStatusBadgeVariant = (status: string): "default" | "secondary" | "outline" => {
   const normalizedStatus = status.toLowerCase().replace(" ", "-");
 
@@ -79,9 +52,6 @@ export const getStatusBadgeVariant = (status: string): "default" | "secondary" |
   }
 };
 
-/**
- * Gets the appropriate CSS classes for a task status badge
- */
 export const getStatusBadgeClassName = (status: string): string => {
   const normalizedStatus = status.toLowerCase().replace(" ", "-");
 
@@ -97,9 +67,6 @@ export const getStatusBadgeClassName = (status: string): string => {
   }
 };
 
-/**
- * Validates and enriches task data with proper defaults
- */
 export const enrichTaskData = (task: any): any => {
   if (!task) return null;
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useContentManager } from "@/libs/hooks/useContentManager";
+import { useContentManager } from "@/libs/hooks/useContent";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -30,8 +30,14 @@ import {
   Video,
   Settings,
   Globe,
+  Check,
+  XCircle,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Dialog } from "@/components/ui/dialog";
+import { DeleteContentModal } from "@/components/modal/content/DeleteContentModal";
+import { RequestApprovalModal } from "@/components/modal/content/RequestApprovalModal";
+import { RejectContentModal } from "@/components/modal/content/RejectContentModal";
 import ContentDetailModal from "./ContentDetailModal";
 import TaskSelectionDialog from "./TaskSelectionDialog";
 import type { Content } from "@/libs/types/content";
@@ -68,7 +74,9 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     fetchContents,
     removeContent,
     publishExistingContent,
-    unpublishExistingContent,
+    submitExistingContent,
+    approveExistingContent,
+    rejectExistingContent,
   } = useContentManager();
 
   const [filters, setFilters] = useState({
@@ -83,6 +91,12 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isTaskSelectionOpen, setIsTaskSelectionOpen] = useState(false);
   const [selectedContentType, setSelectedContentType] = useState<ContentType>("blog");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [contentToDelete, setContentToDelete] = useState<Content | null>(null);
+  const [showRequestApprovalModal, setShowRequestApprovalModal] = useState(false);
+  const [contentToSubmit, setContentToSubmit] = useState<Content | null>(null);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [contentToReject, setContentToReject] = useState<Content | null>(null);
 
   useEffect(() => {
     fetchContents(filters);
@@ -101,20 +115,46 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     setFilters((prev) => ({ ...prev, page }));
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this content?")) {
-      await removeContent(id);
-      fetchContents(filters);
+  const handleDelete = (content: Content) => {
+    setContentToDelete(content);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!contentToDelete) return;
+
+    try {
+      const deleteResponse = await removeContent(contentToDelete.id);
+
+      // Check if deletion was successful based on API response
+      if (deleteResponse.meta.requestStatus === "fulfilled") {
+        // Refresh content list only if successful
+        fetchContents(filters);
+      }
+
+      // Always close modal and clear state
+      setShowDeleteModal(false);
+      setContentToDelete(null);
+    } catch (error) {
+      console.error("Error deleting content:", error);
+      // Close modal and clear state
+      setShowDeleteModal(false);
+      setContentToDelete(null);
     }
   };
 
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setContentToDelete(null);
+  };
+
   const handleToggleStatus = async (content: Content) => {
-    if (content.status === "posted") {
-      await unpublishExistingContent(content.id);
-    } else {
+    if (content.status === "draft") {
       await publishExistingContent(content.id);
+      fetchContents(filters);
     }
-    fetchContents(filters);
+    // For other statuses, we might need different actions like approve/reject
+    // This will be handled by specific buttons in the dropdown menu
   };
 
   const handleViewContent = (content: Content) => {
@@ -129,13 +169,87 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     setSelectedContent(null);
   };
 
-  const handleRequestApproval = async (contentId: string) => {
-    // TODO: Implement request approval logic
-    // For now, we'll change status to pending
-    console.log("Requesting approval for content:", contentId);
-    // You can implement the actual API call here
-    fetchContents(filters);
-    handleCloseDetailModal();
+  const handleRequestApproval = (contentId: string) => {
+    // Find the content by ID and show confirmation modal
+    const content = contentList.find((c) => c.id === contentId);
+    if (content) {
+      setContentToSubmit(content);
+      setShowRequestApprovalModal(true);
+    }
+  };
+
+  const handleConfirmRequestApproval = async () => {
+    if (!contentToSubmit) return;
+
+    try {
+      const submitResponse = await submitExistingContent(contentToSubmit.id);
+
+      // Check if submission was successful
+      if (submitResponse.meta.requestStatus === "fulfilled") {
+        fetchContents(filters);
+      }
+
+      // Always close modals and clear state
+      setShowRequestApprovalModal(false);
+      setContentToSubmit(null);
+      handleCloseDetailModal();
+    } catch (error) {
+      console.error("Error submitting content for approval:", error);
+      // Close modals and clear state on error
+      setShowRequestApprovalModal(false);
+      setContentToSubmit(null);
+      handleCloseDetailModal();
+    }
+  };
+
+  const handleCancelRequestApproval = () => {
+    setShowRequestApprovalModal(false);
+    setContentToSubmit(null);
+  };
+
+  const handleReject = (content: Content) => {
+    setContentToReject(content);
+    setShowRejectModal(true);
+  };
+
+  const handleConfirmReject = async (reason: string) => {
+    if (!contentToReject) return;
+
+    try {
+      const rejectResponse = await rejectExistingContent(contentToReject.id, reason);
+
+      // Check if rejection was successful
+      if (rejectResponse.meta.requestStatus === "fulfilled") {
+        fetchContents(filters);
+      }
+
+      // Always close modals and clear state
+      setShowRejectModal(false);
+      setContentToReject(null);
+    } catch (error) {
+      console.error("Error rejecting content:", error);
+      // Close modals and clear state on error
+      setShowRejectModal(false);
+      setContentToReject(null);
+    }
+  };
+
+  const handleCancelReject = () => {
+    setShowRejectModal(false);
+    setContentToReject(null);
+  };
+
+  const handleApprove = async (content: Content) => {
+    try {
+      const approveResponse = await approveExistingContent(content.id);
+
+      // Check if approval was successful
+      if (approveResponse.meta.requestStatus === "fulfilled") {
+        fetchContents(filters);
+      }
+    } catch (error) {
+      console.error("Error approving content:", error);
+    }
   };
 
   const handleCreateNewClick = (contentType: ContentType) => {
@@ -393,8 +507,26 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                             <Edit className="w-4 h-4 mr-2" />
                             Edit
                           </DropdownMenuItem>
+                          {content.status === "pending" && (
+                            <>
+                              <DropdownMenuItem
+                                onClick={() => handleApprove(content)}
+                                className="text-green-600 hover:text-green-700"
+                              >
+                                <Check className="w-4 h-4 mr-2" />
+                                Approve
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleReject(content)}
+                                className="text-pink-600 hover:text-pink-700"
+                              >
+                                <XCircle className="w-4 h-4 mr-2" />
+                                Reject
+                              </DropdownMenuItem>
+                            </>
+                          )}
                           <DropdownMenuItem
-                            onClick={() => handleDelete(content.id)}
+                            onClick={() => handleDelete(content)}
                             className="text-red-600 hover:text-red-700"
                           >
                             <Trash2 className="w-4 h-4 mr-2" />
@@ -466,6 +598,51 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
         contentType={selectedContentType}
         onTaskSelect={handleTaskSelect}
       />
+
+      {/* Delete Confirmation Modal */}
+      <Dialog
+        open={showDeleteModal}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCancelDelete();
+          }
+        }}
+      >
+        <DeleteContentModal
+          contentTitle={contentToDelete?.title || "content"}
+          onConfirm={handleConfirmDelete}
+        />
+      </Dialog>
+
+      {/* Request Approval Confirmation Modal */}
+      <Dialog
+        open={showRequestApprovalModal}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCancelRequestApproval();
+          }
+        }}
+      >
+        <RequestApprovalModal
+          contentTitle={contentToSubmit?.title || "content"}
+          onConfirm={handleConfirmRequestApproval}
+        />
+      </Dialog>
+
+      {/* Reject Content Modal */}
+      <Dialog
+        open={showRejectModal}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCancelReject();
+          }
+        }}
+      >
+        <RejectContentModal
+          contentTitle={contentToReject?.title || "content"}
+          onConfirm={handleConfirmReject}
+        />
+      </Dialog>
     </div>
   );
 };

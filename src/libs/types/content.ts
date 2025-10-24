@@ -4,7 +4,7 @@ export interface Content {
   actor: string;
   date_time: string;
   views: number;
-  status: "posted" | "draft" | "pending";
+  status: string;
   content_type?: "blog" | "video";
   html_content: string;
   json_content: object;
@@ -24,17 +24,34 @@ export interface ContentListParams {
 
 export interface CreateContentRequest {
   title: string;
-  html_content: string;
-  json_content: object;
-  status: "posted" | "draft" | "pending";
+  body: string;
+  type: "POST";
+  blog_fields?: {
+    author_id: string;
+    excerpt: string;
+    read_time: number;
+    tags: string[];
+  };
+  channels: string[];
+  task_id?: string | null;
+  affiliate_link?: string | null;
+  ai_generated_text?: string | null;
 }
 
 export interface UpdateContentRequest {
   id: string;
-  title?: string;
-  html_content?: string;
-  json_content?: object;
-  status?: "posted" | "draft" | "pending";
+  title: string;
+  body: string;
+  type: "POST";
+  blog_fields?: {
+    author_id: string;
+    excerpt: string;
+    read_time: number;
+    tags: string[];
+  };
+  channels: string[];
+  affiliate_link?: string | null;
+  ai_generated_text?: string | null;
 }
 
 export interface ContentResponse {
@@ -51,4 +68,14 @@ export interface ContentResponse {
 
 export interface SingleContentResponse {
   data: Content;
+}
+
+export interface PublishContentParams {
+  id: string;
+  publishDate?: string;
+}
+
+export interface RejectContentParams {
+  id: string;
+  reason: string;
 }

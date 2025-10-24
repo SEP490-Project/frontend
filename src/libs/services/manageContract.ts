@@ -27,7 +27,7 @@ export const manageContract = {
 
   getContractById: (contractId: string) => api.get(`/contracts/${contractId}`),
 
-  approveContract: (contractId: string) => api.patch(`/contracts/${contractId}/approve`),
+  approveContract: (contractId: string) => api.patch(`/contracts/${contractId}/state`),
 
   rejectContract: (contractId: string) => api.patch(`/contracts/${contractId}/reject`),
 };

@@ -18,7 +18,7 @@ const ContentPreviewPage: React.FC = () => {
   const handleApproveContent = async (content: Content) => {
     try {
       await manageContent.approveContent(content.id);
-      toast.success(`Content "${content.title}" has been approved and published.`);
+      toast.success(`Content "${content.title}" has been approved.`);
       handleBack();
     } catch (error) {
       console.error("Error approving content:", error);
@@ -29,8 +29,10 @@ const ContentPreviewPage: React.FC = () => {
   // Handle rejecting content
   const handleRejectContent = async (content: Content) => {
     try {
-      await manageContent.rejectContent(content.id);
-      toast.success(`Content "${content.title}" has been rejected and moved to draft.`);
+      // For now, using a default rejection reason. This should be updated to show a modal for reason input
+      const defaultReason = "Content does not meet quality standards";
+      await manageContent.rejectContent(content.id, defaultReason);
+      toast.success(`Content "${content.title}" has been rejected.`);
       handleBack();
     } catch (error) {
       console.error("Error rejecting content:", error);

@@ -35,6 +35,18 @@ const getAllUsersThunk = createAsyncThunk(
   },
 );
 
+const getUserDetailByAdminThunk = createAsyncThunk(
+  "userManager/getUserDetailByAdmin",
+  async (userId: string, thunkAPI) => {
+    try {
+      const response = await manageUser.getUserDetailByAdmin(userId);
+      return response.data as UserResponse<UserData>;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error);
+    }
+  },
+);
+
 const updateUserStatusThunk = createAsyncThunk(
   "userManager/updateUserStatus",
   async ({ is_active, userId }: { is_active: boolean; userId: string }, thunkAPI) => {
@@ -63,6 +75,7 @@ export {
   getProfileThunk,
   updateProfileThunk,
   getAllUsersThunk,
+  getUserDetailByAdminThunk,
   updateUserStatusThunk,
   activateBrandThunk,
 };

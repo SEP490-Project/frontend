@@ -5,6 +5,8 @@ import type {
   ContentListParams,
   CreateContentRequest,
   UpdateContentRequest,
+  PublishContentParams,
+  RejectContentParams,
 } from "@/libs/types/content";
 
 export const contents = createAsyncThunk(
@@ -74,9 +76,9 @@ export const deleteContent = createAsyncThunk(
 
 export const publishContent = createAsyncThunk(
   "/contents/publish",
-  async (id: string, { rejectWithValue }) => {
+  async (params: PublishContentParams, { rejectWithValue }) => {
     try {
-      const response = await manageContent.publishContent(id);
+      const response = await manageContent.publishContent(params.id, params.publishDate);
       return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
@@ -85,15 +87,54 @@ export const publishContent = createAsyncThunk(
   },
 );
 
-export const unpublishContent = createAsyncThunk(
-  "/contents/unpublish",
+// export const unpublishContent = createAsyncThunk(
+//   "/contents/unpublish",
+//   async (id: string, { rejectWithValue }) => {
+//     try {
+//       const response = await manageContent.unpublishContent(id);
+//       return response.data;
+//     } catch (error: unknown) {
+//       const err = error as AxiosError<{ message: string }>;
+//       return rejectWithValue(err.response?.data?.message || "Failed to unpublish content");
+//     }
+//   },
+// );
+
+export const submitContent = createAsyncThunk(
+  "/contents/submit",
   async (id: string, { rejectWithValue }) => {
     try {
-      const response = await manageContent.unpublishContent(id);
+      const response = await manageContent.submitContent(id);
       return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
-      return rejectWithValue(err.response?.data?.message || "Failed to unpublish content");
+      return rejectWithValue(err.response?.data?.message || "Failed to submit content for review");
+    }
+  },
+);
+
+export const approveContent = createAsyncThunk(
+  "/contents/approve",
+  async (id: string, { rejectWithValue }) => {
+    try {
+      const response = await manageContent.approveContent(id);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Failed to approve content");
+    }
+  },
+);
+
+export const rejectContent = createAsyncThunk(
+  "/contents/reject",
+  async (params: RejectContentParams, { rejectWithValue }) => {
+    try {
+      const response = await manageContent.rejectContent(params.id, params.reason);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Failed to reject content");
     }
   },
 );

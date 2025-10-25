@@ -21,7 +21,6 @@ export const manageContent = {
 
   contentDetail: (id: string) => {
     // Mock implementation for development
-    console.log("Using mock data for content detail, ID:", id);
     const content = mockData.data.find((item) => item.id === id);
     if (content) {
       // Ensure proper typing for Content interface
@@ -45,42 +44,30 @@ export const manageContent = {
   updateContent: (data: UpdateContentRequest) => api.put(`/contents/${data.id}`, data),
 
   deleteContent: (id: string) => {
-    // Mock implementation for development
-    console.log("Mock delete content:", id);
-    return Promise.resolve({ data: { success: true } });
-    // Uncomment below for real API call
-    // return api.delete(`/contents/${id}`);
+    return api.delete(`/contents/${id}`);
   },
 
-  publishContent: (id: string) => {
-    // Mock implementation for development
-    console.log("Mock publish content:", id);
-    return Promise.resolve({ data: { success: true } });
-    // Uncomment below for real API call
-    // return api.patch(`/contents/${id}/publish`);
+  publishContent: (id: string, publishDate?: string) => {
+    const body = publishDate ? { publish_date: publishDate } : {};
+    return api.patch(`/contents/${id}/publish`, body);
   },
 
-  unpublishContent: (id: string) => {
-    // Mock implementation for development
-    console.log("Mock unpublish content:", id);
-    return Promise.resolve({ data: { success: true } });
-    // Uncomment below for real API call
-    // return api.patch(`/contents/${id}/unpublish`);
-  },
+  // unpublishContent: (id: string) => {
+  //   // Mock implementation for development
+  //   return Promise.resolve({ data: { success: true } });
+  //   // Uncomment below for real API call
+  //   // return api.patch(`/contents/${id}/unpublish`);
+  // },
 
   approveContent: (id: string) => {
-    // Mock implementation for development - approve by updating status to 'posted'
-    console.log("Mock approve content:", id);
-    return Promise.resolve({ data: { success: true, message: "Content approved successfully" } });
-    // Uncomment below for real API call
-    // return api.patch(`/contents/${id}/approve`);
+    return api.patch(`/contents/${id}/approve`);
   },
 
-  rejectContent: (id: string) => {
-    // Mock implementation for development - reject by updating status to 'draft'
-    console.log("Mock reject content:", id);
-    return Promise.resolve({ data: { success: true, message: "Content rejected successfully" } });
-    // Uncomment below for real API call
-    // return api.patch(`/contents/${id}/reject`);
+  rejectContent: (id: string, reason: string) => {
+    return api.patch(`/contents/${id}/reject`, { reason });
+  },
+
+  submitContent: (id: string) => {
+    return api.patch(`/contents/${id}/submit`);
   },
 };

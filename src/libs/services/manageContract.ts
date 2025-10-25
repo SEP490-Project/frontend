@@ -16,7 +16,7 @@ export const manageContract = {
   }) => api.get("/contracts", { params }),
 
   getContractsByBrand: (params: ContractParams) =>
-    api.get(`/contracts/brands/${params.brand_id}`, {
+    api.get("/contracts/brands/profile", {
       params: {
         page: params.page,
         limit: params.limit,
@@ -27,7 +27,10 @@ export const manageContract = {
 
   getContractById: (contractId: string) => api.get(`/contracts/${contractId}`),
 
-  approveContract: (contractId: string) => api.patch(`/contracts/${contractId}/approve`),
+  approveContract: (contractId: string) =>
+    api.patch(`/contracts/${contractId}/state`, {
+      state: "APPROVED",
+    }),
 
   rejectContract: (contractId: string) => api.patch(`/contracts/${contractId}/reject`),
 };

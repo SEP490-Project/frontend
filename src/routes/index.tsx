@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Homepage from "@/pages/Homepage";
 import NotFound from "@/pages/NotFound";
 import { Account, Notification, Dashboard } from "@/pages/manager/shared";
-import { User } from "@/pages/manager/admin";
 import { Contract, Campaign as BrandCampaign } from "@/pages/manager/brand";
 import {
   Brand,
@@ -36,8 +35,8 @@ import {
 import { ContentApproval } from "@/pages/manager/marketing/content-approval";
 import ContentPreviewPage from "@/pages/manager/marketing/content-approval/ContentPreviewPage";
 import AddProductStep from "@/components/manage/sale/AddProductStep";
-import Attribute from "@/pages/manager/sale/attribute/Attribute";
 import ProductDetail from "@/pages/manager/sale/product/ProductDetail";
+import { User, VariantAttribute } from "@/pages/manager/admin";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -78,6 +77,7 @@ const AppRoutes = () => (
       <Route element={<PrivateRoute allowedRoles={["ADMIN"]} />}>
         <Route path="/manage/admin" element={<ManageLayout />}>
           <Route path="users" element={<User />} />
+          <Route path="variant-attribute" element={<VariantAttribute />} />
         </Route>
       </Route>
 
@@ -92,7 +92,6 @@ const AppRoutes = () => (
           {/* <Route path="product/:id/edit" element={<ProductDetail />} /> */}
           <Route path="product/:id" element={<ProductDetail />} />
           <Route path="category" element={<Category />} />
-          <Route path="variant-attribute" element={<Attribute />} />
           <Route path="order" element={<Order />} />
           {/* <Route path="order/:id" element={<OrderDetail />} /> */}
           <Route path="review" element={<Review />} />

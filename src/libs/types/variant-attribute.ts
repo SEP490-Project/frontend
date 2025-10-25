@@ -21,3 +21,9 @@ export interface CreateVariantAttributePayload {
   description: string;
   ingredient: string;
 }
+
+export interface GetVariantAttributesParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+}

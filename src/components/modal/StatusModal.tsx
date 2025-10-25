@@ -26,9 +26,7 @@ export const StatusModal = ({
           </span>
           Confirm Status Change
         </DialogTitle>
-        <DialogDescription>
-          <p>This action will change the status to {status}.</p>
-        </DialogDescription>
+        <DialogDescription>This action will change the status to {status}.</DialogDescription>
       </DialogHeader>
       <p>
         Are you sure you want to change the status of this{" "}

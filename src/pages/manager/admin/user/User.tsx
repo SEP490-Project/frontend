@@ -190,14 +190,16 @@ const UserPage: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <Button
-                        size={"icon"}
-                        variant={"ghost"}
+                        variant="ghost"
+                        size="icon"
+                        className=" hover:bg-blue-100"
+                        title="View"
                         onClick={() => {
                           setIsUserDetailModalOpen(true);
                           setSelectedUserId(user.id);
                         }}
                       >
-                        <FaEye className="text-primary" />
+                        <FaEye className="text-blue-600" />
                       </Button>
                     </TableCell>
                   </TableRow>

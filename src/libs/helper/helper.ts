@@ -52,6 +52,11 @@ export const convertNumberToCurrency = (
   }).format(amount);
 };
 
+export const parseCurrencyToNumber = (currencyString: string): number => {
+  const numberFormat = Number(currencyString.replace(/[^0-9,-]+/g, ""));
+  return isNaN(numberFormat) ? 0 : numberFormat;
+};
+
 export const convertCurrencyForChart = (amount: number): string => {
   if (amount >= 1_000_000_000) {
     return `${(amount / 1_000_000_000).toFixed(1)}B`;

@@ -27,7 +27,6 @@ import {
   Product,
   Category,
   Order,
-  OrderDetail,
   Review,
   Transaction,
   BasicInfoStep,
@@ -37,6 +36,8 @@ import {
 import { ContentApproval } from "@/pages/manager/marketing/content-approval";
 import ContentPreviewPage from "@/pages/manager/marketing/content-approval/ContentPreviewPage";
 import AddProductStep from "@/components/manage/sale/AddProductStep";
+import Attribute from "@/pages/manager/sale/attribute/Attribute";
+import ProductDetail from "@/pages/manager/sale/product/ProductDetail";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -88,11 +89,12 @@ const AppRoutes = () => (
             <Route path="variants" element={<VariantsStep />} />
             <Route path="done" element={<DoneStep />} />
           </Route>
-          {/* <Route path="product/:id/edit" element={<ProductDetail />} />
-          <Route path="product/:id" element={<ProductDetail />} /> */}
+          {/* <Route path="product/:id/edit" element={<ProductDetail />} /> */}
+          <Route path="product/:id" element={<ProductDetail />} />
           <Route path="category" element={<Category />} />
+          <Route path="variant-attribute" element={<Attribute />} />
           <Route path="order" element={<Order />} />
-          <Route path="order/:id" element={<OrderDetail />} />
+          {/* <Route path="order/:id" element={<OrderDetail />} /> */}
           <Route path="review" element={<Review />} />
           <Route path="transaction" element={<Transaction />} />
         </Route>

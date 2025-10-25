@@ -196,6 +196,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       { href: "/manage/sale/task", label: "Tasks & Schedule", icon: <FaCalendarDays size={18} /> },
       { href: "/manage/sale/product", label: "Product", icon: <FaBoxOpen size={18} /> },
       { href: "/manage/sale/category", label: "Category", icon: <FaFolderTree size={18} /> },
+      { href: "/manage/sale/variant-attribute", label: "Attribute", icon: <FaHashtag size={18} /> },
       { href: "/manage/sale/order", label: "Order", icon: <FaCartShopping size={18} /> },
       { href: "/manage/sale/review", label: "Review", icon: <FaStar size={18} /> },
       {

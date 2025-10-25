@@ -237,7 +237,7 @@ const Product: React.FC = () => {
                           className=" hover:bg-blue-100"
                           title="Edit"
                           onClick={() => {
-                            navigate(`/manage/sale/product/${product.id}/edit`, {
+                            navigate(`/manage/sale/product/${product.id}`, {
                               state: { type: ProductFormMode.EDIT, data: product },
                             });
                           }}

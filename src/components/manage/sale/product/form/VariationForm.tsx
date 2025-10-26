@@ -112,10 +112,9 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
 
   const handleAddAttribute = () => {
     append({
-      ingredients: "",
+      attribute_id: "",
       unit: "",
       value: 0,
-      description: "",
     });
   };
 
@@ -127,7 +126,38 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
   };
 
   const onError = (errors: any) => {
-    toast.error(errors[Object.keys(errors)[0]].message);
+    console.log("Validation errors:", errors);
+
+    // Function to extract the first error message from nested error objects
+    const getFirstErrorMessage = (obj: any): string | null => {
+      if (!obj) return null;
+
+      // If it's a direct error with message
+      if (obj.message) {
+        return obj.message;
+      }
+
+      // If it's an array of errors (for field arrays like attributes)
+      if (Array.isArray(obj)) {
+        for (const item of obj) {
+          const msg = getFirstErrorMessage(item);
+          if (msg) return msg;
+        }
+      }
+
+      // If it's an object, recursively search for error messages
+      if (typeof obj === "object") {
+        for (const key in obj) {
+          const msg = getFirstErrorMessage(obj[key]);
+          if (msg) return msg;
+        }
+      }
+
+      return null;
+    };
+
+    const errorMessage = getFirstErrorMessage(errors);
+    toast.error(errorMessage || "Validation failed. Please check all required fields.");
   };
 
   return (
@@ -254,54 +284,72 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
             <Label htmlFor="capacity_unit" className="text-sm font-medium">
               Capacity Unit <span className="text-red-500">*</span>
             </Label>
-            <Select>
-              <SelectTrigger id="capacity_unit" {...register("capacity_unit")}>
-                <SelectValue placeholder="Select unit" />
-              </SelectTrigger>
-              <SelectContent>
-                {capacityUnits.map((unit) => (
-                  <SelectItem key={unit} value={unit}>
-                    {unit}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Controller
+              name="capacity_unit"
+              control={control}
+              render={({ field }) => (
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <SelectTrigger id="capacity_unit">
+                    <SelectValue placeholder="Select unit" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {capacityUnits.map((unit) => (
+                      <SelectItem key={unit} value={unit}>
+                        {unit}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="container_type" className="text-sm font-medium">
               Container Type <span className="text-red-500">*</span>
             </Label>
-            <Select>
-              <SelectTrigger id="container_type" {...register("container_type")}>
-                <SelectValue placeholder="Select container type" />
-              </SelectTrigger>
-              <SelectContent>
-                {containerTypes.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Controller
+              name="container_type"
+              control={control}
+              render={({ field }) => (
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <SelectTrigger id="container_type">
+                    <SelectValue placeholder="Select container type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {containerTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="dispenser_type" className="text-sm font-medium">
               Dispenser Type <span className="text-red-500">*</span>
             </Label>
-            <Select>
-              <SelectTrigger id="dispenser_type" {...register("dispenser_type")}>
-                <SelectValue placeholder="Select dispenser type" />
-              </SelectTrigger>
-              <SelectContent>
-                {dispenserTypes.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Controller
+              name="dispenser_type"
+              control={control}
+              render={({ field }) => (
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <SelectTrigger id="dispenser_type">
+                    <SelectValue placeholder="Select dispenser type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {dispenserTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </div>
         </div>
       </div>
@@ -368,35 +416,44 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
                 {fields.map((field, index) => (
                   <TableRow key={field.id}>
                     <TableCell>
-                      <Select>
-                        <SelectTrigger {...register(`attributes.${index}.ingredients`)}>
-                          <SelectValue placeholder="Select ingredient" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {variantAttributes?.map((ingredient) => (
-                            <SelectItem key={ingredient.id} value={ingredient.id}>
-                              {ingredient.ingredient}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Controller
+                        name={`attributes.${index}.attribute_id`}
+                        control={control}
+                        render={({ field }) => (
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select ingredient" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {variantAttributes?.map((ingredient) => (
+                                <SelectItem key={ingredient.id} value={ingredient.id}>
+                                  {ingredient.ingredient}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
                     </TableCell>
                     <TableCell>
-                      <Select>
-                        <SelectTrigger
-                          {...register(`attributes.${index}.unit`)}
-                          className="min-w-[100px]"
-                        >
-                          <SelectValue placeholder="Select unit" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {attributeUnits.map((unit) => (
-                            <SelectItem key={unit} value={unit}>
-                              {unit}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Controller
+                        name={`attributes.${index}.unit`}
+                        control={control}
+                        render={({ field }) => (
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <SelectTrigger className="min-w-[100px]">
+                              <SelectValue placeholder="Select unit" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {attributeUnits.map((unit) => (
+                                <SelectItem key={unit} value={unit}>
+                                  {unit}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
                     </TableCell>
                     <TableCell>
                       <Input

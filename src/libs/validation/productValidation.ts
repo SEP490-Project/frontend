@@ -72,8 +72,7 @@ export const productVariantSchema: yup.ObjectSchema<ProductVariant> = yup.object
     .array()
     .of(
       yup.object({
-        description: yup.string().nullable().optional(),
-        ingredients: yup.string().required("Ingredients are required"),
+        attribute_id: yup.string().required("Attribute ID is required"),
         unit: yup.mixed<AttributeUnit>().required("Unit is required"),
         value: yup
           .number()

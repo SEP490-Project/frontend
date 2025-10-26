@@ -13,7 +13,12 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { productVariantSchema } from "@/libs/validation/productValidation";
 import { VariationForm } from "@/components/manage/sale/product/form/VariationForm";
-import type { ProductData, ProductVariant, VariantWithImage } from "@/libs/types/product";
+import type {
+  ProductData,
+  ProductResponse,
+  ProductVariant,
+  VariantWithImage,
+} from "@/libs/types/product";
 import { useEffect, useState, useRef } from "react";
 import { useAppDispatch, type RootState } from "@/libs/stores";
 import {
@@ -67,7 +72,9 @@ const VariantsStep = () => {
   });
 
   useEffect(() => {
-    const productId = String(getItem<ProductData>("currentProduct")?.id || "");
+    const productId = String(
+      getItem<ProductResponse<ProductData>>("currentProduct")?.data.id || "",
+    );
     if (productId) {
       dispatch(getProductDetailThunk(productId));
     } else {
@@ -152,7 +159,7 @@ const VariantsStep = () => {
   };
 
   const handleAddVariant = async (data: ProductVariant) => {
-    const currentProduct = getItem<ProductData>("currentProduct");
+    const currentProduct = getItem<ProductResponse<ProductData>>("currentProduct")?.data;
 
     if (!currentProduct) {
       toast.error("No product found. Please create a product first.");

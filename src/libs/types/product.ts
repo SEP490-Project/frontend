@@ -87,8 +87,9 @@ export interface ProductVariantImage {
 }
 
 export interface ProductAttribute {
+  attribute_id?: string;
   description?: string | null;
-  ingredients: string;
+  ingredients?: string | null;
   unit: string;
   value: number;
 }

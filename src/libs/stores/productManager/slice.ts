@@ -14,7 +14,7 @@ const productManagerSlice = createSlice({
   name: "productManager",
   initialState: {
     products: null as ProductResponse<ProductData[]> | null,
-    createdProduct: null as ProductData | null,
+    createdProduct: null as ProductResponse<ProductData> | null,
     productDetail: null as ProductResponse<ProductData> | null,
     productVariants: [] as ProductVariant[],
     isLoading: false,
@@ -56,7 +56,7 @@ const productManagerSlice = createSlice({
       .addCase(createStandardProductThunk.fulfilled, (state, action) => {
         state.isLoading = false;
         state.createdProduct = action.payload;
-        setItem("currentProduct", action.payload);
+        setItem("currentProduct", action.payload.data);
         state.error = null;
       })
       .addCase(createStandardProductThunk.rejected, (state, action) => {

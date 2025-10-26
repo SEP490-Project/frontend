@@ -1,9 +1,10 @@
 import { AdditionalInfoForm } from "@/components/manage/sale/product/form/AdditionalForm";
 import { BasicInfoForm } from "@/components/manage/sale/product/form/BasicInfoForm";
-import type {
-  CreateProductPayload,
-  CreateLimitedProductPayload,
-  ProductData,
+import {
+  type CreateProductPayload,
+  type CreateLimitedProductPayload,
+  type ProductData,
+  type ProductResponse,
 } from "@/libs/types/product";
 import {
   createStandardProductSchema,
@@ -62,7 +63,7 @@ const BasicInfoStep = () => {
   const form = isLimitedProduct ? limitedForm : standardForm;
 
   useEffect(() => {
-    const existingProduct = getItem<ProductData>("currentProduct");
+    const existingProduct = getItem<ProductResponse<ProductData>>("currentProduct")?.data;
     if (existingProduct) {
       form.reset({
         name: existingProduct.name,

@@ -36,7 +36,6 @@ const BasicInfoStep = () => {
       category_id: "",
       description: null,
       name: "",
-      price: null,
     },
   });
 
@@ -47,7 +46,6 @@ const BasicInfoStep = () => {
       category_id: "",
       description: null,
       name: "",
-      price: null,
       task_id: "",
       limited_attribute: {
         premiere_date: "",
@@ -70,7 +68,6 @@ const BasicInfoStep = () => {
         name: existingProduct.name,
         category_id: existingProduct.category?.id?.toString() || "",
         brand_id: existingProduct.brand_id?.toString() || "",
-        price: existingProduct.price,
         description: existingProduct.description || null,
       });
     }

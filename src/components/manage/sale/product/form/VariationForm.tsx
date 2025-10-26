@@ -23,12 +23,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useSelector } from "react-redux";
+import type { AppDispatch, RootState } from "@/libs/stores";
+import { getAllVariantAttributesThunk } from "@/libs/stores/attributeManager/thunk";
 
 interface VariationFormProps extends ProductFormProps<ProductVariant> {
   onSubmit?: (data: ProductVariant) => void;
+  dispatch?: AppDispatch;
 }
 
-export const VariationForm = ({ form, onSubmit, state }: VariationFormProps) => {
+export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationFormProps) => {
+  const variantAttributes = useSelector(
+    (state: RootState) => state?.manageAttribute?.attributes?.data,
+  );
   const capacityUnits = ["ML", "L", "G", "KG", "OZ"];
   const containerTypes = [
     "BOTTLE",
@@ -87,6 +94,16 @@ export const VariationForm = ({ form, onSubmit, state }: VariationFormProps) => 
       clearErrors("manufacture_date");
     }
   }, [manufactureDate, expiryDate, today, setError, clearErrors]);
+
+  useEffect(() => {
+    if (dispatch) {
+      dispatch(
+        getAllVariantAttributesThunk({
+          limit: 100,
+        }),
+      );
+    }
+  }, [dispatch]);
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -344,7 +361,6 @@ export const VariationForm = ({ form, onSubmit, state }: VariationFormProps) => 
                   <TableHead className="font-semibold">Ingredient</TableHead>
                   <TableHead className="font-semibold">Unit</TableHead>
                   <TableHead className="font-semibold">Value</TableHead>
-                  <TableHead className="font-semibold">Description</TableHead>
                   <TableHead className="w-20 text-center font-semibold">Action</TableHead>
                 </TableRow>
               </TableHeader>
@@ -352,11 +368,18 @@ export const VariationForm = ({ form, onSubmit, state }: VariationFormProps) => 
                 {fields.map((field, index) => (
                   <TableRow key={field.id}>
                     <TableCell>
-                      <Input
-                        {...register(`attributes.${index}.ingredients`)}
-                        placeholder="e.g., Vitamin C"
-                        className="min-w-[150px]"
-                      />
+                      <Select>
+                        <SelectTrigger {...register(`attributes.${index}.ingredients`)}>
+                          <SelectValue placeholder="Select ingredient" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {variantAttributes?.map((ingredient) => (
+                            <SelectItem key={ingredient.id} value={ingredient.id}>
+                              {ingredient.ingredient}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell>
                       <Select>
@@ -382,13 +405,6 @@ export const VariationForm = ({ form, onSubmit, state }: VariationFormProps) => 
                         {...register(`attributes.${index}.value`, { valueAsNumber: true })}
                         placeholder="0"
                         className="min-w-[100px]"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        {...register(`attributes.${index}.description`)}
-                        placeholder="Optional description"
-                        className="min-w-[200px]"
                       />
                     </TableCell>
                     <TableCell className="text-center">

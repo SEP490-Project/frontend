@@ -98,7 +98,6 @@ const VariantsStep = () => {
     } else {
       setItem("currentProductVariants", updatedVariants);
     }
-
     toast.success("Variant removed from list");
   };
 
@@ -221,6 +220,7 @@ const VariantsStep = () => {
               state={state}
               isDisabled={false}
               setIsDisabled={setIsDisabled}
+              dispatch={dispatch}
             />
           </DialogContent>
         </Dialog>

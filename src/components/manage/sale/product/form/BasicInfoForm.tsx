@@ -51,7 +51,7 @@ export const BasicInfoForm = ({
   const productBasicInfos = getItem<ProductData>("currentProduct");
   const isLimitedProduct = state?.productType === "LIMITED";
 
-  const [name, category_id, brand_id, price] = watch(["name", "category_id", "brand_id", "price"]);
+  const [name, category_id, brand_id] = watch(["name", "category_id", "brand_id"]);
 
   // Watch limited attributes if it's a limited product
   const limitedAttributeWatch = isLimitedProduct
@@ -97,12 +97,9 @@ export const BasicInfoForm = ({
           name.trim() !== "" &&
           category_id &&
           brand_id &&
-          price &&
-          price >= 1000 &&
           !errors.name &&
           !errors.category_id &&
-          !errors.brand_id &&
-          !errors.price,
+          !errors.brand_id,
       );
 
       // Additional validation for LIMITED products
@@ -128,16 +125,7 @@ export const BasicInfoForm = ({
         setIsDisabled(!isBasicFormValid);
       }
     }
-  }, [
-    name,
-    category_id,
-    brand_id,
-    price,
-    errors,
-    setIsDisabled,
-    isLimitedProduct,
-    limitedAttributeWatch,
-  ]);
+  }, [name, category_id, brand_id, errors, setIsDisabled, isLimitedProduct, limitedAttributeWatch]);
 
   useEffect(() => {
     if (productBasicInfos && productBasicInfos.id) {
@@ -145,7 +133,6 @@ export const BasicInfoForm = ({
         name: productBasicInfos.name,
         category_id: productBasicInfos.category?.id?.toString() || "",
         brand_id: productBasicInfos.brand_id?.toString() || "",
-        price: productBasicInfos.price,
         description: productBasicInfos.description || null,
       } as any);
     }
@@ -266,40 +253,6 @@ export const BasicInfoForm = ({
               </SelectContent>
             </Select>
           )}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">
-        <label
-          htmlFor="productPrice"
-          className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end"
-        >
-          <span className="text-red-600">*</span>
-          Price (VND)
-        </label>
-        <Input
-          id="productPrice"
-          type="number"
-          min={0}
-          placeholder="Price must be at least 1000"
-          className=" col-span-3"
-          autoComplete="off"
-          {...register("price", {
-            valueAsNumber: true,
-            onChange: (e) => {
-              const number = Number(e.target.value);
-              if (number < 0) {
-                e.target.value = "0";
-              }
-            },
-          })}
-          onPaste={(e) => {
-            const pastedData = e.clipboardData.getData("text");
-            const number = Number(pastedData);
-            if (number < 0) {
-              e.preventDefault();
-            }
-          }}
         />
       </div>
 

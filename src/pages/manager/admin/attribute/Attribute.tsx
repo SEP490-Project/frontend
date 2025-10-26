@@ -23,6 +23,9 @@ import type { RootState } from "@/libs/stores";
 const Attribute: React.FC = () => {
   const dispatch = useAppDispatch();
   const attributes = useSelector((state: RootState) => state?.manageAttribute?.attributes?.data);
+  const pagination = useSelector(
+    (state: RootState) => state?.manageAttribute?.attributes?.pagination,
+  );
   const loading = useSelector((state: RootState) => state?.manageAttribute?.loading);
   const error = useSelector((state: RootState) => state?.manageAttribute?.error);
 
@@ -129,9 +132,9 @@ const Attribute: React.FC = () => {
             </TableBody>
           </Table>
           <PaginationTable
-            page={page}
-            totalItems={attributes?.length || 0}
-            pageSize={limit}
+            page={pagination?.page || 1}
+            totalItems={pagination?.total || 0}
+            pageSize={pagination?.limit || 10}
             onPageChange={(p) => setPage(p)}
           />
         </div>

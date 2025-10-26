@@ -48,7 +48,6 @@ export interface ProductData {
   };
   description: string;
   name: string;
-  price: number;
   type: ProductType;
   variants?: ProductVariant[];
   created_at: Date;
@@ -108,7 +107,6 @@ export interface CreateProductPayload {
   category_id: string;
   description?: string | null;
   name: string;
-  price: number | null;
 }
 
 export interface CreateLimitedProductPayload extends CreateProductPayload {

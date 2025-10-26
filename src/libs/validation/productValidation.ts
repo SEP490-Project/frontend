@@ -14,11 +14,6 @@ export const createStandardProductSchema: yup.ObjectSchema<CreateProductPayload>
   category_id: yup.string().required("Category is required"),
   brand_id: yup.string().required("Brand is required"),
   description: yup.string().nullable().optional(),
-  price: yup
-    .number()
-    .positive("Price must be a positive number")
-    .min(1000, "Price must be at least 1000")
-    .required("Price is required"),
 });
 
 export const createLimitedProductSchema: yup.ObjectSchema<CreateLimitedProductPayload> = yup.object(

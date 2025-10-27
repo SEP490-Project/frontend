@@ -26,14 +26,22 @@ import {
 import { bankList } from "@/libs/stores/bankManager/thunk";
 import { getRepresentativeConfig } from "@/libs/stores/configManager/thunk";
 import { useDebounce } from "@/libs/hooks/useDebounce";
-import { Mail, Phone, Globe, User, Building, FileText, Landmark } from "lucide-react";
+import {
+  FaEnvelope,
+  FaPhone,
+  FaGlobe,
+  FaUser,
+  FaBuilding,
+  FaFileLines,
+  FaLandmark,
+  FaImage,
+} from "react-icons/fa6";
 import { Badge } from "@/components/ui/badge";
 
 interface ContractInformationProps {
   formData: any;
   onContractTypeChange: (type: string) => void;
   onInputChange: (field: string, value: any) => void;
-  onUpdateScopeOfWork?: (updates: any) => void;
   errors?: any;
   onFieldValidation?: (field: string, error: string | null) => void;
 }
@@ -54,7 +62,7 @@ const CONTRACT_TYPE_COLORS = {
     border: "border-emerald-200",
   },
   CO_PRODUCING: { bg: "bg-violet-100", text: "text-violet-800", border: "border-violet-200" },
-} as const;
+};
 
 // map config keys (snake_case) to form fields (camelCase)
 const REP_CONFIG_TO_FORM_MAP: Record<string, string> = {
@@ -72,50 +80,84 @@ const REP_CONFIG_TO_FORM_MAP: Record<string, string> = {
 const FieldError = ({ message }: { message?: string | null }) =>
   message ? <p className="text-xs text-red-500 mt-1">{message}</p> : null;
 
-const IconText = ({ Icon, children }: any) => (
-  <div className="flex items-center gap-2 text-sm text-slate-600">
-    <Icon className="h-4 w-4" />
-    <span>{children}</span>
-  </div>
-);
-
-const BrandCard = ({ brand }: { brand: any }) => {
+const MemoBrandCard = React.memo(({ brand, isSelection }: { brand: any; isSelection: boolean }) => {
   if (!brand) return null;
   return (
-    <div className="flex gap-4 items-start">
-      {brand.logo_url ? (
-        <img
-          src={brand.logo_url}
-          alt={brand.name}
-          className="h-12 w-12 rounded-lg object-contain border"
-        />
-      ) : (
-        <div className="h-12 w-12 rounded-lg bg-slate-100 flex items-center justify-center border">
-          <FileText className="h-5 w-5 text-slate-500" />
+    <div
+      className={`flex ${
+        isSelection ? "items-center p-2 sm:p-4" : "flex-col sm:flex-row sm:items-start p-4 sm:p-6"
+      } gap-4 sm:gap-6 rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md w-full`}
+    >
+      <div
+        className={`flex-shrink-0 ${
+          isSelection ? "h-12 w-12" : "h-20 w-20"
+        } rounded-xl border border-slate-100 bg-white shadow-sm flex items-center justify-center`}
+      >
+        {brand.logo_url ? (
+          <img
+            src={brand.logo_url}
+            alt={brand.name}
+            className="object-contain h-full w-full rounded-xl"
+            loading="lazy"
+          />
+        ) : (
+          <FaImage className="text-slate-400 h-6 w-6 sm:h-8 sm:w-8" />
+        )}
+      </div>
+
+      <div className={`flex-1 min-w-0 ${isSelection ? "overflow-hidden" : ""}`}>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 min-w-0">
+          <div className="min-w-0">
+            <h3
+              className={`font-semibold text-slate-900 truncate ${
+                isSelection ? "text-sm sm:text-base" : "text-lg"
+              }`}
+            >
+              {brand.name}
+            </h3>
+            {brand.industry && <p className="text-sm text-slate-500 truncate">{brand.industry}</p>}
+          </div>
         </div>
-      )}
-      <div className="flex-1">
-        <div className="flex items-center justify-between">
-          <h4 className="text-sm font-semibold text-slate-900">{brand.name}</h4>
-        </div>
-        {brand.description && <p className="text-xs text-slate-600 mt-1">{brand.description}</p>}
-        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-          {brand.contact_email && <IconText Icon={Mail}>{brand.contact_email}</IconText>}
-          {brand.contact_phone && <IconText Icon={Phone}>{brand.contact_phone}</IconText>}
-          {brand.website && (
-            <IconText Icon={Globe}>
-              <a href={brand.website} target="_blank" rel="noreferrer" className="underline">
-                {brand.website}
-              </a>
-            </IconText>
-          )}
-        </div>
+
+        {!isSelection && brand.description && (
+          <p className="text-sm text-slate-600 mt-3 leading-relaxed">{brand.description}</p>
+        )}
+
+        {!isSelection && (
+          <div className="mt-5 space-y-3 text-sm">
+            {brand.contact_email && (
+              <div className="flex items-center gap-2 text-slate-700">
+                <FaEnvelope className="h-4 w-4 text-slate-500 flex-shrink-0" />
+                <span className="truncate">{brand.contact_email}</span>
+              </div>
+            )}
+            {brand.contact_phone && (
+              <div className="flex items-center gap-2 text-slate-700">
+                <FaPhone className="h-4 w-4 text-slate-500 flex-shrink-0" />
+                <span>{brand.contact_phone}</span>
+              </div>
+            )}
+            {brand.website && (
+              <div className="flex items-center gap-2 text-slate-700">
+                <FaGlobe className="h-4 w-4 text-slate-500 flex-shrink-0" />
+                <a
+                  href={brand.website}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline hover:text-slate-900 truncate"
+                >
+                  {brand.website}
+                </a>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
-};
+});
 
-const BankCard = ({ bank }: { bank: any }) => {
+const MemoBankCard = React.memo(({ bank }: { bank: any }) => {
   if (!bank) return null;
   return (
     <div className="flex gap-3 items-center">
@@ -124,10 +166,11 @@ const BankCard = ({ bank }: { bank: any }) => {
           src={bank.logo}
           alt={bank.name}
           className="h-12 w-12 rounded-lg object-contain border"
+          loading="lazy"
         />
       ) : (
         <div className="h-8 w-8 rounded bg-slate-100 flex items-center justify-center border">
-          <Landmark className="h-4 w-4 text-slate-500" />
+          <FaLandmark className="h-4 w-4 text-slate-500" />
         </div>
       )}
       <div className="flex-1">
@@ -136,7 +179,7 @@ const BankCard = ({ bank }: { bank: any }) => {
       </div>
     </div>
   );
-};
+});
 
 const ContractInformation: React.FC<ContractInformationProps> = ({
   formData,
@@ -156,9 +199,25 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
   const [allBrands, setAllBrands] = useState<any[]>([]);
   const [brandDetailsOpen, setBrandDetailsOpen] = useState(false);
 
-  // Add bank search states
   const [bankSearch, setBankSearch] = useState("");
-  const [filteredBanks, setFilteredBanks] = useState<any[]>([]);
+  const debouncedBankSearch = useDebounce(bankSearch, 400);
+
+  const filteredBanks = useMemo(() => {
+    const search = debouncedBankSearch.toLowerCase();
+    if (!search) return banks.map((b) => ({ ...b, id: String(b.id) }));
+
+    return banks
+      .filter(
+        (bank) =>
+          bank.name.toLowerCase().includes(search) || bank.shortName.toLowerCase().includes(search),
+      )
+      .map((b) => ({ ...b, id: String(b.id) }));
+  }, [banks, debouncedBankSearch]);
+
+  useEffect(() => {
+    dispatch(bankList());
+    dispatch(getRepresentativeConfig());
+  }, [dispatch]);
 
   useEffect(() => {
     setAllBrands([]);
@@ -177,87 +236,79 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
   }, [dispatch, page, debouncedSearch]);
 
   useEffect(() => {
-    if (page === 1) setAllBrands(brands);
-    else setAllBrands((prev) => [...prev, ...brands]);
+    if (page === 1) {
+      setAllBrands(brands);
+    } else {
+      setAllBrands((prev) => [...prev, ...brands]);
+    }
   }, [brands, page]);
 
   const loadMoreBrands = useCallback(() => {
     if (pagination?.has_next && !brandLoading) setPage((p) => p + 1);
-  }, [pagination, brandLoading]);
+  }, [pagination?.has_next, brandLoading]);
 
-  // Add useEffect to fetch banks on component mount
-  useEffect(() => {
-    dispatch(bankList());
-    dispatch(getRepresentativeConfig());
-  }, [dispatch]);
-
-  // Add useEffect to filter banks based on search
-  useEffect(() => {
-    if (!bankSearch) {
-      setFilteredBanks(banks);
-    } else {
-      const filtered = banks.filter(
-        (bank: any) =>
-          bank.name.toLowerCase().includes(bankSearch.toLowerCase()) ||
-          bank.shortName.toLowerCase().includes(bankSearch.toLowerCase()),
-      );
-      setFilteredBanks(filtered);
-    }
-  }, [banks, bankSearch]);
-
-  // Handle brand selection with clear functionality
   const handleBrandSelect = (brandId: string | null) => {
     onInputChange("brandId", brandId || "");
-
-    // If clearing brand selection, also clear brand details
     if (!brandId) {
       setBrandDetailsOpen(false);
     }
   };
 
-  // Add handler for bank selection
   const handleBankSelect = (bankId: string | null) => {
     const selectedBank = banks.find((bank) => String(bank.id) === String(bankId));
     onInputChange("brandBankName", selectedBank ? selectedBank.name : "");
   };
 
-  // fetch brand detail when brandId changes
   useEffect(() => {
-    if (!formData.brandId) {
+    if (formData.brandId && formData.brandId !== brand?.id) {
+      dispatch(fetchBrandDetail(formData.brandId));
+      setBrandDetailsOpen(true);
+    } else if (!formData.brandId) {
       setBrandDetailsOpen(false);
-      return;
     }
-    dispatch(fetchBrandDetail(formData.brandId));
-    setBrandDetailsOpen(true);
-  }, [formData.brandId, dispatch]);
+  }, [formData.brandId, brand?.id, dispatch]);
 
-  // Add new useEffect to populate brand representative data
-  const brandRepData = useMemo(() => {
-    if (!formData.brandId || !brand) return {};
-    return {
-      brandRepresentativeName: brand.representative_name || "",
-      brandRepresentativeRole: brand.representative_role || "",
-      brandRepresentativePhone: brand.contact_phone || "",
-      brandRepresentativeEmail: brand.contact_email || "",
-      brandTaxNumber: brand.tax_number || "",
-    };
-  }, [formData.brandId, brand]);
-
-  // Autofill representative data from representativeConfig when it becomes available
   useEffect(() => {
-    if (!representativeConfig) return;
+    if (brand && formData.brandId) {
+      const brandRepData = {
+        brandRepresentativeName: brand.representative_name || "",
+        brandRepresentativeRole: brand.representative_role || "",
+        brandRepresentativePhone: brand.contact_phone || "",
+        brandRepresentativeEmail: brand.contact_email || "",
+        brandTaxNumber: brand.tax_number || "",
+        brandName: brand.name || "",
+        brandAddress: brand.address || "",
+      };
 
-    Object.entries(REP_CONFIG_TO_FORM_MAP).forEach(([cfgKey, formKey]) => {
-      // representativeConfig uses snake_case keys according to RepresentativeConfig type
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      const value = representativeConfig[cfgKey];
-      if (value && !formData[formKey]) {
-        onInputChange(formKey, value);
+      let hasChanges = false;
+      const updates: Record<string, string> = {};
+
+      Object.entries(brandRepData).forEach(([key, value]) => {
+        if (value && !formData[key]) {
+          updates[key] = value;
+          hasChanges = true;
+        }
+      });
+
+      if (hasChanges) {
+        Object.entries(updates).forEach(([key, value]) => {
+          onInputChange(key, value);
+        });
       }
-    });
-    // run whenever representativeConfig changes
-  }, [representativeConfig]);
+    }
+  }, [brand, formData, onInputChange]);
+
+  useEffect(() => {
+    if (representativeConfig) {
+      Object.entries(REP_CONFIG_TO_FORM_MAP).forEach(([cfgKey, formKey]) => {
+        // @ts-expect-error representativeConfig keys are dynamic (snake_case from backend)
+        const value = representativeConfig[cfgKey];
+        if (value && !formData[formKey]) {
+          onInputChange(formKey, value);
+        }
+      });
+    }
+  }, [representativeConfig, onInputChange]);
 
   const handleFieldChange = async (field: string, value: any) => {
     const updatedForm = { ...formData, [field]: value };
@@ -276,7 +327,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
         const createdAt = new Date(); // thời điểm hiện tại
         const signedDate = new Date(value);
         if (signedDate < createdAt) {
-          onFieldValidation("signedDate", "Ngày ký không thể trước ngày tạo hợp đồng.");
+          onFieldValidation("signedDate", "Signed Date cannot be earlier than today.");
         } else {
           onFieldValidation("signedDate", null);
         }
@@ -297,68 +348,84 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
     }
   };
 
-  // Representative fields (cập nhật field names)
+  const handleAccountHolderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    const normalized = val
+      .toUpperCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^A-Z\s]/g, "");
+    handleFieldChange("brandBankAccountHolder", normalized);
+    e.target.value = normalized;
+  };
+
   const brandRepresentativeFields = [
+    { label: "Company Name", field: "brandName", placeholder: "Company name", disabled: true },
     {
-      label: "Full Name",
+      label: "Company Address",
+      field: "brandAddress",
+      placeholder: "Company address",
+      disabled: true,
+    },
+    {
+      label: "Representative Name",
       field: "brandRepresentativeName",
       placeholder: "Representative full name",
       required: true,
+      disabled: true,
     },
     {
-      label: "Role", // Đổi từ Position thành Role
-      field: "brandRepresentativeRole", // Đổi từ Position thành Role
+      label: "Representative Role",
+      field: "brandRepresentativeRole",
       placeholder: "Job title/role",
+      disabled: true,
     },
-    { label: "Phone Number", field: "brandRepresentativePhone", placeholder: "0xxx xxx xxx" },
+    {
+      label: "Phone Number",
+      field: "brandRepresentativePhone",
+      placeholder: "0xxx xxx xxx",
+      disabled: true,
+    },
     {
       label: "Email Address",
       field: "brandRepresentativeEmail",
       placeholder: "example@company.com",
       type: "email",
       required: true,
+      disabled: true,
     },
-    { label: "Tax Number", field: "brandTaxNumber", placeholder: "Tax code" },
+    { label: "Tax Number", field: "brandTaxNumber", placeholder: "Tax code", disabled: true },
   ];
 
   const webRepresentativeFields = [
     {
       label: "Full Name",
-      field: "representativeName", // Đổi từ webRepresentativeName
+      field: "representativeName",
       placeholder: "KOL/Blogger full name",
       required: true,
     },
     {
-      label: "Role", // Đổi từ Position thành Role
-      field: "representativeRole", // Đổi từ webRepresentativePosition
+      label: "Role",
+      field: "representativeRole",
       placeholder: "e.g., Content Creator, KOL, Blogger",
     },
-    {
-      label: "Phone Number",
-      field: "representativePhone", // Đổi từ webRepresentativePhone
-      placeholder: "xxx xxx xxx",
-    },
+    { label: "Phone Number", field: "representativePhone", placeholder: "xxx xxx xxx" },
     {
       label: "Email Address",
-      field: "representativeEmail", // Đổi từ webRepresentativeEmail
+      field: "representativeEmail",
       placeholder: "email@example.com",
       type: "email",
       required: true,
     },
     {
       label: "Tax Number",
-      field: "representativeTaxNumber", // Đổi từ webRepresentativeTaxNumber
+      field: "representativeTaxNumber",
       placeholder: "Personal tax identification number",
     },
   ];
 
-  // Thêm fields cho web representative banking
   const webBankingFields = [
-    {
-      label: "Bank Name",
-      field: "representativeBankName",
-      placeholder: "Select bank",
-    },
+    { label: "Bank Name", field: "representativeBankName", placeholder: "Select bank" },
     {
       label: "Account Number",
       field: "representativeBankAccountNumber",
@@ -371,7 +438,6 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
     },
   ];
 
-  // Get contract type color
   const getContractTypeColor = (type: string) => {
     return (
       CONTRACT_TYPE_COLORS[type as keyof typeof CONTRACT_TYPE_COLORS] || {
@@ -393,14 +459,12 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
         <Card className="rounded-2xl shadow-md border border-slate-200">
           <CardHeader className="flex pb-2">
             <div className="flex items-center gap-3">
-              <FileText className="h-5 w-5 text-slate-700" />
+              <FaFileLines className="h-5 w-5 text-slate-700" />
               <CardTitle className="text-base">Contract Type</CardTitle>
               {formData.type && (
                 <Badge
                   variant="outline"
-                  className={`${getContractTypeColor(formData.type).bg} ${
-                    getContractTypeColor(formData.type).text
-                  } ${getContractTypeColor(formData.type).border}`}
+                  className={`${getContractTypeColor(formData.type).bg} ${getContractTypeColor(formData.type).text} ${getContractTypeColor(formData.type).border}`}
                 >
                   {CONTRACT_TYPE_OPTIONS.find((opt) => opt.value === formData.type)?.label ||
                     formData.type}
@@ -408,7 +472,6 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
               )}
             </div>
           </CardHeader>
-
           <CardContent>
             <div className="gap-4 items-center">
               <Label className="text-sm font-medium">Choose contract type *</Label>
@@ -416,7 +479,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                 Tip: choose the type to show relevant fields.
               </div>
               <Select value={formData.type} onValueChange={onContractTypeChange}>
-                <SelectTrigger className={"h-11 mt-2 bg-white"}>
+                <SelectTrigger className="h-11 mt-2 bg-white">
                   <SelectValue placeholder="Select contract type..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -461,28 +524,30 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                     data={allBrands}
                     selectedId={formData.brandId}
                     onSelect={handleBrandSelect}
-                    renderItem={(b) => <BrandCard brand={b} />}
+                    renderItem={(b) => <MemoBrandCard brand={b} isSelection={true} />}
                     getLabel={(b) => b.name}
                     title="Brands"
                     placeholder="Search brands name..."
                     onSearch={setSearch}
                     searchValue={search}
-                    onScrollEnd={pagination?.has_next ? loadMoreBrands : undefined}
+                    onScrollEnd={loadMoreBrands}
                     loading={brandLoading}
                   />
-
                   <AnimatePresence>
                     {brandDetailsOpen && brand && formData.brandId && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.25 }}
+                        transition={{ duration: 0.3 }}
                         className="overflow-hidden"
                       >
-                        <div className="mt-4 p-4 bg-gradient-to-r from-sky-50 to-indigo-50 rounded-lg border border-sky-100">
-                          <BrandCard brand={brand} />
+                        <div className="mb-4 flex items-center justify-between">
+                          <h2 className="text-base font-semibold text-slate-800 flex items-center gap-2">
+                            Brand Information
+                          </h2>
                         </div>
+                        <MemoBrandCard brand={brand} isSelection={false} />
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -505,15 +570,13 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
             <Card className="rounded-2xl shadow-md border border-slate-200">
               <CardHeader>
                 <div className="flex items-center gap-3">
-                  <FileText className="h-5 w-5 text-slate-700" />
+                  <FaFileLines className="h-5 w-5 text-slate-700" />
                   <CardTitle className="text-base">Contract Information</CardTitle>
                 </div>
                 <p className="text-sm text-slate-500">Dates, location and contract identifiers.</p>
               </CardHeader>
-
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Contract Title */}
                   <div className="space-y-2 md:col-span-2">
                     <Label className="text-sm font-medium">Contract Title *</Label>
                     <Input
@@ -527,7 +590,6 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                     </p>
                     <FieldError message={errors.title} />
                   </div>
-
                   <AddressSelector
                     value={formData.signedLocation || ""}
                     onChange={(address) => handleFieldChange("signedLocation", address)}
@@ -536,7 +598,6 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                     required
                     error={errors.signedLocation}
                   />
-
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Contract Number *</Label>
                     <Input
@@ -547,7 +608,6 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                     />
                     <FieldError message={errors.contractNumber} />
                   </div>
-
                   <DatePicker
                     label="Signed Date"
                     value={formData.signedDate || ""}
@@ -560,7 +620,6 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                     required
                     minDate={new Date().toISOString().split("T")[0]}
                   />
-
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Contract Duration</Label>
                     <div className="grid grid-cols-2 gap-3">
@@ -574,7 +633,6 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                         />
                         <p className="text-xs text-slate-500 mt-1">Auto-filled from Signed Date</p>
                       </div>
-
                       <div>
                         <Label className="text-xs">End Date *</Label>
                         <DatePicker
@@ -608,78 +666,72 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
             <Card className="rounded-2xl shadow-md border border-slate-200">
               <CardHeader>
                 <div className="flex items-center gap-3">
-                  <User className="h-5 w-5 text-slate-700" />
+                  <FaUser className="h-5 w-5 text-slate-700" />
                   <CardTitle className="text-base">Representative Information</CardTitle>
                 </div>
                 <p className="text-sm text-slate-500">
                   Auto-filled details for both parties (editable where allowed).
                 </p>
               </CardHeader>
-
               <CardContent className="space-y-6">
-                {/* Brand Representative (now populated from brand data) */}
+                {/* Brand Representative */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                     <div className="flex items-center gap-2">
-                      <Building className="h-5 w-5 text-slate-600" />
+                      <FaBuilding className="h-5 w-5 text-slate-600" />
                       <h4 className="text-sm font-semibold">Brand Representative (Party A)</h4>
                     </div>
                     <Badge variant="secondary" className="text-xs">
                       {formData.brandId ? "From Brand Data" : "Auto-filled"}
                     </Badge>
                   </div>
-
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {brandRepresentativeFields.map((f) => (
-                      <div key={f.field} className="space-y-1">
-                        <Label className="text-sm">
-                          {f.label}
-                          {f.required ? " *" : ""}
-                        </Label>
-                        {f.field === "brandRepresentativePhone" ? (
-                          <PhoneNumberInput
-                            value={
-                              formData[f.field] ||
-                              (brandRepData as Record<string, string>)[f.field] ||
-                              ""
-                            }
-                            onChange={(val) => handleFieldChange(f.field, val)}
-                            disabled
-                            placeholder={f.placeholder}
-                            error={errors[f.field]}
-                          />
-                        ) : (
-                          <Input
-                            disabled
-                            value={
-                              formData[f.field] ||
-                              (brandRepData as Record<string, string>)[f.field] ||
-                              ""
-                            }
-                            placeholder={f.placeholder}
-                            className="h-11 bg-slate-50"
-                          />
-                        )}
-                        <FieldError message={errors[f.field]} />
+                      <div
+                        key={f.field}
+                        className={f.field === "brandAddress" ? "md:col-span-2" : ""}
+                      >
+                        <div className="space-y-1">
+                          <Label className="text-sm">
+                            {f.label}
+                            {f.required ? " *" : ""}
+                          </Label>
+                          {f.field === "brandRepresentativePhone" ? (
+                            <PhoneNumberInput
+                              value={formData[f.field] || ""}
+                              onChange={(val) => handleFieldChange(f.field, val)}
+                              disabled={f.disabled}
+                              placeholder={f.placeholder}
+                              error={errors[f.field]}
+                            />
+                          ) : (
+                            <Input
+                              disabled={f.disabled}
+                              value={formData[f.field] || ""}
+                              onChange={(e) => handleFieldChange(f.field, e.target.value)}
+                              placeholder={f.placeholder}
+                              className={`h-11 ${f.disabled ? "bg-slate-50" : ""}`}
+                            />
+                          )}
+                          <FieldError message={errors[f.field]} />
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* Brand Banking (editable) */}
+                {/* Brand Banking */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                     <div className="flex items-center gap-2">
-                      <Landmark className="h-5 w-5 text-slate-600" />
+                      <FaLandmark className="h-5 w-5 text-slate-600" />
                       <h4 className="text-sm font-semibold">Brand Banking Information</h4>
                     </div>
                     <Badge variant="outline" className="text-xs">
                       Editable
                     </Badge>
                   </div>
-
                   <div className="space-y-4">
-                    {/* Bank Selection using DataSelector */}
                     <div className="space-y-2">
                       <Label className="text-sm font-medium">Bank Name</Label>
                       <DataSelector
@@ -690,7 +742,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                             ?.id?.toString() || ""
                         }
                         onSelect={handleBankSelect}
-                        renderItem={(bank) => <BankCard bank={bank} />}
+                        renderItem={(bank) => <MemoBankCard bank={bank} />}
                         getLabel={(bank) => `${bank.name} - ${bank.shortName}`}
                         title="Banks"
                         placeholder="Search bank name..."
@@ -700,8 +752,6 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                       />
                       <FieldError message={errors.brandBankName} />
                     </div>
-
-                    {/* Other banking fields */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {[
                         {
@@ -720,38 +770,16 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                           {field.field === "brandBankAccountHolder" ? (
                             <Input
                               value={formData.brandBankAccountHolder || ""}
-                              onChange={(e) => {
-                                let val = e.target.value;
-
-                                // Chuyển toàn bộ sang in hoa
-                                val = val.toUpperCase();
-
-                                // Loại bỏ dấu tiếng Việt & ký tự đặc biệt
-                                val = val
-                                  .normalize("NFD")
-                                  .replace(/[\u0300-\u036f]/g, "")
-                                  .replace(/[^A-Z\s]/g, "");
-
-                                handleFieldChange("brandBankAccountHolder", val);
-                              }}
-                              placeholder={field.placeholder || "Nhập tên chủ tài khoản"}
-                              className={`h-11 uppercase ${
-                                errors.brandBankAccountHolder ? "border-red-500" : ""
-                              }`}
+                              onChange={handleAccountHolderChange}
+                              placeholder={field.placeholder}
+                              className={`h-11 ${errors.brandBankAccountHolder ? "border-red-500" : ""}`}
                             />
-                          ) : field.field === "brandBankAccountNumber" ? (
+                          ) : (
                             <BankAccountInput
                               value={formData.brandBankAccountNumber || ""}
                               onChange={(val) => handleFieldChange("brandBankAccountNumber", val)}
                               placeholder={field.placeholder}
                               error={errors.brandBankAccountNumber}
-                            />
-                          ) : (
-                            <Input
-                              value={formData[field.field] || ""}
-                              onChange={(e) => handleFieldChange(field.field, e.target.value)}
-                              placeholder={field.placeholder}
-                              className="h-11"
                             />
                           )}
                           <FieldError message={errors[field.field]} />
@@ -761,19 +789,17 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                   </div>
                 </div>
 
-                {/* Web Representative (với banking info) */}
+                {/* Web Representative */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                     <div className="flex items-center gap-2">
-                      <User className="h-5 w-5 text-slate-600" />
+                      <FaUser className="h-5 w-5 text-slate-600" />
                       <h4 className="text-sm font-semibold">Web Representative (Party B)</h4>
                     </div>
                     <Badge variant="secondary" className="text-xs">
                       Auto-filled
                     </Badge>
                   </div>
-
-                  {/* Personal Information */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {webRepresentativeFields.map((f) => (
                       <div key={f.field} className="space-y-1">
@@ -785,7 +811,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                           <PhoneNumberInput
                             value={formData[f.field] || ""}
                             onChange={(val) => handleFieldChange(f.field, val)}
-                            disabled // vì Party B là auto-filled
+                            disabled
                             placeholder={f.placeholder}
                             error={errors[f.field]}
                           />
@@ -802,8 +828,6 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                       </div>
                     ))}
                   </div>
-
-                  {/* Banking Information */}
                   <div className="mt-4">
                     <div className="flex items-center justify-between mb-3">
                       <h5 className="text-sm font-medium text-slate-700">Banking Information</h5>
@@ -812,32 +836,29 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                       </Badge>
                     </div>
                     <div className="space-y-4">
-                      {/* Bank Name for Representative - DISABLED */}
                       <div className="space-y-2">
                         <Label className="text-sm font-medium">Bank Name</Label>
                         <Input
-                          disabled // DISABLE BANK NAME
+                          disabled
                           value={formData.representativeBankName || ""}
                           onChange={(e) =>
                             handleFieldChange("representativeBankName", e.target.value)
                           }
                           placeholder="Bank name"
-                          className="h-11 bg-slate-50" // Thêm bg-slate-50 để thể hiện disabled state
+                          className="h-11 bg-slate-50"
                         />
                         <FieldError message={errors.representativeBankName} />
                       </div>
-
-                      {/* Other banking fields - DISABLED */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {webBankingFields.slice(1).map((field) => (
                           <div key={field.field} className="space-y-1">
                             <Label className="text-sm">{field.label}</Label>
                             <Input
-                              disabled // DISABLE TẤT CẢ BANKING FIELDS CỦA KOL
+                              disabled
                               value={formData[field.field] || ""}
                               onChange={(e) => handleFieldChange(field.field, e.target.value)}
                               placeholder={field.placeholder}
-                              className="h-11 bg-slate-50" // Thêm bg-slate-50 để thể hiện disabled state
+                              className="h-11 bg-slate-50"
                             />
                             <FieldError message={errors[field.field]} />
                           </div>

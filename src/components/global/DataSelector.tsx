@@ -98,7 +98,11 @@ const DataSelector = <T extends { id: string }>({
             value={searchValue}
             onValueChange={onSearch}
           />
-          <CommandList className="max-h-48 overflow-y-auto" ref={listRef} onScroll={handleScroll}>
+          <CommandList
+            className="max-h-[50vh] overflow-y-auto"
+            ref={listRef}
+            onScroll={handleScroll}
+          >
             <CommandEmpty>No items found.</CommandEmpty>
             <CommandGroup heading={title}>
               {data.map((item) => (

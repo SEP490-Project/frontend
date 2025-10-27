@@ -10,6 +10,7 @@ export interface Product {
   description: string;
   material_url: string[];
   kpis?: KPI[];
+  concepts: Concept[];
 }
 
 export interface Concept {

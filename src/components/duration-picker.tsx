@@ -91,7 +91,6 @@ export const DurationPicker: React.FC<DurationPickerProps> = ({
         </SelectTrigger>
 
         <SelectContent>
-          <SelectItem value="clear">No duration</SelectItem>
           {durationOptions.map((option) => (
             <SelectItem key={option.value} value={option.value}>
               {option.label}

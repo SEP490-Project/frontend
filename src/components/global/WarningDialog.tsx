@@ -53,7 +53,7 @@ const WarningDialog: React.FC<WarningDialogProps> = ({
               {(warningMessage || warningItems.length > 0 || additionalInfo) && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-md">
                   {warningMessage && (
-                    <p className="text-red-800 text-sm font-medium">⚠️ {warningMessage}</p>
+                    <p className="text-red-800 text-sm font-medium">{warningMessage}</p>
                   )}
                   {warningItems.length > 0 && (
                     <ul className="mt-2 text-red-700 text-sm list-disc list-inside space-y-1">

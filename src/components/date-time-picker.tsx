@@ -9,7 +9,7 @@ import { format } from "date-fns";
 
 interface DateTimePickerProps {
   label?: string;
-  value?: string; // Format: "2025-09-10 09:00:00"
+  value?: string;
   onChange: (dateTime: string) => void;
   placeholder?: string;
   error?: string;
@@ -20,24 +20,31 @@ interface DateTimePickerProps {
   className?: string;
 }
 
-// Helper parse datetime safely
+const createLocalDate = (dateStr: string): Date => {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(y, m - 1, d);
+};
+
 const parseDateTime = (dateTimeString?: string): { date?: Date; time?: string } => {
   if (!dateTimeString) return {};
+
+  let d: Date;
+
   try {
-    // Handle both formats: "2025-09-10 09:00:00" and "2024-10-16T14:30"
-    let d: Date;
     if (dateTimeString.includes("T")) {
       d = new Date(dateTimeString);
     } else if (dateTimeString.includes(" ")) {
-      // Parse "2025-09-10 09:00:00" format
-      d = new Date(dateTimeString.replace(" ", "T"));
+      const [datePart, timePart] = dateTimeString.split(" ");
+      const [y, m, day] = datePart.split("-").map(Number);
+      const [h, min] = timePart.split(":").map(Number);
+      d = new Date(y, m - 1, day, h, min);
     } else {
-      d = new Date(dateTimeString);
+      d = createLocalDate(dateTimeString);
     }
 
     if (isNaN(d.getTime())) return {};
 
-    const date = d;
+    const date = new Date(d.getFullYear(), d.getMonth(), d.getDate());
     const hours = d.getHours().toString().padStart(2, "0");
     const minutes = d.getMinutes().toString().padStart(2, "0");
     const time = `${hours}:${minutes}`;
@@ -48,22 +55,20 @@ const parseDateTime = (dateTimeString?: string): { date?: Date; time?: string } 
   }
 };
 
-// Format to required output: "2025-09-10 09:00:00"
 const formatToOutput = (date: Date): string => {
   const year = date.getFullYear();
-  const month = (date.getMonth() + 1).toString().padStart(2, "0");
-  const day = date.getDate().toString().padStart(2, "0");
-  const hours = date.getHours().toString().padStart(2, "0");
-  const minutes = date.getMinutes().toString().padStart(2, "0");
-  const seconds = "00"; // Always use 00 for seconds
-
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day} ${hours}:${minutes}:00`;
 };
 
 export const DateTimePicker: React.FC<DateTimePickerProps> = ({
   label,
   value,
   onChange,
+  placeholder = "Pick date and time",
   error,
   required = false,
   disabled = false,
@@ -81,13 +86,14 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
       return setIsDateOpen(false);
     }
 
-    if (minDate && date < new Date(minDate)) return;
-    if (maxDate && date > new Date(maxDate)) return;
+    const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
-    // Combine with existing time or default to 09:00
+    if (minDate && localDate < createLocalDate(minDate)) return;
+    if (maxDate && localDate > createLocalDate(maxDate)) return;
+
     const time = selectedTime || "09:00";
     const [hours, minutes] = time.split(":");
-    const newDateTime = new Date(date);
+    const newDateTime = new Date(localDate);
     newDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
     onChange(formatToOutput(newDateTime));
@@ -97,9 +103,8 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
   const handleTimeChange = (timeValue: string) => {
     if (!timeValue) return;
 
-    // Combine with existing date or default to today
-    const date = selectedDate || new Date();
     const [hours, minutes] = timeValue.split(":");
+    const date = selectedDate || new Date();
     const newDateTime = new Date(date);
     newDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
@@ -116,11 +121,10 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
       )}
 
       <div className="flex gap-2">
-        {/* Date Picker */}
         <Popover open={isDateOpen} onOpenChange={setIsDateOpen}>
           <PopoverTrigger asChild>
             <Button
-              variant="outline2"
+              variant="outline"
               disabled={disabled}
               className={`flex-1 justify-start text-left font-normal ${
                 !selectedDate ? "text-muted-foreground" : ""
@@ -129,7 +133,9 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
               }`}
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
-              {selectedDate ? format(selectedDate, "dd/MM/yyyy") : "Pick date"}
+              {selectedDate
+                ? format(selectedDate, "dd/MM/yyyy")
+                : placeholder.split(" and ")[0] || "Pick date"}
             </Button>
           </PopoverTrigger>
 
@@ -141,15 +147,14 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
                 onSelect={handleDateSelect}
                 autoFocus
                 disabled={[
-                  ...(minDate ? [{ before: new Date(minDate) }] : []),
-                  ...(maxDate ? [{ after: new Date(maxDate) }] : []),
+                  ...(minDate ? [{ before: createLocalDate(minDate) }] : []),
+                  ...(maxDate ? [{ after: createLocalDate(maxDate) }] : []),
                 ]}
               />
             </PopoverContent>
           )}
         </Popover>
 
-        {/* Time Input */}
         <div className="flex-1 relative">
           <Input
             type="time"
@@ -159,7 +164,7 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
             className={`${error ? "border-red-500" : ""} ${
               disabled ? "bg-gray-100 text-gray-700 cursor-not-allowed" : ""
             }`}
-            placeholder="Select time"
+            placeholder="HH:MM"
           />
         </div>
       </div>

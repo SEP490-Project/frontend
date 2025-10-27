@@ -1,0 +1,135 @@
+{
+  "id": "714114a8-26af-4b91-b37a-2f0d813b2b26",
+  "parent_contract_id": null,
+  "title": "Bán hàng Limited ABC",
+  "contract_number": "CT03973828",
+  "type": "CO_PRODUCING",
+  "status": "APPROVED",
+  "deposit_amount": 100000000,
+  "brand": {
+    "id": "b0ea0fdf-7959-41b5-8b61-7c6fd520e5a8",
+    "name": "Brand",
+    "contact_email": "brandABX@gmail.com",
+    "contact_phone": "+84123456789",
+    "address": "Nguyễn Tất Thành, Vĩnh Phúc, Phú Thọ",
+    "logo_url": "https://bshowsell-public.s3.ap-southeast-1.amazonaws.com/b758136a-f78c-4a36-985a-974c39d5cd0d/logo123.jpg",
+    "tax_number": "123456789012",
+    "representative_name": "Nguyễn Anh Tuấn",
+    "representative_role": "CEO",
+    "representative_phone": "+84123456789",
+    "representative_email": "anhtuan@gmail.com",
+    "representative_citizen_id": "96849302862",
+    "bank_name": "Ngân hàng TMCP Đầu tư và Phát triển Việt Nam",
+    "bank_account_number": "1234 5678 90",
+    "bank_account_holder": "TRUONG TAN DUNG"
+  },
+  "representative_name": "Đinh Thị Ngọc Trinh",
+  "representative_role": "Beauty Blogger",
+  "representative_phone": "+84917956697",
+  "representative_email": "mrstrinh.work@gmail.com",
+  "representative_tax_number": "01234567890",
+  "representative_bank_name": "Ngân hàng TMCP Quân đội",
+  "representative_bank_account_number": "3730 0944 4882 74",
+  "representative_bank_account_holder": "TRAN GIANH KHANH",
+  "signed_date": "2025-10-26 07:00:00",
+  "signed_location": "Trường Sơn, Ia Hrung, Gia Lai",
+  "start_date": "2025-10-26 07:00:00",
+  "end_date": "2025-11-30 07:00:00",
+  "currency": "VND",
+  "financial_terms": {
+    "model": "SHARE",
+    "profit_distribution_cycle": "MONTHLY",
+    "profit_distribution_date": "30",
+    "profit_split_company_percent": 60,
+    "profit_split_kol_percent": 40
+  },
+  "scope_of_work": {
+    "deliverables": {
+      "concepts": [
+        {
+          "content_requirements": [
+            "1/ Tạo 1 video quảng cáo phiên bản concept về sản phẩm kem chống nắng này trên facebook\n2/ Đẩy bảng concept lên trang web để Pre order"
+          ],
+          "creative_notes": "ahvisj",
+          "description": "Concept sẽ có một số mẫu họa tiết nằm trên bao bì",
+          "hash_tag": ["#123", "#limited"],
+          "id": 1,
+          "material_url": [
+            "https://bshowsell-public.s3.ap-southeast-1.amazonaws.com/unknown/logo123.jpg"
+          ],
+          "name": "kem chống nắng",
+          "platform": "WEBSITE",
+          "product_id": 1,
+          "tagline": "def"
+        }
+      ],
+      "products": [
+        {
+          "description": "Kem chống nắng đặc biệt",
+          "id": 1,
+          "kpis": [
+            {
+              "metric": "sales",
+              "target": ""
+            }
+          ],
+          "material": null,
+          "name": "Kem chống nắng"
+        }
+      ]
+    },
+    "general_requirements": ["abc"]
+  },
+  "legal_terms": {
+    "breach_of_contract": {
+      "items": [
+        {
+          "details": ["Contract terminates immediately", "Party A forfeits the deposit"],
+          "title": "Party A (Brand) breaks the rules"
+        },
+        {
+          "compensation_percent": 10,
+          "details": [
+            "Contract terminates immediately",
+            "Party B must refund the deposit",
+            "Party B pays additional 10% compensation"
+          ],
+          "title": "Party B (Service Provider) breaks the rules"
+        },
+        {
+          "details": [
+            "Contract stops with no penalties",
+            "No compensation required from either party"
+          ],
+          "title": "Mutual agreement to terminate"
+        }
+      ],
+      "label": "Breach of Contract"
+    },
+    "standard_terms": {
+      "items": [
+        {
+          "description": "Both parties must keep all contract information confidential and cannot disclose to third parties without written consent",
+          "title": "Confidentiality"
+        },
+        {
+          "description": "Disputes will be resolved through negotiation first, then legal proceedings if necessary",
+          "title": "Dispute Resolution"
+        },
+        {
+          "description": "Contract is effective from signature date until all obligations are fulfilled",
+          "title": "Contract Effectiveness"
+        },
+        {
+          "description": "Neither party is liable for failure to perform due to circumstances beyond their control, including natural disasters or government actions",
+          "title": "Force Majeure"
+        }
+      ],
+      "label": "Standard Terms"
+    }
+  },
+  "contract_file_url": "https://bshowsell-public.s3.ap-southeast-1.amazonaws.com/b758136a-f78c-4a36-985a-974c39d5cd0d/CapstoneProjectRegister-UrbanLens.docx",
+  "proposal_file_url": "https://bshowsell-public.s3.ap-southeast-1.amazonaws.com/b758136a-f78c-4a36-985a-974c39d5cd0d/CapstoneProjectRegister-UrbanLens.docx",
+  "created_at": "2025-10-24 13:43:08",
+  "updated_at": "2025-10-24 13:50:49"
+}

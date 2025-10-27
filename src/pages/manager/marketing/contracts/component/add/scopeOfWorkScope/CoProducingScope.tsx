@@ -1,32 +1,26 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { FaHandshake, FaPalette, FaHashtag, FaNewspaper, FaTrash, FaPlus } from "react-icons/fa6";
+import {
+  CollapsibleSection,
+  DynamicListInput,
+  CompactKPISelector,
+} from "../shared/SharedComponents";
+import type { Product, Concept, ScopeOfWorkProps } from "../types/scopeTypes";
+import ContractUploader from "@/components/global/ContractUploader";
+import { useAuth } from "@/libs/hooks/useAuth";
+import WarningDialog from "@/components/global/WarningDialog";
 import {
   Select,
-  SelectContent,
-  SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectContent,
+  SelectItem,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Link2, AlertCircle } from "lucide-react";
-import {
-  FaHandshake,
-  FaBullseye,
-  FaPalette,
-  FaHashtag,
-  FaLightbulb,
-  FaNewspaper,
-  FaChartLine,
-} from "react-icons/fa6";
-import { CollapsibleSection, DynamicListInput } from "../shared/SharedComponents";
-import type { Product, Concept, ScopeOfWorkProps } from "../types/scopeTypes";
-import FileUploader from "@/components/global/FileUploader";
-import { KPISelector } from "@/components/global";
-import { useAuth } from "@/libs/hooks/useAuth";
 
 const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork }) => {
   const scope = formData?.scopeOfWork || {};
@@ -34,6 +28,20 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
   const { user } = useAuth();
 
   const ensureArray = (arr: any) => (Array.isArray(arr) ? arr : []);
+
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isOpen: boolean;
+    type: "product" | "concept" | null;
+    productIdx: number | null;
+    conceptIdx: number | null;
+    name: string;
+  }>({
+    isOpen: false,
+    type: null,
+    productIdx: null,
+    conceptIdx: null,
+    name: "",
+  });
 
   const updateDeliverables = (partialDeliverables: any) => {
     const updated = { ...deliverables, ...partialDeliverables };
@@ -45,7 +53,8 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
     name: "",
     description: "",
     material_url: [],
-    kpis: [],
+    kpis: [{ metric: "", target: "", description: "" }],
+    concepts: [],
   });
 
   const newConcept = (): Concept => ({
@@ -54,30 +63,57 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
     name: "",
     description: "",
     tagline: "",
-    hash_tag: [],
+    hash_tag: [""],
     creative_notes: "",
-    content_requirements: [],
+    content_requirements: [""],
     material_url: [],
-    kpis: [],
+    kpis: [{ metric: "", target: "", description: "" }],
   });
 
-  // Get products for selection
-  const products = ensureArray(deliverables.products);
-  const concepts = ensureArray(deliverables.concepts);
+  // Ensure products have concepts array
+  const products = ensureArray(deliverables.products).map((p: any) => ({
+    ...p,
+    concepts: ensureArray(p.concepts),
+  }));
 
-  // Helper to get product name by ID
-  const getProductById = (id: number | undefined) => {
-    if (!id) return null;
-    return products.find((p) => p.id === id || products.indexOf(p) === id - 1);
-  };
+  // Thêm effect này để tự động có 1 product nếu chưa có
+  useEffect(() => {
+    if (!products.length) {
+      updateDeliverables({
+        products: [{ ...newProduct(), id: 1 }],
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData]); // chỉ chạy khi formData thay đổi
 
-  // Helper to get product display name
-  const getProductDisplayName = (product: Product, index: number) => {
-    return product.name || `Product ${index + 1}`;
-  };
-
-  // Platform options
   const platformOptions = ["Website", "TikTok", "Facebook"];
+
+  // Handle delete confirm
+  const handleConfirmDelete = () => {
+    if (deleteDialog.type === "product" && deleteDialog.productIdx !== null) {
+      updateDeliverables({
+        products: products.filter((_, idx) => idx !== deleteDialog.productIdx),
+      });
+    }
+    if (
+      deleteDialog.type === "concept" &&
+      deleteDialog.productIdx !== null &&
+      deleteDialog.conceptIdx !== null
+    ) {
+      const updatedProducts = [...products];
+      updatedProducts[deleteDialog.productIdx].concepts = updatedProducts[
+        deleteDialog.productIdx
+      ].concepts.filter((_: any, idx: number) => idx !== deleteDialog.conceptIdx);
+      updateDeliverables({ products: updatedProducts });
+    }
+    setDeleteDialog({
+      isOpen: false,
+      type: null,
+      productIdx: null,
+      conceptIdx: null,
+      name: "",
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -90,499 +126,471 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
         </CardHeader>
         <CardContent className="pt-6 space-y-6">
           {/* Products Section */}
-          <CollapsibleSection title="Products" badge={products.length} defaultOpen={true}>
-            <div className="space-y-4">
-              {products.map((p: Product, i: number) => {
-                // Count concepts linked to this product
-                const linkedConcepts = concepts.filter(
-                  (c) => c.product_id === (p.id || i + 1) || c.product_id === i + 1,
-                ).length;
+          <div className="space-y-4">
+            {products.map((p: Product, i: number) => {
+              const isDefaultOpen = i === 0 || i === products.length - 1;
 
-                return (
-                  <div
-                    key={i}
-                    className="border-2 rounded-xl p-4 bg-gradient-to-br from-pink-25 to-white"
-                    style={{ borderColor: "#ff9fb2" }}
-                  >
-                    <div className="flex justify-between items-center mb-4">
-                      <div className="flex items-center gap-2">
-                        <Label
-                          className="font-semibold flex items-center gap-2"
-                          style={{ color: "#d6336c" }}
-                        >
-                          <FaBullseye className="w-4 h-4" />
-                          Product #{i + 1}
-                        </Label>
-                        {linkedConcepts > 0 && (
-                          <Badge variant="secondary" className="bg-pink-100 text-pink-800">
-                            <Link2 className="w-3 h-3 mr-1" />
-                            {linkedConcepts} concept{linkedConcepts > 1 ? "s" : ""}
-                          </Badge>
-                        )}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-red-500 hover:bg-red-50"
-                        onClick={() =>
-                          updateDeliverables({ products: products.filter((_, idx) => idx !== i) })
-                        }
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+              const DeleteActionComponent = (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-red-500 hover:bg-red-50"
+                  onClick={() =>
+                    setDeleteDialog({
+                      isOpen: true,
+                      type: "product",
+                      productIdx: i,
+                      conceptIdx: null,
+                      name: p.name || `Product ${i + 1}`,
+                    })
+                  }
+                >
+                  <FaTrash className="w-4 h-4" />
+                </Button>
+              );
+
+              return (
+                <CollapsibleSection
+                  key={i}
+                  title={p.name || `Product ${i + 1}`}
+                  defaultOpen={isDefaultOpen}
+                  badge={p.concepts.length > 0 ? p.concepts.length : undefined}
+                  actionComponent={DeleteActionComponent}
+                >
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">Product Name</Label>
+                      <Input
+                        placeholder="Product name"
+                        value={p.name || ""}
+                        onChange={(e) => {
+                          const updated = [...products];
+                          updated[i] = { ...updated[i], name: e.target.value, id: i + 1 };
+                          updateDeliverables({ products: updated });
+                        }}
+                        className="bg-white border-pink-200 focus:border-pink-400"
+                      />
                     </div>
 
-                    <div className="space-y-4">
-                      <div>
-                        <Label className="text-sm font-medium mb-2 block">Product Name</Label>
-                        <Input
-                          placeholder="Product name"
-                          value={p.name || ""}
-                          onChange={(e) => {
-                            const updated = [...products];
-                            updated[i] = { ...updated[i], name: e.target.value, id: i + 1 };
-                            updateDeliverables({ products: updated });
-                          }}
-                          className="bg-white border-pink-200 focus:border-pink-400"
-                        />
-                      </div>
-
-                      <div>
-                        <Label className="text-sm font-medium mb-2 block">
-                          Product Description
-                        </Label>
-                        <Textarea
-                          placeholder="Product description"
-                          value={p.description || ""}
-                          onChange={(e) => {
-                            const updated = [...products];
-                            updated[i] = { ...updated[i], description: e.target.value };
-                            updateDeliverables({ products: updated });
-                          }}
-                          className="bg-white border-pink-200 focus:border-pink-400"
-                        />
-                      </div>
-
-                      <div>
-                        <Label className="text-sm font-medium mb-2 flex items-center gap-2 text-pink-800">
-                          <FaPalette className="w-4 h-4" />
-                          Product Materials
-                        </Label>
-
-                        <FileUploader
-                          userId={user?.id || "unknown"}
-                          accept="image/*,video/*"
-                          multiple={true}
-                          maxFiles={20}
-                          maxSize={200}
-                          allowedTypes={["jpg", "jpeg", "png", "webp", "mp4", "mov", "avi"]}
-                          title="Upload product materials"
-                          onUploadComplete={(urls) => {
-                            const updated = [...products];
-                            updated[i] = {
-                              ...updated[i],
-                              material_url: [...(updated[i].material_url || []), ...urls],
-                            };
-                            updateDeliverables({ products: updated });
-                          }}
-                          onFilesRemove={(removedUrls) => {
-                            const updated = [...products];
-                            const currentUrls = updated[i].material_url || [];
-                            updated[i] = {
-                              ...updated[i],
-                              material_url: currentUrls.filter(
-                                (url: string) => !removedUrls.includes(url),
-                              ),
-                            };
-                            updateDeliverables({ products: updated });
-                          }}
-                        />
-                        <p className="text-xs text-gray-500 mt-1">Upload images / videos.</p>
-                      </div>
-
-                      {/* KPIs */}
-                      <div className="border-t pt-4">
-                        <Label className="text-sm font-medium mb-3 flex items-center gap-2 text-pink-800">
-                          <FaChartLine className="w-4 h-4" />
-                          Key Performance Indicators
-                        </Label>
-                        <KPISelector
-                          kpis={(p.kpis || []).map((kpi: any) => ({
-                            id: kpi.id ?? "",
-                            type: kpi.type ?? "",
-                            target_value: kpi.target_value ?? "",
-                            unit: kpi.unit ?? "",
-                            ...kpi,
-                          }))}
-                          onChange={(kpis) => {
-                            const updated = [...products];
-                            updated[i] = { ...updated[i], kpis };
-                            updateDeliverables({ products: updated });
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-
-              <Button
-                variant="outline"
-                onClick={() =>
-                  updateDeliverables({
-                    products: [...products, { ...newProduct(), id: products.length + 1 }],
-                  })
-                }
-                className="w-full py-6 border-2 border-dashed hover:bg-pink-50"
-                style={{ borderColor: "#ff9fb2" }}
-              >
-                <Plus className="w-5 h-5 mr-2" style={{ color: "#ff9fb2" }} /> Add New Product
-              </Button>
-            </div>
-          </CollapsibleSection>
-
-          {/* Concepts Section */}
-          <CollapsibleSection
-            title="Creative Concepts"
-            badge={concepts.length}
-            defaultOpen={products.length > 0}
-          >
-            <div className="space-y-4">
-              {/* Warning if no products */}
-              {products.length === 0 && (
-                <div className="flex items-center gap-2 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                  <AlertCircle className="w-5 h-5 text-amber-600" />
-                  <p className="text-sm text-amber-800">
-                    Add products first to create concepts linked to them.
-                  </p>
-                </div>
-              )}
-
-              {concepts.map((c: Concept, i: number) => {
-                const linkedProduct = getProductById(c.product_id);
-                return (
-                  <div
-                    key={i}
-                    className="border-2 rounded-xl p-4 bg-gradient-to-br from-pink-25 to-white"
-                    style={{ borderColor: "#ff9fb2" }}
-                  >
-                    <div className="flex justify-between items-center mb-4">
-                      <div className="flex items-center gap-2">
-                        <Label
-                          className="font-semibold flex items-center gap-2"
-                          style={{ color: "#d6336c" }}
-                        >
-                          <FaLightbulb className="w-4 h-4" />
-                          Concept #{i + 1}
-                        </Label>
-                        {linkedProduct && (
-                          <Badge
-                            variant="outline"
-                            className="bg-pink-50 text-pink-700 border-pink-200"
-                          >
-                            <Link2 className="w-3 h-3 mr-1" />
-                            {getProductDisplayName(linkedProduct, (c.product_id || 1) - 1)}
-                          </Badge>
-                        )}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-red-500 hover:bg-red-50"
-                        onClick={() =>
-                          updateDeliverables({ concepts: concepts.filter((_, idx) => idx !== i) })
-                        }
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">Product Description</Label>
+                      <Textarea
+                        placeholder="Product description"
+                        value={p.description || ""}
+                        onChange={(e) => {
+                          const updated = [...products];
+                          updated[i] = { ...updated[i], description: e.target.value };
+                          updateDeliverables({ products: updated });
+                        }}
+                        className="bg-white border-pink-200 focus:border-pink-400"
+                      />
                     </div>
 
-                    <div className="space-y-4">
-                      {/* Product Selection & Basic Info */}
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div>
-                          <Label className="text-sm font-medium mb-2 block">Linked Product</Label>
-                          <Select
-                            value={c.product_id?.toString() || ""}
-                            onValueChange={(value) => {
-                              const updated = [...concepts];
-                              updated[i] = { ...updated[i], product_id: parseInt(value) };
-                              updateDeliverables({ concepts: updated });
-                            }}
-                          >
-                            <SelectTrigger className="bg-white border-pink-200 focus:border-pink-400">
-                              <SelectValue placeholder="Select a product" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {products.map((product, productIndex) => (
-                                <SelectItem
-                                  key={productIndex}
-                                  value={(productIndex + 1).toString()}
-                                >
-                                  {getProductDisplayName(product, productIndex)}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
+                    <div>
+                      <Label className="text-sm font-medium mb-2 flex items-center gap-2 text-pink-800">
+                        <FaPalette className="w-4 h-4" />
+                        Product Materials
+                      </Label>
 
-                        <div>
-                          <Label className="text-sm font-medium mb-2 block">Platform</Label>
-                          <Select
-                            value={
-                              // hiển thị option gốc khớp với giá trị đã lưu (case-insensitive)
-                              (c.platform &&
-                                platformOptions.find(
-                                  (p) => p.toUpperCase() === String(c.platform).toUpperCase(),
-                                )) ||
-                              ""
-                            }
-                            onValueChange={(value) => {
-                              const updated = [...concepts];
-                              // lưu dưới dạng UPPERCASE để chuẩn hoá
-                              updated[i] = {
-                                ...updated[i],
-                                platform: value ? String(value).toUpperCase() : "",
-                              };
-                              updateDeliverables({ concepts: updated });
-                            }}
-                          >
-                            <SelectTrigger className="bg-white border-pink-200 focus:border-pink-400">
-                              <SelectValue placeholder="Select platform" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {platformOptions.map((platform) => (
-                                <SelectItem key={platform} value={platform}>
-                                  {platform}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      <div>
-                        <Label className="text-sm font-medium mb-2 block">Concept Name</Label>
-                        <Input
-                          placeholder="Concept name"
-                          value={c.name || ""}
-                          onChange={(e) => {
-                            const updated = [...concepts];
-                            updated[i] = { ...updated[i], name: e.target.value };
-                            updateDeliverables({ concepts: updated });
-                          }}
-                          className="bg-white border-pink-200 focus:border-pink-400"
-                        />
-                      </div>
-
-                      <div>
-                        <Label className="text-sm font-medium mb-2 block">Tagline</Label>
-                        <Input
-                          placeholder="Tagline"
-                          value={c.tagline || ""}
-                          onChange={(e) => {
-                            const updated = [...concepts];
-                            updated[i] = { ...updated[i], tagline: e.target.value };
-                            updateDeliverables({ concepts: updated });
-                          }}
-                          className="bg-white border-pink-200 focus:border-pink-400"
-                        />
-                      </div>
-
-                      <div>
-                        <Label className="text-sm font-medium mb-2 block">
-                          Concept Description
-                        </Label>
-                        <Textarea
-                          placeholder="Concept description"
-                          value={c.description || ""}
-                          onChange={(e) => {
-                            const updated = [...concepts];
-                            updated[i] = { ...updated[i], description: e.target.value };
-                            updateDeliverables({ concepts: updated });
-                          }}
-                          className="bg-white border-pink-200 focus:border-pink-400"
-                        />
-                      </div>
-
-                      <div>
-                        <Label className="text-sm font-medium mb-2 block">Creative Notes</Label>
-                        <Textarea
-                          placeholder="Creative notes and guidelines"
-                          value={c.creative_notes || ""}
-                          onChange={(e) => {
-                            const updated = [...concepts];
-                            updated[i] = { ...updated[i], creative_notes: e.target.value };
-                            updateDeliverables({ concepts: updated });
-                          }}
-                          className="bg-white border-pink-200 focus:border-pink-400"
-                        />
-                      </div>
-
-                      {/* HASHTAGS INLINE - Thay thế DynamicListInput */}
-                      <div>
-                        <Label className="text-sm font-medium mb-2 flex items-center gap-2 text-pink-800">
-                          <FaHashtag className="w-4 h-4" />
-                          Hashtags
-                        </Label>
-                        <div className="flex flex-wrap gap-2">
-                          {ensureArray(c.hash_tag).map((tag, idx) => (
-                            <div key={idx} className="flex items-center gap-1">
-                              <Input
-                                placeholder={`#hashtag${idx + 1}`}
-                                value={tag}
-                                onChange={(e) => {
-                                  const updated = [...concepts];
-                                  const newTags = [...ensureArray(c.hash_tag)];
-                                  newTags[idx] = e.target.value;
-                                  updated[i] = { ...updated[i], hash_tag: newTags };
-                                  updateDeliverables({ concepts: updated });
-                                }}
-                                className="w-32 text-xs border-pink-200 focus:border-pink-400"
-                              />
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-red-500 hover:bg-red-50"
-                                onClick={() => {
-                                  const updated = [...concepts];
-                                  updated[i] = {
-                                    ...updated[i],
-                                    hash_tag: ensureArray(c.hash_tag).filter(
-                                      (_, tIdx) => tIdx !== idx,
-                                    ),
-                                  };
-                                  updateDeliverables({ concepts: updated });
-                                }}
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          ))}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const updated = [...concepts];
-                              updated[i] = {
-                                ...updated[i],
-                                hash_tag: [...ensureArray(c.hash_tag), ""],
-                              };
-                              updateDeliverables({ concepts: updated });
-                            }}
-                            className="border-pink-200 text-pink-700 hover:bg-pink-50"
-                          >
-                            <Plus className="w-3 h-3 mr-1" /> Add Hashtag
-                          </Button>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Each hashtag is an individual field. Example: #creative #concept #brand
-                        </p>
-                      </div>
-
-                      <DynamicListInput
-                        label="Content Requirements"
-                        icon={<FaNewspaper className="w-4 h-4" />}
-                        items={c.content_requirements || []}
-                        placeholder="e.g., Must include product logo"
-                        multiline
-                        onChange={(items) => {
-                          const updated = [...concepts];
+                      <ContractUploader
+                        userId={user?.id || "unknown"}
+                        accept="image/*,video/*"
+                        multiple={true}
+                        maxFiles={20}
+                        maxSize={200}
+                        allowedTypes={["jpg", "jpeg", "png", "webp", "mp4", "mov", "avi"]}
+                        title="Upload product materials"
+                        context={`coproducing-product-${i + 1}`}
+                        initialUrls={p.material_url || []}
+                        onUploadComplete={(urls) => {
+                          const updated = [...products];
                           updated[i] = {
                             ...updated[i],
-                            content_requirements: items,
+                            material_url: [...(updated[i].material_url || []), ...urls],
                           };
-                          updateDeliverables({ concepts: updated });
+                          updateDeliverables({ products: updated });
+                        }}
+                        onFilesRemove={(removedUrls) => {
+                          const updated = [...products];
+                          const currentUrls = updated[i].material_url || [];
+                          updated[i] = {
+                            ...updated[i],
+                            material_url: currentUrls.filter(
+                              (url: string) => !removedUrls.includes(url),
+                            ),
+                          };
+                          updateDeliverables({ products: updated });
                         }}
                       />
+                    </div>
 
-                      <div>
-                        <Label className="text-sm font-medium mb-2 flex items-center gap-2 text-pink-800">
-                          <FaPalette className="w-4 h-4" />
-                          Concept Materials
-                        </Label>
+                    <div className="border-t pt-4">
+                      <CompactKPISelector
+                        contractType="CO_PRODUCING"
+                        kpis={(p.kpis || []).map((kpi: any) => ({
+                          metric: kpi.type || kpi.metric || "",
+                          target: kpi.target_value || kpi.target || "",
+                          description: kpi.description || "",
+                        }))}
+                        onChange={(kpis) => {
+                          const updated = [...products];
+                          updated[i] = { ...updated[i], kpis };
+                          updateDeliverables({ products: updated });
+                        }}
+                      />
+                    </div>
 
-                        <FileUploader
-                          userId={formData?.brand_id || "unknown"}
-                          accept="image/*,video/*"
-                          multiple={true}
-                          maxFiles={20}
-                          maxSize={200}
-                          allowedTypes={["jpg", "jpeg", "png", "webp", "mp4", "mov", "avi"]}
-                          title="Upload concept materials"
-                          onUploadComplete={(urls) => {
-                            const updated = [...concepts];
-                            updated[i] = {
-                              ...updated[i],
-                              material_url: [...(updated[i].material_url || []), ...urls],
-                            };
-                            updateDeliverables({ concepts: updated });
-                          }}
-                          onFilesRemove={(removedUrls) => {
-                            const updated = [...concepts];
-                            const currentUrls = updated[i].material_url || [];
-                            updated[i] = {
-                              ...updated[i],
-                              material_url: currentUrls.filter(
-                                (url: string) => !removedUrls.includes(url),
-                              ),
-                            };
-                            updateDeliverables({ concepts: updated });
-                          }}
-                        />
-                        <p className="text-xs text-gray-500 mt-1">Upload images / videos.</p>
-                      </div>
+                    {/* Concepts Section inside Product */}
+                    <div className="space-y-4 mt-6">
+                      <div className="font-semibold text-pink-900">Concepts</div>
+                      {p.concepts.map((c: Concept, j: number) => {
+                        const isConceptOpen = j === 0 || j === p.concepts.length - 1;
+                        const DeleteConceptAction = (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-red-500 hover:bg-red-50"
+                            onClick={() =>
+                              setDeleteDialog({
+                                isOpen: true,
+                                type: "concept",
+                                productIdx: i,
+                                conceptIdx: j,
+                                name: c.name || `Concept #${j + 1}`,
+                              })
+                            }
+                          >
+                            <FaTrash className="w-4 h-4" />
+                          </Button>
+                        );
+                        return (
+                          <CollapsibleSection
+                            key={j}
+                            title={c.name || `Concept #${j + 1}`}
+                            defaultOpen={isConceptOpen}
+                            actionComponent={DeleteConceptAction}
+                          >
+                            <div className="space-y-4">
+                              <div>
+                                <Label className="text-sm font-medium mb-2 block">
+                                  Concept Name
+                                </Label>
+                                <Input
+                                  placeholder="Concept name"
+                                  value={c.name || ""}
+                                  onChange={(e) => {
+                                    const updated = [...products];
+                                    const concepts = [...updated[i].concepts];
+                                    concepts[j] = { ...concepts[j], name: e.target.value };
+                                    updated[i].concepts = concepts;
+                                    updateDeliverables({ products: updated });
+                                  }}
+                                  className="bg-white border-pink-200 focus:border-pink-400"
+                                />
+                              </div>
 
-                      {/* KPIs */}
-                      <div className="border-t pt-4">
-                        <Label className="text-sm font-medium mb-3 flex items-center gap-2 text-pink-800">
-                          <FaChartLine className="w-4 h-4" />
-                          Key Performance Indicators
-                        </Label>
-                        <KPISelector
-                          kpis={(c.kpis || []).map((kpi: any) => ({
-                            id: kpi.id ?? "",
-                            type: kpi.type ?? "",
-                            target_value: kpi.target_value ?? "",
-                            unit: kpi.unit ?? "",
-                            ...kpi,
-                          }))}
-                          onChange={(kpis) => {
-                            const updated = [...concepts];
-                            updated[i] = { ...updated[i], kpis };
-                            updateDeliverables({ concepts: updated });
-                          }}
-                          contractType={formData?.type}
-                        />
-                      </div>
+                              <div>
+                                <Label className="text-sm font-medium mb-2 block">Platform</Label>
+                                <Select
+                                  value={
+                                    (c.platform &&
+                                      platformOptions.find(
+                                        (p) => p.toUpperCase() === String(c.platform).toUpperCase(),
+                                      )) ||
+                                    ""
+                                  }
+                                  onValueChange={(value) => {
+                                    const updated = [...products];
+                                    const concepts = [...updated[i].concepts];
+                                    concepts[j] = {
+                                      ...concepts[j],
+                                      platform: value ? String(value).toUpperCase() : "",
+                                    };
+                                    updated[i].concepts = concepts;
+                                    updateDeliverables({ products: updated });
+                                  }}
+                                >
+                                  <SelectTrigger className="bg-white border-pink-200 focus:border-pink-400">
+                                    <SelectValue placeholder="Select platform" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {platformOptions.map((platform) => (
+                                      <SelectItem key={platform} value={platform}>
+                                        {platform}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              <div>
+                                <Label className="text-sm font-medium mb-2 block">Tagline</Label>
+                                <Input
+                                  placeholder="Tagline"
+                                  value={c.tagline || ""}
+                                  onChange={(e) => {
+                                    const updated = [...products];
+                                    const concepts = [...updated[i].concepts];
+                                    concepts[j] = { ...concepts[j], tagline: e.target.value };
+                                    updated[i].concepts = concepts;
+                                    updateDeliverables({ products: updated });
+                                  }}
+                                  className="bg-white border-pink-200 focus:border-pink-400"
+                                />
+                              </div>
+
+                              <div>
+                                <Label className="text-sm font-medium mb-2 block">
+                                  Concept Description
+                                </Label>
+                                <Textarea
+                                  placeholder="Concept description"
+                                  value={c.description || ""}
+                                  onChange={(e) => {
+                                    const updated = [...products];
+                                    const concepts = [...updated[i].concepts];
+                                    concepts[j] = { ...concepts[j], description: e.target.value };
+                                    updated[i].concepts = concepts;
+                                    updateDeliverables({ products: updated });
+                                  }}
+                                  className="bg-white border-pink-200 focus:border-pink-400"
+                                />
+                              </div>
+
+                              <div>
+                                <Label className="text-sm font-medium mb-2 block">
+                                  Creative Notes
+                                </Label>
+                                <Textarea
+                                  placeholder="Creative notes and guidelines"
+                                  value={c.creative_notes || ""}
+                                  onChange={(e) => {
+                                    const updated = [...products];
+                                    const concepts = [...updated[i].concepts];
+                                    concepts[j] = {
+                                      ...concepts[j],
+                                      creative_notes: e.target.value,
+                                    };
+                                    updated[i].concepts = concepts;
+                                    updateDeliverables({ products: updated });
+                                  }}
+                                  className="bg-white border-pink-200 focus:border-pink-400"
+                                />
+                              </div>
+
+                              <div className="space-y-2">
+                                <Label className="text-sm font-medium flex items-center gap-2 text-pink-800">
+                                  <FaHashtag className="w-4 h-4" />
+                                  Hashtags
+                                </Label>
+                                <div className="flex flex-wrap items-center gap-2 border border-pink-200 rounded-lg p-3">
+                                  {ensureArray(c.hash_tag).map((tag, idx) => (
+                                    <div
+                                      key={idx}
+                                      className="flex items-center gap-1 bg-white border border-pink-200 rounded-full px-3 py-1 shadow-sm"
+                                    >
+                                      <Input
+                                        placeholder={`#hashtag${idx + 1}`}
+                                        value={tag}
+                                        onChange={(e) => {
+                                          const updated = [...products];
+                                          const concepts = [...updated[i].concepts];
+                                          const newTags = [...ensureArray(concepts[j].hash_tag)];
+                                          let val = e.target.value;
+                                          if (val && !val.startsWith("#"))
+                                            val = "#" + val.replace(/^#+/, "");
+                                          newTags[idx] = val;
+                                          concepts[j] = { ...concepts[j], hash_tag: newTags };
+                                          updated[i].concepts = concepts;
+                                          updateDeliverables({ products: updated });
+                                        }}
+                                        className="w-24 text-xs shadow-none border-none focus:ring-0 focus:outline-none focus-visible:ring-0"
+                                      />
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="text-red-500 hover:bg-red-50 rounded-full"
+                                        onClick={() => {
+                                          const updated = [...products];
+                                          const concepts = [...updated[i].concepts];
+                                          concepts[j] = {
+                                            ...concepts[j],
+                                            hash_tag: ensureArray(concepts[j].hash_tag).filter(
+                                              (_: any, tIdx: number) => tIdx !== idx,
+                                            ),
+                                          };
+                                          updated[i].concepts = concepts;
+                                          updateDeliverables({ products: updated });
+                                        }}
+                                      >
+                                        <FaTrash className="w-3 h-3" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      const updated = [...products];
+                                      const concepts = [...updated[i].concepts];
+                                      concepts[j] = {
+                                        ...concepts[j],
+                                        hash_tag: [...ensureArray(concepts[j].hash_tag), ""],
+                                      };
+                                      updated[i].concepts = concepts;
+                                      updateDeliverables({ products: updated });
+                                    }}
+                                    className="border-pink-300 text-pink-700 hover:bg-pink-100/70 rounded-full px-3 py-1"
+                                  >
+                                    <FaPlus className="w-3 h-3 mr-1" /> Add Hashtag
+                                  </Button>
+                                </div>
+                              </div>
+
+                              <DynamicListInput
+                                label="Content Requirements"
+                                icon={<FaNewspaper className="w-4 h-4" />}
+                                items={c.content_requirements || []}
+                                placeholder="e.g., Must include product logo"
+                                multiline
+                                onChange={(items) => {
+                                  const updated = [...products];
+                                  const concepts = [...updated[i].concepts];
+                                  concepts[j] = {
+                                    ...concepts[j],
+                                    content_requirements: items,
+                                  };
+                                  updated[i].concepts = concepts;
+                                  updateDeliverables({ products: updated });
+                                }}
+                              />
+
+                              <div>
+                                <Label className="text-sm font-medium mb-2 flex items-center gap-2 text-pink-800">
+                                  <FaPalette className="w-4 h-4" />
+                                  Concept Materials
+                                </Label>
+                                <ContractUploader
+                                  userId={formData?.brand_id || "unknown"}
+                                  accept="image/*,video/*"
+                                  multiple={true}
+                                  maxFiles={20}
+                                  maxSize={200}
+                                  allowedTypes={["jpg", "jpeg", "png", "webp", "mp4", "mov", "avi"]}
+                                  title="Upload concept materials"
+                                  context={`coproducing-concept-${i + 1}-${j + 1}`}
+                                  initialUrls={c.material_url || []}
+                                  onUploadComplete={(urls) => {
+                                    const updated = [...products];
+                                    const concepts = [...updated[i].concepts];
+                                    concepts[j] = {
+                                      ...concepts[j],
+                                      material_url: [...(concepts[j].material_url || []), ...urls],
+                                    };
+                                    updated[i].concepts = concepts;
+                                    updateDeliverables({ products: updated });
+                                  }}
+                                  onFilesRemove={(removedUrls) => {
+                                    const updated = [...products];
+                                    const concepts = [...updated[i].concepts];
+                                    const currentUrls = concepts[j].material_url || [];
+                                    concepts[j] = {
+                                      ...concepts[j],
+                                      material_url: currentUrls.filter(
+                                        (url: string) => !removedUrls.includes(url),
+                                      ),
+                                    };
+                                    updated[i].concepts = concepts;
+                                    updateDeliverables({ products: updated });
+                                  }}
+                                />
+                              </div>
+
+                              <div className="border-t pt-4">
+                                <CompactKPISelector
+                                  contractType="ADVERTISING"
+                                  kpis={(c.kpis || []).map((kpi: any) => ({
+                                    metric: kpi.type || kpi.metric || "",
+                                    target: kpi.target_value || kpi.target || "",
+                                    description: kpi.description || "",
+                                  }))}
+                                  onChange={(kpis) => {
+                                    const updated = [...products];
+                                    const concepts = [...updated[i].concepts];
+                                    concepts[j] = { ...concepts[j], kpis };
+                                    updated[i].concepts = concepts;
+                                    updateDeliverables({ products: updated });
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          </CollapsibleSection>
+                        );
+                      })}
+
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          const updated = [...products];
+                          updated[i].concepts = [
+                            ...updated[i].concepts,
+                            { ...newConcept(), product_id: updated[i].id || i + 1 },
+                          ];
+                          updateDeliverables({ products: updated });
+                        }}
+                        className="w-full py-6 border-2 border-dashed hover:bg-pink-50"
+                        style={{ borderColor: "#ff9fb2" }}
+                      >
+                        <FaPlus className="w-5 h-5 mr-2" style={{ color: "#ff9fb2" }} /> Add New
+                        Concept
+                      </Button>
                     </div>
                   </div>
-                );
-              })}
+                </CollapsibleSection>
+              );
+            })}
 
-              <Button
-                variant="outline"
-                onClick={() =>
-                  updateDeliverables({
-                    concepts: [...concepts, newConcept()],
-                  })
-                }
-                disabled={products.length === 0}
-                className="w-full py-6 border-2 border-dashed hover:bg-pink-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ borderColor: "#ff9fb2" }}
-              >
-                <Plus className="w-5 h-5 mr-2" style={{ color: "#ff9fb2" }} /> Add New Concept
-              </Button>
-
-              {products.length === 0 && (
-                <p className="text-sm text-gray-500 text-center">
-                  Create products first to add concepts
-                </p>
-              )}
-            </div>
-          </CollapsibleSection>
+            <Button
+              variant="outline"
+              onClick={() =>
+                updateDeliverables({
+                  products: [...products, { ...newProduct(), id: products.length + 1 }],
+                })
+              }
+              className="w-full py-6 border-2 border-dashed hover:bg-pink-50"
+              style={{ borderColor: "#ff9fb2" }}
+            >
+              <FaPlus className="w-5 h-5 mr-2" style={{ color: "#ff9fb2" }} /> Add New Product
+            </Button>
+          </div>
         </CardContent>
       </Card>
+
+      <WarningDialog
+        isOpen={deleteDialog.isOpen}
+        onOpenChange={(open) => setDeleteDialog((prev) => ({ ...prev, isOpen: open }))}
+        title={
+          deleteDialog.type === "product" ? "Confirm Product Deletion" : "Confirm Concept Deletion"
+        }
+        description={
+          deleteDialog.type === "product"
+            ? `You are deleting the product: "${deleteDialog.name}".`
+            : `You are deleting the concept: "${deleteDialog.name}".`
+        }
+        warningMessage="This action cannot be undone and will permanently delete this data."
+        additionalInfo="Please confirm to proceed."
+        onConfirm={handleConfirmDelete}
+        onCancel={() =>
+          setDeleteDialog({
+            isOpen: false,
+            type: null,
+            productIdx: null,
+            conceptIdx: null,
+            name: "",
+          })
+        }
+        confirmText="Delete Permanently"
+      />
     </div>
   );
 };

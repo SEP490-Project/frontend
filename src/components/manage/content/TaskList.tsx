@@ -2,7 +2,7 @@ import { ChevronDown, Eye, User, Clock, AlertTriangle, FileText, Video, Image } 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TaskDetail } from "./TaskDetail";
@@ -62,16 +62,12 @@ export function TaskList({ currentDate }: TaskListProps) {
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [showTaskDetail, setShowTaskDetail] = useState(false);
 
-  const { tasks, fetchTasksByProfile } = useTaskManager();
+  const { tasks } = useTaskManager();
 
   // Convert API tasks to legacy format grouped by date
   const tasksByDate: LegacyTasksByDate[] = React.useMemo(() => {
     return groupTasksByDate(tasks);
   }, [tasks]);
-
-  useEffect(() => {
-    fetchTasksByProfile();
-  }, [fetchTasksByProfile]);
 
   // Auto-progress tasks based on current date
   const getAutoProgressStatus = (dueDate: Date, originalStatus: TaskStatus): TaskStatus => {

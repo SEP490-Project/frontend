@@ -39,14 +39,9 @@ const TaskSelectionDialog: React.FC<TaskSelectionDialogProps> = ({
   const [selectedTask, setSelectedTask] = React.useState<ContentTask | null>(null);
   const [viewingTask, setViewingTask] = React.useState<ContentTask | null>(null);
 
-  const { loading, tasks, fetchTasksByProfile, error } = useTaskManager();
+  const { loading, tasks, error, fetchTasksByProfile } = useTaskManager();
 
-  // Fetch tasks when dialog opens
-  React.useEffect(() => {
-    if (isOpen) {
-      fetchTasksByProfile();
-    }
-  }, [isOpen, fetchTasksByProfile]);
+  // The tasks are already loaded by the provider, but we can still retry on error
 
   // Convert API tasks to legacy format and filter by content type
   const availableTasks: ContentTask[] = React.useMemo(() => {

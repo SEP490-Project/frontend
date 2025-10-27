@@ -47,7 +47,7 @@ type ContentType = "blog" | "video";
 interface ContentTask {
   id: number;
   title: string;
-  type: "Blog" | "Video";
+  type: "Blog" | "Video" | "Post";
   campaign: string;
   status: "to-do" | "in-progress" | "completed";
   details: {

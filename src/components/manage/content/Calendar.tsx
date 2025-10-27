@@ -2,9 +2,8 @@ import { ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTaskManager } from "@/libs/hooks/useTask";
-import { useEffect } from "react";
 
-const daysOfWeek = ["S", "M", "T", "W", "T", "F", "S"];
+const daysOfWeek = ["Su", "M", "T", "W", "T", "F", "S"];
 
 interface CalendarProps {
   currentDate: Date;
@@ -12,14 +11,10 @@ interface CalendarProps {
 }
 
 export function Calendar({ currentDate, setCurrentDate }: CalendarProps) {
-  const { tasks, fetchTasksByProfile } = useTaskManager();
+  const { tasks } = useTaskManager();
   const today = new Date();
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
-
-  useEffect(() => {
-    fetchTasksByProfile();
-  }, [fetchTasksByProfile]);
 
   const firstDayOfMonth = new Date(year, month, 1);
   const lastDayOfMonth = new Date(year, month + 1, 0);
@@ -50,6 +45,7 @@ export function Calendar({ currentDate, setCurrentDate }: CalendarProps) {
       day: daysInPrevMonth - i,
       isCurrentMonth: false,
       date: new Date(year, month - 1, daysInPrevMonth - i),
+      key: `prev-${daysInPrevMonth - i}`,
     });
   }
 
@@ -59,6 +55,7 @@ export function Calendar({ currentDate, setCurrentDate }: CalendarProps) {
       day,
       isCurrentMonth: true,
       date: new Date(year, month, day),
+      key: `current-${day}`,
     });
   }
 
@@ -69,6 +66,7 @@ export function Calendar({ currentDate, setCurrentDate }: CalendarProps) {
       day,
       isCurrentMonth: false,
       date: new Date(year, month + 1, day),
+      key: `next-${day}`,
     });
   }
 
@@ -151,7 +149,7 @@ export function Calendar({ currentDate, setCurrentDate }: CalendarProps) {
 
             return (
               <div
-                key={dayObj.date.getTime()}
+                key={dayObj.key}
                 className={`
                   text-center cursor-pointer rounded-lg transition-all duration-10 ease-out relative h-10 w-10 mx-auto
                   flex flex-col items-center justify-center 

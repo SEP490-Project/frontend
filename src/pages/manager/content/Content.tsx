@@ -6,6 +6,7 @@ import BlogEditor from "@/components/manage/content/BlogEditor";
 import VideoEditor from "@/components/manage/content/VideoEditor";
 import { Dialog } from "@/components/ui/dialog";
 import { SaveConfirmModal } from "@/components/modal/content/SaveConfirmModal";
+import { TaskProvider } from "@/libs/contexts/TaskContext";
 
 type ViewMode = "list" | "editor";
 type ContentType = "blog" | "video";
@@ -124,49 +125,53 @@ const ManageContent = () => {
   };
 
   return (
-    <div className="min-h-screen p-5">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Main Content */}
-        {viewMode === "list" ? (
-          /* Content List View */
-          <ContentList onCreateNew={handleCreateNew} onEdit={handleEdit} />
-        ) : /* Editor View */
-        currentContentType === "blog" ? (
-          <BlogEditor
-            editingContent={editingContent}
-            selectedTask={selectedTask}
-            onSave={handleSave}
-            onBack={handleBackToList}
-          />
-        ) : (
-          <VideoEditor
-            editingContent={editingContent}
-            selectedTask={selectedTask}
-            onSave={handleSave}
-            onBack={handleBackToList}
-          />
-        )}
-      </div>
+    <TaskProvider>
+      <div className="min-h-screen p-5">
+        <div className="max-w-7xl mx-auto space-y-6">
+          {/* Main Content */}
+          {viewMode === "list" ? (
+            /* Content List View */
+            <ContentList onCreateNew={handleCreateNew} onEdit={handleEdit} />
+          ) : /* Editor View */
+          currentContentType === "blog" ? (
+            <BlogEditor
+              editingContent={editingContent}
+              selectedTask={selectedTask}
+              onSave={handleSave}
+              onBack={handleBackToList}
+            />
+          ) : (
+            <VideoEditor
+              editingContent={editingContent}
+              selectedTask={selectedTask}
+              onSave={handleSave}
+              onBack={handleBackToList}
+            />
+          )}
+        </div>
 
-      {/* Save Confirmation Modal */}
-      <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
-        {pendingSaveData && (
-          <SaveConfirmModal
-            contentTitle={(() => {
-              if ("title" in pendingSaveData.content && "body" in pendingSaveData.content) {
-                return pendingSaveData.content.title;
-              } else {
-                const oldContent = pendingSaveData.content as { html: string; json: object };
-                return (oldContent.json as any)?.title || `Untitled ${pendingSaveData.contentType}`;
-              }
-            })()}
-            contentType={pendingSaveData.contentType}
-            isUpdate={!!editingContent}
-            onConfirm={handleConfirmSave}
-          />
-        )}
-      </Dialog>
-    </div>
+        {/* Save Confirmation Modal */}
+        <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
+          {pendingSaveData && (
+            <SaveConfirmModal
+              contentTitle={(() => {
+                if ("title" in pendingSaveData.content && "body" in pendingSaveData.content) {
+                  return pendingSaveData.content.title;
+                } else {
+                  const oldContent = pendingSaveData.content as { html: string; json: object };
+                  return (
+                    (oldContent.json as any)?.title || `Untitled ${pendingSaveData.contentType}`
+                  );
+                }
+              })()}
+              contentType={pendingSaveData.contentType}
+              isUpdate={!!editingContent}
+              onConfirm={handleConfirmSave}
+            />
+          )}
+        </Dialog>
+      </div>
+    </TaskProvider>
   );
 };
 

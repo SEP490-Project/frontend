@@ -40,7 +40,7 @@ import { RequestApprovalModal } from "@/components/modal/content/RequestApproval
 import { RejectContentModal } from "@/components/modal/content/RejectContentModal";
 import ContentDetailModal from "./ContentDetailModal";
 import TaskSelectionDialog from "./TaskSelectionDialog";
-import type { Content } from "@/libs/types/content";
+import type { LegacyContent } from "@/libs/utils/contentConverter";
 
 type ContentType = "blog" | "video";
 
@@ -61,8 +61,8 @@ interface ContentTask {
 
 interface ContentListProps {
   onCreateNew?: (contentType: ContentType, task?: ContentTask) => void;
-  onEdit?: (content: Content) => void;
-  onView?: (content: Content) => void;
+  onEdit?: (content: LegacyContent) => void;
+  onView?: (content: LegacyContent) => void;
 }
 
 const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }) => {
@@ -87,16 +87,16 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     actor: "",
   });
 
-  const [selectedContent, setSelectedContent] = useState<Content | null>(null);
+  const [selectedContent, setSelectedContent] = useState<LegacyContent | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isTaskSelectionOpen, setIsTaskSelectionOpen] = useState(false);
   const [selectedContentType, setSelectedContentType] = useState<ContentType>("blog");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [contentToDelete, setContentToDelete] = useState<Content | null>(null);
+  const [contentToDelete, setContentToDelete] = useState<LegacyContent | null>(null);
   const [showRequestApprovalModal, setShowRequestApprovalModal] = useState(false);
-  const [contentToSubmit, setContentToSubmit] = useState<Content | null>(null);
+  const [contentToSubmit, setContentToSubmit] = useState<LegacyContent | null>(null);
   const [showRejectModal, setShowRejectModal] = useState(false);
-  const [contentToReject, setContentToReject] = useState<Content | null>(null);
+  const [contentToReject, setContentToReject] = useState<LegacyContent | null>(null);
 
   useEffect(() => {
     fetchContents(filters);
@@ -115,7 +115,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     setFilters((prev) => ({ ...prev, page }));
   };
 
-  const handleDelete = (content: Content) => {
+  const handleDelete = (content: LegacyContent) => {
     setContentToDelete(content);
     setShowDeleteModal(true);
   };
@@ -148,7 +148,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     setContentToDelete(null);
   };
 
-  const handleToggleStatus = async (content: Content) => {
+  const handleToggleStatus = async (content: LegacyContent) => {
     if (content.status === "draft") {
       await publishExistingContent(content.id);
       fetchContents(filters);
@@ -157,7 +157,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     // This will be handled by specific buttons in the dropdown menu
   };
 
-  const handleViewContent = (content: Content) => {
+  const handleViewContent = (content: LegacyContent) => {
     setSelectedContent(content);
     setIsDetailModalOpen(true);
     // Also call the parent onView if provided
@@ -207,7 +207,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     setContentToSubmit(null);
   };
 
-  const handleReject = (content: Content) => {
+  const handleReject = (content: LegacyContent) => {
     setContentToReject(content);
     setShowRejectModal(true);
   };
@@ -239,7 +239,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     setContentToReject(null);
   };
 
-  const handleApprove = async (content: Content) => {
+  const handleApprove = async (content: LegacyContent) => {
     try {
       const approveResponse = await approveExistingContent(content.id);
 

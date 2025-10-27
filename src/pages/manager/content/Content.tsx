@@ -7,6 +7,7 @@ import VideoEditor from "@/components/manage/content/VideoEditor";
 import { Dialog } from "@/components/ui/dialog";
 import { SaveConfirmModal } from "@/components/modal/content/SaveConfirmModal";
 import { TaskProvider } from "@/libs/contexts/TaskContext";
+import { type LegacyContent } from "@/libs/utils/contentConverter";
 
 type ViewMode = "list" | "editor";
 type ContentType = "blog" | "video";
@@ -110,10 +111,40 @@ const ManageContent = () => {
     setViewMode("editor");
   };
 
-  const handleEdit = (contentItem: Content) => {
+  const handleEdit = (legacyContent: LegacyContent) => {
+    // Convert legacy content to new Content format for editing
+    const contentItem: Content = {
+      id: legacyContent.id,
+      title: legacyContent.title,
+      body: legacyContent.html_content,
+      type: "POST",
+      status: legacyContent.status.toUpperCase() as any,
+      task_id: (legacyContent.json_content as any)?.task_id || "",
+      created_at: legacyContent.created_at,
+      updated_at: legacyContent.updated_at,
+      content_channels: [],
+      publish_date: undefined,
+      rejection_feedback: undefined,
+      affiliate_link: (legacyContent.json_content as any)?.affiliate_link || undefined,
+      ai_generated_text: (legacyContent.json_content as any)?.ai_generated_text || undefined,
+      ...(legacyContent.content_type === "blog" &&
+        (legacyContent.json_content as any)?.author && {
+          blog: {
+            author: (legacyContent.json_content as any).author,
+            author_id: (legacyContent.json_content as any).author?.id || "",
+            content_id: legacyContent.id,
+            excerpt: (legacyContent.json_content as any).excerpt || "",
+            read_time: (legacyContent.json_content as any).read_time || 0,
+            tags: (legacyContent.json_content as any).tags || [],
+            created_at: legacyContent.created_at,
+            updated_at: legacyContent.updated_at,
+          },
+        }),
+    };
+
     setEditingContent(contentItem);
     // Determine content type based on the json_content
-    const contentType = (contentItem.json_content as any)?.type === "video" ? "video" : "blog";
+    const contentType = legacyContent.content_type === "video" ? "video" : "blog";
     setCurrentContentType(contentType);
     setViewMode("editor");
   };

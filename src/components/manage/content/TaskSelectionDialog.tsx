@@ -9,26 +9,13 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Calendar, User, Eye, FileText, Video } from "lucide-react";
+import { Calendar, User, Eye, FileText, Video, Loader2 } from "lucide-react";
 import React from "react";
+import { useTaskManager } from "@/libs/hooks/useTask";
+import { convertApiTaskToLegacy, type LegacyTask } from "@/libs/utils/taskConverter";
 
-// Import the task data structure from the existing tasks
-import tasksData from "@/pages/manager/content/mock-data/tasks-data.json";
-
-interface ContentTask {
-  id: number;
-  title: string;
-  type: "Blog" | "Video";
-  campaign: string;
-  status: "to-do" | "in-progress" | "completed";
-  details: {
-    description: string;
-    assignee: string;
-    dueTime: string;
-    priority: "High" | "Medium" | "Low";
-  };
-  color: string;
-}
+// Use the legacy task type for backward compatibility
+type ContentTask = LegacyTask;
 
 interface TaskSelectionDialogProps {
   isOpen: boolean;
@@ -52,35 +39,24 @@ const TaskSelectionDialog: React.FC<TaskSelectionDialogProps> = ({
   const [selectedTask, setSelectedTask] = React.useState<ContentTask | null>(null);
   const [viewingTask, setViewingTask] = React.useState<ContentTask | null>(null);
 
-  // Transform and filter tasks based on content type
+  const { loading, tasks, fetchTasksByProfile, error } = useTaskManager();
+
+  // Fetch tasks when dialog opens
+  React.useEffect(() => {
+    if (isOpen) {
+      fetchTasksByProfile();
+    }
+  }, [isOpen, fetchTasksByProfile]);
+
+  // Convert API tasks to legacy format and filter by content type
   const availableTasks: ContentTask[] = React.useMemo(() => {
-    const allTasks: ContentTask[] = [];
-
-    tasksData.beautyTasks.forEach((taskGroup) => {
-      taskGroup.items.forEach((item) => {
-        allTasks.push({
-          id: item.id,
-          title: item.title,
-          type: item.type as "Blog" | "Video",
-          campaign: item.campaign,
-          status: item.status as "to-do" | "in-progress" | "completed",
-          details: {
-            ...item.details,
-            priority: item.details.priority as "High" | "Medium" | "Low",
-          },
-          color: item.color,
-        });
-      });
-    });
-
-    // Filter tasks by content type and status
-    return allTasks.filter(
+    return tasks.map(convertApiTaskToLegacy).filter(
       (task) =>
         task.type.toLowerCase() === contentType &&
         // You can add more filters here, like status filtering
         true,
     );
-  }, [contentType]);
+  }, [tasks, contentType]);
 
   const handleTaskSelect = (task: ContentTask) => {
     setSelectedTask(task);
@@ -138,7 +114,19 @@ const TaskSelectionDialog: React.FC<TaskSelectionDialogProps> = ({
             </DialogHeader>
 
             <div className="max-h-[60vh] overflow-y-auto mt-4">
-              {availableTasks.length === 0 ? (
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-gray-500" />
+                  <span className="ml-2 text-gray-500">Loading tasks...</span>
+                </div>
+              ) : error ? (
+                <div className="text-center py-8 text-red-500">
+                  <p>Error loading tasks: {error}</p>
+                  <Button variant="outline" onClick={() => fetchTasksByProfile()} className="mt-2">
+                    Retry
+                  </Button>
+                </div>
+              ) : availableTasks.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   No {contentType} tasks available
                 </div>

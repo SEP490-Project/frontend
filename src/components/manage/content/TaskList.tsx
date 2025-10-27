@@ -2,20 +2,12 @@ import { ChevronDown, Eye, User, Clock, AlertTriangle, FileText, Video, Image } 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TaskDetail } from "./TaskDetail";
-import tasksData from "@/pages/manager/content/mock-data/tasks-data.json";
-
-// Transform JSON data to match the expected format
-export const beautyTasks = tasksData.beautyTasks.map((task) => ({
-  ...task,
-  date: new Date(task.date),
-  items: task.items.map((item) => ({
-    ...item,
-    status: item.status as "to-do" | "in-progress" | "completed",
-  })),
-}));
+import { useTaskManager } from "@/libs/hooks/useTask";
+import { groupTasksByDate, type LegacyTasksByDate } from "@/libs/utils/taskConverter";
 
 type TaskStatus = "to-do" | "in-progress" | "completed";
 
@@ -70,6 +62,17 @@ export function TaskList({ currentDate }: TaskListProps) {
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [showTaskDetail, setShowTaskDetail] = useState(false);
 
+  const { tasks, fetchTasksByProfile } = useTaskManager();
+
+  // Convert API tasks to legacy format grouped by date
+  const tasksByDate: LegacyTasksByDate[] = React.useMemo(() => {
+    return groupTasksByDate(tasks);
+  }, [tasks]);
+
+  useEffect(() => {
+    fetchTasksByProfile();
+  }, [fetchTasksByProfile]);
+
   // Auto-progress tasks based on current date
   const getAutoProgressStatus = (dueDate: Date, originalStatus: TaskStatus): TaskStatus => {
     const now = new Date();
@@ -100,13 +103,13 @@ export function TaskList({ currentDate }: TaskListProps) {
     endOfWeek.setDate(endOfWeek.getDate() + 6);
     endOfWeek.setHours(23, 59, 59, 999);
 
-    const filtered = beautyTasks
+    const filtered = tasksByDate
       .filter((task) => {
         const taskDate = new Date(task.date);
         taskDate.setHours(0, 0, 0, 0);
         return taskDate >= startOfWeek && taskDate <= endOfWeek;
       })
-      .sort((a, b) => a.date.getTime() - b.date.getTime());
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     return filtered;
   };
@@ -166,7 +169,7 @@ export function TaskList({ currentDate }: TaskListProps) {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
           {filteredTasks.map((task, index) => (
             <motion.div
-              key={`${task.date.getTime()}-${index}`}
+              key={`${new Date(task.date).getTime()}-${index}`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.1 }}
@@ -175,9 +178,11 @@ export function TaskList({ currentDate }: TaskListProps) {
               {/* Date Column */}
               <div className="w-20 flex-shrink-0">
                 <div className="text-center sticky top-6">
-                  <div className="text-2xl font-bold text-foreground">{task.date.getDate()}</div>
+                  <div className="text-2xl font-bold text-foreground">
+                    {new Date(task.date).getDate()}
+                  </div>
                   <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-                    {task.date
+                    {new Date(task.date)
                       .toLocaleDateString("en-US", { month: "short", weekday: "short" })
                       .toUpperCase()}
                   </div>
@@ -195,7 +200,7 @@ export function TaskList({ currentDate }: TaskListProps) {
                 ) : (
                   task.items.map((item) => {
                     const isExpanded = expandedTasks.has(item.id);
-                    const currentStatus = getAutoProgressStatus(task.date, item.status);
+                    const currentStatus = getAutoProgressStatus(new Date(task.date), item.status);
 
                     return (
                       <Card

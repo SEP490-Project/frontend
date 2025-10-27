@@ -1,21 +1,8 @@
 import { motion } from "framer-motion";
-import {
-  X,
-  Calendar,
-  User,
-  Clock,
-  AlertTriangle,
-  FileText,
-  Target,
-  Briefcase,
-  MapPin,
-} from "lucide-react";
+import { X, User, Clock, AlertTriangle, FileText, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-import tasksData from "@/pages/manager/content/mock-data/tasks-data.json";
-
-// Use task contract data from JSON
-const taskContractData = tasksData.taskContractData;
+import { useTaskManager } from "@/libs/hooks/useTask";
+import { useEffect } from "react";
 
 interface TaskDetailProps {
   taskId: number | null;
@@ -24,42 +11,49 @@ interface TaskDetailProps {
 }
 
 export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
-  if (!taskId || !isVisible) return null;
+  const { selectedTask, fetchTaskById } = useTaskManager();
 
-  // Transform JSON data to match expected format
-  const beautyTasks = tasksData.beautyTasks.map((taskGroup) => ({
-    ...taskGroup,
-    date: new Date(taskGroup.date),
-    items: taskGroup.items.map((item) => ({
-      ...item,
-      status: item.status as "to-do" | "in-progress" | "completed",
-    })),
-  }));
-
-  // Find the task details with proper typing
-  let task: any = null;
-  for (const taskGroup of beautyTasks) {
-    const foundTask = taskGroup.items.find((item) => item.id === taskId);
-    if (foundTask) {
-      task = foundTask;
-      break;
+  useEffect(() => {
+    if (taskId && isVisible) {
+      fetchTaskById(taskId.toString());
     }
-  }
+  }, [taskId, isVisible, fetchTaskById]);
 
-  if (!task) return null;
+  if (!taskId || !isVisible || !selectedTask) return null;
 
-  const contractData = taskContractData[taskId.toString() as keyof typeof taskContractData];
-  const getMilestoneStatusColor = (status: string) => {
-    switch (status) {
-      case "completed":
-        return "bg-green-100 text-green-800 border-green-200";
-      case "in-progress":
-        return "bg-blue-100 text-blue-800 border-blue-200";
-      case "pending":
-        return "bg-gray-100 text-gray-800 border-gray-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
-    }
+  // Convert to legacy format for backward compatibility with existing UI
+  const legacyTask = {
+    id: parseInt(selectedTask.id.slice(-6), 16) || taskId,
+    title: selectedTask.name,
+    type:
+      selectedTask.type === "CONTENT"
+        ? "Blog"
+        : selectedTask.type === "MARKETING"
+          ? "Video"
+          : "Post",
+    campaign: `Campaign ${selectedTask.campaign_id.slice(-6)}`,
+    status:
+      selectedTask.status === "TODO"
+        ? "to-do"
+        : selectedTask.status === "IN_PROGRESS"
+          ? "in-progress"
+          : "completed",
+    details: {
+      description: selectedTask.description || "No description available",
+      assignee: selectedTask.assigned_to_name,
+      dueTime: new Date(selectedTask.deadline).toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      }),
+      priority: "Medium" as const,
+    },
+    color:
+      selectedTask.type === "CONTENT"
+        ? "#f7c06d"
+        : selectedTask.type === "MARKETING"
+          ? "#ff88fa"
+          : "#9976ff",
   };
 
   const getPriorityColor = (priority: string) => {
@@ -97,15 +91,15 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
           <motion.div
             whileHover={{ rotate: 5, scale: 1.1 }}
             className="w-10 h-10 rounded-full flex items-center justify-center shadow-md"
-            style={{ backgroundColor: task.color }}
+            style={{ backgroundColor: legacyTask.color }}
           >
             <div className="w-4 h-4 bg-white rounded-full"></div>
           </motion.div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{task.title}</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{legacyTask.title}</h1>
             <p className="text-sm text-gray-500 flex items-center gap-2">
               <FileText className="h-4 w-4" />
-              {task.type} Content
+              {legacyTask.type} Content
             </p>
           </div>
         </div>
@@ -133,7 +127,7 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
             Task Overview
           </h2>
           <div className="space-y-4">
-            <p className="text-gray-700 leading-relaxed">{task.details.description}</p>
+            <p className="text-gray-700 leading-relaxed">{legacyTask.details.description}</p>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="bg-white p-4 rounded-lg border border-gray-100">
@@ -141,7 +135,7 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
                   <User className="h-4 w-4" />
                   Assignee
                 </div>
-                <p className="font-semibold text-gray-900">{task.details.assignee}</p>
+                <p className="font-semibold text-gray-900">{legacyTask.details.assignee}</p>
               </div>
 
               <div className="bg-white p-4 rounded-lg border border-gray-100">
@@ -149,7 +143,7 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
                   <Clock className="h-4 w-4" />
                   Due Time
                 </div>
-                <p className="font-semibold text-gray-900">{task.details.dueTime}</p>
+                <p className="font-semibold text-gray-900">{legacyTask.details.dueTime}</p>
               </div>
 
               <div className="bg-white p-4 rounded-lg border border-gray-100">
@@ -158,9 +152,9 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
                   Priority
                 </div>
                 <span
-                  className={`inline-flex px-3 py-1 rounded-lg text-sm font-semibold ${getPriorityColor(task.details.priority)}`}
+                  className={`inline-flex px-3 py-1 rounded-lg text-sm font-semibold ${getPriorityColor(legacyTask.details.priority)}`}
                 >
-                  {task.details.priority}
+                  {legacyTask.details.priority}
                 </span>
               </div>
 
@@ -169,134 +163,67 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
                   <FileText className="h-4 w-4" />
                   Type
                 </div>
-                <p className="font-semibold text-gray-900">{task.type}</p>
+                <p className="font-semibold text-gray-900">{legacyTask.type}</p>
               </div>
             </div>
           </div>
         </motion.section>
 
-        {/* Contract Information */}
-        {contractData && (
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
-            className="bg-gradient-to-br from-blue-50 to-white rounded-2xl p-6 border border-blue-200 shadow-sm"
-          >
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Briefcase className="h-5 w-5 text-blue-600" />
-              Contract Information
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="bg-white p-4 rounded-lg border border-gray-100">
-                <p className="text-sm text-gray-500 mb-1">Contract ID</p>
-                <p className="font-semibold text-gray-900">{contractData.contract.id}</p>
-              </div>
-
-              <div className="bg-white p-4 rounded-lg border border-gray-100">
-                <p className="text-sm text-gray-500 mb-1">Client</p>
-                <p className="font-semibold text-gray-900">{contractData.contract.clientName}</p>
-              </div>
-
-              <div className="bg-white p-4 rounded-lg border border-gray-100">
-                <p className="text-sm text-gray-500 mb-1">Start Date</p>
-                <p className="font-semibold text-gray-900">{contractData.contract.startDate}</p>
-              </div>
-
-              <div className="bg-white p-4 rounded-lg border border-gray-100">
-                <p className="text-sm text-gray-500 mb-1">End Date</p>
-                <p className="font-semibold text-gray-900">{contractData.contract.endDate}</p>
-              </div>
-
-              <div className="bg-white p-4 rounded-lg border border-gray-100">
-                <p className="text-sm text-gray-500 mb-1">Status</p>
-                <span className="inline-flex px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800">
-                  {contractData.contract.status}
-                </span>
-              </div>
+        {/* Additional Task Information */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.3 }}
+          className="bg-gradient-to-br from-blue-50 to-white rounded-2xl p-6 border border-blue-200 shadow-sm"
+        >
+          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <Briefcase className="h-5 w-5 text-blue-600" />
+            Task Information
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white p-4 rounded-lg border border-gray-100">
+              <p className="text-sm text-gray-500 mb-1">Task ID</p>
+              <p className="font-semibold text-gray-900">{selectedTask.id}</p>
             </div>
-          </motion.section>
-        )}
 
-        {/* Campaign Information */}
-        {contractData && (
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.4 }}
-            className="bg-gradient-to-br from-purple-50 to-white rounded-2xl p-6 border border-purple-200 shadow-sm"
-          >
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Target className="h-5 w-5 text-purple-600" />
-              Campaign Details
-            </h2>
-            <div className="space-y-4">
-              <div className="bg-white p-4 rounded-lg border border-gray-100">
-                <h3 className="font-semibold text-lg text-gray-900 mb-2">
-                  {contractData.campaign.name}
-                </h3>
-                <p className="text-gray-700 mb-3">{contractData.campaign.objective}</p>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Timeline</p>
-                    <p className="font-semibold text-gray-900">{contractData.campaign.timeline}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Target Audience</p>
-                    <p className="font-semibold text-gray-900">
-                      {contractData.campaign.targetAudience}
-                    </p>
-                  </div>
-                </div>
-              </div>
+            <div className="bg-white p-4 rounded-lg border border-gray-100">
+              <p className="text-sm text-gray-500 mb-1">Campaign ID</p>
+              <p className="font-semibold text-gray-900">{selectedTask.campaign_id}</p>
             </div>
-          </motion.section>
-        )}
 
-        {/* Campaign Milestones */}
-        {contractData && (
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.5 }}
-            className="bg-gradient-to-br from-green-50 to-white rounded-2xl p-6 border border-green-200 shadow-sm"
-          >
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-green-600" />
-              Campaign Milestones
-            </h2>
-            <div className="space-y-3">
-              {contractData.milestones.map((milestone, index) => (
-                <motion.div
-                  key={milestone.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: 0.6 + index * 0.1 }}
-                  className="bg-white p-4 rounded-lg border border-gray-100 flex items-center justify-between hover:shadow-md transition-shadow duration-300"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-sm font-semibold text-gray-600">
-                      {milestone.id}
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900">{milestone.name}</h4>
-                      <p className="text-sm text-gray-500 flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        Due: {milestone.dueDate}
-                      </p>
-                    </div>
-                  </div>
-                  <span
-                    className={`px-3 py-1 rounded-full text-sm font-medium border ${getMilestoneStatusColor(milestone.status)}`}
-                  >
-                    {milestone.status.charAt(0).toUpperCase() + milestone.status.slice(1)}
-                  </span>
-                </motion.div>
-              ))}
+            <div className="bg-white p-4 rounded-lg border border-gray-100">
+              <p className="text-sm text-gray-500 mb-1">Contract ID</p>
+              <p className="font-semibold text-gray-900">{selectedTask.contract_id}</p>
             </div>
-          </motion.section>
-        )}
+
+            <div className="bg-white p-4 rounded-lg border border-gray-100">
+              <p className="text-sm text-gray-500 mb-1">Created Date</p>
+              <p className="font-semibold text-gray-900">
+                {new Date(selectedTask.created_at).toLocaleDateString()}
+              </p>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg border border-gray-100">
+              <p className="text-sm text-gray-500 mb-1">Status</p>
+              <span
+                className={`inline-flex px-3 py-1 rounded-full text-sm font-semibold ${
+                  selectedTask.status === "COMPLETED"
+                    ? "bg-green-100 text-green-800"
+                    : selectedTask.status === "IN_PROGRESS"
+                      ? "bg-blue-100 text-blue-800"
+                      : "bg-gray-100 text-gray-800"
+                }`}
+              >
+                {selectedTask.status.replace("_", " ")}
+              </span>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg border border-gray-100">
+              <p className="text-sm text-gray-500 mb-1">Role</p>
+              <p className="font-semibold text-gray-900">{selectedTask.assigned_to_role}</p>
+            </div>
+          </div>
+        </motion.section>
       </div>
     </motion.div>
   );

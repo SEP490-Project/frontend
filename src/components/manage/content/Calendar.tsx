@@ -1,17 +1,8 @@
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import tasksData from "@/pages/manager/content/mock-data/tasks-data.json";
-
-// Transform JSON data to match expected format
-const beautyTasks = tasksData.beautyTasks.map((task) => ({
-  ...task,
-  date: new Date(task.date),
-  items: task.items.map((item) => ({
-    ...item,
-    status: item.status as "to-do" | "in-progress" | "completed",
-  })),
-}));
+import { useTaskManager } from "@/libs/hooks/useTask";
+import { useEffect } from "react";
 
 const daysOfWeek = ["S", "M", "T", "W", "T", "F", "S"];
 
@@ -21,9 +12,14 @@ interface CalendarProps {
 }
 
 export function Calendar({ currentDate, setCurrentDate }: CalendarProps) {
+  const { tasks, fetchTasksByProfile } = useTaskManager();
   const today = new Date();
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
+
+  useEffect(() => {
+    fetchTasksByProfile();
+  }, [fetchTasksByProfile]);
 
   const firstDayOfMonth = new Date(year, month, 1);
   const lastDayOfMonth = new Date(year, month + 1, 0);
@@ -36,13 +32,12 @@ export function Calendar({ currentDate, setCurrentDate }: CalendarProps) {
 
   // Function to check if a date has tasks
   const hasTasksOnDate = (date: Date): boolean => {
-    return beautyTasks.some((task) => {
-      const taskDate = new Date(task.date);
+    return tasks.some((task) => {
+      const taskDate = new Date(task.deadline);
       return (
         taskDate.getFullYear() === date.getFullYear() &&
         taskDate.getMonth() === date.getMonth() &&
-        taskDate.getDate() === date.getDate() &&
-        task.items.length > 0
+        taskDate.getDate() === date.getDate()
       );
     });
   };

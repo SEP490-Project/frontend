@@ -106,7 +106,7 @@ const CampaignPage: React.FC = () => {
         </div>
         <Button
           className="bg-primary hover:bg-[#f794a8] text-white flex items-center gap-2"
-          onClick={() => navigate("/manage/marketing/campaigns/add")}
+          onClick={() => navigate("/manage/marketing/campaigns/create")}
         >
           <FaPlus className="h-4 w-4" />
           Create Campaign
@@ -368,7 +368,7 @@ const CampaignPage: React.FC = () => {
                 </p>
                 <Button
                   className="bg-primary hover:bg-[#f794a8] text-white"
-                  onClick={() => navigate("/manage/marketing/campaigns/add")}
+                  onClick={() => navigate("/manage/marketing/campaigns/create")}
                 >
                   <FaPlus className="h-4 w-4 mr-2" />
                   Create Campaign

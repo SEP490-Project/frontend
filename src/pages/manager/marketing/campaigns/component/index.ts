@@ -1,3 +1,3 @@
-export { default as CreateCampaign } from "./CreateCampaign";
-export { default as CreateTask } from "./CreateTask";
+export { default as Campaign } from "./Campaign";
+export { default as Task } from "./Task";
 export { default as Review } from "./Review";

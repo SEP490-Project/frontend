@@ -8,10 +8,10 @@ import {
   Brand,
   Campaign as MarketingCampaign,
   Contracts,
-  AddContract,
+  CreateContract,
   ContractDetail,
-  AddCampaign,
-  AddBrand,
+  CreateCampaign,
+  CreateBrand,
 } from "@/pages/manager/marketing";
 import ManageLayout from "@/layouts/ManageLayout";
 import Login from "@/pages/authentication/Login";
@@ -94,12 +94,12 @@ const AppRoutes = () => (
       <Route element={<PrivateRoute allowedRoles={["MARKETING_STAFF"]} />}>
         <Route path="/manage/marketing" element={<ManageLayout />}>
           <Route path="brands" element={<Brand />} />
-          <Route path="brands/add" element={<AddBrand />} />
+          <Route path="brands/create" element={<CreateBrand />} />
           <Route path="contracts" element={<Contracts />} />
-          <Route path="contracts/add" element={<AddContract />} />
+          <Route path="contracts/create" element={<CreateContract />} />
           <Route path="contracts/:id" element={<ContractDetail />} />
           <Route path="campaigns" element={<MarketingCampaign />} />
-          <Route path="campaigns/add" element={<AddCampaign />} />
+          <Route path="campaigns/create" element={<CreateCampaign />} />
           <Route path="content-approval" element={<ContentApproval />} />
           <Route path="content-approval/preview/:id" element={<ContentPreviewPage />} />
         </Route>

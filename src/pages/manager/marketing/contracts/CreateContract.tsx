@@ -5,7 +5,7 @@ import {
   FinancialTerms,
   LegalTerms,
   ScopeOfWork,
-} from "./component/add";
+} from "./component/create";
 import { FaCheck, FaArrowLeft, FaArrowRight, FaRotateLeft, FaEye } from "react-icons/fa6";
 import { validateField } from "./validation";
 import { Button } from "@/components/ui/button";

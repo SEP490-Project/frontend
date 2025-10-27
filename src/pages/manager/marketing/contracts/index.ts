@@ -1,2 +1,2 @@
-export { default as AddContract } from "./AddContract";
+export { default as CreateContract } from "./CreateContract";
 export { default as ContractDetail } from "./ContractDetail";

@@ -1,2 +1,2 @@
-export { default as AddBrand } from "./AddBrand";
+export { default as CreateBrand } from "./CreateBrand";
 export { default as BrandDetail } from "./BrandDetail";

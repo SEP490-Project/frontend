@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { CreateCampaign, CreateTask, Review } from "./component";
+import { Campaign, Task, Review } from "./component";
 import { parse } from "date-fns";
 import type { CampaignRequest } from "@/libs/types/campaign";
 import { useAppDispatch } from "@/libs/stores";
@@ -191,7 +191,7 @@ const AddCampaignPage: React.FC = () => {
 
                 <div className="mt-6">
                   <TabsContent value="campaign">
-                    <CreateCampaign
+                    <Campaign
                       campaignData={campaignData}
                       setCampaignData={setCampaignData}
                       campaignTypes={campaignTypes}
@@ -203,7 +203,7 @@ const AddCampaignPage: React.FC = () => {
                   </TabsContent>
 
                   <TabsContent value="milestone">
-                    <CreateTask
+                    <Task
                       milestones={milestones}
                       setMilestones={setMilestones}
                       selectedContract={selectedContract}

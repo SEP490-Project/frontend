@@ -104,7 +104,7 @@ const ContractPage: React.FC = () => {
         </div>
         <Button
           className="bg-primary hover:bg-[#f794a8] text-white"
-          onClick={() => navigate("/manage/marketing/contracts/add")}
+          onClick={() => navigate("/manage/marketing/contracts/create")}
         >
           Create Contract
         </Button>

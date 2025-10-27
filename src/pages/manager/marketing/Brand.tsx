@@ -97,7 +97,7 @@ const BrandPage: React.FC = () => {
         </div>
         <Button
           className="bg-primary hover:bg-[#f794a8] text-white"
-          onClick={() => navigate("/manage/marketing/brands/add")}
+          onClick={() => navigate("/manage/marketing/brands/create")}
         >
           Create Brand
         </Button>

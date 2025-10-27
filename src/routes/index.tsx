@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Homepage from "@/pages/Homepage";
 import NotFound from "@/pages/NotFound";
 import { Account, Notification, Dashboard } from "@/pages/manager/shared";
-import { User } from "@/pages/manager/admin";
 import { Contract, Campaign as BrandCampaign } from "@/pages/manager/brand";
 import {
   Brand,
@@ -25,15 +24,19 @@ import PrivateRoute from "./private-route";
 import PublicRoute from "./public-route";
 import {
   Product,
-  ProductDetail,
   Category,
   Order,
-  OrderDetail,
   Review,
   Transaction,
+  BasicInfoStep,
+  VariantsStep,
+  DoneStep,
 } from "@/pages/manager/sale";
 import { ContentApproval } from "@/pages/manager/marketing/content-approval";
 import ContentPreviewPage from "@/pages/manager/marketing/content-approval/ContentPreviewPage";
+import AddProductStep from "@/components/manage/sale/AddProductStep";
+import ProductDetail from "@/pages/manager/sale/product/ProductDetail";
+import { User, VariantAttribute } from "@/pages/manager/admin";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -74,18 +77,23 @@ const AppRoutes = () => (
       <Route element={<PrivateRoute allowedRoles={["ADMIN"]} />}>
         <Route path="/manage/admin" element={<ManageLayout />}>
           <Route path="users" element={<User />} />
+          <Route path="variant-attribute" element={<VariantAttribute />} />
         </Route>
       </Route>
 
       <Route element={<PrivateRoute allowedRoles={["SALES_STAFF"]} />}>
         <Route path="/manage/sale" element={<ManageLayout />}>
           <Route path="product" element={<Product />} />
-          <Route path="product/create" element={<ProductDetail />} />
-          <Route path="product/:id/edit" element={<ProductDetail />} />
+          <Route path="product/create" element={<AddProductStep />}>
+            <Route index element={<BasicInfoStep />} />
+            <Route path="variants" element={<VariantsStep />} />
+            <Route path="done" element={<DoneStep />} />
+          </Route>
+          {/* <Route path="product/:id/edit" element={<ProductDetail />} /> */}
           <Route path="product/:id" element={<ProductDetail />} />
           <Route path="category" element={<Category />} />
           <Route path="order" element={<Order />} />
-          <Route path="order/:id" element={<OrderDetail />} />
+          {/* <Route path="order/:id" element={<OrderDetail />} /> */}
           <Route path="review" element={<Review />} />
           <Route path="transaction" element={<Transaction />} />
         </Route>

@@ -219,6 +219,11 @@ const Sidebar: React.FC<SidebarProps> = ({
         label: "Users",
         icon: <FaUserGear size={18} />,
       },
+      {
+        href: "/manage/admin/variant-attribute",
+        label: "Attribute",
+        icon: <FaHashtag size={18} />,
+      },
       { href: "/manage/admin/configurations", label: "Configurations", icon: <Bolt size={18} /> },
     ],
   };

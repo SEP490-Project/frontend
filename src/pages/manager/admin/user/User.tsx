@@ -1,5 +1,7 @@
 import { PaginationTable } from "@/components/global";
+import UserDetailModal from "@/components/manage/admin/UserDetailModal";
 import { StatusModal } from "@/components/modal/StatusModal";
+import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
@@ -26,6 +28,7 @@ import {
 } from "@/libs/stores/userManager/thunk";
 import type { UserParams } from "@/libs/types/user";
 import { useEffect, useState } from "react";
+import { FaEye } from "react-icons/fa";
 
 import { FaFilter } from "react-icons/fa6";
 import { useSelector } from "react-redux";
@@ -35,6 +38,9 @@ const UserPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const users = useSelector((state: any) => state?.manageUser?.users?.data);
   const pagination = useSelector((state: any) => state?.manageUser?.users?.pagination);
+  const loading = useSelector((state: any) => state?.manageUser?.loading);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [isUserDetailModalOpen, setIsUserDetailModalOpen] = useState<boolean>(false);
 
   const [params, setParams] = useState<UserParams>({
     page: 1,
@@ -103,7 +109,6 @@ const UserPage: React.FC = () => {
                 <SelectValue placeholder="Role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value=" ">All</SelectItem>
                 <SelectItem value="CUSTOMER">Customer</SelectItem>
                 <SelectItem value="BRAND_PARTNER">Brand</SelectItem>
                 <SelectItem value="SALES_STAFF">Sale staff</SelectItem>
@@ -143,10 +148,21 @@ const UserPage: React.FC = () => {
                 <TableHead>Role</TableHead>
                 <TableHead>Created Date</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users &&
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8">
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                      <span className="ml-2">Loading...</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                users &&
                 users.map((user: any) => (
                   <TableRow key={user.id}>
                     <TableCell>{user.username}</TableCell>
@@ -172,8 +188,23 @@ const UserPage: React.FC = () => {
                         />
                       </Dialog>
                     </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className=" hover:bg-blue-100"
+                        title="View"
+                        onClick={() => {
+                          setIsUserDetailModalOpen(true);
+                          setSelectedUserId(user.id);
+                        }}
+                      >
+                        <FaEye className="text-blue-600" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
-                ))}
+                ))
+              )}
             </TableBody>
           </Table>
           {pagination && (
@@ -185,6 +216,9 @@ const UserPage: React.FC = () => {
             />
           )}
         </div>
+        <Dialog open={isUserDetailModalOpen} onOpenChange={setIsUserDetailModalOpen}>
+          <UserDetailModal userId={selectedUserId} />
+        </Dialog>
       </div>
     </div>
   );

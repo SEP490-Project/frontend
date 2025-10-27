@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -50,18 +50,24 @@ export default function TaskManagement() {
 
   return (
     <TaskProvider>
-      <div className="flex min-h-screen bg-background">
+      <div className="flex min-h-screen">
         {/* Left Sidebar */}
-        <div className="w-80 bg-card border-r border-border p-6">
-          <TaskSidebar currentDate={currentDate} setCurrentDate={setCurrentDate} />
+        <div className="w-80 border-r border-border p-6 flex flex-col">
+          <div className="mb-6">
+            <h1 className="text-2xl font-semibold text-foreground">Assigned Tasks</h1>
+          </div>
+          <div className="flex-1">
+            <TaskSidebar currentDate={currentDate} setCurrentDate={setCurrentDate} />
+          </div>
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 p-6">
+        <div className="flex-1 p-6 flex flex-col h-screen">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <Button variant="outline" onClick={goToToday} className="gap-2">
-                📅 Today
+              <Button variant="default" onClick={goToToday} className="gap-2">
+                <Calendar className="h-4 w-4" />
+                Today
               </Button>
               <AnimatePresence mode="wait">
                 <motion.h1
@@ -96,7 +102,9 @@ export default function TaskManagement() {
             </div>
           </div>
 
-          <TaskList currentDate={currentDate} />
+          <div className="flex-1 overflow-hidden">
+            <TaskList currentDate={currentDate} />
+          </div>
         </div>
       </div>
     </TaskProvider>

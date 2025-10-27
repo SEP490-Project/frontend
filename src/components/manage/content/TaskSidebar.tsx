@@ -14,8 +14,6 @@ interface TaskSidebarProps {
 export function TaskSidebar({ currentDate, setCurrentDate }: TaskSidebarProps) {
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-foreground mb-6">Assigned Tasks</h1>
-
       <Calendar currentDate={currentDate} setCurrentDate={setCurrentDate} />
 
       <div className="space-y-3">

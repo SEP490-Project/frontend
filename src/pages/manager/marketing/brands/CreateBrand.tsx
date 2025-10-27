@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router";
-import { BrandInfo, RepresentativeInfo } from "./component/add";
+import { BrandInfo, RepresentativeInfo } from "./component/create";
 import type { BrandBase } from "@/libs/types/brand";
 import * as yup from "yup";
 import { useAppDispatch } from "@/libs/stores";

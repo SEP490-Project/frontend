@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import ContractApproval from "./ContractApproval";
-import { getBrandIdFromToken } from "@/libs/helper";
+import { getBrandIdFromToken } from "@/libs/helper/helper";
 
 // Wrapper component that gets brand ID from router params or JWT token
 export default function ContractApprovalPage() {

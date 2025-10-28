@@ -1,0 +1,112 @@
+def utils
+
+pipeline {
+    agent any
+
+    tools {
+        nodejs 'NodeJS_22.21.0'
+    }
+
+    triggers {
+        githubPush()
+    }
+
+    parameters {
+        booleanParam(name: 'RUN_TESTS', defaultValue: true, description: 'Run tests before build')
+        choice(name: 'ENVIRONMENT', choices: ['STAGING', 'PRODUCTION'], description: 'Environment to inject .env file for')
+    }
+
+    environment {
+        APP_NAME = 'frontend'
+        FRONTEND_REPO = 'git@github.com:SEP490-Project/frontend.git'
+        DEVOPS_REPO   = 'git@github.com:SEP490-Project/private-server-application-devops.git'
+        GIT_CREDENTIALS_ID = 'ssh-github-key'
+    }
+
+    stages {
+        stage('Initialize') {
+            steps {
+                script {
+                    utils = load 'script.groovy'
+                    def commitSHA = sh(returnStdout: true, script: 'git rev-parse HEAD').trim().take(7)
+                    def branchName = env.BRANCH_NAME ?: env.GIT_BRANCH?.replaceAll('origin/', '')
+
+                    currentBuild.displayName = "${branchName}-${commitSHA}"
+                }
+                sshagent (credentials: ["${env.GIT_CREDENTIALS_ID}"]) {
+                    sh 'ssh -o StrictHostKeyChecking=no -T git@github.com || true'
+                }
+            }
+        }
+
+        stage('Checkout Frontend Repo') {
+            steps {
+                script {
+                    cleanWs()
+                    utils.checkoutRepo(env.FRONTEND_REPO, "*/${env.BRANCH_NAME ?: 'main'}")
+                    env.GIT_COMMIT = sh(returnStdout: true, script: 'git rev-parse HEAD').trim()
+                    env.BRANCH_NAME = sh(returnStdout: true, script: 'git rev-parse --abbrev-ref HEAD').trim()
+                    currentBuild.displayName = "${env.BRANCH_NAME}-${env.GIT_COMMIT.take(7)}"
+                }
+            }
+        }
+
+        stage('Fetch DevOps Config') {
+            steps {
+                script {
+                    utils.fetchDevOpsConfig(env.DEVOPS_REPO)
+                }
+            }
+        }
+
+        stage('Inject .env File') {
+            steps {
+                script {
+                    def environment = (params.Environment == 'PRODUCTION') ? 'main' : 'staging'
+                    utils.injectEnvFile(params.ENVIRONMENT)
+                }
+            }
+        }
+
+        stage('Install & Build Frontend') {
+            steps {
+                script {
+                    sh 'npm ci'
+                    if (params.RUN_TESTS) {
+                        utils.runTests()
+                    }
+                    utils.buildFrontend()
+                }
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                script {
+                    utils.buildDockerfile(env.APP_NAME, env.GIT_COMMIT.take(7))
+                }
+            }
+        }
+
+        stage('Archive & Push Artifacts') {
+            steps {
+                script {
+                    utils.archiveArtifacts(env.APP_NAME, env.GIT_COMMIT.take(7), env.BRANCH_NAME)
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            script {
+                utils.sendSuccessNotification()
+            }
+        }
+        failure {
+            script {
+                utils.sendFailureNotification()
+            }
+        }
+    }
+}

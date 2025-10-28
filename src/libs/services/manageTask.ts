@@ -6,7 +6,7 @@ export const manageTask = {
     return api.get("/tasks/profile", { params });
   },
 
-  getTaskById: (taskId: string): Promise<SingleTaskResponse> => {
-    return api.get(`/tasks/${taskId}`);
+  getTaskById: (taskId: string) => {
+    return api.get<SingleTaskResponse>(`/tasks/${taskId}`);
   },
 };

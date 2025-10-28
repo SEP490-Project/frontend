@@ -5,33 +5,64 @@ import { useTaskManager } from "@/libs/hooks/useTask";
 import { useEffect } from "react";
 
 interface TaskDetailProps {
-  taskId: number | null;
+  taskId: string | null;
   onClose: () => void;
   isVisible: boolean;
 }
 
 export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
-  const { selectedTask, fetchTaskById } = useTaskManager();
+  const { selectedTask, fetchTaskById, loading } = useTaskManager();
 
   useEffect(() => {
     if (taskId && isVisible) {
-      fetchTaskById(taskId.toString());
+      fetchTaskById(taskId);
     }
   }, [taskId, isVisible, fetchTaskById]);
 
-  if (!taskId || !isVisible || !selectedTask) return null;
+  if (!taskId || !isVisible) return null;
+
+  // Show loading state while fetching task
+  if (loading || !selectedTask) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.4 }}
+        className="w-full bg-white overflow-y-auto flex items-center justify-center h-full"
+      >
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading task details...</p>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // Additional safety check - if selectedTask is somehow still undefined
+  if (!selectedTask || !selectedTask.id) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.4 }}
+        className="w-full bg-white overflow-y-auto flex items-center justify-center h-full"
+      >
+        <div className="text-center">
+          <p className="text-muted-foreground">Task not found or failed to load.</p>
+          <Button onClick={onClose} variant="outline" className="mt-4">
+            Go Back
+          </Button>
+        </div>
+      </motion.div>
+    );
+  }
 
   // Convert to legacy format for backward compatibility with existing UI
   const legacyTask = {
-    id: parseInt(selectedTask.id.slice(-6), 16) || taskId,
-    title: selectedTask.name,
-    type:
-      selectedTask.type === "CONTENT"
-        ? "Blog"
-        : selectedTask.type === "MARKETING"
-          ? "Video"
-          : "Post",
-    campaign: `Campaign ${selectedTask.campaign_id.slice(-6)}`,
+    id: selectedTask.id || "",
+    title: selectedTask.name || "Untitled Task",
+    type: selectedTask.type || "Unknown", // Keep original API type
+    campaign: `Campaign ${selectedTask.campaign_id?.slice(-6) || "Unknown"}`,
     status:
       selectedTask.status === "TODO"
         ? "to-do"
@@ -40,12 +71,14 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
           : "completed",
     details: {
       description: selectedTask.description || "No description available",
-      assignee: selectedTask.assigned_to_name,
-      dueTime: new Date(selectedTask.deadline).toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      }),
+      assignee: selectedTask.assigned_to_name || "Unassigned",
+      dueTime: selectedTask.deadline
+        ? new Date(selectedTask.deadline).toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+          })
+        : "No deadline",
       priority: "Medium" as const,
     },
     color:

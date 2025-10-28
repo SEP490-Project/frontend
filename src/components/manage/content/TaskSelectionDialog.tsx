@@ -41,9 +41,6 @@ const TaskSelectionDialog: React.FC<TaskSelectionDialogProps> = ({
 
   const { loading, tasks, error, fetchTasksByProfile } = useTaskManager();
 
-  // The tasks are already loaded by the provider, but we can still retry on error
-
-  // Convert API tasks to legacy format and filter by content type
   const availableTasks: ContentTask[] = React.useMemo(() => {
     return tasks.map(convertApiTaskToLegacy).filter(
       (task) =>

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTaskManager } from "@/libs/hooks/useTask";
 
-const daysOfWeek = ["Su", "M", "T", "W", "T", "F", "S"];
+const daysOfWeek = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
 interface CalendarProps {
   currentDate: Date;

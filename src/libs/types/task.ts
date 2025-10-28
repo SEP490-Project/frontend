@@ -1,8 +1,8 @@
 export interface Task {
   id: string;
   name: string;
-  type: "PRODUCT" | "CONTENT" | "MARKETING";
-  status: "TODO" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+  type: string;
+  status: string;
   description?: string;
   deadline: string;
   created_at: string;

@@ -123,9 +123,11 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({ children }) => {
         setError(null);
         const response = await manageTask.getTaskById(taskId);
 
-        if (response.data) {
-          setSelectedTask(response.data);
-          return response.data;
+        // Handle the SingleTaskResponse format based on the actual API response
+        if (response.data && response.data.success && response.data.data) {
+          const taskData = response.data.data;
+          setSelectedTask(taskData);
+          return taskData;
         }
       } catch (err) {
         console.error("Error fetching task:", err);

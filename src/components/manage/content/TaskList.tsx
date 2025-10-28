@@ -2,7 +2,7 @@ import { Eye, FileText, Video, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import React from "react";
 import { motion } from "framer-motion";
 import { TaskDetail } from "./TaskDetail";
@@ -28,17 +28,30 @@ const getTaskIcon = (type: string) => {
 };
 
 export function TaskList({ currentDate }: TaskListProps) {
-  const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [showTaskDetail, setShowTaskDetail] = useState(false);
+  const previousDateRef = useRef<Date | null>(null);
 
   const { tasks } = useTaskManager();
+
+  // Close task detail when date changes
+  useEffect(() => {
+    // Only close if this is not the first render and date actually changed
+    if (previousDateRef.current && previousDateRef.current.getTime() !== currentDate.getTime()) {
+      if (showTaskDetail) {
+        setShowTaskDetail(false);
+        setSelectedTaskId(null);
+      }
+    }
+    previousDateRef.current = currentDate;
+  }, [currentDate, showTaskDetail]);
 
   // Convert API tasks to legacy format grouped by date
   const tasksByDate: LegacyTasksByDate[] = React.useMemo(() => {
     return groupTasksByDate(tasks);
   }, [tasks]);
 
-  const handleViewTaskDetail = (taskId: number) => {
+  const handleViewTaskDetail = (taskId: string) => {
     setSelectedTaskId(taskId);
     setShowTaskDetail(true);
   };

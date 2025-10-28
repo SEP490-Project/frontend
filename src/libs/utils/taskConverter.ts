@@ -2,9 +2,9 @@ import type { Task } from "@/libs/types/task";
 
 // Legacy interface for backward compatibility with existing components
 export interface LegacyTask {
-  id: number;
+  id: string; // Keep original UUID - no conversion needed
   title: string;
-  type: "Blog" | "Video" | "Post";
+  type: string; // Keep original API type instead of converting
   campaign: string;
   status: "to-do" | "in-progress" | "completed";
   details: {
@@ -24,9 +24,9 @@ export interface LegacyTasksByDate {
 // Utility functions to convert API data to legacy format
 export const convertApiTaskToLegacy = (apiTask: Task): LegacyTask => {
   return {
-    id: parseInt(apiTask.id.slice(-6), 16) || Math.floor(Math.random() * 1000), // Convert UUID to number
+    id: apiTask.id, // Keep original UUID - simple and clean
     title: apiTask.name,
-    type: mapApiTypeToLegacy(apiTask.type),
+    type: apiTask.type, // Keep original API type without conversion
     campaign: `Campaign ${apiTask.campaign_id.slice(-6)}`, // Use part of campaign_id as campaign name
     status: mapApiStatusToLegacy(apiTask.status),
     details: {
@@ -46,6 +46,9 @@ export const mapApiTypeToLegacy = (apiType: string): "Blog" | "Video" | "Post" =
     case "MARKETING":
       return "Video";
     case "PRODUCT":
+      return "Post";
+    case "Design":
+      return "Video"; // Map Design to Video for now
     default:
       return "Post";
   }
@@ -85,8 +88,11 @@ export const getTaskColor = (type: string): string => {
     case "MARKETING":
       return "#ff88fa"; // Pink for marketing tasks
     case "PRODUCT":
-    default:
       return "#9976ff"; // Purple for product tasks
+    case "Design":
+      return "#ff88fa"; // Pink for design tasks (same as marketing)
+    default:
+      return "#9976ff"; // Purple for unknown tasks
   }
 };
 

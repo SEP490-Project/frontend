@@ -15,6 +15,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useOutletContext, type NavigateFunction } from "react-router";
 import { getItem } from "@/libs/local-storage";
+import { Input } from "@/components/ui/input";
 
 const BasicInfoStep = () => {
   const { setOnSubmitStep, steps, currentStep, navigate, state, setIsDisabled, isDisabled } =
@@ -52,9 +53,9 @@ const BasicInfoStep = () => {
         premiere_date: "",
         availability_start_date: "",
         availability_end_date: "",
-        bought_limit: 1,
-        max_stock: 1,
-        is_free_shipping: false,
+        bought_limit: null,
+        max_stock: null,
+        is_free_shipping: true,
         concept_id: "",
       },
     },
@@ -76,6 +77,26 @@ const BasicInfoStep = () => {
 
   return (
     <>
+      {state?.productType === "LIMITED" && (
+        <div className="flex mb-6 bg-white p-6 rounded-lg mt-6 shadow-md">
+          <label
+            htmlFor="taskId"
+            className="text-lg font-medium text-gray-700 text-nowrap flex items-center justify-start md:justify-end mr-4"
+          >
+            Task ID
+          </label>
+          <Input
+            id="taskId"
+            type="text"
+            placeholder="Optional"
+            className="col-span-3"
+            autoComplete="off"
+            {...(form.register as any)("task_id")}
+            // disabled
+          />
+        </div>
+      )}
+
       <BasicInfoForm
         form={form as any}
         setOnSubmitStep={setOnSubmitStep}

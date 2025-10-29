@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import {
-  ArrowLeft,
   Package,
   Calendar,
   DollarSign,
@@ -10,7 +8,6 @@ import {
   Info,
   Clock,
   ShoppingCart,
-  Tag,
   Droplet,
   Box,
   Zap,
@@ -18,7 +15,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAppDispatch } from "@/libs/stores";
 import { getProductDetailThunk } from "@/libs/stores/productManager/thunk";
@@ -53,7 +49,6 @@ const ProductDetail: React.FC = () => {
 
   useEffect(() => {
     if (product?.variants && product.variants.length > 0) {
-      // Set the default variant or first variant
       const defaultVariant = product.variants.find((v) => v.is_default) || product.variants[0];
       setSelectedVariant(defaultVariant);
     }
@@ -103,140 +98,59 @@ const ProductDetail: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen p-4 sm:p-6">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="mb-6"
-      >
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/manage/sale/product")}
-          className="mb-4 hover:bg-gray-100"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Products
-        </Button>
+    <div className="min-h-fit p-4 sm:p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-xl sm:text-2xl font-semibold">Product Details</h1>
+      </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{product.name}</h1>
-          </div>
-          <div className="flex gap-2">
-            <Badge
-              className={
-                product.type === "STANDARD"
-                  ? "bg-blue-100 text-blue-800 border border-blue-200 text-base px-4 py-1"
-                  : "bg-orange-100 text-orange-800 border border-orange-200 text-base px-4 py-1"
-              }
-            >
-              {product.type}
-            </Badge>
-            <Badge
-              className={
-                product.is_active
-                  ? "bg-green-100 text-green-800 border border-green-200 text-base px-4 py-1"
-                  : "bg-gray-100 text-gray-800 border border-gray-200 text-base px-4 py-1"
-              }
-            >
-              {product.is_active ? "Active" : "Inactive"}
-            </Badge>
-          </div>
-        </div>
-      </motion.div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Product Images */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.4 }}
-          className="lg:col-span-1"
-        >
-          <Card className="overflow-hidden">
-            <CardContent className="p-6">
-              <div className="relative bg-gray-100 rounded-lg aspect-square overflow-hidden mb-4">
-                <img
-                  src={
-                    typeof currentImage === "string"
-                      ? currentImage
-                      : currentImage?.image_url ||
-                        "https://cdn.shopify.com/s/files/1/0069/4471/8937/products/Chanel-Coco-Mademoiselle-Intense-EDP-W-50ml-2_de2881cf-4ddb-4a2d-a65a-12b75ff4ec7f_1200x1200.jpg?v=1573190789"
-                  }
-                  alt={product.name}
-                  className="w-full h-full object-contain"
-                />
-              </div>
-
-              {/* Thumbnail Gallery */}
-              {Array.isArray(displayImages) && displayImages.length > 1 && (
-                <div className="grid grid-cols-4 gap-2">
-                  {displayImages.map((img: any, index: number) => (
-                    <button
-                      key={index}
-                      onClick={() => setSelectedImageIndex(index)}
-                      className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
-                        selectedImageIndex === index
-                          ? "border-primary ring-2 ring-primary ring-offset-2"
-                          : "border-gray-200 hover:border-gray-300"
-                      }`}
+      <div className="lg:col-span-2">
+        <div className="bg-white rounded-lg shadow mb-3">
+          <div className="p-6">
+            <h2 className="flex items-center gap-2 text-lg font-semibold mb-4">
+              <Info className="h-5 w-5 text-primary" />
+              Basic Information
+            </h2>
+            <div className="space-y-4">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <p className="text-sm text-gray-500 mb-1">Product Name</p>
+                  <div className="flex gap-2">
+                    <Badge
+                      className={
+                        product.type === "STANDARD"
+                          ? "bg-blue-100 text-blue-800 border border-blue-200 lowercase"
+                          : "bg-orange-100 text-orange-800 border border-orange-200 lowercase"
+                      }
                     >
-                      <img
-                        src={typeof img === "string" ? img : img?.image_url}
-                        alt={`${product.name} ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                    </button>
-                  ))}
+                      {product.type}
+                    </Badge>
+                    <Badge
+                      className={
+                        product.is_active
+                          ? "bg-green-100 text-green-800 border border-green-200 lowercase"
+                          : "bg-red-100 text-red-800 border border-red-200 lowercase"
+                      }
+                    >
+                      {product.is_active ? "Active" : "Inactive"}
+                    </Badge>
+                  </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Brand Information */}
-          <Card className="mt-4">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Tag className="h-5 w-5 text-primary" />
-                Brand Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-4">
-                {product.brand_logo_url && (
-                  <img
-                    src={product.brand_logo_url}
-                    alt={product.brand_name}
-                    className="w-16 h-16 object-contain rounded-lg border border-gray-200"
-                  />
-                )}
-                <div>
-                  <p className="font-semibold text-gray-900">{product.brand_name}</p>
+                <p className="text-2xl sm:text-2xl font-bold text-gray-900">{product.name}</p>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-500 mb-2">Brand</p>
+                <div className="flex items-center gap-2">
+                  {product.brand_logo_url && (
+                    <img
+                      src={product.brand_logo_url}
+                      alt={product.brand_name}
+                      className="w-12 h-12 object-contain rounded-lg border border-gray-200"
+                    />
+                  )}
+                  <p className="text-gray-900">{product.brand_name || "No brand available"}</p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Right Column - Product Details */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.4 }}
-          className="lg:col-span-2"
-        >
-          {/* Basic Information */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Info className="h-5 w-5 text-primary" />
-                Basic Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
+              <div className="bg-gray-50 p-4 rounded-lg">
                 <p className="text-sm text-gray-500 mb-1">Description</p>
                 <p className="text-gray-900">{product.description || "No description available"}</p>
               </div>
@@ -258,64 +172,65 @@ const ProductDetail: React.FC = () => {
                     Created At
                   </p>
                   <p className="font-semibold text-gray-900 text-sm">
-                    {new Date(product.created_at).toLocaleDateString()}
+                    {product.created_at ? new Date(product.created_at).toLocaleString() : "N/A"}
                   </p>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-              {product.category?.description && (
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                  <p className="text-sm text-blue-900 font-medium mb-1">Category Description</p>
-                  <p className="text-sm text-blue-800">{product.category.description}</p>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-3">
+        <div className="lg:col-span-1">
+          <div className="bg-white rounded-lg shadow overflow-hidden r">
+            <div className="flex flex-col justify-center items-center p-6">
+              <div className="bg-gray-100 rounded-lg aspect-square overflow-hidden mb-4 w-full">
+                <img
+                  src={
+                    typeof currentImage === "string"
+                      ? currentImage
+                      : currentImage?.image_url ||
+                        "https://cdn.shopify.com/s/files/1/0069/4471/8937/products/Chanel-Coco-Mademoiselle-Intense-EDP-W-50ml-2_de2881cf-4ddb-4a2d-a65a-12b75ff4ec7f_1200x1200.jpg?v=1573190789"
+                  }
+                  alt={product.name}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+
+              {Array.isArray(displayImages) && displayImages.length > 1 && (
+                <div className="grid grid-cols-4 gap-2 w-full">
+                  {displayImages.map((img: any, index: number) => (
+                    <button
+                      key={index}
+                      onClick={() => setSelectedImageIndex(index)}
+                      className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                        selectedImageIndex === index
+                          ? "border-primary ring-2 ring-primary ring-offset-2"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      <img
+                        src={typeof img === "string" ? img : img?.image_url}
+                        alt={`${product.name} ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+        </div>
 
-          {/* Limited Product Information */}
-          {isLimited && (
-            <Card className="mb-6 border-orange-200 bg-orange-50">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-orange-800">
-                  <Star className="h-5 w-5" />
-                  Limited Edition Details
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {selectedVariant?.story && (
-                    <div className="md:col-span-2 bg-white p-4 rounded-lg border border-orange-200">
-                      <p className="text-sm text-orange-700 font-medium mb-2">Story</p>
-                      <p className="text-gray-900">{selectedVariant.story}</p>
-                    </div>
-                  )}
-
-                  {selectedVariant?.current_stock !== undefined && (
-                    <div className="bg-white p-4 rounded-lg border border-orange-200">
-                      <p className="text-sm text-orange-700 font-medium mb-1 flex items-center gap-1">
-                        <ShoppingCart className="h-4 w-4" />
-                        Current Stock
-                      </p>
-                      <p className="text-2xl font-bold text-orange-900">
-                        {selectedVariant.current_stock} units
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Product Variants */}
+        <div className="lg:col-span-2">
           {product.variants && product.variants.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+            <div className="bg-white rounded-lg shadow">
+              <div className="p-6">
+                <h2 className="flex items-center gap-2 text-lg font-semibold mb-4">
                   <Package className="h-5 w-5 text-primary" />
                   Product Variants
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+                </h2>
                 <Tabs defaultValue={selectedVariant?.id || product.variants[0]?.id}>
                   <TabsList className="w-full flex-wrap h-auto gap-2">
                     {product.variants.map((variant) => (
@@ -328,7 +243,7 @@ const ProductDetail: React.FC = () => {
                         }}
                         className="flex-1 min-w-[120px]"
                       >
-                        {variant.name}
+                        {variant.capacity} {variant.capacity_unit}
                         {variant.is_default && (
                           <Badge className="ml-2 text-xs" variant="secondary">
                             Default
@@ -341,14 +256,13 @@ const ProductDetail: React.FC = () => {
                   {product.variants.map((variant) => (
                     <TabsContent key={variant.id} value={variant.id || ""} className="mt-4">
                       <div className="space-y-6">
-                        {/* Variant Basic Info */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                           <div className="bg-gradient-to-br from-primary/10 to-primary/5 p-4 rounded-lg border border-primary/20">
                             <p className="text-sm text-gray-600 mb-1 flex items-center gap-1">
                               <DollarSign className="h-4 w-4" />
                               Price
                             </p>
-                            <p className="text-2xl font-bold text-primary">
+                            <p className="font-bold text-primary">
                               {variant.price?.toLocaleString() || "N/A"}đ
                             </p>
                           </div>
@@ -358,7 +272,7 @@ const ProductDetail: React.FC = () => {
                               <Droplet className="h-4 w-4" />
                               Capacity
                             </p>
-                            <p className="text-xl font-semibold text-gray-900">
+                            <p className="font-semibold text-gray-900">
                               {variant.capacity || "N/A"} {variant.capacity_unit || ""}
                             </p>
                           </div>
@@ -368,7 +282,7 @@ const ProductDetail: React.FC = () => {
                               <Box className="h-4 w-4" />
                               Container Type
                             </p>
-                            <p className="text-sm font-semibold text-gray-900">
+                            <p className="font-semibold text-gray-900">
                               {getContainerTypeLabel(variant.container_type)}
                             </p>
                           </div>
@@ -378,7 +292,7 @@ const ProductDetail: React.FC = () => {
                               <Zap className="h-4 w-4" />
                               Dispenser Type
                             </p>
-                            <p className="text-sm font-semibold text-gray-900">
+                            <p className="font-semibold text-gray-900">
                               {getDispenserTypeLabel(variant.dispenser_type)}
                             </p>
                           </div>
@@ -389,8 +303,8 @@ const ProductDetail: React.FC = () => {
                                 <Calendar className="h-4 w-4" />
                                 Manufacture Date
                               </p>
-                              <p className="text-sm font-semibold text-gray-900">
-                                {new Date(variant.manufacture_date).toLocaleDateString()}
+                              <p className="font-semibold text-gray-900">
+                                {new Date(variant?.manufacture_date).toLocaleDateString() || "N/A"}
                               </p>
                             </div>
                           )}
@@ -401,14 +315,39 @@ const ProductDetail: React.FC = () => {
                                 <Clock className="h-4 w-4" />
                                 Expiry Date
                               </p>
-                              <p className="text-sm font-semibold text-gray-900">
+                              <p className=" font-semibold text-gray-900">
                                 {new Date(variant.expiry_date).toLocaleDateString()}
                               </p>
                             </div>
                           )}
+
+                          {selectedVariant?.current_stock !== undefined ||
+                            (isLimited && (
+                              <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                                <p className="text-sm text-orange-700 font-medium mb-1 flex items-center gap-1">
+                                  <ShoppingCart className="h-4 w-4" />
+                                  Current Stock
+                                </p>
+                                <p className="font-bold text-orange-900">
+                                  {variant.current_stock} units
+                                </p>
+                              </div>
+                            ))}
                         </div>
 
-                        {/* Variant Description */}
+                        {selectedVariant?.story ||
+                          (isLimited && (
+                            <div className="md:col-span-2 bg-orange-50 p-4 rounded-lg border border-orange-200">
+                              <p className="text-sm text-orange-700 font-medium mb-2 flex items-center gap-1">
+                                <span>
+                                  <Star className="h-5 w-5" />
+                                </span>
+                                Story
+                              </p>
+                              <p className="text-gray-900">{variant.story || "Test"}</p>
+                            </div>
+                          ))}
+
                         {variant.description && (
                           <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                             <p className="text-sm text-gray-600 font-medium mb-2 flex items-center gap-1">
@@ -419,7 +358,6 @@ const ProductDetail: React.FC = () => {
                           </div>
                         )}
 
-                        {/* Instructions */}
                         {variant.instructions && (
                           <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                             <p className="text-sm text-blue-900 font-medium mb-2">
@@ -429,7 +367,6 @@ const ProductDetail: React.FC = () => {
                           </div>
                         )}
 
-                        {/* Uses */}
                         {variant.uses && (
                           <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                             <p className="text-sm text-green-900 font-medium mb-2">Uses</p>
@@ -437,7 +374,6 @@ const ProductDetail: React.FC = () => {
                           </div>
                         )}
 
-                        {/* Attributes */}
                         {variant.attributes && variant.attributes.length > 0 && (
                           <div>
                             <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
@@ -461,9 +397,9 @@ const ProductDetail: React.FC = () => {
                                   {attr.description && (
                                     <p className="text-sm text-gray-600 mb-1">{attr.description}</p>
                                   )}
-                                  {attr.ingredients && (
+                                  {attr.ingredient && (
                                     <p className="text-xs text-gray-500 italic">
-                                      Ingredients: {attr.ingredients}
+                                      Ingredient: {attr.ingredient}
                                     </p>
                                   )}
                                 </div>
@@ -475,27 +411,19 @@ const ProductDetail: React.FC = () => {
                     </TabsContent>
                   ))}
                 </Tabs>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
+        </div>
+      </div>
 
-          {/* Action Buttons */}
-          <div className="mt-6 flex gap-4">
-            <Button
-              onClick={() => navigate(`/manage/sale/product/${product.id}/edit`)}
-              className="flex-1 bg-primary hover:bg-primary/90"
-            >
-              Edit Product
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => navigate("/manage/sale/product")}
-              className="flex-1"
-            >
-              Back to List
-            </Button>
-          </div>
-        </motion.div>
+      <div className="border-gray-200 absolute min-w-full bottom-0 left-0 bg-white min-h-fit border-t flex justify-end items-center px-4 py-2 gap-2">
+        <div className="space-x-2">
+          <Button variant={"outline"} size={"sm"} onClick={() => navigate("/manage/sale/product")}>
+            Back To Products
+          </Button>
+          <Button size={"sm"}>Edit Product</Button>
+        </div>
       </div>
     </div>
   );

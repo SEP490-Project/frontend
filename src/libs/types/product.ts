@@ -89,17 +89,17 @@ export interface ProductVariantImage {
 export interface ProductAttribute {
   attribute_id?: string;
   description?: string | null;
-  ingredients?: string | null;
+  ingredient?: string | null;
   unit: string;
   value: number;
 }
 export interface LimitedAttribute {
   availability_end_date: string;
   availability_start_date: string;
-  bought_limit: number;
+  bought_limit: number | null;
   concept_id?: string;
   is_free_shipping: boolean;
-  max_stock: number;
+  max_stock: number | null;
   premiere_date: string;
 }
 

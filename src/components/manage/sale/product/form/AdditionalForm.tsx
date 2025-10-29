@@ -1,6 +1,4 @@
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import type { UseFormReturn } from "react-hook-form";
 import type { CreateLimitedProductPayload } from "@/libs/types/product";
 import { useEffect } from "react";
@@ -10,23 +8,16 @@ interface AdditionalInfoFormProps {
 }
 
 export const AdditionalInfoForm = ({ form }: AdditionalInfoFormProps) => {
-  const { register, setValue, watch, setError, clearErrors } = form;
-  const isFreeShipping = watch("limited_attribute.is_free_shipping");
+  const { register, watch, setError, clearErrors } = form;
   const premiereDate = watch("limited_attribute.premiere_date");
   const startSaleDate = watch("limited_attribute.availability_start_date");
   const endSaleDate = watch("limited_attribute.availability_end_date");
 
-  // Get current datetime in ISO format for min attribute
-  const now = new Date();
-  const currentDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-    .toISOString()
-    .slice(0, 16);
+  const today = new Date(Date.now() + 86400000).toISOString().split("T")[0];
 
-  // Convert dates to string format for min attributes
-  const premiereDateStr = premiereDate ? String(premiereDate).slice(0, 16) : "";
-  const startSaleDateStr = startSaleDate ? String(startSaleDate).slice(0, 16) : "";
+  const premiereDateStr = premiereDate ? String(premiereDate) : "";
+  const startSaleDateStr = startSaleDate ? String(startSaleDate) : "";
 
-  // Validate date sequence: premiere < start < end
   useEffect(() => {
     if (premiereDate && startSaleDate) {
       const premDate = new Date(premiereDate);
@@ -59,7 +50,7 @@ export const AdditionalInfoForm = ({ form }: AdditionalInfoFormProps) => {
 
   return (
     <div className="bg-white p-6 rounded-lg mt-6 shadow-md">
-      <h2 className="text-lg font-semibold mb-4">Limited Edition Information</h2>
+      <h2 className="text-lg font-semibold mb-4">Additional Information</h2>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">
         <label
@@ -71,8 +62,8 @@ export const AdditionalInfoForm = ({ form }: AdditionalInfoFormProps) => {
         </label>
         <Input
           id="premiereDate"
-          type="datetime-local"
-          min={currentDateTime}
+          type="date"
+          min={today}
           className="col-span-3"
           autoComplete="off"
           {...register("limited_attribute.premiere_date")}
@@ -89,11 +80,12 @@ export const AdditionalInfoForm = ({ form }: AdditionalInfoFormProps) => {
         </label>
         <Input
           id="startSaleDate"
-          type="datetime-local"
-          min={premiereDateStr || currentDateTime}
+          type="date"
+          min={premiereDateStr || today}
           className="col-span-3"
           autoComplete="off"
           {...register("limited_attribute.availability_start_date")}
+          disabled={!premiereDate}
         />
       </div>
 
@@ -107,11 +99,12 @@ export const AdditionalInfoForm = ({ form }: AdditionalInfoFormProps) => {
         </label>
         <Input
           id="endSaleDate"
-          type="datetime-local"
-          min={startSaleDateStr || currentDateTime}
+          type="date"
+          min={startSaleDateStr || today}
           className="col-span-3"
           autoComplete="off"
           {...register("limited_attribute.availability_end_date")}
+          disabled={!startSaleDate}
         />
       </div>
 
@@ -167,59 +160,6 @@ export const AdditionalInfoForm = ({ form }: AdditionalInfoFormProps) => {
             },
           })}
         />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">
-        <label
-          htmlFor="conceptId"
-          className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end"
-        >
-          Concept ID
-        </label>
-        <Input
-          id="conceptId"
-          type="text"
-          placeholder="Optional"
-          className="col-span-3"
-          autoComplete="off"
-          {...register("limited_attribute.concept_id")}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">
-        <label
-          htmlFor="taskId"
-          className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end"
-        >
-          Task ID
-        </label>
-        <Input
-          id="taskId"
-          type="text"
-          placeholder="Optional"
-          className="col-span-3"
-          autoComplete="off"
-          {...register("task_id")}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">
-        <div className="col-span-1"></div>
-        <div className="col-span-3 flex items-center space-x-2">
-          <Checkbox
-            id="isFreeShipping"
-            checked={isFreeShipping}
-            onCheckedChange={(checked) => {
-              setValue("limited_attribute.is_free_shipping", checked as boolean);
-            }}
-          />
-          <Label
-            htmlFor="isFreeShipping"
-            className="text-sm font-medium text-gray-700 cursor-pointer"
-          >
-            Free Shipping
-          </Label>
-        </div>
       </div>
     </div>
   );

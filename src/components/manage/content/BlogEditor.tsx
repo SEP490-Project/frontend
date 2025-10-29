@@ -34,6 +34,7 @@ import {
 import { useAuth } from "@/libs/hooks/useAuth";
 import { getBrandIdFromToken } from "@/libs/helper/helper";
 import { mockTags } from "@/pages/manager/content/mock-data/tag-mock-data";
+import { useNavigationBlocker } from "@/libs/hooks/useNavigationBlocker";
 
 interface Tag {
   id: string;
@@ -58,6 +59,8 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
   const contentType = "blog";
   const [showPreview, setShowPreview] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const [showNavigationDialog, setShowNavigationDialog] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
 
@@ -115,8 +118,6 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
       const excerpt = plainText.substring(0, 150) + (plainText.length > 150 ? "..." : "");
 
       // Debug: Log user info to understand the issue
-      console.log("Current user from auth:", user);
-      console.log("User ID:", user?.id);
 
       const apiData: CreateContentRequest = {
         title: localTitle.trim(),
@@ -126,9 +127,9 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
           author_id: user?.id || getBrandIdFromToken() || "",
           excerpt: excerpt,
           read_time: calculateReadTime(content.html),
-          tags: selectedTags.map((tag) => tag.id), // Convert selected tags to array of IDs
+          tags: selectedTags.map((tag) => tag.name), // Convert selected tags to array of names
         },
-        channels: ["website"],
+        channels: ["0a2a3dcb-71c2-474f-8d15-7400dd424b2b"],
         task_id: selectedTask?.id?.toString() || null,
         affiliate_link: null,
         ai_generated_text: null,
@@ -157,6 +158,14 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
     );
   }, [content, initialContent, localTitle, editingContent?.title]);
 
+  // Block browser navigation when there are unsaved changes
+  useNavigationBlocker({
+    when: hasUnsavedChanges,
+    onNavigationAttempt: () => {
+      setShowNavigationDialog(true);
+    },
+  });
+
   // Handle back navigation with unsaved changes check
   const handleBackClick = () => {
     if (hasUnsavedChanges) {
@@ -177,6 +186,21 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
     setShowUnsavedDialog(false);
   };
 
+  // Handle navigation dialog - stay on page
+  const handleStayOnPage = () => {
+    setShowNavigationDialog(false);
+    setPendingNavigation(null);
+  };
+
+  // Handle navigation dialog - proceed with navigation
+  const handleProceedNavigation = () => {
+    setShowNavigationDialog(false);
+    // Allow navigation by temporarily disabling the blocker
+    if (pendingNavigation) {
+      window.location.href = pendingNavigation;
+    }
+  };
+
   // Calculate estimated read time based on content
   const calculateReadTime = (htmlContent: string) => {
     // Remove HTML tags and get plain text
@@ -188,8 +212,7 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
     return readTime > 0 ? readTime : 1; // Minimum 1 minute
   };
 
-  const defaultContent =
-    "<h1>Heading1</h1><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quis lobortis nisl cursus bibendum et nulla accumsan sodales ornare. At urna viverra non suspendisse neque, lorem. Pretium condimentum pellentesque id gravida id eiam sit sed orci euismod. Rhoncus proin orci duis scelerisque molestie cursus tincidunt aliguam.</p><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quis lobortis nisl cursus bibendum et nulla accumsan sodales ornare. At urna viverra non suspendisse neque, lorem. Pretium condimentum pellentesque id gravida id eiam sit sed orci euismod. Rhoncus proin orci duis scelerisque molestie cursus tincidunt aliguam.</p>";
+  const defaultContent = "Edit your blog content here...";
 
   return (
     <div className="space-y-6">
@@ -490,6 +513,27 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
             </Button>
             <Button variant="destructive" onClick={handleDiscardChanges}>
               Discard Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Navigation Blocker Dialog - for in-app navigation */}
+      <Dialog open={showNavigationDialog} onOpenChange={setShowNavigationDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Leave Page?</DialogTitle>
+            <DialogDescription>
+              You have unsaved changes that will be lost if you navigate away from this page. Are
+              you sure you want to leave?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleStayOnPage}>
+              Stay on Page
+            </Button>
+            <Button variant="destructive" onClick={handleProceedNavigation}>
+              Leave Without Saving
             </Button>
           </DialogFooter>
         </DialogContent>

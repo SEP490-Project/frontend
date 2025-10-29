@@ -28,6 +28,7 @@ import {
   getStatusBadgeVariant,
   getStatusBadgeClassName,
 } from "@/libs/helper/taskUtils";
+import { useNavigationBlocker } from "@/libs/hooks/useNavigationBlocker";
 
 type ContentType = "blog" | "video";
 
@@ -49,6 +50,8 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
   const contentType = "video";
   const [showPreview, setShowPreview] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const [showNavigationDialog, setShowNavigationDialog] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
 
   const [videoContent, setVideoContent] = useState<VideoContent>({
     platform: editingContent ? (editingContent.json_content as any)?.platform || "" : "",
@@ -76,6 +79,14 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
       videoContent.videoFile !== null
     );
   }, [videoContent, initialContent]);
+
+  // Block browser navigation when there are unsaved changes
+  useNavigationBlocker({
+    when: hasUnsavedChanges,
+    onNavigationAttempt: () => {
+      setShowNavigationDialog(true);
+    },
+  });
 
   const handleSave = () => {
     if (
@@ -145,6 +156,21 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
   // Handle keeping changes (close dialog)
   const handleKeepEditing = () => {
     setShowUnsavedDialog(false);
+  };
+
+  // Handle navigation dialog - stay on page
+  const handleStayOnPage = () => {
+    setShowNavigationDialog(false);
+    setPendingNavigation(null);
+  };
+
+  // Handle navigation dialog - proceed with navigation
+  const handleProceedNavigation = () => {
+    setShowNavigationDialog(false);
+    // Allow navigation by temporarily disabling the blocker
+    if (pendingNavigation) {
+      window.location.href = pendingNavigation;
+    }
   };
 
   return (
@@ -406,6 +432,27 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
             </Button>
             <Button variant="destructive" onClick={handleDiscardChanges}>
               Discard Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Navigation Blocker Dialog - for in-app navigation */}
+      <Dialog open={showNavigationDialog} onOpenChange={setShowNavigationDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Leave Page?</DialogTitle>
+            <DialogDescription>
+              You have unsaved changes that will be lost if you navigate away from this page. Are
+              you sure you want to leave?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleStayOnPage}>
+              Stay on Page
+            </Button>
+            <Button variant="destructive" onClick={handleProceedNavigation}>
+              Leave Without Saving
             </Button>
           </DialogFooter>
         </DialogContent>

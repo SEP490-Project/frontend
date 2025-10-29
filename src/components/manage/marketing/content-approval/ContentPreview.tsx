@@ -63,8 +63,13 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
   };
 
   // Get reading time estimate
-  const getReadingTime = (htmlContent: string) => {
-    const wordCount = htmlContent.replace(/<[^>]*>/g, "").split(/\s+/).length;
+  const getReadingTime = (htmlContent?: string) => {
+    const safeContent = htmlContent ?? "";
+    const wordCount = safeContent
+      .replace(/<[^>]*>/g, "")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean).length;
     const readingTime = Math.ceil(wordCount / 200); // Average reading speed
     return `${readingTime} min to read`;
   };
@@ -132,7 +137,7 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
         </Button>
 
         {/* Approval Actions in Header - Only show for pending content */}
-        {content && content.status === "pending" && (
+        {content && content.status === "PENDING" && (
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
@@ -192,7 +197,7 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
 
           {/* Content Body */}
           <div className="prose prose-base max-w-none text-gray-700 leading-relaxed mb-8">
-            <div dangerouslySetInnerHTML={{ __html: content.html_content }} />
+            <div dangerouslySetInnerHTML={{ __html: content.html_content ?? "" }} />
           </div>
         </CardContent>
       </Card>

@@ -2,13 +2,13 @@ import { useEffect } from "react";
 
 interface UseNavigationBlockerProps {
   when: boolean;
-  onNavigationAttempt?: () => void;
+  onNavigationAttempt?: (destinationUrl: string) => void;
 }
 
 /**
  * Custom hook to block navigation when there are unsaved changes
  * @param when - Condition to determine if navigation should be blocked
- * @param onNavigationAttempt - Callback when user tries to navigate away
+ * @param onNavigationAttempt - Callback when user tries to navigate away with destination URL
  */
 export function useNavigationBlocker({ when, onNavigationAttempt }: UseNavigationBlockerProps) {
   // Handle browser navigation (refresh, close tab, etc.)
@@ -54,7 +54,7 @@ export function useNavigationBlocker({ when, onNavigationAttempt }: UseNavigatio
             e.stopPropagation();
 
             if (onNavigationAttempt) {
-              onNavigationAttempt();
+              onNavigationAttempt(link.href);
             }
           }
         }

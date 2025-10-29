@@ -57,13 +57,20 @@ const LegalTerms: React.FC<LegalTermsProps> = ({ formData, onInputChange }) => {
                         type="number"
                         min={0}
                         max={100}
-                        value={formData.legalTerms?.compensationPercent ?? 0}
-                        onChange={(e) =>
+                        enforceRange
+                        value={
+                          formData.legalTerms?.compensationPercent === null ||
+                          formData.legalTerms?.compensationPercent === undefined
+                            ? ""
+                            : formData.legalTerms?.compensationPercent
+                        }
+                        onChange={(e) => {
+                          const val = e.target.value;
                           onInputChange("legalTerms", {
                             ...formData.legalTerms,
-                            compensationPercent: e.target.value === "" ? 0 : Number(e.target.value),
-                          })
-                        }
+                            compensationPercent: val === "" ? "" : Number(val),
+                          });
+                        }}
                         className="w-20 h-8 pr-7"
                         placeholder="0"
                       />

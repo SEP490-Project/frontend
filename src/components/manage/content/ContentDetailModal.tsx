@@ -3,10 +3,10 @@ import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, CheckCircle } from "lucide-react";
-import type { Content } from "@/libs/types/content";
+import type { LegacyContent } from "@/libs/utils/contentConverter";
 
 interface ContentDetailModalProps {
-  content: Content | null;
+  content: LegacyContent | null;
   isOpen: boolean;
   onClose: () => void;
   onRequestApproval?: (contentId: string) => void;

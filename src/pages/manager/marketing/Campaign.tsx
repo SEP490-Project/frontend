@@ -18,11 +18,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FaEye, FaPenToSquare, FaFilter, FaPlus } from "react-icons/fa6";
-import { Trash, Loader2, Target } from "lucide-react";
+import { Loader2, Target } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import PaginationTable from "@/components/global/PaginationTable";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { DeleteModal } from "@/components/modal/DeleteModal";
 import { useNavigate } from "react-router";
 import { useCampaign } from "@/libs/hooks/useCampaign";
 import { useAppDispatch } from "@/libs/stores";
@@ -108,7 +106,7 @@ const CampaignPage: React.FC = () => {
         </div>
         <Button
           className="bg-primary hover:bg-[#f794a8] text-white flex items-center gap-2"
-          onClick={() => navigate("/manage/marketing/campaigns/add")}
+          onClick={() => navigate("/manage/marketing/campaigns/create")}
         >
           <FaPlus className="h-4 w-4" />
           Create Campaign
@@ -267,25 +265,6 @@ const CampaignPage: React.FC = () => {
                               <p>Edit campaign</p>
                             </TooltipContent>
                           </Tooltip>
-                          <Dialog>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <DialogTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 w-8 p-0 hover:bg-red-50"
-                                  >
-                                    <Trash className="text-red-600" />
-                                  </Button>
-                                </DialogTrigger>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Delete campaign</p>
-                              </TooltipContent>
-                            </Tooltip>
-                            <DeleteModal name={campaign.name} />
-                          </Dialog>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -372,25 +351,6 @@ const CampaignPage: React.FC = () => {
                         <p>Edit campaign</p>
                       </TooltipContent>
                     </Tooltip>
-                    <Dialog>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 hover:bg-red-50"
-                            >
-                              <Trash className="text-red-600" />
-                            </Button>
-                          </DialogTrigger>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Delete campaign</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      <DeleteModal name={campaign.name} />
-                    </Dialog>
                   </div>
                 </div>
               ))}
@@ -408,7 +368,7 @@ const CampaignPage: React.FC = () => {
                 </p>
                 <Button
                   className="bg-primary hover:bg-[#f794a8] text-white"
-                  onClick={() => navigate("/manage/marketing/campaigns/add")}
+                  onClick={() => navigate("/manage/marketing/campaigns/create")}
                 >
                   <FaPlus className="h-4 w-4 mr-2" />
                   Create Campaign

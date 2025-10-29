@@ -1,5 +1,5 @@
 import api from "@/libs/api";
-import type { CampaignParams } from "@/libs/types/campaign";
+import type { CampaignParams, CampaignRequest } from "@/libs/types/campaign";
 
 export const manageCampaign = {
   getCampaignsByBrand: (params: CampaignParams) =>
@@ -21,4 +21,6 @@ export const manageCampaign = {
     status?: string;
     type?: string;
   }) => api.get("/campaigns", { params }),
+
+  CreateCampaign: (request: CampaignRequest) => api.post("/campaigns", request),
 };

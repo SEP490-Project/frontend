@@ -151,3 +151,51 @@ export interface ContractBase {
   created_at: string;
   updated_at: string;
 }
+
+export interface AddContract {
+  type: "ADVERTISING" | "AFFILIATE" | "BRAND_AMBASSADOR" | "CO_PRODUCING";
+  brand_id: string;
+  signed_location: string;
+  contract_number: string;
+  signed_date: string;
+  start_date: string;
+  end_date: string;
+  currency: "VND";
+  representative_bank_name?: string;
+  representative_bank_account_number?: string;
+  representative_bank_account_holder?: string;
+  financial_terms: {
+    total_value?: number;
+    payment_schedule: string;
+    payment_method: string;
+  };
+
+  scope_of_work: {
+    deliverables: string[];
+    requirements: string[];
+    responsibilities: string[];
+  };
+  legal_terms: {
+    breach_of_contract: {
+      label: string;
+      items: [
+        {
+          title: string;
+          details?: string[];
+          compensation_percent?: number;
+        },
+      ];
+    };
+    standard_terms: {
+      label: string;
+      items: [
+        {
+          title: string;
+          description?: string;
+        },
+      ];
+    };
+  };
+  created_at: string;
+  updated_at: string;
+}

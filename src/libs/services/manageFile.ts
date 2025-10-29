@@ -7,7 +7,15 @@ const manageFile = {
         "Content-Type": "multipart/form-data",
       },
     }),
-  uploadFile: async (file: File) => api.post("/files/upload", file),
+  uploadFiles: (data: FormData, onProgress?: (percent: number) => void) =>
+    api.post("/files/upload", data, {
+      onUploadProgress: (event) => {
+        if (onProgress) {
+          const percent = Math.round((event.loaded * 100) / (event.total || 1));
+          onProgress(percent);
+        }
+      },
+    }),
 };
 
 export default manageFile;

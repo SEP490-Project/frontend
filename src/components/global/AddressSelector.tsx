@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MapPin, Loader2 } from "lucide-react";
+import { MapPin, Loader2, X } from "lucide-react";
 import { useGoong } from "@/libs/hooks/useGoong";
 import { useDebounce } from "@/libs/hooks/useDebounce";
 
@@ -28,48 +28,62 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
   const [addressInput, setAddressInput] = useState(value || "");
   const debouncedAddress = useDebounce(addressInput, 500);
   const [showPredictions, setShowPredictions] = useState(false);
+  const [hasSelected, setHasSelected] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Sync với prop value khi thay đổi từ bên ngoài
+  // Đồng bộ value bên ngoài
   useEffect(() => {
     setAddressInput(value || "");
   }, [value]);
 
-  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    setAddressInput(newValue);
-    onChange(newValue); // Update ngay lập tức để user có thể type freely
-  };
-
+  // Lấy gợi ý khi người dùng nhập
   useEffect(() => {
-    if (debouncedAddress && debouncedAddress.trim().length > 2) {
+    if (debouncedAddress && debouncedAddress.trim().length > 2 && !hasSelected) {
       getPredictions(debouncedAddress.trim());
       setShowPredictions(true);
     } else {
       clear();
       setShowPredictions(false);
     }
-  }, [debouncedAddress, getPredictions, clear]);
+  }, [debouncedAddress, getPredictions, clear, hasSelected]);
+
+  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setHasSelected(false); // người dùng đang nhập lại, bỏ trạng thái "đã chọn"
+    setAddressInput(newValue);
+    onChange(newValue);
+  };
 
   const handleAddressSelect = (prediction: any) => {
     const selectedAddress = prediction.description;
     setAddressInput(selectedAddress);
     onChange(selectedAddress);
+    setHasSelected(true);
     setShowPredictions(false);
     clear();
   };
 
-  const handleAddressFocus = () => {
-    if (predictions?.length && addressInput.trim().length > 2) {
-      setShowPredictions(true);
-    }
+  const handleClearInput = () => {
+    setAddressInput("");
+    setHasSelected(false);
+    setShowPredictions(false);
+    clear();
+    onChange("");
   };
 
-  const handleAddressBlur = () => {
-    setTimeout(() => setShowPredictions(false), 100);
-  };
+  // Ẩn danh sách khi click ngoài
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setShowPredictions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
-    <div className={`space-y-2 relative ${className}`}>
+    <div ref={containerRef} className={`space-y-2 relative ${className}`}>
       {label && (
         <Label className="text-sm font-medium">
           {label} {required && "*"}
@@ -80,13 +94,25 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
         <Input
           value={addressInput}
           onChange={handleAddressChange}
-          onFocus={handleAddressFocus}
-          onBlur={handleAddressBlur}
           placeholder={placeholder}
-          className={`pl-10 ${error ? "border-red-500" : ""}`}
+          className={`h-11 pl-10 pr-9 text-sm ${error ? "border-red-500" : ""}`}
           autoComplete="off"
+          onFocus={() => {
+            if (!hasSelected && predictions?.length) setShowPredictions(true);
+          }}
         />
         <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+
+        {/* Nút X để xóa */}
+        {addressInput && (
+          <button
+            type="button"
+            onClick={handleClearInput}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
       {showPredictions && (
@@ -121,7 +147,7 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
               </button>
             ))
           ) : (
-            addressInput.trim().length > 2 && (
+            debouncedAddress.trim().length > 2 && (
               <div className="px-4 py-3 text-sm text-slate-500 text-center">
                 No matching address found
               </div>

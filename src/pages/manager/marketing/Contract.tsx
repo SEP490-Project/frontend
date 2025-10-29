@@ -18,11 +18,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FaEye, FaPenToSquare, FaFilter } from "react-icons/fa6";
-import { Trash, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import PaginationTable from "@/components/global/PaginationTable";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { DeleteModal } from "@/components/modal/DeleteModal";
 import { useNavigate } from "react-router";
 import { useContract } from "@/libs/hooks/useContract";
 import { useAppDispatch } from "@/libs/stores";
@@ -98,12 +96,17 @@ const ContractPage: React.FC = () => {
   return (
     <div className="min-h-fit p-4 sm:p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl sm:text-2xl font-semibold">Contracts</h1>
+        <div>
+          <h1 className="text-xl sm:text-2xl font-semibold">Contracts</h1>
+          <p className="text-gray-600 mt-1">
+            Manage, track the status, and store all your contracts and agreements
+          </p>
+        </div>
         <Button
           className="bg-primary hover:bg-[#f794a8] text-white"
-          onClick={() => navigate("/manage/marketing/contracts/add")}
+          onClick={() => navigate("/manage/marketing/contracts/create")}
         >
-          Add Contract
+          Create Contract
         </Button>
       </div>
 
@@ -216,6 +219,9 @@ const ContractPage: React.FC = () => {
                                 variant="ghost"
                                 size="sm"
                                 className="h-8 w-8 p-0 hover:bg-blue-50"
+                                onClick={() =>
+                                  navigate(`/manage/marketing/contracts/${contract.id}`)
+                                }
                               >
                                 <FaEye className="text-blue-600" />
                               </Button>
@@ -224,39 +230,27 @@ const ContractPage: React.FC = () => {
                               <p>View contract</p>
                             </TooltipContent>
                           </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 hover:bg-yellow-50"
-                              >
-                                <FaPenToSquare className="text-yellow-600" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Edit contract</p>
-                            </TooltipContent>
-                          </Tooltip>
-                          <Dialog>
+
+                          {/* Chỉ hiển thị nút edit khi status là DRAFT */}
+                          {contract.status === "DRAFT" && (
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <DialogTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 w-8 p-0 hover:bg-red-50"
-                                  >
-                                    <Trash className="text-red-600" />
-                                  </Button>
-                                </DialogTrigger>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 hover:bg-yellow-50"
+                                  onClick={() =>
+                                    navigate(`/manage/marketing/contracts/edit/${contract.id}`)
+                                  }
+                                >
+                                  <FaPenToSquare className="text-yellow-600" />
+                                </Button>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>Delete contract</p>
+                                <p>Edit contract</p>
                               </TooltipContent>
                             </Tooltip>
-                            <DeleteModal name={contract.contract_number} />
-                          </Dialog>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -305,7 +299,12 @@ const ContractPage: React.FC = () => {
                   <div className="flex gap-1 pt-2">
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-blue-50">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 hover:bg-blue-50"
+                          onClick={() => navigate(`/manage/marketing/contracts/${contract.id}`)}
+                        >
                           <FaEye className="text-blue-600" />
                         </Button>
                       </TooltipTrigger>
@@ -313,39 +312,27 @@ const ContractPage: React.FC = () => {
                         <p>View contract</p>
                       </TooltipContent>
                     </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 hover:bg-yellow-50"
-                        >
-                          <FaPenToSquare className="text-yellow-600" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Edit contract</p>
-                      </TooltipContent>
-                    </Tooltip>
-                    <Dialog>
+
+                    {/* Chỉ hiển thị nút edit khi status là DRAFT */}
+                    {contract.status === "DRAFT" && (
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 hover:bg-red-50"
-                            >
-                              <Trash className="text-red-600" />
-                            </Button>
-                          </DialogTrigger>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-yellow-50"
+                            onClick={() =>
+                              navigate(`/manage/marketing/contracts/edit/${contract.id}`)
+                            }
+                          >
+                            <FaPenToSquare className="text-yellow-600" />
+                          </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Delete contract</p>
+                          <p>Edit contract</p>
                         </TooltipContent>
                       </Tooltip>
-                      <DeleteModal name={contract.contract_number} />
-                    </Dialog>
+                    )}
                   </div>
                 </div>
               ))}

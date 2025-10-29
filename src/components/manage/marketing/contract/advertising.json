@@ -1,0 +1,170 @@
+{
+  "id": "84f40033-91de-4a01-9d56-93e538222584",
+  "parent_contract_id": null,
+  "title": "cnajedlldg",
+  "contract_number": "CT1958286",
+  "type": "ADVERTISING",
+  "status": "DRAFT",
+  "deposit_percent": 10,
+  "deposit_amount": 100000,
+  "brand": {
+    "id": "5be019ea-717c-4eac-a9fe-203348b6f84f",
+    "name": "Blory Berfume",
+    "contact_email": "Blory@gmail.com",
+    "contact_phone": "+84486756432",
+    "address": "Phum Sre Tonle, Ô Lâm, An Giang",
+    "logo_url": "https://bshowsell-public.s3.ap-southeast-1.amazonaws.com/b758136a-f78c-4a36-985a-974c39d5cd0d/logo123.jpg",
+    "tax_number": "857493021242",
+    "representative_name": "Trương Đặng",
+    "representative_role": "CEO",
+    "representative_phone": "+845968475683",
+    "representative_email": "kevintruong6587@gmail.com",
+    "representative_citizen_id": "195748392812",
+    "bank_name": "Ngân hàng TMCP Ngoại Thương Việt Nam",
+    "bank_account_number": "1234 5678 90",
+    "bank_account_holder": "TRUONG TAN DUNG"
+  },
+  "representative_name": "Đinh Thị Ngọc Trinh",
+  "representative_role": "Beauty Blogger",
+  "representative_phone": "+84917956697",
+  "representative_email": "mrstrinh.work@gmail.com",
+  "representative_tax_number": "01234567890",
+  "representative_bank_name": "Ngân hàng TMCP Quân đội",
+  "representative_bank_account_number": "3730 0944 4882 74",
+  "representative_bank_account_holder": "TRAN GIANH KHANH",
+  "signed_date": "2025-10-24 07:00:00",
+  "signed_location": "Đại học FPT Thành phố Hồ Chí Minh, Lô E2A-7, Khu Công nghệ Cao, Đường D1, Tăng Nhơn Phú, Hồ Chí Minh",
+  "start_date": "2025-10-24 07:00:00",
+  "end_date": "2025-10-25 07:00:00",
+  "currency": "VND",
+  "financial_terms": {
+    "cost_breakdown": {
+      "Creative_Production": 750000,
+      "Media_Spend_Setup": 250000
+    },
+    "model": "FIXED",
+    "payment_method": "BANK_TRANSFER",
+    "schedule": [
+      {
+        "amount": 300000,
+        "due_date": "2025-11-01",
+        "id": 1,
+        "milestone": "Initiation & Concept Approval",
+        "percent": 30
+      },
+      {
+        "amount": 400000,
+        "due_date": "2025-11-20",
+        "id": 2,
+        "milestone": "Creative Delivery & Final Review",
+        "percent": 40
+      },
+      {
+        "amount": 300000,
+        "due_date": "2025-12-05",
+        "id": 3,
+        "milestone": "Campaign Launch & Final Payment",
+        "percent": 30
+      }
+    ],
+    "total_cost": 1000000
+  },
+  "scope_of_work": {
+    "deliverables": {
+      "advertised_items": [
+        {
+          "creative_notes": "A/B Test: Bright, sunny imagery. Focus on portability and long battery life.",
+          "description": "Perfect for beach trips, hikes, and backyard BBQs. Experience crystal-clear audio with deep bass and all-day battery life.",
+          "hash_tag": ["#SummerVibes", "#WaterproofSound", "#AdventureGear"],
+          "id": 2,
+          "material_url": [
+            "https://bshowsell-public.s3.ap-southeast-1.amazonaws.com/audio/waterproof-speaker-v2.mp4",
+            "https://bshowsell-public.s3.ap-southeast-1.amazonaws.com/audio/speaker-lifestyle-photo.jpg"
+          ],
+          "name": "AquaBeat Portable Speaker",
+          "platform": "TIKTOK",
+          "tagline": "Unleash the sound of summer. Waterproof. Wireless. Worry-free."
+        },
+        {
+          "creative_notes": "Targeting WFH professionals. Use a split-screen video: half showing a messy desk, half showing the clean setup with the hub.",
+          "description": "Streamline your workstation with the 7-in-1 Ultra Hub. Connect your monitor, hard drive, keyboard, and more with just one USB-C cable. Say goodbye to cable clutter.",
+          "hash_tag": ["#TechSetup", "#WFHLife", "#MinimalistDesk"],
+          "id": 3,
+          "material_url": [
+            "https://bshowsell-public.s3.ap-southeast-1.amazonaws.com/tech/ultrahub-product-shot.jpg",
+            "https://bshowsell-public.s3.ap-southeast-1.amazonaws.com/tech/ultrahub-inuse-video.mp4"
+          ],
+          "name": "Ultra Hub Pro 7-in-1",
+          "platform": "FACEBOOK",
+          "tagline": "The only cable you'll ever need. Power, ports, and simplicity."
+        },
+        {
+          "creative_notes": "Focus on the 'natural' and 'organic' aspects. Use a testimonial image of a user with glowing skin. Emphasize the limited-time 20% off offer.",
+          "description": "Our best-selling night cream, now with a new organic Lavender infusion. Hydrates, repairs, and smooths fine lines while you sleep. Suitable for all skin types.",
+          "hash_tag": ["#SkincareRoutine", "#OrganicBeauty", "#NightCreamGoals"],
+          "id": 4,
+          "material_url": [
+            "https://bshowsell-public.s3.ap-southeast-1.amazonaws.com/beauty/lavender-cream-jar.jpg",
+            "https://bshowsell-public.s3.ap-southeast-1.amazonaws.com/beauty/cream-before-after.jpg"
+          ],
+          "name": "Renewal Lavender Night Cream",
+          "platform": "WEBSITE",
+          "tagline": "Wake up to radiant skin. 20% off for a limited time!"
+        }
+      ]
+    },
+    "general_requirements": ["abc"]
+  },
+  "legal_terms": {
+    "breach_of_contract": {
+      "items": [
+        {
+          "details": ["Contract terminates immediately", "Party A forfeits the deposit"],
+          "title": "Party A (Brand) breaks the rules"
+        },
+        {
+          "compensation_percent": 10,
+          "details": [
+            "Contract terminates immediately",
+            "Party B must refund the deposit",
+            "Party B pays additional 10% compensation"
+          ],
+          "title": "Party B (Service Provider) breaks the rules"
+        },
+        {
+          "details": [
+            "Contract stops with no penalties",
+            "No compensation required from either party"
+          ],
+          "title": "Mutual agreement to terminate"
+        }
+      ],
+      "label": "Breach of Contract"
+    },
+    "standard_terms": {
+      "items": [
+        {
+          "description": "Both parties must keep all contract information confidential and cannot disclose to third parties without written consent",
+          "title": "Confidentiality"
+        },
+        {
+          "description": "Disputes will be resolved through negotiation first, then legal proceedings if necessary",
+          "title": "Dispute Resolution"
+        },
+        {
+          "description": "Contract is effective from signature date until all obligations are fulfilled",
+          "title": "Contract Effectiveness"
+        },
+        {
+          "description": "Neither party is liable for failure to perform due to circumstances beyond their control, including natural disasters or government actions",
+          "title": "Force Majeure"
+        }
+      ],
+      "label": "Standard Terms"
+    }
+  },
+  "contract_file_url": "https://bshowsell-public.s3.ap-southeast-1.amazonaws.com/b758136a-f78c-4a36-985a-974c39d5cd0d/CapstoneProjectRegister-UrbanLens.docx",
+  "proposal_file_url": "https://bshowsell-public.s3.ap-southeast-1.amazonaws.com/b758136a-f78c-4a36-985a-974c39d5cd0d/CapstoneProjectRegister-UrbanLens.docx",
+  "created_at": "2025-10-23 16:43:17",
+  "updated_at": "2025-10-23 16:43:17"
+}

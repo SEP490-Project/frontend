@@ -52,10 +52,24 @@ export interface CampaignResponse {
   success: boolean;
 }
 
-export interface SingleCampaignResponse {
-  data: CampaignData;
-  message: string;
-  status: string;
-  status_code: number;
-  success: boolean;
+export interface CampaignRequest {
+  contract_id: string;
+  name: string;
+  description: string;
+  start_date: string;
+  end_date: string;
+  type: string;
+  milestones: {
+    description: string;
+    due_date: string;
+    tasks: {
+      deadline: string;
+      name: string;
+      type: string;
+      description: {
+        description: string;
+        material_url: string[];
+      };
+    }[];
+  }[];
 }

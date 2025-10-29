@@ -46,9 +46,10 @@ import {
   Quote,
   Minus,
 } from "lucide-react";
+import { isTiptapJson } from "@/libs/helper/tiptapHelper";
 
 interface TiptapEditorProps {
-  initialContent?: string;
+  initialContent?: string | object;
   onChange?: (content: { html: string; json: object }) => void;
 }
 
@@ -57,6 +58,28 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
   onChange,
 }) => {
   const [showImageUploader, setShowImageUploader] = useState(false);
+
+  // Convert initial content to proper format
+  const getInitialContent = () => {
+    if (!initialContent) return "<p>Start typing...</p>";
+
+    // If it's a string, check if it's JSON
+    if (typeof initialContent === "string") {
+      if (isTiptapJson(initialContent)) {
+        // Parse and return JSON object
+        try {
+          return JSON.parse(initialContent);
+        } catch {
+          return initialContent;
+        }
+      }
+      return initialContent;
+    }
+
+    // If it's already an object, return it
+    return initialContent;
+  };
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -94,7 +117,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
         types: ["heading", "paragraph"],
       }),
     ],
-    content: initialContent,
+    content: getInitialContent(),
     editorProps: {
       attributes: {
         class:

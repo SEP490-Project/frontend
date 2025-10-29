@@ -83,7 +83,8 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
   // Block browser navigation when there are unsaved changes
   useNavigationBlocker({
     when: hasUnsavedChanges,
-    onNavigationAttempt: () => {
+    onNavigationAttempt: (destinationUrl) => {
+      setPendingNavigation(destinationUrl);
       setShowNavigationDialog(true);
     },
   });

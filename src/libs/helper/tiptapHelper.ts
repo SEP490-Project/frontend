@@ -20,6 +20,11 @@ export const tiptapJsonToHtml = (json: string | object | null | undefined): stri
     // If it's a string, try to parse it as JSON
     const jsonContent = typeof json === "string" ? JSON.parse(json) : json;
 
+    // Validate that it's a proper TipTap document
+    if (!jsonContent || typeof jsonContent !== "object" || !("type" in jsonContent)) {
+      return typeof json === "string" ? json : "";
+    }
+
     // Generate HTML from TipTap JSON using the same extensions
     const html = generateHTML(jsonContent, [
       StarterKit.configure({

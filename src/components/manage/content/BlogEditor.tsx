@@ -61,7 +61,6 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [showNavigationDialog, setShowNavigationDialog] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
-  const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
 
   // Get user from auth state
@@ -70,12 +69,23 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
   // Get available tags (filtered to show only non-deleted)
   const availableTags = mockTags.filter((tag) => tag.deleted_at === null);
 
+  // Initialize selected tags from editing content
+  const [selectedTags, setSelectedTags] = useState<Tag[]>(() => {
+    if (editingContent?.blog?.tags) {
+      // Map tag names from editing content to Tag objects
+      return editingContent.blog.tags
+        .map((tagName: string) => availableTags.find((tag) => tag.name === tagName))
+        .filter((tag): tag is Tag => tag !== undefined);
+    }
+    return [];
+  });
+
   // State for content tracking
   const [content, setContent] = React.useState<{ html: string; json: any } | null>(
     editingContent
       ? {
-          html: editingContent.html_content || "",
-          json: editingContent.json_content || null,
+          html: editingContent.body || "",
+          json: editingContent.body || null,
         }
       : null,
   );
@@ -121,7 +131,7 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
 
       const apiData: CreateContentRequest = {
         title: localTitle.trim(),
-        body: content.html,
+        body: content.json, // Export as JSON instead of HTML
         type: "POST",
         blog_fields: {
           author_id: user?.id || getBrandIdFromToken() || "",
@@ -161,7 +171,8 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
   // Block browser navigation when there are unsaved changes
   useNavigationBlocker({
     when: hasUnsavedChanges,
-    onNavigationAttempt: () => {
+    onNavigationAttempt: (destinationUrl) => {
+      setPendingNavigation(destinationUrl);
       setShowNavigationDialog(true);
     },
   });
@@ -450,7 +461,7 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
           <div className="space-y-2">
             <Label htmlFor="content">Content *</Label>
             <TiptapEditor
-              initialContent={editingContent ? editingContent.html_content : defaultContent}
+              initialContent={editingContent ? editingContent.body : defaultContent}
               onChange={handleContentChange}
             />
           </div>

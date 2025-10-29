@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useContentManager } from "@/libs/hooks/useContent";
+import { manageContent } from "@/libs/services/manageContent";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -41,23 +43,12 @@ import { RejectContentModal } from "@/components/modal/content/RejectContentModa
 import ContentDetailModal from "./ContentDetailModal";
 import TaskSelectionDialog from "./TaskSelectionDialog";
 import type { LegacyContent } from "@/libs/utils/contentConverter";
+import type { LegacyTask } from "@/libs/utils/taskConverter";
 
 type ContentType = "blog" | "video";
 
-interface ContentTask {
-  id: number;
-  title: string;
-  type: "Blog" | "Video" | "Post";
-  campaign: string;
-  status: "to-do" | "in-progress" | "completed";
-  details: {
-    description: string;
-    assignee: string;
-    dueTime: string;
-    priority: "High" | "Medium" | "Low";
-  };
-  color: string;
-}
+// Use LegacyTask type for consistency
+type ContentTask = LegacyTask;
 
 interface ContentListProps {
   onCreateNew?: (contentType: ContentType, task?: ContentTask) => void;
@@ -89,6 +80,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
 
   const [selectedContent, setSelectedContent] = useState<LegacyContent | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [isTaskSelectionOpen, setIsTaskSelectionOpen] = useState(false);
   const [selectedContentType, setSelectedContentType] = useState<ContentType>("blog");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -157,9 +149,54 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     // This will be handled by specific buttons in the dropdown menu
   };
 
-  const handleViewContent = (content: LegacyContent) => {
-    setSelectedContent(content);
-    setIsDetailModalOpen(true);
+  const handleViewContent = async (content: LegacyContent) => {
+    setIsLoadingDetail(true);
+
+    try {
+      // Fetch detailed content from API first
+      const response = await manageContent.contentDetail(content.id);
+      console.log("=== API Response ===");
+      console.log("Full response.data:", response.data);
+
+      // Access the nested data object from the API response
+      const apiData = response.data.data;
+      console.log("API data:", apiData);
+      console.log("created_at:", apiData?.created_at);
+      console.log("blog:", apiData?.blog);
+      console.log("blog.author:", apiData?.blog?.author);
+      console.log("blog.author.username:", apiData?.blog?.author?.username);
+
+      if (apiData) {
+        // Convert API response to LegacyContent format
+        const detailedContent: LegacyContent = {
+          id: apiData.id,
+          title: apiData.title,
+          content_type: apiData.blog ? "blog" : "video",
+          status: apiData.status.toLowerCase(),
+          date_time: apiData.created_at,
+          actor: apiData.blog?.author?.username || "Unknown",
+          html_content: JSON.stringify(apiData.body), // Convert JSON body to string for storage
+          json_content: apiData.blog || apiData.video || {},
+          created_at: apiData.created_at,
+          updated_at: apiData.updated_at,
+          views: 0, // Add default views count
+        };
+        console.log("=== Detailed Content ===");
+        console.log("date_time:", detailedContent.date_time);
+        console.log("actor:", detailedContent.actor);
+        console.log("status:", detailedContent.status);
+
+        // Show modal only after we have the complete data
+        setSelectedContent(detailedContent);
+        setIsDetailModalOpen(true);
+      }
+    } catch (error) {
+      console.error("Error fetching content detail:", error);
+      toast.error("Failed to load content details");
+    } finally {
+      setIsLoadingDetail(false);
+    }
+
     // Also call the parent onView if provided
     onView?.(content);
   };
@@ -499,9 +536,12 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start">
-                          <DropdownMenuItem onClick={() => handleViewContent(content)}>
+                          <DropdownMenuItem
+                            onClick={() => handleViewContent(content)}
+                            disabled={isLoadingDetail}
+                          >
                             <Eye className="w-4 h-4 mr-2" />
-                            View
+                            {isLoadingDetail ? "Loading..." : "View"}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => onEdit?.(content)}>
                             <Edit className="w-4 h-4 mr-2" />

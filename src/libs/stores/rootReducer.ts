@@ -9,6 +9,7 @@ import { manageCampaignReducer } from "./campaignManager/slice";
 import { productManagerReducer } from "./productManager/slice";
 import { categoryManagerReducer } from "./categoryManager/slice";
 import { attributeManagerReducer } from "./attributeManager/slice";
+import { manageTagReducer } from "./tagManager/slice";
 
 export const rootReducer = combineReducers({
   manageAuthen: manageAuthenReducer,
@@ -22,4 +23,5 @@ export const rootReducer = combineReducers({
   manageUserProfile: userProfileReducer,
   manageCategory: categoryManagerReducer,
   manageAttribute: attributeManagerReducer,
+  manageTag: manageTagReducer,
 });

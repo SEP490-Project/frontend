@@ -26,7 +26,6 @@ coverage
 .github
 .gitignore
 .gitattributes
-.husky
 jenkinsfile
 script.groovy
 
@@ -38,9 +37,9 @@ LICENSE
 Dockerfile
 commitlint.config.js
 eslint.config.js
-tailwind.config.js
-tsconfig*.json
-components.json
+# tailwind.config.js
+# tsconfig*.json
+# components.json
 
 # Logs and temporary files
 *.log

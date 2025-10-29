@@ -156,7 +156,12 @@ const ManageTags: React.FC = () => {
                             <p>Delete tag</p>
                           </TooltipContent>
                         </Tooltip>
-                        <DeleteModal name={tag.name} />
+                        <DeleteModal
+                          name={tag.name}
+                          onDelete={() => {
+                            console.log("Delete tag:", tag.name);
+                          }}
+                        />
                       </Dialog>
                     </div>
                   </TableCell>
@@ -216,7 +221,12 @@ const ManageTags: React.FC = () => {
                       <p>Delete tag</p>
                     </TooltipContent>
                   </Tooltip>
-                  <DeleteModal name={tag.name} />
+                  <DeleteModal
+                    name={tag.name}
+                    onDelete={() => {
+                      console.log("Delete tag:", tag.name);
+                    }}
+                  />
                 </Dialog>
               </div>
             </div>

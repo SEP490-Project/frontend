@@ -97,7 +97,7 @@ export interface LimitedAttribute {
   availability_end_date: string;
   availability_start_date: string;
   bought_limit: number | null;
-  concept_id?: string;
+  concept_id?: string | null;
   is_free_shipping: boolean;
   max_stock: number | null;
   premiere_date: string;

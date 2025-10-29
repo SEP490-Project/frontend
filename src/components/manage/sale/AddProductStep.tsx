@@ -58,8 +58,11 @@ const AddProductStep = () => {
     if (currentStep > 1) {
       navigate(steps[currentStep - 2]?.path, { state });
     } else {
+      // Clean up localStorage when exiting the creation flow
       removeItem("currentProduct");
       removeItem("currentProductVariants");
+      removeItem("currentConcept");
+      removeItem("currentConceptId");
       navigate("/manage/sale/product", { state });
     }
   };

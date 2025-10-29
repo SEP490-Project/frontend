@@ -22,7 +22,6 @@ export const createLimitedProductSchema: yup.ObjectSchema<CreateLimitedProductPa
     category_id: yup.string().required("Category is required"),
     brand_id: yup.string().required("Brand is required"),
     description: yup.string().nullable().optional(),
-
     task_id: yup.string().optional(),
     limited_attribute: yup
       .object({
@@ -38,7 +37,7 @@ export const createLimitedProductSchema: yup.ObjectSchema<CreateLimitedProductPa
           .min(1, "Max stock must be at least 1")
           .required("Max stock is required"),
         is_free_shipping: yup.boolean().required(),
-        concept_id: yup.string().optional(),
+        concept_id: yup.string().nullable().optional(),
       })
       .required("Limited attributes are required"),
   },

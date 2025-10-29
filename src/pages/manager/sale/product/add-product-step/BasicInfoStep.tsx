@@ -56,24 +56,48 @@ const BasicInfoStep = () => {
         bought_limit: null,
         max_stock: null,
         is_free_shipping: true,
-        concept_id: "",
+        concept_id: undefined,
       },
     },
   });
 
   const form = isLimitedProduct ? limitedForm : standardForm;
 
+  // Load existing product data from localStorage
   useEffect(() => {
-    const existingProduct = getItem<ProductResponse<ProductData>>("currentProduct")?.data;
-    if (existingProduct) {
-      form.reset({
-        name: existingProduct.name,
-        category_id: existingProduct.category?.id?.toString() || "",
-        brand_id: existingProduct.brand_id?.toString() || "",
-        description: existingProduct.description || null,
-      });
+    const existingProduct = getItem<ProductResponse<ProductData>>("currentProduct");
+    if (existingProduct?.data?.id) {
+      const productData = existingProduct.data;
+      if (isLimitedProduct) {
+        limitedForm.reset({
+          name: productData.name,
+          category_id: productData.category?.id?.toString() || "",
+          brand_id: productData.brand_id?.toString() || "",
+          description: productData.description || null,
+          task_id: (productData as any).task_id || "",
+          limited_attribute: {
+            premiere_date: (productData as any).limited_attribute?.premiere_date || "",
+            availability_start_date:
+              (productData as any).limited_attribute?.availability_start_date || "",
+            availability_end_date:
+              (productData as any).limited_attribute?.availability_end_date || "",
+            bought_limit: (productData as any).limited_attribute?.bought_limit || null,
+            max_stock: (productData as any).limited_attribute?.max_stock || null,
+            is_free_shipping: (productData as any).limited_attribute?.is_free_shipping ?? true,
+            concept_id: (productData as any).limited_attribute?.concept_id || undefined,
+          },
+        });
+      } else {
+        standardForm.reset({
+          name: productData.name,
+          category_id: productData.category?.id?.toString() || "",
+          brand_id: productData.brand_id?.toString() || "",
+          description: productData.description || null,
+        });
+      }
     }
-  }, [form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <>

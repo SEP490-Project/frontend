@@ -73,8 +73,6 @@ export const manageCampaignSlice = createSlice({
         // The API returns { data: CampaignData, ... } structure
         state.campaignDetail = action.payload.data;
         state.error = null;
-        console.log("getCampaignById fulfilled, payload:", action.payload);
-        console.log("campaignDetail set to:", state.campaignDetail);
       })
       .addCase(getCampaignById.rejected, (state, action) => {
         state.detailLoading = false;

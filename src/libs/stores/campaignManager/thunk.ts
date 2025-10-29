@@ -20,12 +20,9 @@ export const getCampaignById = createAsyncThunk(
   "campaigns/getById",
   async (campaignId: string, { rejectWithValue }) => {
     try {
-      console.log("getCampaignById thunk called with ID:", campaignId);
       const response = await manageCampaign.getCampaignById(campaignId);
-      console.log("getCampaignById API response:", response);
       return response.data;
     } catch (error: unknown) {
-      console.error("getCampaignById error:", error);
       const err = error as AxiosError<{ message: string }>;
       return rejectWithValue(err.response?.data?.message || "Failed to fetch campaign detail");
     }

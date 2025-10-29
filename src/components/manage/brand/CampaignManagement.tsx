@@ -79,15 +79,10 @@ export default function CampaignManagement() {
 
   // Handle campaign view
   const handleViewCampaign = async (campaign: CampaignData) => {
-    console.log("handleViewCampaign called with:", campaign.id);
     setIsModalOpen(true);
 
     try {
-      // Fetch detailed campaign data from API
-      console.log("Dispatching getCampaignById for ID:", campaign.id);
-      const result = await dispatch(getCampaignById(campaign.id));
-      console.log("getCampaignById result:", result);
-      // The campaign detail will be available in the Redux store via useCampaign hook
+      await dispatch(getCampaignById(campaign.id));
     } catch (error) {
       console.error("Failed to fetch campaign details:", error);
     }

@@ -1,10 +1,11 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { TaskSidebar } from "@/components/manage/content/TaskSidebar";
 import { TaskList } from "@/components/manage/content/TaskList";
+import { TaskProvider } from "@/libs/contexts/TaskContext";
 
 export default function TaskManagement() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -48,54 +49,64 @@ export default function TaskManagement() {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
-      {/* Left Sidebar */}
-      <div className="w-80 bg-card border-r border-border p-6">
-        <TaskSidebar currentDate={currentDate} setCurrentDate={setCurrentDate} />
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" onClick={goToToday} className="gap-2">
-              📅 Today
-            </Button>
-            <AnimatePresence mode="wait">
-              <motion.h1
-                key={formatWeekRange(currentDate)}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                transition={{ duration: 0.3 }}
-                className="text-xl font-semibold text-foreground"
-              >
-                {formatWeekRange(currentDate)}
-              </motion.h1>
-            </AnimatePresence>
+    <TaskProvider>
+      <div className="flex min-h-screen">
+        {/* Left Sidebar */}
+        <div className="w-80 border-r border-border p-6 flex flex-col">
+          <div className="mb-6">
+            <h1 className="text-2xl font-semibold text-foreground">Assigned Tasks</h1>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigateWeek("prev")}
-              className="h-8 w-8 p-0"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigateWeek("next")}
-              className="h-8 w-8 p-0"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+          <div className="flex-1">
+            <TaskSidebar currentDate={currentDate} setCurrentDate={setCurrentDate} />
           </div>
         </div>
 
-        <TaskList currentDate={currentDate} />
+        {/* Main Content */}
+        <div className="flex-1 p-6 flex flex-col h-screen">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <Button variant="default" onClick={goToToday} className="gap-2">
+                <Calendar className="h-4 w-4" />
+                Today
+              </Button>
+              <AnimatePresence mode="wait">
+                <motion.h1
+                  key={formatWeekRange(currentDate)}
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  transition={{ duration: 0.3 }}
+                  className="text-xl font-semibold text-foreground"
+                >
+                  {formatWeekRange(currentDate)}
+                </motion.h1>
+              </AnimatePresence>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigateWeek("prev")}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigateWeek("next")}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-hidden">
+            <TaskList currentDate={currentDate} />
+          </div>
+        </div>
       </div>
-    </div>
+    </TaskProvider>
   );
 }

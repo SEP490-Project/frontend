@@ -1,59 +1,35 @@
 "use client";
 
-import {
-  Eye,
-  ChevronLeft,
-  ChevronRight,
-  ChevronDown,
-  Menu,
-  X,
-  Check,
-  FileText,
-  AlertTriangle,
-} from "lucide-react";
+import { Eye, ChevronLeft, ChevronRight, ChevronDown, Menu, X } from "lucide-react";
+import ContractDetail from "./ContractDetail";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
+import { useParams } from "react-router-dom";
 import { useContract } from "@/libs/hooks/useContract";
-import {
-  getContractsByBrand,
-  approveContract,
-  rejectContract,
-} from "@/libs/stores/contractManager/thunk";
+import { getContractsByBrand } from "@/libs/stores/contractManager/thunk";
 import type { AppDispatch } from "@/libs/stores";
 import type { ContractBase } from "@/libs/types/contract";
 import { getBrandIdFromToken } from "@/libs/helper/helper";
-import { toast } from "sonner";
 
 interface ContractApprovalProps {
   brandId?: string;
 }
 
 export default function ContractApproval({ brandId: propBrandId }: ContractApprovalProps = {}) {
+  const { brandId: paramBrandId } = useParams<{ brandId: string }>();
   const dispatch = useDispatch<AppDispatch>();
-  const { loading, contracts, pagination, actionLoading } = useContract();
+  const { loading, contracts, pagination } = useContract();
 
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedContract, setSelectedContract] = useState<ContractBase | null>(null);
-  const [contractStatus, setContractStatus] = useState("");
-  const [showApproveDialog, setShowApproveDialog] = useState(false);
-  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [showDetailView, setShowDetailView] = useState(false);
+  const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
 
-  // Get brand ID from JWT token or use prop
-  const brandId = propBrandId || getBrandIdFromToken();
+  // Get brand ID from URL param, prop, or JWT token
+  const brandId = paramBrandId || propBrandId || getBrandIdFromToken();
 
   // Fetch contracts when component mounts or brand changes
   useEffect(() => {
@@ -68,6 +44,28 @@ export default function ContractApproval({ brandId: propBrandId }: ContractAppro
       );
     }
   }, [dispatch, brandId, selectedStatus]);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setIsStatusDropdownOpen(false);
+    };
+
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
+
+  // Show error if no brand ID is available
+  if (!brandId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Brand ID Required</h2>
+          <p className="text-gray-600">Please log in to view contracts.</p>
+        </div>
+      </div>
+    );
+  }
 
   // Get unique statuses for dropdown
   const uniqueStatuses = [...new Set(contracts.map((item) => item.status))];
@@ -86,43 +84,8 @@ export default function ContractApproval({ brandId: propBrandId }: ContractAppro
 
   // Handle contract view
   const handleViewContract = (contract: ContractBase) => {
-    setSelectedContract(contract);
-    setContractStatus(contract.status);
-    setIsModalOpen(true);
-  };
-
-  const handleApprove = () => {
-    setShowApproveDialog(true);
-  };
-
-  const handleReject = () => {
-    setShowRejectDialog(true);
-  };
-
-  const confirmApprove = async () => {
-    if (!selectedContract) return;
-    setShowApproveDialog(false);
-
-    try {
-      await dispatch(approveContract(selectedContract.id)).unwrap();
-      setContractStatus("ACTIVE");
-      toast.success("Contract approved successfully!");
-    } catch {
-      toast.error("Failed to approve contract. Please try again.");
-    }
-  };
-
-  const confirmReject = async () => {
-    if (!selectedContract) return;
-    setShowRejectDialog(false);
-
-    try {
-      await dispatch(rejectContract(selectedContract.id)).unwrap();
-      setContractStatus("TERMINATED");
-      toast.success("Contract rejected successfully!");
-    } catch {
-      toast.error("Failed to reject contract. Please try again.");
-    }
+    setSelectedContractId(contract.id);
+    setShowDetailView(true);
   };
 
   const getStatusStyles = (status: string) => {
@@ -140,15 +103,18 @@ export default function ContractApproval({ brandId: propBrandId }: ContractAppro
     }
   };
 
-  // Close dropdowns when clicking outside
-  useEffect(() => {
-    const handleClickOutside = () => {
-      setIsStatusDropdownOpen(false);
-    };
-
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, []);
+  // Conditional rendering for detail view
+  if (showDetailView && selectedContractId) {
+    return (
+      <ContractDetail
+        contractId={selectedContractId}
+        onBack={() => {
+          setShowDetailView(false);
+          setSelectedContractId(null);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen md:p-2">
@@ -436,206 +402,6 @@ export default function ContractApproval({ brandId: propBrandId }: ContractAppro
             </div>
           </div>
         </div>
-
-        {/* Contract Detail Modal */}
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <DialogContent className="max-w-7xl w-[95vw] h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-xl">Contract Details</DialogTitle>
-              <DialogDescription>Contract #{selectedContract?.contract_number}</DialogDescription>
-            </DialogHeader>
-
-            {selectedContract && (
-              <div className="space-y-6">
-                {/* Action Buttons */}
-                {selectedContract.status === "DRAFT" && (
-                  <div className="flex gap-3 justify-end border-b pb-4">
-                    <Button
-                      onClick={handleReject}
-                      disabled={actionLoading}
-                      variant="outline"
-                      className="flex items-center gap-2 border-red-300 text-red-600 hover:bg-red-50"
-                    >
-                      <X className="h-4 w-4" />
-                      {actionLoading ? "Processing..." : "Reject"}
-                    </Button>
-                    <Button
-                      onClick={handleApprove}
-                      disabled={actionLoading}
-                      className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
-                    >
-                      <Check className="h-4 w-4" />
-                      {actionLoading ? "Processing..." : "Approve"}
-                    </Button>
-                  </div>
-                )}
-
-                {/* Contract Overview */}
-                <div className="bg-gray-50 rounded-lg border border-gray-200 p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <FileText className="h-5 w-5 text-gray-400" />
-                    <h2 className="text-lg font-semibold text-gray-900">Contract Overview</h2>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Contract Number</label>
-                      <p className="text-sm text-gray-900 mt-1">
-                        {selectedContract.contract_number}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Title</label>
-                      <p className="text-sm text-gray-900 mt-1">{selectedContract.title}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Contract Type</label>
-                      <p className="text-sm text-gray-900 mt-1">
-                        {selectedContract.type.replace("_", " ")}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Brand Name</label>
-                      <p className="text-sm text-gray-900 mt-1">{selectedContract.brand_name}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Status</label>
-                      <div className="mt-1">
-                        <span
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusStyles(contractStatus)}`}
-                        >
-                          {contractStatus}
-                        </span>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Start Date</label>
-                      <p className="text-sm text-gray-900 mt-1">
-                        {new Date(selectedContract.start_date).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">End Date</label>
-                      <p className="text-sm text-gray-900 mt-1">
-                        {new Date(selectedContract.end_date).toLocaleDateString()}
-                      </p>
-                    </div>
-                    {selectedContract.signed_date && (
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Signed Date</label>
-                        <p className="text-sm text-gray-900 mt-1">
-                          {new Date(selectedContract.signed_date).toLocaleDateString()}
-                        </p>
-                      </div>
-                    )}
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Created</label>
-                      <p className="text-sm text-gray-900 mt-1">
-                        {new Date(selectedContract.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Last Updated</label>
-                      <p className="text-sm text-gray-900 mt-1">
-                        {new Date(selectedContract.updated_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
-
-        {/* Approve Confirmation Dialog */}
-        <Dialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100">
-                  <AlertTriangle className="h-5 w-5 text-orange-600" />
-                </div>
-                <div>
-                  <DialogTitle className="text-left">Confirm Status Change</DialogTitle>
-                </div>
-              </div>
-            </DialogHeader>
-            <div className="py-4">
-              <DialogDescription className="text-gray-600">
-                This action will change the status to Active.
-              </DialogDescription>
-              <DialogDescription className="mt-2 text-gray-600">
-                Are you sure you want to change the status of this{" "}
-                <span className="font-medium text-gray-900">
-                  {selectedContract?.brand_name} - {selectedContract?.type.replace("_", " ")}{" "}
-                  Contract
-                </span>
-                ?
-              </DialogDescription>
-            </div>
-            <DialogFooter className="flex flex-row justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowApproveDialog(false)}
-                className="text-gray-600"
-              >
-                No
-              </Button>
-              <Button
-                onClick={confirmApprove}
-                disabled={actionLoading}
-                className="bg-red-500 hover:bg-red-600 text-white"
-              >
-                {actionLoading ? "Processing..." : "Yes"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Reject Confirmation Dialog */}
-        <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100">
-                  <AlertTriangle className="h-5 w-5 text-orange-600" />
-                </div>
-                <div>
-                  <DialogTitle className="text-left">Confirm Status Change</DialogTitle>
-                </div>
-              </div>
-            </DialogHeader>
-            <div className="py-4">
-              <DialogDescription className="text-gray-600">
-                This action will change the status to Terminated.
-              </DialogDescription>
-              <DialogDescription className="mt-2 text-gray-600">
-                Are you sure you want to reject this{" "}
-                <span className="font-medium text-gray-900">
-                  {selectedContract?.brand_name} - {selectedContract?.type.replace("_", " ")}{" "}
-                  Contract
-                </span>
-                ?
-              </DialogDescription>
-            </div>
-            <DialogFooter className="flex flex-row justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowRejectDialog(false)}
-                className="text-gray-600"
-              >
-                No
-              </Button>
-              <Button
-                onClick={confirmReject}
-                disabled={actionLoading}
-                className="bg-red-500 hover:bg-red-600 text-white"
-              >
-                {actionLoading ? "Processing..." : "Yes"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     </div>
   );

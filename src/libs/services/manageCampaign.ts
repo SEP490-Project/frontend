@@ -12,7 +12,7 @@ export const manageCampaign = {
       },
     }),
 
-  getCampaignById: (campaignId: string) => api.get(`/campaigns/${campaignId}`),
+  getCampaignById: (campaignId: string) => api.get(`/campaigns/id/${campaignId}/details`),
 
   campaign: (params: {
     page: number;

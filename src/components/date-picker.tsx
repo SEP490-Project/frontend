@@ -89,7 +89,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           <Button
-            variant="outline2"
+            variant="outline"
             disabled={disabled}
             className={`w-full justify-start text-left font-normal ${
               !value ? "text-muted-foreground" : ""

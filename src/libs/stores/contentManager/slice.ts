@@ -11,13 +11,18 @@ import {
   approveContent,
   rejectContent,
 } from "./thunk";
-import type { Content } from "@/libs/types/content";
+import type { ContentResponse } from "@/libs/types/content";
+import {
+  convertApiContentArrayToLegacy,
+  convertApiContentToLegacy,
+  type LegacyContent,
+} from "@/libs/utils/contentConverter";
 import { toast } from "sonner";
 
 interface stateType {
   loading: boolean;
-  contents: Content[];
-  content: Content | null;
+  contents: LegacyContent[]; // Use legacy format for backward compatibility
+  content: LegacyContent | null;
   pagination: {
     page: number;
     limit: number;
@@ -57,8 +62,10 @@ export const manageContentSlice = createSlice({
       })
       .addCase(contents.fulfilled, (state, action) => {
         state.loading = false;
-        state.contents = action.payload.data as Content[];
-        state.pagination = action.payload.pagination;
+        // Convert new API format to legacy format for backward compatibility
+        const apiResponse = action.payload as ContentResponse;
+        state.contents = convertApiContentArrayToLegacy(apiResponse.data);
+        state.pagination = apiResponse.pagination;
       })
       .addCase(contents.rejected, (state, action) => {
         state.loading = false;
@@ -72,7 +79,8 @@ export const manageContentSlice = createSlice({
       })
       .addCase(createContent.fulfilled, (state, action) => {
         state.loading = false;
-        state.contents.unshift(action.payload.data);
+        const legacyContent = convertApiContentToLegacy(action.payload.data);
+        state.contents.unshift(legacyContent);
         toast.success("Content created successfully!", {
           description: "Your content has been saved and is ready for review.",
           duration: 4000,
@@ -94,7 +102,12 @@ export const manageContentSlice = createSlice({
       })
       .addCase(contentDetail.fulfilled, (state, action) => {
         state.loading = false;
-        state.content = action.payload.data;
+        // Content detail API returns an array with single item, extract the first one
+        const apiResponse = action.payload as ContentResponse;
+        const contentItem = apiResponse.data[0];
+        if (contentItem) {
+          state.content = convertApiContentToLegacy(contentItem);
+        }
       })
       .addCase(contentDetail.rejected, (state, action) => {
         state.loading = false;
@@ -108,12 +121,13 @@ export const manageContentSlice = createSlice({
       })
       .addCase(updateContent.fulfilled, (state, action) => {
         state.loading = false;
-        const index = state.contents.findIndex((c) => c.id === action.payload.data.id);
+        const legacyContent = convertApiContentToLegacy(action.payload.data);
+        const index = state.contents.findIndex((c) => c.id === legacyContent.id);
         if (index !== -1) {
-          state.contents[index] = action.payload.data;
+          state.contents[index] = legacyContent;
         }
-        if (state.content && state.content.id === action.payload.data.id) {
-          state.content = action.payload.data;
+        if (state.content && state.content.id === legacyContent.id) {
+          state.content = legacyContent;
         }
         toast.success("Content updated successfully!", {
           description: "Your content has been updated and is ready for review.",

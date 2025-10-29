@@ -1,19 +1,9 @@
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import tasksData from "@/pages/manager/content/mock-data/tasks-data.json";
+import { useTaskManager } from "@/libs/hooks/useTask";
 
-// Transform JSON data to match expected format
-const beautyTasks = tasksData.beautyTasks.map((task) => ({
-  ...task,
-  date: new Date(task.date),
-  items: task.items.map((item) => ({
-    ...item,
-    status: item.status as "to-do" | "in-progress" | "completed",
-  })),
-}));
-
-const daysOfWeek = ["S", "M", "T", "W", "T", "F", "S"];
+const daysOfWeek = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
 interface CalendarProps {
   currentDate: Date;
@@ -21,6 +11,7 @@ interface CalendarProps {
 }
 
 export function Calendar({ currentDate, setCurrentDate }: CalendarProps) {
+  const { tasks } = useTaskManager();
   const today = new Date();
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -36,13 +27,12 @@ export function Calendar({ currentDate, setCurrentDate }: CalendarProps) {
 
   // Function to check if a date has tasks
   const hasTasksOnDate = (date: Date): boolean => {
-    return beautyTasks.some((task) => {
-      const taskDate = new Date(task.date);
+    return tasks.some((task) => {
+      const taskDate = new Date(task.deadline);
       return (
         taskDate.getFullYear() === date.getFullYear() &&
         taskDate.getMonth() === date.getMonth() &&
-        taskDate.getDate() === date.getDate() &&
-        task.items.length > 0
+        taskDate.getDate() === date.getDate()
       );
     });
   };
@@ -55,6 +45,7 @@ export function Calendar({ currentDate, setCurrentDate }: CalendarProps) {
       day: daysInPrevMonth - i,
       isCurrentMonth: false,
       date: new Date(year, month - 1, daysInPrevMonth - i),
+      key: `prev-${daysInPrevMonth - i}`,
     });
   }
 
@@ -64,6 +55,7 @@ export function Calendar({ currentDate, setCurrentDate }: CalendarProps) {
       day,
       isCurrentMonth: true,
       date: new Date(year, month, day),
+      key: `current-${day}`,
     });
   }
 
@@ -74,6 +66,7 @@ export function Calendar({ currentDate, setCurrentDate }: CalendarProps) {
       day,
       isCurrentMonth: false,
       date: new Date(year, month + 1, day),
+      key: `next-${day}`,
     });
   }
 
@@ -156,7 +149,7 @@ export function Calendar({ currentDate, setCurrentDate }: CalendarProps) {
 
             return (
               <div
-                key={dayObj.date.getTime()}
+                key={dayObj.key}
                 className={`
                   text-center cursor-pointer rounded-lg transition-all duration-10 ease-out relative h-10 w-10 mx-auto
                   flex flex-col items-center justify-center 

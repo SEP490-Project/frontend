@@ -13,6 +13,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import { X, Tag } from "lucide-react";
 
 import type { Content, CreateContentRequest } from "@/libs/types/content";
 import { ArrowLeft, User, Calendar, Target, FileText } from "lucide-react";
@@ -24,6 +33,17 @@ import {
 } from "@/libs/helper/taskUtils";
 import { useAuth } from "@/libs/hooks/useAuth";
 import { getBrandIdFromToken } from "@/libs/helper/helper";
+import { mockTags } from "@/pages/manager/content/mock-data/tag-mock-data";
+
+interface Tag {
+  id: string;
+  name: string;
+  description: string;
+  usage_count: number;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
 
 type ContentType = "blog" | "video";
 
@@ -38,9 +58,14 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
   const contentType = "blog";
   const [showPreview, setShowPreview] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
+  const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
 
   // Get user from auth state
   const { user } = useAuth();
+
+  // Get available tags (filtered to show only non-deleted)
+  const availableTags = mockTags.filter((tag) => tag.deleted_at === null);
 
   // State for content tracking
   const [content, setContent] = React.useState<{ html: string; json: any } | null>(
@@ -58,6 +83,23 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
   // Simple content update handler
   const handleContentChange = (data: any) => {
     setContent(data);
+  };
+
+  // Tag selection handlers
+  const handleTagSelect = (tag: Tag) => {
+    const isAlreadySelected = selectedTags.some((t) => t.id === tag.id);
+    if (!isAlreadySelected) {
+      setSelectedTags([...selectedTags, tag]);
+    }
+    setTagPopoverOpen(false);
+  };
+
+  const handleTagRemove = (tagId: string) => {
+    setSelectedTags(selectedTags.filter((tag) => tag.id !== tagId));
+  };
+
+  const clearAllTags = () => {
+    setSelectedTags([]);
   };
 
   // Memoized save button disabled state
@@ -84,7 +126,7 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
           author_id: user?.id || getBrandIdFromToken() || "",
           excerpt: excerpt,
           read_time: calculateReadTime(content.html),
-          tags: [],
+          tags: selectedTags.map((tag) => tag.id), // Convert selected tags to array of IDs
         },
         channels: ["website"],
         task_id: selectedTask?.id?.toString() || null,
@@ -281,6 +323,104 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
               onChange={(e) => setLocalTitle(e.target.value)}
               className="w-full"
             />
+          </div>
+
+          {/* Tag Selection */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Tags</Label>
+              {selectedTags.length > 0 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearAllTags}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  Clear all
+                </Button>
+              )}
+            </div>
+
+            {/* Selected Tags Display */}
+            <div className="flex flex-wrap gap-2 min-h-[2rem]">
+              {selectedTags.map((tag) => (
+                <Badge
+                  key={tag.id}
+                  className="flex items-center gap-1 px-3 py-1 bg-[#FF9DB0] hover:bg-pink-600 text-white border-0"
+                >
+                  <Tag className="h-3 w-3" />
+                  {tag.name}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-4 w-4 p-0 hover:bg-white/20 text-white"
+                    onClick={() => handleTagRemove(tag.id)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </Badge>
+              ))}
+
+              {/* Add Tag Button - Always Show */}
+              <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
+                <PopoverTrigger asChild>
+                  {selectedTags.length > 0 ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="default"
+                      className="h-10 w-10 border-[#FF9DB0] text-[#FF9DB0] hover:bg-[#FF9DB0] hover:text-white transition-colors flex items-center justify-center"
+                    >
+                      <span className="text-2xl font-bold leading-none">+</span>
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="justify-start gap-2 text-muted-foreground border-dashed hover:border-[#FF9DB0] hover:text-[#FF9DB0] transition-colors"
+                    >
+                      <Tag className="h-4 w-4" />
+                      Add tags...
+                    </Button>
+                  )}
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0 bg-white border" align="start">
+                  <Command className="bg-white">
+                    <CommandInput placeholder="Search tags..." className="border-0 focus:ring-0" />
+                    <CommandEmpty>No tags found.</CommandEmpty>
+                    <CommandGroup className="max-h-64 overflow-auto">
+                      {availableTags
+                        .filter((tag) => !selectedTags.some((selected) => selected.id === tag.id))
+                        .map((tag) => (
+                          <CommandItem
+                            key={tag.id}
+                            value={tag.name}
+                            onSelect={() => handleTagSelect(tag)}
+                            className="cursor-pointer hover:bg-[#FF9DB0]/10 data-[selected]:bg-[#FFFFFF]/20"
+                          >
+                            <div className="flex items-center space-x-2 flex-1">
+                              <Tag className="h-4 w-4 text-[#FF9DB0]" />
+                              <div className="flex-1">
+                                <div className="font-medium">{tag.name}</div>
+                                {tag.description && (
+                                  <div className="text-sm text-muted-foreground">
+                                    {tag.description}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="text-xs text-muted-foreground bg-[#FF9DB0]/10 px-2 py-1 rounded-full">
+                                {tag.usage_count} uses
+                              </div>
+                            </div>
+                          </CommandItem>
+                        ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
 
           {/* Content Editor */}

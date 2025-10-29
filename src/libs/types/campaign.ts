@@ -1,3 +1,14 @@
+export interface Milestone {
+  id: string;
+  description: string;
+  due_date: string;
+  completed_at?: string | null;
+  status: string;
+  completion_percentage: number;
+  number_of_tasks: number;
+  behind_schedule: boolean;
+}
+
 export interface CampaignData {
   id: string;
   name: string;
@@ -6,19 +17,19 @@ export interface CampaignData {
   type: string;
   start_date: string;
   end_date: string;
-  budget_actual: number;
-  budget_projected: number;
   contract_id: string;
   contract_number: string;
   contract_title: string;
   created_at: string;
   updated_at: string;
+  milestones?: Milestone[];
+  number_of_tasks?: number;
+  percentage_completed?: number;
 }
 
 export type CampaignBase = CampaignData;
 
 export interface CampaignParams {
-  brand_id?: string;
   page: number;
   limit: number;
   status?: string;

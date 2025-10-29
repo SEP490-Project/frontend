@@ -1,10 +1,11 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { brand, addBrand } from "./thunk";
+import { brand, addBrand, brandDetail } from "./thunk";
 import type { Brands } from "@/libs/types/brand";
 
 interface stateType {
   loading: boolean;
   brands: Brands[];
+  brand: Brands | null;
   pagination: {
     page: number;
     limit: number;
@@ -18,6 +19,7 @@ interface stateType {
 const initialState: stateType = {
   loading: false,
   brands: [],
+  brand: null,
   pagination: null,
 };
 
@@ -45,6 +47,16 @@ export const manageBrandSlice = createSlice({
         state.loading = false;
       })
       .addCase(addBrand.rejected, (state) => {
+        state.loading = false;
+      })
+      .addCase(brandDetail.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(brandDetail.fulfilled, (state, action) => {
+        state.loading = false;
+        state.brand = action.payload.data;
+      })
+      .addCase(brandDetail.rejected, (state) => {
         state.loading = false;
       });
   },

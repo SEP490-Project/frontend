@@ -1,0 +1,46 @@
+# Node and dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+pnpm-lock.yaml
+
+# Build output
+dist
+build
+.cache
+.vite
+coverage
+
+# Local environment and editor files
+.env
+.env.*
+!.env.example
+.vscode
+.idea
+.DS_Store
+*.swp
+*.swo
+
+# CI/CD and git files
+.git
+.github
+.gitignore
+.gitattributes
+jenkinsfile
+script.groovy
+
+# Documentation and metadata
+README.md
+LICENSE
+
+# Docker and config files not needed inside image
+Dockerfile
+commitlint.config.js
+eslint.config.js
+# tailwind.config.js
+# tsconfig*.json
+# components.json
+
+# Logs and temporary files
+*.log
+*.tmp

@@ -11,7 +11,11 @@ const Register: React.FC = () => {
     email: string;
     password: string;
   }) => {
-    await dispatch(register(data));
+    try {
+      await dispatch(register(data));
+    } catch (error: any) {
+      console.error("Registration failed:", error);
+    }
   };
 
   return <RegisterForm onSubmit={handleSubmit} />;

@@ -5,10 +5,14 @@ on:
     branches:
       - main
       - dev
+      - staging
+      - pre-staging
   pull_request:
     branches:
       - main
       - dev
+      - staging
+      - pre-staging
 
 jobs:
   lint-test-build:

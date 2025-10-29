@@ -20,17 +20,19 @@ interface RegisterFormProps {
 }
 
 const RegisterSchema = yup.object().shape({
-  username: yup.string().required("Username is required"),
-  full_name: yup.string().required("Full name is required"),
-  email: yup.string().email("Invalid email").required("Email is required"),
+  username: yup.string().required("Username is required").trim(),
+  full_name: yup.string().required("Full name is required").trim(),
+  email: yup.string().email("Invalid email").required("Email is required").trim(),
   password: yup
     .string()
     .min(8, "Password must be at least 8 characters")
-    .required("Password is required"),
+    .required("Password is required")
+    .trim(),
   confirmPassword: yup
     .string()
     .oneOf([yup.ref("password")], "Passwords must match")
-    .required("Confirm password is required"),
+    .required("Confirm password is required")
+    .trim(),
 });
 
 export const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit }) => {

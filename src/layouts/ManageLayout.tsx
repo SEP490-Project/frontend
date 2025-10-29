@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Sidebar, Header } from "@/components/layout/manage";
+import { Sidebar, Header } from "@/components/manage";
 import { Outlet } from "react-router-dom";
 import { motion } from "framer-motion";
 

@@ -1,9 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
-import { VitePWA } from "vite-plugin-pwa";
 import tailwindcss from "@tailwindcss/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
-import { PWAConfig } from "./src/libs/config";
 
 export default defineConfig({
   server: {
@@ -18,6 +16,5 @@ export default defineConfig({
       projects: ["./tsconfig.app.json"],
     }),
     tailwindcss(),
-    VitePWA(PWAConfig),
   ],
 });

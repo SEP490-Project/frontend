@@ -1,0 +1,153 @@
+import { Search, User, ShoppingBag, Menu } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useAuth } from "@/libs/hooks/useAuth";
+import { useNavigate } from "react-router";
+
+const GlobalHeader = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  return (
+    <header className="bg-white px-4 py-4 shadow-sm">
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
+        {/* Logo */}
+        <div className="flex items-center">
+          <img src="/pink.png" alt="B-ShowSell Logo" className="h-16 w-auto" />
+        </div>
+
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex items-center space-x-8">
+          <a href="#" className="text-[#383838] hover:text-[#fec6d4] transition-colors font-medium">
+            SHOP ALL
+          </a>
+          <a href="#" className="text-[#383838] hover:text-[#fec6d4] transition-colors font-medium">
+            BESTSELLERS
+          </a>
+          {/* <a href="#" className="text-[#383838] hover:text-[#fec6d4] transition-colors font-medium">
+            COLLECTION
+          </a> */}
+          <a href="#" className="text-[#383838] hover:text-[#fec6d4] transition-colors font-medium">
+            ABOUT US
+          </a>
+          <a href="#" className="text-[#383838] hover:text-[#fec6d4] transition-colors font-medium">
+            BLOG
+          </a>
+        </nav>
+
+        {/* Right side icons */}
+        <div className="flex items-center space-x-6">
+          {/* Desktop Icons */}
+          <div className="hidden md:flex items-center space-x-6">
+            {user ? (
+              <>
+                <button className="flex flex-col items-center">
+                  <Search className="w-6 h-6 text-[#383838]" />
+                  <span className="text-sm text-[#383838] mt-2">SEARCH</span>
+                </button>
+                <button className="flex flex-col items-center">
+                  <User className="w-6 h-6 text-[#383838]" />
+                  <span className="text-sm text-[#383838] mt-2">ACCOUNT</span>
+                </button>
+                <button className="flex flex-col items-center">
+                  <ShoppingBag className="w-6 h-6 text-[#383838]" />
+                  <span className="text-sm text-[#383838] mt-2">CART</span>
+                </button>
+              </>
+            ) : (
+              <div className="flex items-center space-x-4">
+                <button onClick={() => navigate("/login")}>
+                  <span className="cursor-pointer text-[#383838] hover:text-primary mt-2 font-semibold transition-colors">
+                    LOGIN
+                  </span>
+                </button>
+                <span className="text-[#383838]">|</span>
+                <button onClick={() => navigate("/register")}>
+                  <span className="cursor-pointer text-[#383838] hover:text-primary mt-2 font-semibold transition-colors">
+                    REGISTER
+                  </span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Menu */}
+          <Sheet>
+            <SheetTrigger asChild className="md:hidden">
+              <Button variant="ghost" size="icon">
+                <Menu className="w-6 h-6 text-[#383838]" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[300px] sm:w-[400px] ml-2">
+              <nav className="flex flex-col space-y-6 mt-6">
+                <a
+                  href="#"
+                  className="text-[#383838] hover:text-[#fec6d4] transition-colors font-medium text-lg"
+                >
+                  SHOP ALL
+                </a>
+                <a
+                  href="#"
+                  className="text-[#383838] hover:text-[#fec6d4] transition-colors font-medium text-lg"
+                >
+                  BEST SELLERS
+                </a>
+                {/* <a
+                  href="#"
+                  className="text-[#383838] hover:text-[#fec6d4] transition-colors font-medium text-lg"
+                >
+                  COLLECTION
+                </a> */}
+                <a
+                  href="#"
+                  className="text-[#383838] hover:text-[#fec6d4] transition-colors font-medium text-lg"
+                >
+                  ABOUT US
+                </a>
+                <a
+                  href="#"
+                  className="text-[#383838] hover:text-[#fec6d4] transition-colors font-medium text-lg"
+                >
+                  BLOG
+                </a>
+                {user ? (
+                  <div className="border-t pt-6 mt-6">
+                    <div className="flex justify-around">
+                      <button className="flex flex-col items-center">
+                        <Search className="w-6 h-6 text-[#383838]" />
+                        <span className="text-sm text-[#383838] mt-2">SEARCH</span>
+                      </button>
+                      <button className="flex flex-col items-center">
+                        <User className="w-6 h-6 text-[#383838]" />
+                        <span className="text-sm text-[#383838] mt-2">ACCOUNT</span>
+                      </button>
+                      <button className="flex flex-col items-center">
+                        <ShoppingBag className="w-6 h-6 text-[#383838]" />
+                        <span className="text-sm text-[#383838] mt-2">CART</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-start gap-6 border-t pt-6 mt-6">
+                    <button onClick={() => navigate("/login")}>
+                      <span className="cursor-pointer text-lg text-[#383838] hover:text-primary mt-2 font-semibold transition-colors">
+                        LOGIN
+                      </span>
+                    </button>
+
+                    <button onClick={() => navigate("/register")}>
+                      <span className="cursor-pointer text-lg text-[#383838] hover:text-primary mt-2 font-semibold transition-colors">
+                        REGISTER
+                      </span>
+                    </button>
+                  </div>
+                )}
+              </nav>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </div>
+    </header>
+  );
+};
+export default GlobalHeader;

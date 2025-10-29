@@ -1,11 +1,12 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import type { ReactElement } from "react";
+import { useAppDispatch } from "@/libs/stores";
+import { uploadFilesThunk } from "@/libs/stores/fileManager/thunk";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { cn } from "@/libs/utils";
 import {
   FaCloudArrowUp,
   FaFile,
@@ -23,6 +24,8 @@ import {
   FaChartColumn,
   FaFileZipper,
 } from "react-icons/fa6";
+
+// File type icons
 const FILE_ICONS: Record<string, ReactElement> = {
   pdf: <FaFilePdf className="h-8 w-8 text-red-500" />,
   doc: <FaFileWord className="h-8 w-8 text-blue-500" />,
@@ -53,131 +56,243 @@ const getFileIcon = (fileName: string) => {
 const formatFileSize = (bytes: number) =>
   bytes === 0
     ? "0 Bytes"
-    : `${(bytes / 1024 ** Math.floor(Math.log(bytes) / Math.log(1024))).toFixed(2)} ${["Bytes", "KB", "MB", "GB"][Math.floor(Math.log(bytes) / Math.log(1024))]}`;
+    : `${(bytes / 1024 ** Math.floor(Math.log(bytes) / Math.log(1024))).toFixed(
+        2,
+      )} ${["Bytes", "KB", "MB", "GB"][Math.floor(Math.log(bytes) / Math.log(1024))]}`;
 
-const FileUploader = ({
+// Types
+interface FileItem {
+  id: string;
+  file: File;
+  progress: number;
+  status: "uploading" | "completed" | "error";
+  preview?: string;
+}
+
+interface FileUploaderProps {
+  userId: string; // cần để gửi lên API
+  accept?: string;
+  multiple?: boolean;
+  maxSize?: number;
+  maxFiles?: number;
+  onFilesChange?: (files: File[]) => void;
+  className?: string;
+  disabled?: boolean;
+  showPreview?: boolean;
+  allowedTypes?: string[];
+  title?: string;
+  showSummary?: boolean;
+  initialFiles?: File[];
+  onUploadComplete?: (urls: string[], fileItemId?: string) => void; // <--- added
+  onFilesRemove?: (removedUrls: string[]) => void; // <-- Thêm này
+}
+
+// Component
+const FileUploader: React.FC<FileUploaderProps> = ({
+  userId,
   accept = "*/*",
   multiple = true,
   maxSize = 10,
   maxFiles = 5,
   onFilesChange,
-  onUpload,
   className,
   disabled = false,
-  showPreview = true,
+  // showPreview = true,
   allowedTypes = [],
   title,
   showSummary = true,
-}: any) => {
-  const [files, setFiles] = useState<any[]>([]);
+  initialFiles = [],
+  onUploadComplete,
+  onFilesRemove, // <-- Thêm này
+}) => {
+  const dispatch = useAppDispatch();
+
+  const [files, setFiles] = useState<FileItem[]>(() =>
+    initialFiles.map((file) => ({
+      id: Math.random().toString(36).substr(2, 9),
+      file,
+      progress: 100,
+      status: "completed",
+      preview: file.type.startsWith("image/") ? URL.createObjectURL(file) : undefined,
+    })),
+  );
+
   const [isDragActive, setIsDragActive] = useState(false);
   const [error, setError] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Allow zip/rar by default if allowedTypes is empty
-  const allowed =
-    allowedTypes.length > 0
-      ? allowedTypes
-      : [
-          "pdf",
-          "doc",
-          "docx",
-          "xls",
-          "xlsx",
-          "jpg",
-          "jpeg",
-          "png",
-          "gif",
-          "webp",
-          "mp4",
-          "avi",
-          "mov",
-          "wmv",
-          "mp3",
-          "wav",
-          "flac",
-          "zip",
-          "rar",
-        ];
+  const allowed = useMemo(
+    () =>
+      allowedTypes.length > 0
+        ? allowedTypes
+        : [
+            "pdf",
+            "doc",
+            "docx",
+            "xls",
+            "xlsx",
+            "jpg",
+            "jpeg",
+            "png",
+            "gif",
+            "webp",
+            "mp4",
+            "avi",
+            "mov",
+            "wmv",
+            "mp3",
+            "wav",
+            "flac",
+            "zip",
+            "rar",
+          ],
+    [allowedTypes],
+  );
 
-  const validateFile = (file: File) => {
-    if (file.size > maxSize * 1024 * 1024) return `File size exceeds ${maxSize}MB limit`;
-    const ext = file.name.split(".").pop()?.toLowerCase() || "";
-    if (allowed.length && !allowed.includes(ext))
-      return `File type not allowed. Allowed: ${allowed.join(", ")}`;
-    return null;
-  };
+  const validateFile = useCallback(
+    (file: File) => {
+      if (file.size > maxSize * 1024 * 1024) return `File size exceeds ${maxSize}MB limit`;
+      const ext = file.name.split(".").pop()?.toLowerCase() || "";
+      if (allowed.length && !allowed.includes(ext))
+        return `File type not allowed. Allowed: ${allowed.join(", ")}`;
+      return null;
+    },
+    [maxSize, allowed],
+  );
+
+  // Store uploaded URLs to track removals
+  const [uploadedUrls, setUploadedUrls] = useState<Record<string, string>>({});
+
+  const handleUpload = useCallback(
+    async (filesToUpload: FileItem[]) => {
+      try {
+        // Gom tất cả files lại gửi 1 lần
+        const allFiles = filesToUpload.map((f) => f.file);
+        const result = await dispatch(uploadFilesThunk({ userId, files: allFiles })).unwrap();
+
+        const extractUrls = (res: any): string[] => {
+          if (!res) return [];
+          if (Array.isArray(res)) return res.map((r) => r?.url || r);
+          if (typeof res === "object") return [res.url || JSON.stringify(res)];
+          if (typeof res === "string") return [res];
+          return [];
+        };
+
+        const urls = extractUrls(result);
+
+        // Store mapping of file ID to URL
+        const urlMapping: Record<string, string> = {};
+        filesToUpload.forEach((file, index) => {
+          if (urls[index]) {
+            urlMapping[file.id] = urls[index];
+          }
+        });
+        setUploadedUrls((prev) => ({ ...prev, ...urlMapping }));
+
+        onUploadComplete?.(urls);
+
+        // Cập nhật trạng thái tất cả thành completed
+        setFiles((prev) =>
+          prev.map((fileItem) =>
+            filesToUpload.some((f) => f.id === fileItem.id)
+              ? { ...fileItem, progress: 100, status: "completed" }
+              : fileItem,
+          ),
+        );
+      } catch (error) {
+        console.error("Upload failed:", error);
+        setError("Upload failed. Please try again.");
+        setFiles((prev) =>
+          prev.map((fileItem) =>
+            filesToUpload.some((f) => f.id === fileItem.id)
+              ? { ...fileItem, status: "error" }
+              : fileItem,
+          ),
+        );
+      }
+    },
+    [dispatch, userId, onUploadComplete],
+  );
 
   const processFiles = useCallback(
     (fileList: FileList) => {
-      let errorMessage = "";
       if (files.length + fileList.length > maxFiles) {
         setError(`Maximum ${maxFiles} files allowed`);
         return;
       }
-      const newFiles = Array.from(fileList).reduce<any[]>((arr, file) => {
-        const err = validateFile(file);
-        if (err) {
-          errorMessage = err;
-          return arr;
+
+      const newFiles: FileItem[] = [];
+      for (const file of Array.from(fileList)) {
+        const validationError = validateFile(file);
+        if (validationError) {
+          setError(validationError);
+          continue;
         }
         const id = Math.random().toString(36).substr(2, 9);
-        const fileItem: any = { id, file, progress: 0, status: "uploading" };
-        if (file.type.startsWith("image/") && showPreview) {
-          const reader = new FileReader();
-          reader.onload = (e) =>
-            setFiles((prev) =>
-              prev.map((f) => (f.id === id ? { ...f, preview: e.target?.result } : f)),
-            );
-          reader.readAsDataURL(file);
-        }
-        arr.push(fileItem);
-        return arr;
-      }, []);
-      if (errorMessage) return setError(errorMessage);
+        newFiles.push({
+          id,
+          file,
+          progress: 0,
+          status: "uploading",
+          preview: file.type.startsWith("image/") ? URL.createObjectURL(file) : undefined,
+        });
+      }
+
       setError("");
       setFiles((prev) => [...prev, ...newFiles]);
-      newFiles.forEach((f) => simulateUploadProgress(f.id));
       onFilesChange?.([...files.map((f) => f.file), ...newFiles.map((f) => f.file)]);
+      if (newFiles.length && userId) handleUpload(newFiles);
     },
-    [files, maxFiles, maxSize, allowed, onFilesChange, showPreview, validateFile],
+    [files, maxFiles, onFilesChange, userId, validateFile, handleUpload],
   );
 
-  const simulateUploadProgress = (fileId: string) => {
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += Math.random() * 30;
-      setFiles((prev) =>
-        prev.map((f) =>
-          f.id === fileId
-            ? {
-                ...f,
-                progress: progress >= 100 ? 100 : Math.round(progress),
-                status: progress >= 100 ? "completed" : "uploading",
-              }
-            : f,
-        ),
-      );
-      if (progress >= 100) clearInterval(interval);
-    }, 200);
+  const removeFile = (fileId: string) => {
+    setFiles((prev) => {
+      const fileToRemove = prev.find((f) => f.id === fileId);
+      if (fileToRemove?.preview && fileToRemove.preview.startsWith("blob:")) {
+        URL.revokeObjectURL(fileToRemove.preview);
+      }
+
+      // Get the URL for this file and notify parent
+      const removedUrl = uploadedUrls[fileId];
+      if (removedUrl && onFilesRemove) {
+        onFilesRemove([removedUrl]);
+      }
+
+      // Remove from uploadedUrls tracking
+      setUploadedUrls((prev) => {
+        const updated = { ...prev };
+        delete updated[fileId];
+        return updated;
+      });
+
+      const newFiles = prev.filter((f) => f.id !== fileId);
+      onFilesChange?.(newFiles.map((f) => f.file));
+      return newFiles;
+    });
   };
 
-  const removeFile = (fileId: string) => {
-    setFiles((prev) => prev.filter((f) => f.id !== fileId));
-    onFilesChange?.(files.filter((f) => f.id !== fileId).map((f) => f.file));
-  };
+  useEffect(() => {
+    return () => {
+      files.forEach((file) => {
+        if (file.preview && file.preview.startsWith("blob:")) {
+          URL.revokeObjectURL(file.preview);
+        }
+      });
+    };
+  }, [files]);
 
   return (
-    <div className={cn("space-y-4", className)}>
-      {/* Upload Area */}
+    <div className={`space-y-4 ${className || ""}`}>
+      {/* Card Upload */}
       <Card
-        className={cn(
+        className={[
           "border-2 border-dashed transition-all duration-200 cursor-pointer",
           isDragActive
             ? "border-blue-500 bg-blue-50/50"
             : "border-slate-300 hover:border-slate-400",
-          disabled && "opacity-50 cursor-not-allowed",
-        )}
+          disabled ? "opacity-50 cursor-not-allowed" : "",
+        ].join(" ")}
       >
         <CardContent
           className="p-6 text-center"
@@ -199,16 +314,16 @@ const FileUploader = ({
         >
           <div className="flex flex-col items-center space-y-3">
             <div
-              className={cn(
+              className={[
                 "p-3 rounded-full transition-colors",
                 isDragActive ? "bg-blue-100" : "bg-slate-100",
-              )}
+              ].join(" ")}
             >
               <FaCloudArrowUp
-                className={cn(
+                className={[
                   "h-8 w-8 transition-colors",
                   isDragActive ? "text-blue-600" : "text-slate-500",
-                )}
+                ].join(" ")}
               />
             </div>
             <div className="space-y-1">
@@ -237,7 +352,7 @@ const FileUploader = ({
         </CardContent>
       </Card>
 
-      {/* Error Message */}
+      {/* Error */}
       {error && (
         <div className="p-3 bg-red-50 border border-red-200 rounded-md flex items-center gap-2">
           <FaXmark className="h-4 w-4 text-red-500" />
@@ -252,22 +367,8 @@ const FileUploader = ({
             <h4 className="text-sm font-medium text-slate-700">
               {title ? `${title} (${files.length})` : `Uploaded Files (${files.length})`}
             </h4>
-            {onUpload && (
-              <Button
-                size="sm"
-                onClick={async () => {
-                  try {
-                    await onUpload(files.map((f) => f.file));
-                  } catch {
-                    setError("Upload failed. Please try again.");
-                  }
-                }}
-                disabled={files.some((f) => f.status === "uploading")}
-              >
-                Upload All
-              </Button>
-            )}
           </div>
+
           <div className="space-y-2">
             {files.map((fileItem) => (
               <Card key={fileItem.id} className="p-3">
@@ -334,6 +435,8 @@ const FileUploader = ({
               </Card>
             ))}
           </div>
+
+          {/* Summary */}
           {showSummary && (
             <>
               <Separator />
@@ -373,6 +476,8 @@ const FileUploader = ({
           )}
         </div>
       )}
+
+      {/* File Input */}
       <input
         ref={fileInputRef}
         type="file"

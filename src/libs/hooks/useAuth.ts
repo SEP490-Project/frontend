@@ -2,7 +2,7 @@ import { useSelector } from "react-redux";
 import type { RootState } from "@/libs/stores";
 
 export const useAuth = () => {
-  const { loading, isAuthenticated, role, user, accessToken, refreshToken, error } = useSelector(
+  const { loading, isAuthenticated, role, user } = useSelector(
     (state: RootState) => state.manageAuthen,
   );
 
@@ -11,8 +11,5 @@ export const useAuth = () => {
     isAuthenticated,
     role,
     user,
-    accessToken,
-    refreshToken,
-    error,
   };
 };

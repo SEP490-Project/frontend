@@ -43,7 +43,7 @@ const INITIAL_TABS = [
   { id: "scope-of-work", label: "Scope of Work", isRequired: true, step: 2 },
   { id: "financial-terms", label: "Financial Terms", isRequired: true, step: 3 },
   { id: "legal-terms", label: "Legal Terms", isRequired: true, step: 4 },
-  { id: "contract-actions", label: "Documents & Actions", isRequired: true, step: 5 },
+  { id: "contract-actions", label: "Documents", isRequired: true, step: 5 },
 ];
 
 const INITIAL_FORM_DATA = {
@@ -98,7 +98,7 @@ const getContractTypeColor = (type: string) =>
 
 const getDefaultFinancialTerms = (type: string) => {
   const baseTerms = {
-    payment_method: "BANK_TRANSFER", // khớp với mẫu JSON
+    payment_method: "BANK_TRANSFER",
   };
 
   switch (type) {
@@ -357,29 +357,31 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
 
       const financialTerms = formData.financialTerms || {};
 
-      // Kiểm tra payment method - bắt buộc cho tất cả
       const hasPaymentMethod = financialTerms.payment_method?.trim();
 
       if (formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR") {
-        // Kiểm tra các field bắt buộc cho ADVERTISING/BRAND_AMBASSADOR
         const hasBasicInfo = !!(hasPaymentMethod && financialTerms.total_cost > 0);
 
-        // Kiểm tra payment schedule - CHỈ validate cho ADVERTISING và BRAND_AMBASSADOR
-        const hasValidSchedule =
-          financialTerms.schedule?.length > 0 &&
-          financialTerms.schedule.every(
-            (item: any) => item.milestone?.trim() && item.amount > 0 && item.due_date,
-          );
+        const schedule = financialTerms.schedule || [];
+        const allItemsValid = schedule.every(
+          (item: any) => item.milestone?.trim() && item.amount > 0 && item.due_date,
+        );
+        const scheduleTotal = schedule.reduce(
+          (sum: number, item: any) => sum + (item.amount || 0),
+          0,
+        );
+        const isScheduleBalanced =
+          Math.abs((financialTerms.total_cost || 0) - scheduleTotal) < 0.01;
 
-        // const scheduleTotal = (financialTerms.schedule || []).reduce(
-        //   (sum: number, item: any) => sum + (item.amount || 0),
-        //   0,
-        // );
+        const breakdownArray = financialTerms.cost_breakdown_array || [];
+        const breakdownTotal = breakdownArray.reduce(
+          (sum: number, item: any) => sum + (item.value || 0),
+          0,
+        );
+        const isBreakdownBalanced =
+          Math.abs((financialTerms.total_cost || 0) - breakdownTotal) < 0.01;
 
-        // const isScheduleBalanced =
-        //   Math.abs((financialTerms.total_cost || 0) - scheduleTotal) < 0.01;
-
-        return hasBasicInfo && hasValidSchedule;
+        return hasBasicInfo && allItemsValid && isScheduleBalanced && isBreakdownBalanced;
       }
 
       if (formData.type === "AFFILIATE") {
@@ -414,11 +416,11 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
 
       if (formData.type === "CO_PRODUCING") {
         // Kiểm tra các field bắt buộc cho CO_PRODUCING - KHÔNG cần schedule
-        const hasBasicInfo = !!(
-          hasPaymentMethod &&
-          financialTerms.profit_distribution_cycle &&
-          financialTerms.profit_distribution_date?.length > 0
-        );
+        // const hasBasicInfo = !!(
+        //   hasPaymentMethod &&
+        //   financialTerms.profit_distribution_cycle &&
+        //   financialTerms.profit_distribution_date?.length > 0
+        // );
 
         // Kiểm tra profit split (phải tổng = 100%)
         const validProfitSplit = !!(
@@ -431,19 +433,13 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
           ) < 0.01
         );
 
-        return hasBasicInfo && validProfitSplit;
+        return validProfitSplit;
       }
 
       return false;
     }
     case "legal-terms": {
-      // Kiểm tra compensationPercent - PHẢI được user nhập thực sự
       const compensationPercent = formData.legalTerms?.compensationPercent;
-
-      // Kiểm tra chặt chẽ hơn:
-      // 1. Không được undefined/null
-      // 2. Phải khác empty string
-      // 3. Phải là số hợp lệ >= 0 và <= 100
       const isValid = !!(
         compensationPercent !== undefined &&
         compensationPercent !== null &&
@@ -663,13 +659,28 @@ const AddContractPage: React.FC = () => {
     setFormData((prev: any) => ({ ...prev, [field]: value }));
   };
 
+  // Modify updateFinancialTerms để xử lý cả formData updates
   const updateFinancialTerms = async (updates: any) => {
-    const newFinancialTerms = { ...formData.financialTerms, ...updates };
+    // Tách formData updates và financialTerms updates
+    const { _formDataUpdates, ...financialUpdates } = updates;
+
+    // Cập nhật formData nếu có _formDataUpdates
+    if (_formDataUpdates) {
+      setFormData((prev: any) => ({
+        ...prev,
+        ..._formDataUpdates,
+      }));
+    }
+
+    // Cập nhật financialTerms
+    const newFinancialTerms = { ...formData.financialTerms, ...financialUpdates };
     setFormData((prev: typeof INITIAL_FORM_DATA) => ({
       ...prev,
       financialTerms: newFinancialTerms,
     }));
-    for (const [key, value] of Object.entries(updates)) {
+
+    // Validation
+    for (const [key, value] of Object.entries(financialUpdates)) {
       const validation = await validateField(`financialTerms.${key}`, value, {
         ...formData,
         financialTerms: newFinancialTerms,
@@ -780,11 +791,12 @@ const AddContractPage: React.FC = () => {
         end_date: formatDateForBackend(formData.endDate),
         currency: "VND",
 
-        ...(formData.financialTerms?.deposit_percent && formData.financialTerms.deposit_percent > 0
-          ? { deposit_percent: formData.financialTerms.deposit_percent }
-          : formData.financialTerms?.deposit_amount && formData.financialTerms.deposit_amount > 0
-            ? { deposit_amount: formData.financialTerms.deposit_amount }
+        ...(formData.deposit_percent && formData.deposit_percent > 0
+          ? { deposit_percent: formData.deposit_percent }
+          : formData.deposit_amount && formData.deposit_amount > 0
+            ? { deposit_amount: formData.deposit_amount }
             : {}),
+        is_deposit_paid: formData.is_deposit_paid,
 
         // Scope of Work
         scope_of_work: {
@@ -803,11 +815,12 @@ const AddContractPage: React.FC = () => {
                   ? "SHARE"
                   : "FIXED",
           payment_method: formData.financialTerms?.payment_method || "BANK_TRANSFER",
+          total_cost: formData.financialTerms?.total_cost || 0,
 
           // Contract type specific terms
           ...(formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR"
             ? {
-                total_cost: formData.financialTerms?.total_cost || 0,
+                // cost_breakdown is already in correct format from handleUpdate conversion
                 cost_breakdown: formData.financialTerms?.cost_breakdown || {},
                 schedule: formData.financialTerms?.schedule || {},
               }
@@ -830,7 +843,6 @@ const AddContractPage: React.FC = () => {
                 profit_split_kol_percent: formData.financialTerms?.profit_split_kol_percent || 0,
                 profit_distribution_cycle: formData.financialTerms?.profit_distribution_cycle,
                 profit_distribution_date: formData.financialTerms?.profit_distribution_date,
-                capital_contribution: formData.financialTerms?.capital_contribution || {},
               }
             : {}),
         },
@@ -849,7 +861,7 @@ const AddContractPage: React.FC = () => {
                 details: [
                   "Contract terminates immediately",
                   "Party B must refund the deposit",
-                  `Party B pays additional ${formData.legalTerms?.compensationPercent || 10}% compensation`,
+                  `Party B pays additional ${formData.legalTerms?.compensationPercent}% compensation`,
                 ],
                 compensation_percent: formData.legalTerms?.compensationPercent,
               },
@@ -917,7 +929,7 @@ const AddContractPage: React.FC = () => {
   const renderTabContent = (tabId: string) => {
     const componentProps = {
       formData,
-      onInputChange: handleInputChange,
+      onInputChange: handleInputChange, // THÊM PROP NÀY
       errors,
       onContractTypeChange: handleTypeChangeRequest,
       onUpdateScopeOfWork: updateScopeOfWork,
@@ -926,7 +938,6 @@ const AddContractPage: React.FC = () => {
       onUpdateFinancialTerms: updateFinancialTerms,
       onContractFilesChange: handleContractFilesChange,
       onProposalFilesChange: handleProposalFilesChange,
-      // THÊM CÁC HANDLERS CHO URLs
       onContractUrlsChange: handleContractUrlsChange,
       onProposalUrlsChange: handleProposalUrlsChange,
       onSubmit: handleSubmit,

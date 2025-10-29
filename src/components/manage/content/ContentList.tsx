@@ -257,9 +257,27 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     setIsTaskSelectionOpen(true);
   };
 
-  const handleTaskSelect = (task: ContentTask) => {
+  const handleTaskSelect = (task: any) => {
+    // Accept either a LegacyTask (id as string) or ContentTask; normalize to ContentTask before forwarding.
     setIsTaskSelectionOpen(false);
-    onCreateNew?.(selectedContentType, task);
+    const normalizedTask: ContentTask = {
+      id: typeof task?.id === "string" ? Number(task.id) : ((task?.id as number) ?? 0),
+      title: task?.title ?? "",
+      type: (task?.type as ContentTask["type"]) ?? "Blog",
+      campaign: task?.campaign ?? "",
+      status: (task?.status as ContentTask["status"]) ?? "to-do",
+      details: {
+        description: task?.details?.description ?? task?.description ?? "",
+        assignee: task?.details?.assignee ?? task?.assignee ?? "",
+        dueTime: task?.details?.dueTime ?? task?.dueTime ?? "",
+        priority:
+          (task?.details?.priority as ContentTask["details"]["priority"]) ??
+          task?.priority ??
+          "Medium",
+      },
+      color: task?.color ?? "#000000",
+    };
+    onCreateNew?.(selectedContentType, normalizedTask);
   };
 
   const handleTaskSelectionClose = () => {

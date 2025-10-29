@@ -2,7 +2,7 @@ import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ContractPDF } from "./ContractPreview";
-import { X, Eye, Download } from "lucide-react";
+import { FaEye, FaFileArrowDown, FaCircleCheck } from "react-icons/fa6";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 
 interface ContractPreviewModalProps {
@@ -22,7 +22,6 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
   console.log("Contract Data for Preview:", contractData);
 
   const formatContractDataForPreview = (formData: any) => {
-    // Helper function to format dates
     const formatDateForPreview = (dateString: string): string => {
       if (!dateString) return "";
       if (dateString.includes("T")) return dateString;
@@ -31,7 +30,6 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
       return date.toISOString();
     };
 
-    // Transform the form data to match the expected contract structure
     return {
       contract_number: formData.contractNumber,
       title: formData.title,
@@ -43,7 +41,6 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
       end_date: formatDateForPreview(formData.endDate),
       currency: "VND",
 
-      // Brand information (from form data)
       brand: {
         name: formData.brandName || "Brand Name",
         representative_name: formData.brandRepresentativeName,
@@ -56,7 +53,6 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
         bank_account_holder: formData.brandBankAccountHolder,
       },
 
-      // Representative information
       representative_name: formData.representativeName,
       representative_role: formData.representativeRole,
       representative_phone: formData.representativePhone,
@@ -66,21 +62,17 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
       representative_bank_account_number: formData.representativeBankAccountNumber,
       representative_bank_account_holder: formData.representativeBankAccountHolder,
 
-      // Deposit information (always provide keys so TS knows these properties exist)
-      deposit_percent: formData.financialTerms?.deposit_percent ?? undefined,
+      deposit_percent: formData.deposit_percent ?? undefined,
       deposit_amount:
-        formData.financialTerms?.deposit_percent && formData.financialTerms?.deposit_percent > 0
-          ? (formData.financialTerms?.total_cost || 0) *
-            (formData.financialTerms.deposit_percent / 100)
-          : (formData.financialTerms?.deposit_amount ?? undefined),
+        formData.deposit_percent && formData.deposit_percent > 0
+          ? (formData.financialTerms?.total_cost || 0) * (formData.deposit_percent / 100)
+          : (formData.deposit_amount ?? undefined),
 
-      // Scope of work
       scope_of_work: {
         general_requirements: formData.scopeOfWork?.general_requirements || [],
         deliverables: formData.scopeOfWork?.deliverables || {},
       },
 
-      // Financial terms
       financial_terms: {
         model:
           formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR"
@@ -92,7 +84,6 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
                 : "FIXED",
         payment_method: formData.financialTerms?.payment_method || "BANK_TRANSFER",
 
-        // Contract type specific terms
         ...(formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR"
           ? {
               total_cost: formData.financialTerms?.total_cost || 0,
@@ -123,7 +114,6 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
           : {}),
       },
 
-      // Legal terms with default compensation percentage
       legal_terms: {
         breach_of_contract: {
           label: formData.legalTerms?.breach_of_contract?.label || "Breach of Contract",
@@ -193,6 +183,20 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
     });
   };
 
+  const formatDateTime = (dateStr?: string) => {
+    if (!dateStr) return "N/A";
+    const normalized = dateStr.replace(" ", "T");
+    const d = new Date(normalized);
+    if (Number.isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   const formatMoney = (amount?: number | null) => {
     const currency = previewData.currency || "VND";
     if (amount === undefined || amount === null) return `0 ${currency}`;
@@ -202,6 +206,41 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
       })} ${currency}`;
     } catch {
       return `${amount} ${currency}`;
+    }
+  };
+
+  const formatPaymentDate = (cycle: string, date: any) => {
+    if (!date) return "N/A";
+
+    const getOrdinal = (n: number) => {
+      if (n === 1) return "1st";
+      if (n === 2) return "2nd";
+      if (n === 3) return "3rd";
+      return `${n}th`;
+    };
+
+    switch (cycle) {
+      case "MONTHLY":
+        return `Day ${date} of every month`;
+
+      case "QUARTERLY":
+        if (typeof date === "object" && date.day && date.month) {
+          const monthInQuarter = ((date.month - 1) % 3) + 1;
+          return `Day ${date.day} of the ${getOrdinal(monthInQuarter)} month of each quarter`;
+        }
+        return "N/A";
+
+      case "ANNUALLY":
+        if (typeof date === "string") {
+          const d = new Date(date);
+          if (!isNaN(d.getTime())) {
+            return `Day ${d.getDate()} of ${d.toLocaleString("en-US", { month: "long" })} every year`;
+          }
+        }
+        return "N/A";
+
+      default:
+        return date;
     }
   };
 
@@ -219,15 +258,15 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
         return events.map((event: any, i: number) => (
           <div key={i} className="mb-6 pl-4 border-l-2 border-blue-400">
             <h4 className="text-sm font-bold text-blue-900 mb-2">
-              {i + 1}. {previewData.title} - Event #{i + 1}
+              {i + 1}. {event.name} - Event #{i + 1}
             </h4>
             <p className="text-xs mb-1">
               <span className="font-semibold">Location:</span> {event.location || "N/A"}
             </p>
             <p className="text-xs mb-1">
               <span className="font-semibold">Date & Duration:</span>{" "}
-              {formatDate(event.date || event.date_time || event.date_time_iso)} (Expected duration:{" "}
-              {event.expected_duration || "N/A"})
+              {formatDateTime(event.date || event.date_time || event.date_time_iso)} (Expected
+              duration: {event.expected_duration || "N/A"})
             </p>
 
             {(event.activities ?? []).length > 0 && (
@@ -392,20 +431,31 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
                     </p>
                   )}
 
+                  {(item.content_requirements ?? []).length > 0 && (
+                    <div className="ml-5 text-xs text-gray-600 mb-1">
+                      • <span className="font-semibold">Content Requirements:</span>
+                      {item.content_requirements.map((req: string, j: number) => (
+                        <p key={j} className="ml-4 text-xs text-gray-600">
+                          ○ {req}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+
                   {item.creative_notes && (
                     <p className="ml-5 text-xs text-gray-600 mb-1">
                       • <span className="font-semibold">Creative Notes:</span> {item.creative_notes}
                     </p>
                   )}
 
-                  {item.content_requirements?.length > 0 && (
-                    <div>
-                      <p className="ml-5 text-xs text-gray-600 font-semibold mb-1">
-                        • Content Requirements:
-                      </p>
-                      {item.content_requirements.map((req: string, j: number) => (
-                        <p key={j} className="ml-8 text-xs text-gray-600">
-                          ○ {req}
+                  {(item.kpis ?? []).length > 0 && (
+                    <div className="ml-5 text-xs text-gray-600 mb-1">
+                      • <span className="font-semibold">Key Performance Indicators (KPIs):</span>
+                      {item.kpis.map((kpi: any, j: number) => (
+                        <p key={j} className="ml-4 text-xs text-gray-600">
+                          ○ <span className="font-semibold">{kpi.metric || "Metric"}:</span>{" "}
+                          {kpi.target ? `${kpi.target}` : "No target specified"}{" "}
+                          {kpi.description && <span className="italic">({kpi.description})</span>}
                         </p>
                       ))}
                     </div>
@@ -446,10 +496,34 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
                 </p>
               )}
 
+              {(item.content_requirements ?? []).length > 0 && (
+                <div className="ml-5 text-xs text-gray-600 mb-1">
+                  • <span className="font-semibold">Content Requirements:</span>
+                  {item.content_requirements.map((req: string, j: number) => (
+                    <p key={j} className="ml-4 text-xs text-gray-600">
+                      ○ {req}
+                    </p>
+                  ))}
+                </div>
+              )}
+
               {item.creative_notes && (
                 <p className="ml-5 text-xs text-gray-600 mb-1">
                   • <span className="font-semibold">Creative Notes:</span> {item.creative_notes}
                 </p>
+              )}
+
+              {(item.kpis ?? []).length > 0 && (
+                <div className="ml-5 text-xs text-gray-600 mb-1">
+                  • <span className="font-semibold">Key Performance Indicators (KPIs):</span>
+                  {item.kpis.map((kpi: any, j: number) => (
+                    <p key={j} className="ml-4 text-xs text-gray-600">
+                      ○ <span className="font-semibold">{kpi.metric || "Metric"}:</span>{" "}
+                      {kpi.target ? `${kpi.target}` : "No target specified"}{" "}
+                      {kpi.description && <span className="italic">({kpi.description})</span>}
+                    </p>
+                  ))}
+                </div>
               )}
             </div>
           ));
@@ -473,8 +547,13 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
             <p className="text-xs mb-1">
               <span className="font-semibold">Distribution Cycle:</span>{" "}
               {financial.profit_distribution_cycle || "N/A"} (
-              <span className="font-semibold">{financial.profit_distribution_date || "N/A"}th</span>{" "}
-              of each cycle)
+              <span className="font-semibold">
+                {formatPaymentDate(
+                  financial.profit_distribution_cycle,
+                  financial.profit_distribution_date,
+                )}
+              </span>
+              )
             </p>
             <div className="mt-2 p-2 bg-gray-100 border-t border-b border-gray-300">
               <p className="text-xs font-semibold mb-1">Profit Distribution Split</p>
@@ -501,9 +580,11 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
             </p>
             <p className="text-xs mb-1">
               <span className="font-semibold">Payment Cycle:</span>{" "}
-              {financial.payment_cycle || "N/A"} (on the{" "}
-              <span className="font-semibold">{financial.payment_date || "N/A"}th</span> of each
-              cycle)
+              {financial.payment_cycle || "N/A"} (on{" "}
+              <span className="font-semibold">
+                {formatPaymentDate(financial.payment_cycle, financial.payment_date)}
+              </span>
+              )
             </p>
             <p className="text-xs mb-1">
               <span className="font-semibold">Base Per Click Rate:</span>{" "}
@@ -604,44 +685,19 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="sticky top-0 bg-white z-10 border-b pb-4">
-          <DialogTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Eye className="h-5 w-5" />
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden rounded-2xl p-0 flex flex-col">
+        <DialogHeader className="px-6 py-4">
+          <div className="flex items-center gap-2">
+            <FaEye className="h-5 w-5 text-indigo-600" />
+            <DialogTitle className="text-lg font-bold text-indigo-900 tracking-wide">
               Contract Preview
-            </div>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
-          </DialogTitle>
+            </DialogTitle>
+          </div>
         </DialogHeader>
 
-        <div className="py-4">
-          {/* Action Buttons */}
-          <div className="flex justify-center gap-4 mb-6 sticky top-16 bg-white z-10 py-2 border-b">
-            <PDFDownloadLink
-              document={<ContractPDF data={previewData} />}
-              fileName={`${previewData.title || "contract"}_preview.pdf`}
-            >
-              {({ loading }) => (
-                <Button variant="outline" disabled={loading}>
-                  <Download className="h-4 w-4 mr-2" />
-                  {loading ? "Generating..." : "Download PDF"}
-                </Button>
-              )}
-            </PDFDownloadLink>
-
-            {onConfirmCreate && (
-              <Button onClick={handleConfirmCreate} className="bg-green-600 hover:bg-green-700">
-                Confirm - Create Draft Contract
-              </Button>
-            )}
-          </div>
-
+        <div className="flex-1 overflow-y-auto px-6 py-6">
           {/* Contract Content Preview */}
           <div className="bg-white text-gray-900 max-w-4xl mx-auto p-8 shadow-2xl leading-relaxed border rounded-lg">
-            {/* Contract Header & Title */}
             <header className="text-center mb-8 border-b border-gray-400 pb-4">
               <div className="flex justify-center mb-4">
                 <img src="/pink.png" alt="Platform Logo" className="h-24 w-auto object-contain" />
@@ -802,7 +858,6 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
               )}
             </section>
 
-            {/* Signatures */}
             <section className="mt-8 pt-6 border-t border-gray-600">
               <p className="text-xs font-bold text-center mb-4">
                 IN WITNESS WHEREOF, the Parties have executed this Agreement on the date first
@@ -832,6 +887,33 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
               </div>
             </section>
           </div>
+        </div>
+        <div className="flex flex-wrap justify-end gap-2 px-6 py-4">
+          <PDFDownloadLink
+            document={<ContractPDF data={previewData} />}
+            fileName={`${previewData.title || "contract"}_preview.pdf`}
+          >
+            {({ loading }) => (
+              <Button
+                variant="outline"
+                className="border-indigo-300 text-indigo-700 hover:bg-indigo-100"
+                disabled={loading}
+              >
+                <FaFileArrowDown className="h-4 w-4 mr-2" />
+                {loading ? "Generating..." : "Download PDF"}
+              </Button>
+            )}
+          </PDFDownloadLink>
+
+          {onConfirmCreate && (
+            <Button
+              onClick={handleConfirmCreate}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              <FaCircleCheck className="h-4 w-4 mr-2" />
+              Create Draft Contract
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>

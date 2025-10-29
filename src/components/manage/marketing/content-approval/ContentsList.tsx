@@ -64,7 +64,7 @@ const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
       const blogContent = contentData.filter(
         (content) =>
           content.content_type === "blog" &&
-          (content.status === "pending" || content.status === "posted"),
+          (content.status === "PENDING" || content.status === "PUBLISHED"),
       );
       setContents(blogContent);
       setPagination(response.data.pagination);
@@ -150,7 +150,7 @@ const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
   };
 
   // Format published date
-  const formatPublishedDate = (dateString: string | null) => {
+  const formatPublishedDate = (dateString: string | null | undefined) => {
     if (!dateString) {
       return "Not published";
     }
@@ -294,7 +294,9 @@ const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
                     </TableCell>
                     <TableCell>{getStatusBadge(content.status)}</TableCell>
                     <TableCell className="text-sm text-gray-600 hidden md:table-cell">
-                      {formatPublishedDate(content.status === "posted" ? content.date_time : null)}
+                      {formatPublishedDate(
+                        content.status === "PUBLISHED" ? content.date_time : null,
+                      )}
                     </TableCell>
                     <TableCell className="text-sm text-gray-600 hidden lg:table-cell">
                       {content.actor}

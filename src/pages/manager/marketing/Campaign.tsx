@@ -89,14 +89,6 @@ const CampaignPage: React.FC = () => {
     return d.toLocaleDateString("vi-VN");
   };
 
-  // Format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(amount);
-  };
-
   return (
     <div className="min-h-fit p-4 sm:p-6">
       <div className="flex justify-between items-center mb-6">
@@ -174,7 +166,6 @@ const CampaignPage: React.FC = () => {
                     <TableHead className="font-semibold">Type</TableHead>
                     <TableHead className="font-semibold">Status</TableHead>
                     <TableHead className="font-semibold">Duration</TableHead>
-                    <TableHead className="font-semibold">Budget</TableHead>
                     <TableHead className="font-semibold">Contract</TableHead>
                     <TableHead className="font-semibold">Created</TableHead>
                     <TableHead className="font-semibold">Actions</TableHead>
@@ -211,11 +202,6 @@ const CampaignPage: React.FC = () => {
                         <div className="text-sm">
                           <div>{formatDate(campaign.start_date)}</div>
                           <div className="text-gray-500">to {formatDate(campaign.end_date)}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <div className="text-sm font-medium">
-                          {formatCurrency(campaign.budget_projected)}
                         </div>
                       </TableCell>
                       <TableCell className="py-4">
@@ -307,10 +293,6 @@ const CampaignPage: React.FC = () => {
                     <div>
                       <span className="font-medium">Duration:</span>{" "}
                       {formatDate(campaign.start_date)} - {formatDate(campaign.end_date)}
-                    </div>
-                    <div>
-                      <span className="font-medium">Budget:</span>{" "}
-                      {formatCurrency(campaign.budget_projected)}
                     </div>
                     <div>
                       <span className="font-medium">Contract:</span> {campaign.contract_number}

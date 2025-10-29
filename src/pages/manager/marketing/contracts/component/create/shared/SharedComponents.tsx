@@ -31,41 +31,38 @@ export const CollapsibleSection: React.FC<{
   actionComponent?: React.ReactNode;
 }> = ({ title, defaultOpen = false, children, badge, actionComponent }) => {
   const [open, setOpen] = useState<boolean>(defaultOpen);
+
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
       <div className="border border-pink-200 rounded-lg overflow-hidden shadow-sm">
-        <button
-          onClick={() => setOpen(!open)}
-          className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-pink-50 via-rose-50 to-pink-100 hover:from-pink-100 hover:to-rose-100 transition-all"
-        >
+        <div className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-pink-50 via-rose-50 to-pink-100 hover:from-pink-100 hover:to-rose-100 transition-all">
           <CollapsibleTrigger asChild>
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-pink-900">{title}</span>
-                {badge !== undefined && (
-                  <span
-                    className="text-white text-xs px-2 py-1 rounded-full"
-                    style={{ backgroundColor: "#ff9fb2" }}
-                  >
-                    {badge}
-                  </span>
-                )}
-              </div>
-
-              <div className="flex items-center gap-3">
-                {actionComponent}
-                <span className="flex items-center">
-                  {open ? (
-                    <FaChevronUp className="w-4 h-4" style={{ color: "#ff9fb2" }} />
-                  ) : (
-                    <FaChevronDown className="w-4 h-4" style={{ color: "#ff9fb2" }} />
-                  )}
+            <button
+              type="button"
+              className="flex items-center gap-2 text-pink-900 font-medium focus:outline-none"
+            >
+              <span>{title}</span>
+              {badge !== undefined && (
+                <span
+                  className="text-white text-xs px-2 py-1 rounded-full"
+                  style={{ backgroundColor: "#ff9fb2" }}
+                >
+                  {badge}
                 </span>
-              </div>
-            </div>
+              )}
+            </button>
           </CollapsibleTrigger>
-        </button>
-
+          <div className="flex items-center gap-3">
+            {actionComponent}
+            <button type="button" onClick={() => setOpen(!open)} className="focus:outline-none">
+              {open ? (
+                <FaChevronUp className="w-4 h-4" style={{ color: "#ff9fb2" }} />
+              ) : (
+                <FaChevronDown className="w-4 h-4" style={{ color: "#ff9fb2" }} />
+              )}
+            </button>
+          </div>
+        </div>
         <CollapsibleContent>
           <div className="p-4 bg-white">{children}</div>
         </CollapsibleContent>

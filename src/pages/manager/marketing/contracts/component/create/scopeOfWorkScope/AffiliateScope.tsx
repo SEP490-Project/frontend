@@ -176,9 +176,16 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
               </Label>
               <Input
                 id="tracking-link"
-                placeholder="https://www.example.com"
+                placeholder="example.com"
                 value={deliverables.tracking_link || ""}
-                onChange={(e) => updateDeliverables({ tracking_link: e.target.value })}
+                onChange={(e) => {
+                  let val = e.target.value.trim();
+                  if (val && !/^https?:\/\//i.test(val)) {
+                    val = "https://" + val.replace(/^\/+/, "");
+                  }
+
+                  updateDeliverables({ tracking_link: val });
+                }}
                 className="bg-white border-pink-200 focus:border-pink-400"
               />
               <p className="text-xs text-gray-500 mt-1">

@@ -329,6 +329,8 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
         return <Badge className="bg-gray-100 text-gray-800">Draft</Badge>;
       case "pending":
         return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+      case "rejected":
+        return <Badge className="bg-red-100 text-red-800">Rejected</Badge>;
       default:
         return <Badge className="bg-gray-100 text-gray-800">{status}</Badge>;
     }
@@ -420,6 +422,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                 <SelectItem value="posted">Posted</SelectItem>
                 <SelectItem value="draft">Draft</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -561,10 +564,13 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                             <Eye className="w-4 h-4 mr-2" />
                             {isLoadingDetail ? "Loading..." : "View"}
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => onEdit?.(content)}>
-                            <Edit className="w-4 h-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
+                          {/* Only show Edit for draft and rejected content */}
+                          {(content.status === "draft" || content.status === "rejected") && (
+                            <DropdownMenuItem onClick={() => onEdit?.(content)}>
+                              <Edit className="w-4 h-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                          )}
                           {content.status === "pending" && (
                             <>
                               <DropdownMenuItem
@@ -583,13 +589,16 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                               </DropdownMenuItem>
                             </>
                           )}
-                          <DropdownMenuItem
-                            onClick={() => handleDelete(content)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
+                          {/* Only show Delete for draft and rejected content */}
+                          {(content.status === "draft" || content.status === "rejected") && (
+                            <DropdownMenuItem
+                              onClick={() => handleDelete(content)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>

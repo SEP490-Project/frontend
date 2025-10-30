@@ -1,14 +1,40 @@
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { TaskSidebar } from "@/components/manage/content/TaskSidebar";
 import { TaskList } from "@/components/manage/content/TaskList";
+import { TaskDetail } from "@/components/manage/content/TaskDetail";
 import { TaskProvider } from "@/libs/contexts/TaskContext";
 
 export default function TaskManagement() {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [showTaskDetail, setShowTaskDetail] = useState(false);
+  const previousDateRef = useRef<Date | null>(null);
+
+  // Close task detail when date changes
+  useEffect(() => {
+    // Only close if this is not the first render and date actually changed
+    if (previousDateRef.current && previousDateRef.current.getTime() !== currentDate.getTime()) {
+      if (showTaskDetail) {
+        setShowTaskDetail(false);
+        setSelectedTaskId(null);
+      }
+    }
+    previousDateRef.current = currentDate;
+  }, [currentDate, showTaskDetail]);
+
+  const handleViewTaskDetail = (taskId: string) => {
+    setSelectedTaskId(taskId);
+    setShowTaskDetail(true);
+  };
+
+  const handleCloseTaskDetail = () => {
+    setShowTaskDetail(false);
+    setSelectedTaskId(null);
+  };
 
   const goToToday = () => {
     setCurrentDate(new Date());
@@ -52,7 +78,7 @@ export default function TaskManagement() {
     <TaskProvider>
       <div className="flex min-h-screen">
         {/* Left Sidebar */}
-        <div className="w-80 border-r border-border p-6 flex flex-col">
+        <div className="w-80 border-r mt-0.5 border-border p-6 flex flex-col">
           <div className="mb-6">
             <h1 className="text-2xl font-semibold text-foreground">Assigned Tasks</h1>
           </div>
@@ -102,8 +128,19 @@ export default function TaskManagement() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-hidden">
-            <TaskList currentDate={currentDate} />
+          <div className="flex-1 overflow-hidden relative">
+            <TaskList currentDate={currentDate} onViewTask={handleViewTaskDetail} />
+
+            {/* Task Detail Overlay */}
+            {showTaskDetail && (
+              <div className="absolute inset-0 z-50">
+                <TaskDetail
+                  taskId={selectedTaskId}
+                  onClose={handleCloseTaskDetail}
+                  isVisible={showTaskDetail}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

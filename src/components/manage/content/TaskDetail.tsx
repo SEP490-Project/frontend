@@ -70,7 +70,12 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
           ? "in-progress"
           : "completed",
     details: {
-      description: selectedTask.description || "No description available",
+      description:
+        typeof selectedTask.description === "string"
+          ? selectedTask.description
+          : selectedTask.description && typeof selectedTask.description === "object"
+            ? JSON.stringify(selectedTask.description)
+            : "No description available",
       assignee: selectedTask.assigned_to_name || "Unassigned",
       dueTime: selectedTask.deadline
         ? new Date(selectedTask.deadline).toLocaleTimeString("en-US", {
@@ -111,14 +116,14 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
         duration: 0.4,
         ease: [0.4, 0.0, 0.2, 1],
       }}
-      className="w-full bg-white overflow-y-auto"
+      className="w-full bg-white h-full flex flex-col"
     >
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.1 }}
-        className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-sm"
+        className="bg-white border-b border-gray-200 px-4 lg:px-6 py-3 lg:py-4 flex items-center justify-between shadow-sm flex-shrink-0"
       >
         <div className="flex items-center gap-4">
           <motion.div
@@ -147,7 +152,7 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
       </motion.div>
 
       {/* Content */}
-      <div className="px-6 py-6 space-y-8">
+      <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-4 lg:py-6 space-y-6 lg:space-y-8">
         {/* Task Overview */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
@@ -162,7 +167,7 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
           <div className="space-y-4">
             <p className="text-gray-700 leading-relaxed">{legacyTask.details.description}</p>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-white p-4 rounded-lg border border-gray-100">
                 <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
                   <User className="h-4 w-4" />
@@ -213,7 +218,7 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
             <Briefcase className="h-5 w-5 text-blue-600" />
             Task Information
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="bg-white p-4 rounded-lg border border-gray-100">
               <p className="text-sm text-gray-500 mb-1">Task ID</p>
               <p className="font-semibold text-gray-900">{selectedTask.id}</p>

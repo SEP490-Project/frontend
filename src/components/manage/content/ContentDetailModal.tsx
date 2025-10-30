@@ -153,29 +153,6 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
               </div>
             </div>
 
-            {/* Featured Image/Video */}
-            <div className="w-full rounded-lg overflow-hidden">
-              {content.content_type === "video" &&
-              content.json_content &&
-              typeof content.json_content === "object" &&
-              "videoUrl" in content.json_content ? (
-                <video
-                  className="w-full aspect-video object-cover"
-                  controls
-                  poster="/api/placeholder/800/400"
-                >
-                  <source src={String((content.json_content as any).videoUrl)} type="video/mp4" />
-                  Your browser does not support the video tag.
-                </video>
-              ) : (
-                <img
-                  src="/api/placeholder/800/400"
-                  alt={content.title}
-                  className="w-full aspect-video object-cover"
-                />
-              )}
-            </div>
-
             {/* Content Body */}
             <div>
               {(() => {

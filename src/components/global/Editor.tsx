@@ -33,7 +33,6 @@ import {
   List,
   ListOrdered,
   Link2,
-  Unlink,
   ImageIcon,
   AlignLeft,
   AlignCenter,
@@ -45,8 +44,10 @@ import {
   Redo,
   Quote,
   Minus,
+  Unlink,
 } from "lucide-react";
 import { isTiptapJson } from "@/libs/helper/tiptapHelper";
+import { useAuth } from "@/libs/hooks/useAuth";
 
 interface TiptapEditorProps {
   initialContent?: string | object;
@@ -80,6 +81,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
     return initialContent;
   };
 
+  const { user } = useAuth();
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -517,6 +519,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
                   <DialogTitle>Upload Image</DialogTitle>
                 </DialogHeader>
                 <FileUploader
+                  userId={user?.id || ""}
                   accept="image/*"
                   multiple={false}
                   maxSize={5}

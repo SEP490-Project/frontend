@@ -12,8 +12,9 @@ pipeline {
     }
 
     parameters {
-        booleanParam(name: 'RUN_TESTS', defaultValue: true, description: 'Run tests before build')
+        booleanParam(name: 'RUN_TESTS', defaultValue: false, description: 'Run tests before build')
         choice(name: 'ENVIRONMENT', choices: ['STAGING', 'PRODUCTION'], description: 'Environment to inject .env file for')
+        choice(name: 'BRANCH_NAME', choices: ['-- Select --','main', 'staging', 'pre-staging'], description: 'Select branch to build')
     }
 
     environment {
@@ -29,9 +30,12 @@ pipeline {
                 script {
                     utils = load 'script.groovy'
                     def commitSHA = sh(returnStdout: true, script: 'git rev-parse HEAD').trim().take(7)
-                    def branchName = env.BRANCH_NAME ?: env.GIT_BRANCH?.replaceAll('origin/', '')
+                    def branchName = params.BRANCH_NAME == '-- Select --' ?
+                        env.GIT_BRANCH.replaceFirst(/^origin\//, '') : params.Branch_NAME
+                    env.BRANCH_NAME = branchName
 
                     currentBuild.displayName = "${branchName}-${commitSHA}"
+                    echo "🔧 Build Display Name set to: ${currentBuild.displayName}"
                 }
                 sshagent (credentials: ["${env.GIT_CREDENTIALS_ID}"]) {
                     sh 'ssh -o StrictHostKeyChecking=no -T git@github.com || true'
@@ -43,10 +47,8 @@ pipeline {
             steps {
                 script {
                     cleanWs()
-                    utils.checkoutRepo(env.FRONTEND_REPO, "*/${env.BRANCH_NAME ?: 'main'}")
-                    env.GIT_COMMIT = sh(returnStdout: true, script: 'git rev-parse HEAD').trim()
-                    env.BRANCH_NAME = sh(returnStdout: true, script: 'git rev-parse --abbrev-ref HEAD').trim()
-                    currentBuild.displayName = "${env.BRANCH_NAME}-${env.GIT_COMMIT.take(7)}"
+                    def checkoutBranch = env.BRANCH_NAME ?: 'main'
+                    utils.checkoutRepo(env.FRONTEND_REPO, "*/${checkoutBranch}")
                 }
             }
         }
@@ -71,11 +73,26 @@ pipeline {
         stage('Install & Build Frontend') {
             steps {
                 script {
-                    sh 'npm ci'
-                    if (params.RUN_TESTS) {
-                        utils.runTests()
+                    try {
+                        unstash 'node_modules_cache'
+                        echo 'Restored node_modules from stash.'
+                    } catch (Exception e) {
+                        echo 'No previous cache found, running npm ci...'
+                        sh 'npm ci'
+                        stash name: 'node_modules_cache', includes: 'node_modules/**'
                     }
                     utils.buildFrontend()
+                }
+            }
+        }
+
+        stage ('Testing Frontend') {
+            when {
+                expression { params.RUN_TESTS }
+            }
+            steps {
+                script {
+                    utils.runTests()
                 }
             }
         }
@@ -110,3 +127,4 @@ pipeline {
         }
     }
 }
+

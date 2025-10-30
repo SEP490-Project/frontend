@@ -1,13 +1,5 @@
 // ========== FRONTEND PIPELINE HELPERS ==========
 
-// ---------- Pipeline Parameters ----------
-def getParameters() {
-    return [
-        choice(name: 'ENVIRONMENT', choices: ['STAG', 'PROD'], description: 'Select environment for deployment'),
-        booleanParam(name: 'RUN_TESTS', defaultValue: true, description: 'Run tests before build')
-    ]
-}
-
 // ---------- Git Checkout ----------
 def checkoutRepo(url, branchRegex) {
     checkout([

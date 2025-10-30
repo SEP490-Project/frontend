@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { campaign, getCampaignsByBrand, getCampaignById } from "./thunk";
+import { campaign, createCampaign, getCampaignsByBrand, getCampaignById } from "./thunk";
 import type { CampaignData } from "@/libs/types/campaign";
 
 interface stateType {
@@ -13,8 +13,8 @@ interface stateType {
     has_next: boolean;
     has_prev: boolean;
   } | null;
-  detailLoading: boolean;
   campaignDetail: CampaignData | null;
+  detailLoading: boolean;
   error: string | null;
 }
 
@@ -22,18 +22,21 @@ const initialState: stateType = {
   loading: false,
   campaigns: [],
   pagination: null,
-  detailLoading: false,
   campaignDetail: null,
+  detailLoading: false,
   error: null,
 };
 
 export const manageCampaignSlice = createSlice({
   name: "manageCampaign",
   initialState,
-  reducers: {},
+  reducers: {
+    clearError: (state) => {
+      state.error = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
-      // Generic campaigns
       .addCase(campaign.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -48,7 +51,18 @@ export const manageCampaignSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-      // Get campaigns by brand
+      .addCase(createCampaign.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(createCampaign.fulfilled, (state) => {
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(createCampaign.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
       .addCase(getCampaignsByBrand.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -61,25 +75,27 @@ export const manageCampaignSlice = createSlice({
       })
       .addCase(getCampaignsByBrand.rejected, (state, action) => {
         state.loading = false;
+        state.campaigns = [];
+        state.pagination = null;
         state.error = action.payload as string;
       })
-      // Get campaign by ID
       .addCase(getCampaignById.pending, (state) => {
         state.detailLoading = true;
         state.error = null;
       })
       .addCase(getCampaignById.fulfilled, (state, action) => {
         state.detailLoading = false;
-        // The API returns { data: CampaignData, ... } structure
-        state.campaignDetail = action.payload.data;
+        state.campaignDetail = action.payload;
         state.error = null;
       })
       .addCase(getCampaignById.rejected, (state, action) => {
         state.detailLoading = false;
+        state.campaignDetail = null;
         state.error = action.payload as string;
       });
   },
 });
 
+export const { clearError } = manageCampaignSlice.actions;
 export const { reducer: manageCampaignReducer, actions: manageCampaignActions } =
   manageCampaignSlice;

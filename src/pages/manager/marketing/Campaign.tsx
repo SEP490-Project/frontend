@@ -18,11 +18,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FaEye, FaPenToSquare, FaFilter, FaPlus } from "react-icons/fa6";
-import { Trash, Loader2, Target } from "lucide-react";
+import { Loader2, Target } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import PaginationTable from "@/components/global/PaginationTable";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { DeleteModal } from "@/components/modal/DeleteModal";
 import { useNavigate } from "react-router";
 import { useCampaign } from "@/libs/hooks/useCampaign";
 import { useAppDispatch } from "@/libs/stores";
@@ -91,14 +89,6 @@ const CampaignPage: React.FC = () => {
     return d.toLocaleDateString("vi-VN");
   };
 
-  // Format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(amount);
-  };
-
   return (
     <div className="min-h-fit p-4 sm:p-6">
       <div className="flex justify-between items-center mb-6">
@@ -108,7 +98,7 @@ const CampaignPage: React.FC = () => {
         </div>
         <Button
           className="bg-primary hover:bg-[#f794a8] text-white flex items-center gap-2"
-          onClick={() => navigate("/manage/marketing/campaigns/add")}
+          onClick={() => navigate("/manage/marketing/campaigns/create")}
         >
           <FaPlus className="h-4 w-4" />
           Create Campaign
@@ -176,7 +166,6 @@ const CampaignPage: React.FC = () => {
                     <TableHead className="font-semibold">Type</TableHead>
                     <TableHead className="font-semibold">Status</TableHead>
                     <TableHead className="font-semibold">Duration</TableHead>
-                    <TableHead className="font-semibold">Budget</TableHead>
                     <TableHead className="font-semibold">Contract</TableHead>
                     <TableHead className="font-semibold">Created</TableHead>
                     <TableHead className="font-semibold">Actions</TableHead>
@@ -213,11 +202,6 @@ const CampaignPage: React.FC = () => {
                         <div className="text-sm">
                           <div>{formatDate(campaign.start_date)}</div>
                           <div className="text-gray-500">to {formatDate(campaign.end_date)}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <div className="text-sm font-medium">
-                          {formatCurrency(campaign.budget_projected)}
                         </div>
                       </TableCell>
                       <TableCell className="py-4">
@@ -267,25 +251,6 @@ const CampaignPage: React.FC = () => {
                               <p>Edit campaign</p>
                             </TooltipContent>
                           </Tooltip>
-                          <Dialog>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <DialogTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 w-8 p-0 hover:bg-red-50"
-                                  >
-                                    <Trash className="text-red-600" />
-                                  </Button>
-                                </DialogTrigger>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Delete campaign</p>
-                              </TooltipContent>
-                            </Tooltip>
-                            <DeleteModal name={campaign.name} />
-                          </Dialog>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -330,10 +295,6 @@ const CampaignPage: React.FC = () => {
                       {formatDate(campaign.start_date)} - {formatDate(campaign.end_date)}
                     </div>
                     <div>
-                      <span className="font-medium">Budget:</span>{" "}
-                      {formatCurrency(campaign.budget_projected)}
-                    </div>
-                    <div>
                       <span className="font-medium">Contract:</span> {campaign.contract_number}
                     </div>
                     <div className="text-xs text-gray-500 truncate">{campaign.contract_title}</div>
@@ -372,25 +333,6 @@ const CampaignPage: React.FC = () => {
                         <p>Edit campaign</p>
                       </TooltipContent>
                     </Tooltip>
-                    <Dialog>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 hover:bg-red-50"
-                            >
-                              <Trash className="text-red-600" />
-                            </Button>
-                          </DialogTrigger>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Delete campaign</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      <DeleteModal name={campaign.name} />
-                    </Dialog>
                   </div>
                 </div>
               ))}
@@ -408,7 +350,7 @@ const CampaignPage: React.FC = () => {
                 </p>
                 <Button
                   className="bg-primary hover:bg-[#f794a8] text-white"
-                  onClick={() => navigate("/manage/marketing/campaigns/add")}
+                  onClick={() => navigate("/manage/marketing/campaigns/create")}
                 >
                   <FaPlus className="h-4 w-4 mr-2" />
                   Create Campaign

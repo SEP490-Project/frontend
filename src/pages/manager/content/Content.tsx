@@ -18,6 +18,7 @@ const ManageContent = () => {
   const [currentContentType, setCurrentContentType] = useState<ContentType>("blog");
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [pendingSaveData, setPendingSaveData] = useState<{
     content: CreateContentRequest | { html: string; json: object };
     contentType: "blog" | "video";
@@ -35,8 +36,9 @@ const ManageContent = () => {
   };
 
   const handleConfirmSave = async () => {
-    if (!pendingSaveData) return;
+    if (!pendingSaveData || isSaving) return;
 
+    setIsSaving(true);
     const { content } = pendingSaveData;
 
     try {
@@ -101,6 +103,8 @@ const ManageContent = () => {
       // Close modal and clear pending data even on error
       setShowConfirmModal(false);
       setPendingSaveData(null);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -182,7 +186,15 @@ const ManageContent = () => {
         </div>
 
         {/* Save Confirmation Modal */}
-        <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
+        <Dialog
+          open={showConfirmModal}
+          onOpenChange={(open) => {
+            // Prevent closing modal while saving
+            if (!isSaving) {
+              setShowConfirmModal(open);
+            }
+          }}
+        >
           {pendingSaveData && (
             <SaveConfirmModal
               contentTitle={(() => {
@@ -198,6 +210,7 @@ const ManageContent = () => {
               contentType={pendingSaveData.contentType}
               isUpdate={!!editingContent}
               onConfirm={handleConfirmSave}
+              isLoading={isSaving}
             />
           )}
         </Dialog>

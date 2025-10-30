@@ -1,4 +1,4 @@
-import { Save } from "lucide-react";
+import { Save, Loader2 } from "lucide-react";
 import {
   DialogClose,
   DialogContent,
@@ -13,6 +13,7 @@ export interface SaveConfirmModalProps {
   contentType: "blog" | "video";
   isUpdate: boolean;
   onConfirm: () => void;
+  isLoading?: boolean;
 }
 
 export const SaveConfirmModal = ({
@@ -20,6 +21,7 @@ export const SaveConfirmModal = ({
   contentType,
   isUpdate,
   onConfirm,
+  isLoading = false,
 }: SaveConfirmModalProps): React.ReactElement => {
   const action = isUpdate ? "Update" : "Save";
   const actionLower = isUpdate ? "update" : "save";
@@ -51,13 +53,26 @@ export const SaveConfirmModal = ({
 
       <DialogFooter className="flex justify-end space-x-2">
         <DialogClose asChild>
-          <button className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Cancel</button>
+          <button
+            className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isLoading}
+          >
+            Cancel
+          </button>
         </DialogClose>
         <button
-          className="px-4 py-2 bg-primary text-white rounded hover:bg-[#f794a8]"
+          className="px-4 py-2 bg-primary text-white rounded hover:bg-[#f794a8] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           onClick={onConfirm}
+          disabled={isLoading}
         >
-          {action} Content
+          {isLoading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>{action} Content</>
+          )}
         </button>
       </DialogFooter>
     </DialogContent>

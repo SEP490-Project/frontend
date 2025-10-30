@@ -21,7 +21,7 @@ import {
   CommandInput,
   CommandItem,
 } from "@/components/ui/command";
-import { X, Tag } from "lucide-react";
+import { X, Tag as TagIcon } from "lucide-react";
 
 import type { Content, CreateContentRequest } from "@/libs/types/content";
 import { ArrowLeft, User, Calendar, Target, FileText } from "lucide-react";
@@ -33,18 +33,10 @@ import {
 } from "@/libs/helper/taskUtils";
 import { useAuth } from "@/libs/hooks/useAuth";
 import { getBrandIdFromToken } from "@/libs/helper/helper";
-import { mockTags } from "@/pages/manager/content/mock-data/tag-mock-data";
 import { useNavigationBlocker } from "@/libs/hooks/useNavigationBlocker";
+import { useTag } from "@/libs/hooks/useTag";
 
-interface Tag {
-  id: string;
-  name: string;
-  description: string;
-  usage_count: number;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
-}
+import type { Tag } from "@/libs/types/tag";
 
 type ContentType = "blog" | "video";
 
@@ -66,8 +58,8 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
   // Get user from auth state
   const { user } = useAuth();
 
-  // Get available tags (filtered to show only non-deleted)
-  const availableTags = mockTags.filter((tag) => tag.deleted_at === null);
+  // Get available tags from API
+  const { tags: availableTags, loading: tagsLoading, error: tagsError } = useTag();
 
   // Initialize selected tags from editing content
   const [selectedTags, setSelectedTags] = useState<Tag[]>(() => {
@@ -383,7 +375,7 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
                   key={tag.id}
                   className="flex items-center gap-1 px-3 py-1 bg-[#FF9DB0] hover:bg-pink-600 text-white border-0"
                 >
-                  <Tag className="h-3 w-3" />
+                  <TagIcon className="h-3 w-3" />
                   {tag.name}
                   <Button
                     type="button"
@@ -415,7 +407,7 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
                       variant="outline"
                       className="justify-start gap-2 text-muted-foreground border-dashed hover:border-[#FF9DB0] hover:text-[#FF9DB0] transition-colors"
                     >
-                      <Tag className="h-4 w-4" />
+                      <TagIcon className="h-4 w-4" />
                       Add tags...
                     </Button>
                   )}
@@ -423,34 +415,48 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
                 <PopoverContent className="w-full p-0 bg-white border" align="start">
                   <Command className="bg-white">
                     <CommandInput placeholder="Search tags..." className="border-0 focus:ring-0" />
-                    <CommandEmpty>No tags found.</CommandEmpty>
-                    <CommandGroup className="max-h-64 overflow-auto">
-                      {availableTags
-                        .filter((tag) => !selectedTags.some((selected) => selected.id === tag.id))
-                        .map((tag) => (
-                          <CommandItem
-                            key={tag.id}
-                            value={tag.name}
-                            onSelect={() => handleTagSelect(tag)}
-                            className="cursor-pointer hover:bg-[#FF9DB0]/10 data-[selected]:bg-[#FFFFFF]/20"
-                          >
-                            <div className="flex items-center space-x-2 flex-1">
-                              <Tag className="h-4 w-4 text-[#FF9DB0]" />
-                              <div className="flex-1">
-                                <div className="font-medium">{tag.name}</div>
-                                {tag.description && (
-                                  <div className="text-sm text-muted-foreground">
-                                    {tag.description}
+                    {tagsLoading ? (
+                      <div className="p-4 text-center text-sm text-muted-foreground">
+                        Loading tags...
+                      </div>
+                    ) : tagsError ? (
+                      <div className="p-4 text-center text-sm text-red-500">
+                        Error loading tags: {tagsError}
+                      </div>
+                    ) : (
+                      <>
+                        <CommandEmpty>No tags found.</CommandEmpty>
+                        <CommandGroup className="max-h-64 overflow-auto">
+                          {availableTags
+                            .filter(
+                              (tag) => !selectedTags.some((selected) => selected.id === tag.id),
+                            )
+                            .map((tag) => (
+                              <CommandItem
+                                key={tag.id}
+                                value={tag.name}
+                                onSelect={() => handleTagSelect(tag)}
+                                className="cursor-pointer hover:bg-[#FF9DB0]/10 data-[selected]:bg-[#FFFFFF]/20"
+                              >
+                                <div className="flex items-center space-x-2 flex-1">
+                                  <TagIcon className="h-4 w-4 text-[#FF9DB0]" />
+                                  <div className="flex-1">
+                                    <div className="font-medium">{tag.name}</div>
+                                    {tag.description && (
+                                      <div className="text-sm text-muted-foreground">
+                                        {tag.description}
+                                      </div>
+                                    )}
                                   </div>
-                                )}
-                              </div>
-                              <div className="text-xs text-muted-foreground bg-[#FF9DB0]/10 px-2 py-1 rounded-full">
-                                {tag.usage_count} uses
-                              </div>
-                            </div>
-                          </CommandItem>
-                        ))}
-                    </CommandGroup>
+                                  <div className="text-xs text-muted-foreground bg-[#FF9DB0]/10 px-2 py-1 rounded-full">
+                                    {tag.usage_count} uses
+                                  </div>
+                                </div>
+                              </CommandItem>
+                            ))}
+                        </CommandGroup>
+                      </>
+                    )}
                   </Command>
                 </PopoverContent>
               </Popover>

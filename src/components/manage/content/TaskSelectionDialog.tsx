@@ -13,6 +13,8 @@ import { Calendar, User, Eye, FileText, Video, Loader2 } from "lucide-react";
 import React from "react";
 import { useTaskManager } from "@/libs/hooks/useTask";
 import { convertApiTaskToLegacy, type LegacyTask } from "@/libs/utils/taskConverter";
+import { manageTask } from "@/libs/services/manageTask";
+import { toast } from "sonner";
 
 // Use the legacy task type for backward compatibility
 type ContentTask = LegacyTask;
@@ -38,6 +40,7 @@ const TaskSelectionDialog: React.FC<TaskSelectionDialogProps> = ({
 }) => {
   const [selectedTask, setSelectedTask] = React.useState<ContentTask | null>(null);
   const [viewingTask, setViewingTask] = React.useState<ContentTask | null>(null);
+  const [loadingTaskDetail, setLoadingTaskDetail] = React.useState(false);
 
   const { loading, tasks, error, fetchTasksByProfile } = useTaskManager();
 
@@ -68,8 +71,23 @@ const TaskSelectionDialog: React.FC<TaskSelectionDialogProps> = ({
     onClose();
   };
 
-  const handleViewTaskDetail = (task: ContentTask) => {
-    setViewingTask(task);
+  const handleViewTaskDetail = async (task: ContentTask) => {
+    try {
+      setLoadingTaskDetail(true);
+      const response = await manageTask.getTaskById(task.id);
+      if (response.data.success) {
+        // Convert the detailed API task to legacy format for display
+        const detailedTask = convertApiTaskToLegacy(response.data.data);
+        setViewingTask(detailedTask);
+      } else {
+        toast.error("Failed to load task details");
+      }
+    } catch (error) {
+      console.error("Error fetching task detail:", error);
+      toast.error("Failed to load task details");
+    } finally {
+      setLoadingTaskDetail(false);
+    }
   };
 
   const handleBackToTaskList = () => {
@@ -130,6 +148,7 @@ const TaskSelectionDialog: React.FC<TaskSelectionDialogProps> = ({
                     selectedTask={selectedTask}
                     onSelect={handleTaskSelect}
                     onViewDetail={handleViewTaskDetail}
+                    isLoadingDetail={loadingTaskDetail}
                   />
                 ))
               )}
@@ -159,7 +178,8 @@ const TaskCard: React.FC<{
   onSelect: (task: ContentTask) => void;
   selectedTask: ContentTask | null;
   onViewDetail: (task: ContentTask) => void;
-}> = ({ task, onSelect, selectedTask, onViewDetail }) => {
+  isLoadingDetail?: boolean;
+}> = ({ task, onSelect, selectedTask, onViewDetail, isLoadingDetail = false }) => {
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "High":
@@ -221,12 +241,17 @@ const TaskCard: React.FC<{
                 variant="outline"
                 size="icon"
                 className="h-8 w-8"
+                disabled={isLoadingDetail}
                 onClick={(e) => {
                   e.stopPropagation();
                   onViewDetail(task);
                 }}
               >
-                <Eye className="h-3 w-3" />
+                {isLoadingDetail ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Eye className="h-3 w-3" />
+                )}
               </Button>
             </TooltipTrigger>
             <TooltipContent>

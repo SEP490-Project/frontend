@@ -30,7 +30,35 @@ export const convertApiTaskToLegacy = (apiTask: Task): LegacyTask => {
     campaign: `Campaign ${apiTask.campaign_id.slice(-6)}`, // Use part of campaign_id as campaign name
     status: mapApiStatusToLegacy(apiTask.status),
     details: {
-      description: apiTask.description || "No description available",
+      description: (() => {
+        // Safely handle description field that might be an object or string
+        if (apiTask.description) {
+          if (typeof apiTask.description === "string") return apiTask.description;
+          if (typeof apiTask.description === "object") {
+            // If it's an object, try to extract meaningful content
+            const desc = apiTask.description as any;
+            if (desc.details && typeof desc.details === "string") return desc.details;
+            if (desc.description && typeof desc.description === "string") return desc.description;
+            // If it's a simple string in an object wrapper, try to extract it
+            if (typeof desc === "string") return desc;
+            // Fallback to JSON string representation
+            return JSON.stringify(desc);
+          }
+        }
+
+        // If no description field, try to create a meaningful description from available data
+        if (apiTask.name && apiTask.name.trim()) {
+          // Use the task name directly as it's already descriptive
+          return apiTask.name;
+        }
+
+        // Fallback to task type
+        if (apiTask.type) {
+          return `Task type: ${apiTask.type}`;
+        }
+
+        return "No description available";
+      })(),
       assignee: apiTask.assigned_to_name,
       dueTime: formatDeadline(apiTask.deadline),
       priority: "Medium", // Default priority since API doesn't provide this
@@ -71,13 +99,16 @@ export const mapApiStatusToLegacy = (apiStatus: string): "to-do" | "in-progress"
 export const formatDeadline = (deadline: string): string => {
   try {
     const date = new Date(deadline);
-    return date.toLocaleTimeString("en-US", {
+    return date.toLocaleString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
     });
   } catch {
-    return "All day";
+    return "No deadline";
   }
 };
 

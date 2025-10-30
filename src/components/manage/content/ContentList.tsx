@@ -85,10 +85,13 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
   const [selectedContentType, setSelectedContentType] = useState<ContentType>("blog");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [contentToDelete, setContentToDelete] = useState<LegacyContent | null>(null);
+  const [isDeletingContent, setIsDeletingContent] = useState(false);
   const [showRequestApprovalModal, setShowRequestApprovalModal] = useState(false);
   const [contentToSubmit, setContentToSubmit] = useState<LegacyContent | null>(null);
+  const [isSubmittingApproval, setIsSubmittingApproval] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [contentToReject, setContentToReject] = useState<LegacyContent | null>(null);
+  const [isRejectingContent, setIsRejectingContent] = useState(false);
 
   useEffect(() => {
     fetchContents(filters);
@@ -113,8 +116,9 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
   };
 
   const handleConfirmDelete = async () => {
-    if (!contentToDelete) return;
+    if (!contentToDelete || isDeletingContent) return;
 
+    setIsDeletingContent(true);
     try {
       const deleteResponse = await removeContent(contentToDelete.id);
 
@@ -132,6 +136,8 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
       // Close modal and clear state
       setShowDeleteModal(false);
       setContentToDelete(null);
+    } finally {
+      setIsDeletingContent(false);
     }
   };
 
@@ -216,8 +222,9 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
   };
 
   const handleConfirmRequestApproval = async () => {
-    if (!contentToSubmit) return;
+    if (!contentToSubmit || isSubmittingApproval) return;
 
+    setIsSubmittingApproval(true);
     try {
       const submitResponse = await submitExistingContent(contentToSubmit.id);
 
@@ -236,6 +243,8 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
       setShowRequestApprovalModal(false);
       setContentToSubmit(null);
       handleCloseDetailModal();
+    } finally {
+      setIsSubmittingApproval(false);
     }
   };
 
@@ -250,8 +259,9 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
   };
 
   const handleConfirmReject = async (reason: string) => {
-    if (!contentToReject) return;
+    if (!contentToReject || isRejectingContent) return;
 
+    setIsRejectingContent(true);
     try {
       const rejectResponse = await rejectExistingContent(contentToReject.id, reason);
 
@@ -268,6 +278,8 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
       // Close modals and clear state on error
       setShowRejectModal(false);
       setContentToReject(null);
+    } finally {
+      setIsRejectingContent(false);
     }
   };
 
@@ -670,7 +682,8 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
       <Dialog
         open={showDeleteModal}
         onOpenChange={(open) => {
-          if (!open) {
+          // Prevent closing modal while deleting
+          if (!open && !isDeletingContent) {
             handleCancelDelete();
           }
         }}
@@ -678,6 +691,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
         <DeleteContentModal
           contentTitle={contentToDelete?.title || "content"}
           onConfirm={handleConfirmDelete}
+          isLoading={isDeletingContent}
         />
       </Dialog>
 
@@ -685,7 +699,8 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
       <Dialog
         open={showRequestApprovalModal}
         onOpenChange={(open) => {
-          if (!open) {
+          // Prevent closing modal while submitting
+          if (!open && !isSubmittingApproval) {
             handleCancelRequestApproval();
           }
         }}
@@ -693,6 +708,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
         <RequestApprovalModal
           contentTitle={contentToSubmit?.title || "content"}
           onConfirm={handleConfirmRequestApproval}
+          isLoading={isSubmittingApproval}
         />
       </Dialog>
 
@@ -700,7 +716,8 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
       <Dialog
         open={showRejectModal}
         onOpenChange={(open) => {
-          if (!open) {
+          // Prevent closing modal while rejecting
+          if (!open && !isRejectingContent) {
             handleCancelReject();
           }
         }}
@@ -708,6 +725,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
         <RejectContentModal
           contentTitle={contentToReject?.title || "content"}
           onConfirm={handleConfirmReject}
+          isLoading={isRejectingContent}
         />
       </Dialog>
     </div>

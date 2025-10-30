@@ -46,10 +46,11 @@ import {
   Minus,
   Unlink,
 } from "lucide-react";
+import { isTiptapJson } from "@/libs/helper/tiptapHelper";
 import { useAuth } from "@/libs/hooks/useAuth";
 
 interface TiptapEditorProps {
-  initialContent?: string;
+  initialContent?: string | object;
   onChange?: (content: { html: string; json: object }) => void;
 }
 
@@ -58,6 +59,28 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
   onChange,
 }) => {
   const [showImageUploader, setShowImageUploader] = useState(false);
+
+  // Convert initial content to proper format
+  const getInitialContent = () => {
+    if (!initialContent) return "<p>Start typing...</p>";
+
+    // If it's a string, check if it's JSON
+    if (typeof initialContent === "string") {
+      if (isTiptapJson(initialContent)) {
+        // Parse and return JSON object
+        try {
+          return JSON.parse(initialContent);
+        } catch {
+          return initialContent;
+        }
+      }
+      return initialContent;
+    }
+
+    // If it's already an object, return it
+    return initialContent;
+  };
+
   const { user } = useAuth();
   const editor = useEditor({
     extensions: [
@@ -96,7 +119,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
         types: ["heading", "paragraph"],
       }),
     ],
-    content: initialContent,
+    content: getInitialContent(),
     editorProps: {
       attributes: {
         class:
@@ -133,17 +156,12 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
     return editor.getText().length;
   };
 
-  const handleImageUpload = (files: File[]) => {
-    if (files.length > 0) {
-      const file = files[0];
-      // Create a temporary URL for the uploaded image
-      const imageUrl = URL.createObjectURL(file);
-      editor.chain().focus().setImage({ src: imageUrl }).run();
+  const handleUploadComplete = (urls: string[]) => {
+    if (urls.length > 0) {
+      const imageUrl = urls[0];
+      // Insert the uploaded image into the editor
+      editor?.chain().focus().setImage({ src: imageUrl }).run();
       setShowImageUploader(false);
-
-      // In a real application, you would upload the file to your server
-      // and then update the image src with the permanent URL
-      // For now, we'll use the temporary blob URL
     }
   };
 
@@ -501,10 +519,9 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
                   multiple={false}
                   maxSize={5}
                   maxFiles={1}
-                  allowedTypes={["jpg", "jpeg", "png", "gif", "webp", "mp4", "wav"]}
-                  onFilesChange={handleImageUpload}
+                  allowedTypes={["jpg", "jpeg", "png", "gif", "webp"]}
+                  onUploadComplete={handleUploadComplete}
                   title="Select Image"
-                  showSummary={false}
                 />
               </DialogContent>
             </Dialog>

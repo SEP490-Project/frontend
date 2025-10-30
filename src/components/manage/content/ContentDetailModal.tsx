@@ -2,8 +2,9 @@ import React from "react";
 import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, CheckCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle, Tag } from "lucide-react";
 import type { LegacyContent } from "@/libs/utils/contentConverter";
+import { tiptapJsonToHtml, isTiptapJson } from "@/libs/helper/tiptapHelper";
 
 interface ContentDetailModalProps {
   content: LegacyContent | null;
@@ -19,36 +20,65 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
   onRequestApproval,
 }) => {
   if (!content) return null;
+  const formatDateTime = (dateTime: string | null | undefined) => {
+    if (!dateTime) return "Unknown date";
 
-  const formatDateTime = (dateTime: string) => {
-    const date = new Date(dateTime);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    try {
+      // Handle MySQL datetime format: "YYYY-MM-DD HH:MM:SS"
+      // Replace space with 'T' to make it ISO 8601 compliant
+      const isoDateTime = dateTime.replace(" ", "T");
+      const date = new Date(isoDateTime);
+
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        console.error("Invalid date:", dateTime, "parsed as:", date);
+        return "Unknown date";
+      }
+
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (err) {
+      console.error("Error parsing date:", dateTime, err);
+      return "Unknown date";
+    }
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
+    const normalizedStatus = status?.toLowerCase();
+    switch (normalizedStatus) {
       case "posted":
+      case "published":
         return <Badge className="bg-green-100 text-green-800">Posted</Badge>;
       case "draft":
         return <Badge className="bg-gray-100 text-gray-800">Draft</Badge>;
       case "pending":
+      case "await_staff":
         return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
       default:
-        return <Badge className="bg-gray-100 text-gray-800">{status}</Badge>;
+        return <Badge className="bg-gray-100 text-gray-800">{status || "Unknown"}</Badge>;
     }
   };
 
-  const getReadTimeEstimate = (htmlContent: string) => {
-    // Remove HTML tags and calculate reading time
-    const textContent = htmlContent.replace(/<[^>]*>/g, "");
+  const getReadTimeEstimate = (htmlContent: string | null | undefined) => {
+    // Return default if no content
+    if (!htmlContent) return 1;
+
+    // Check if content is TipTap JSON and convert it first
+    let textContent: string;
+    if (isTiptapJson(htmlContent)) {
+      const html = tiptapJsonToHtml(htmlContent);
+      textContent = html.replace(/<[^>]*>/g, "");
+    } else {
+      // Remove HTML tags and calculate reading time
+      textContent = htmlContent.replace(/<[^>]*>/g, "");
+    }
     const wordsPerMinute = 200;
-    const wordCount = textContent.split(/\s+/).length;
+    const wordCount = textContent.split(/\s+/).filter((word) => word.length > 0).length;
     const readTime = Math.ceil(wordCount / wordsPerMinute);
     return readTime > 0 ? readTime : 1;
   };
@@ -69,8 +99,24 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                 <ArrowLeft className="w-4 h-4" />
                 Back
               </Button>
-              <div className="text-sm text-purple-600 uppercase tracking-wide font-medium">
-                TRENDS & RESEARCH
+              <div className="flex flex-wrap items-center gap-2">
+                {content.json_content &&
+                typeof content.json_content === "object" &&
+                "tags" in content.json_content &&
+                Array.isArray((content.json_content as any).tags) &&
+                (content.json_content as any).tags.length > 0 ? (
+                  (content.json_content as any).tags.map((tag: string, index: number) => (
+                    <Badge
+                      key={index}
+                      className="flex items-center gap-1 px-3 py-1 bg-[#FF9DB0] hover:bg-pink-600 text-white border-0"
+                    >
+                      <Tag className="h-3 w-3" />
+                      {tag}
+                    </Badge>
+                  ))
+                ) : (
+                  <div className="text-sm text-gray-400 italic">No tags</div>
+                )}
               </div>
             </div>
             {content.status === "draft" && (
@@ -107,70 +153,33 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
               </div>
             </div>
 
-            {/* Featured Image/Video */}
-            <div className="w-full rounded-lg overflow-hidden">
-              {content.content_type === "video" &&
-              content.json_content &&
-              typeof content.json_content === "object" &&
-              "videoUrl" in content.json_content ? (
-                <video
-                  className="w-full aspect-video object-cover"
-                  controls
-                  poster="/api/placeholder/800/400"
-                >
-                  <source src={String((content.json_content as any).videoUrl)} type="video/mp4" />
-                  Your browser does not support the video tag.
-                </video>
-              ) : (
-                <img
-                  src="/api/placeholder/800/400"
-                  alt={content.title}
-                  className="w-full aspect-video object-cover"
-                />
-              )}
-            </div>
-
             {/* Content Body */}
-            <div className="prose prose-lg max-w-none">
-              {content.html_content ? (
-                <div
-                  dangerouslySetInnerHTML={{
-                    __html: content.html_content,
-                  }}
-                  className="text-gray-800 leading-relaxed"
-                />
-              ) : (
-                <div className="text-gray-800 leading-relaxed">
-                  <p className="mb-4">
-                    {content.json_content &&
-                    typeof content.json_content === "object" &&
-                    "description" in content.json_content
-                      ? String((content.json_content as any).description)
-                      : "No content available."}
-                  </p>
-                </div>
-              )}
+            <div>
+              {(() => {
+                if (!content.html_content) {
+                  return (
+                    <div className="text-gray-800 leading-relaxed">
+                      <p className="mb-4">
+                        {content.json_content &&
+                        typeof content.json_content === "object" &&
+                        "description" in content.json_content
+                          ? String((content.json_content as any).description)
+                          : "No content available."}
+                      </p>
+                    </div>
+                  );
+                }
 
-              {/* Sample content for demonstration */}
-              <div className="mt-8 space-y-4">
-                <p className="text-gray-800 leading-relaxed">
-                  Curabiturem auctor lorem lorem volutpat maecenas lorem nunc bibendum a sem diam
-                  feugiat lectus mauris ut enim eget vehicula ut id est.
-                </p>
-                <p className="text-gray-800 leading-relaxed">
-                  Etiam porta sem malesuada magna mollis euismod. Cras mattis consectetur purus sit
-                  amet fermentum. Aenean lacinia bibendum nulla sed consectetur.
-                </p>
-
-                <div className="bg-gray-50 p-6 rounded-lg my-8">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4">Heading</h3>
-                  <p className="text-gray-700 leading-relaxed">
-                    Vestibulum sagittis lorem vel susque lorem, cursus non lorem dolor auctor. Donec
-                    mollis, est non commodo luctus, nisi erat porttitor ligula, eget lacinia odio
-                    sem nec elit. Morbi leo risus, porta ac consectetur ac, vestibulum at eros.
-                  </p>
-                </div>
-              </div>
+                const htmlToDisplay = isTiptapJson(content.html_content)
+                  ? tiptapJsonToHtml(content.html_content)
+                  : content.html_content;
+                return (
+                  <div
+                    dangerouslySetInnerHTML={{ __html: htmlToDisplay }}
+                    className="ProseMirror prose prose-sm sm:prose-base lg:prose-lg max-w-none prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-blockquote:my-2"
+                  />
+                );
+              })()}
             </div>
           </div>
         </div>

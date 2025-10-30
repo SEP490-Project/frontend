@@ -12,6 +12,7 @@ import { manageFileReducer } from "./fileManager/slice";
 import { manageConfigReducer } from "./configManager/slice";
 import { categoryManagerReducer } from "./categoryManager/slice";
 import { attributeManagerReducer } from "./attributeManager/slice";
+import { manageTagReducer } from "./tagManager/slice";
 
 export const rootReducer = combineReducers({
   manageAuthen: manageAuthenReducer,
@@ -28,4 +29,5 @@ export const rootReducer = combineReducers({
   manageConfig: manageConfigReducer,
   manageCategory: categoryManagerReducer,
   manageAttribute: attributeManagerReducer,
+  manageTag: manageTagReducer,
 });

@@ -298,7 +298,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     // Accept either a LegacyTask (id as string) or ContentTask; normalize to ContentTask before forwarding.
     setIsTaskSelectionOpen(false);
     const normalizedTask: ContentTask = {
-      id: typeof task?.id === "string" ? Number(task.id) : ((task?.id as number) ?? 0),
+      id: task?.id !== undefined && task?.id !== null ? String(task.id) : "0",
       title: task?.title ?? "",
       type: (task?.type as ContentTask["type"]) ?? "Blog",
       campaign: task?.campaign ?? "",

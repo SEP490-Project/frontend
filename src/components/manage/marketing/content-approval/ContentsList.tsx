@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +22,7 @@ import { Eye, Filter } from "lucide-react";
 import { PaginationTable } from "@/components/global";
 import type { Content, ContentListParams } from "@/libs/types/content";
 import { manageContent } from "@/libs/services/manageContent";
+import ContentPreview from "./ContentPreview";
 
 interface ContentsListProps {
   onViewContent?: (content: Content) => void;
@@ -31,6 +31,7 @@ interface ContentsListProps {
 const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
   const [contents, setContents] = useState<Content[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedContentId, setSelectedContentId] = useState<string | null>(null);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -39,8 +40,6 @@ const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
     has_next: false,
     has_prev: false,
   });
-
-  const navigate = useNavigate();
 
   // Filter states
   const [filters, setFilters] = useState<ContentListParams>({
@@ -63,8 +62,8 @@ const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
       // Filter to only show blog content and exclude draft status for marketing
       const blogContent = contentData.filter(
         (content) =>
-          content.content_type === "blog" &&
-          (content.status === "PENDING" || content.status === "PUBLISHED"),
+          // content.content_type === "blog" &&
+          content.status === "AWAIT_STAFF" || content.status === "PUBLISHED",
       );
       setContents(blogContent);
       setPagination(response.data.pagination);
@@ -105,14 +104,11 @@ const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
     setSearchInput("");
   };
 
-  // Get channel - only Website for blog content
-  const getChannel = () => {
-    return "Website";
-  };
-
-  // Get channel badge variant - only Website variant needed
-  const getChannelVariant = (): "default" | "destructive" | "outline" | "secondary" => {
-    return "default";
+  // Get channel badge with pink theme
+  const getChannelBadge = () => {
+    return (
+      <Badge className="bg-pink-100 text-pink-800 border-pink-200 hover:bg-pink-100">Website</Badge>
+    );
   };
 
   // Format date
@@ -125,19 +121,37 @@ const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
     });
   };
 
-  // Format status badge
+  // Format status badge with pink theme colors
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "posted":
+      case "PUBLISHED":
         return (
-          <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+          <Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-100">
             Published
           </Badge>
         );
-      case "pending":
+      case "AWAIT_STAFF":
         return (
-          <Badge variant="default" className="bg-yellow-100 text-yellow-800 border-yellow-200">
-            Pending
+          <Badge className="bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100">
+            Awaiting Review
+          </Badge>
+        );
+      case "APPROVED":
+        return (
+          <Badge className="bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-100">
+            Approved
+          </Badge>
+        );
+      case "REJECTED":
+        return (
+          <Badge className="bg-red-100 text-red-800 border-red-200 hover:bg-red-100">
+            Rejected
+          </Badge>
+        );
+      case "DRAFT":
+        return (
+          <Badge className="bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-100">
+            Draft
           </Badge>
         );
       default:
@@ -164,8 +178,22 @@ const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
 
   // Handle view content
   const handleViewContent = (content: Content) => {
-    navigate(`/manage/marketing/content-approval/preview/${content.id}`);
+    setSelectedContentId(content.id);
     onViewContent?.(content);
+  };
+
+  // Handle close modal
+  const handleCloseModal = () => {
+    setSelectedContentId(null);
+    // Refresh the content list to reflect any status changes
+    fetchContents();
+  };
+
+  // Handle content updated from detail view
+  const handleContentUpdated = (updatedContent: Content) => {
+    setContents((prevContents) =>
+      prevContents.map((content) => (content.id === updatedContent.id ? updatedContent : content)),
+    );
   };
 
   return (
@@ -217,8 +245,10 @@ const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="posted">Published</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="PUBLISHED">Published</SelectItem>
+                  <SelectItem value="AWAIT_STAFF">Awaiting Review</SelectItem>
+                  <SelectItem value="APPROVED">Approved</SelectItem>
+                  <SelectItem value="REJECTED">Rejected</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -270,13 +300,7 @@ const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
                         <div className="font-medium text-gray-900 truncate max-w-xs">
                           {content.title}
                         </div>
-                        <div className="text-sm text-gray-500 truncate max-w-xs mt-1">
-                          {content.json_content &&
-                          typeof content.json_content === "object" &&
-                          "description" in content.json_content
-                            ? (content.json_content as { description: string }).description
-                            : "No description available"}
-                        </div>
+
                         {/* Show author and date on mobile */}
                         <div className="flex items-center gap-2 mt-2 lg:hidden">
                           <span className="text-xs text-gray-500">{content.actor}</span>
@@ -287,11 +311,7 @@ const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <Badge variant={getChannelVariant()} className="capitalize">
-                        {getChannel()}
-                      </Badge>
-                    </TableCell>
+                    <TableCell>{getChannelBadge()}</TableCell>
                     <TableCell>{getStatusBadge(content.status)}</TableCell>
                     <TableCell className="text-sm text-gray-600 hidden md:table-cell">
                       {formatPublishedDate(
@@ -311,7 +331,7 @@ const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleViewContent(content)}
-                          className="h-8 w-8 p-0"
+                          className="h-8 w-8 p-0 hover:bg-pink-50 hover:text-pink-600"
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
@@ -342,6 +362,14 @@ const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
           {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}
         </div>
       )}
+
+      {/* Content Preview Modal */}
+      <ContentPreview
+        contentId={selectedContentId}
+        isOpen={!!selectedContentId}
+        onClose={handleCloseModal}
+        onContentUpdated={handleContentUpdated}
+      />
     </div>
   );
 };

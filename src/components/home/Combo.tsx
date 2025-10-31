@@ -52,7 +52,7 @@ export default function Combo() {
 
           <div className="order-first lg:order-last">
             <img
-              src="../public/combo/pink-innisfree-skincare-products-on-wooden-planks-.jpg"
+              src="/combo/pink-innisfree-skincare-products-on-wooden-planks-.jpg"
               alt="Innisfree Blossom Glow Kit products arranged on wooden planks with pink cherry blossoms in background"
               className="w-full h-auto rounded-lg"
             />
@@ -63,7 +63,7 @@ export default function Combo() {
         <section className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center px-6 lg:px-12 py-12 lg:py-16 bg-gradient-to-br from-[#fec6d4]/10 to-[#ffffff]">
           <div className="order-last lg:order-first">
             <img
-              src="../public/combo/colorful-face-mask-packages-arranged-artistically-.jpg"
+              src="/combo/colorful-face-mask-packages-arranged-artistically-.jpg"
               alt="Various colorful face mask packages including Chocolate Lava, Milk Tea, Volcanic, Coffee Holic, Sulfur, Vanilla Latte, and Matcha masks with floral decorations"
               className="w-full h-auto rounded-lg"
             />

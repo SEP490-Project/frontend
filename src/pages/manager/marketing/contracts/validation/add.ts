@@ -1,14 +1,19 @@
 import * as yup from "yup";
 
 const contractSchema = yup.object({
-  // Basic fields
-  brandId: yup.string().required("Please select a brand"),
-  contractNumber: yup.string().required("Please enter a contract number"),
+  // Basic fields - snake_case
+  brand_id: yup.string().required("Please select a brand"),
+  contract_number: yup.string().required("Please enter a contract number"),
   type: yup.string().required("Please select a contract type"),
-  signedLocation: yup.string().required("Please enter the signing location"),
+  signed_location: yup.string().required("Please enter the signing location"),
+  title: yup
+    .string()
+    .required("Contract title is required")
+    .min(5, "Contract title must be at least 5 characters long")
+    .max(200, "Contract title must not exceed 200 characters"),
 
   // Date validations - use string format for dates from inputs
-  startDate: yup
+  start_date: yup
     .string()
     .required("Please select a start date")
     .test("is-valid-date", "Please enter a valid start date", function (value) {
@@ -17,7 +22,7 @@ const contractSchema = yup.object({
       return !isNaN(date.getTime());
     }),
 
-  endDate: yup
+  end_date: yup
     .string()
     .required("Please select an end date")
     .test("is-valid-date", "Please enter a valid end date", function (value) {
@@ -28,14 +33,13 @@ const contractSchema = yup.object({
     .test("after-start", "End date must be after the start date", function (value) {
       if (!value) return true;
 
-      // Handle both this.parent and this.options.context for different validation contexts
       const parentData = this.parent || this.options?.context || {};
-      const startDate = parentData.startDate;
+      const start_date = parentData.start_date;
 
-      if (!startDate) return true;
+      if (!start_date) return true;
 
       const endDate = new Date(value);
-      const startDateObj = new Date(startDate);
+      const startDateObj = new Date(start_date);
       return endDate > startDateObj;
     })
     .test("not-today", "End date cannot be today's date", function (value) {
@@ -47,7 +51,7 @@ const contractSchema = yup.object({
       return endDate.getTime() !== today.getTime();
     }),
 
-  signedDate: yup
+  signed_date: yup
     .string()
     .nullable()
     .test("is-valid-date", "Please enter a valid signed date", function (value) {
@@ -61,15 +65,14 @@ const contractSchema = yup.object({
       function (value) {
         if (!value) return true;
 
-        // Handle both this.parent and this.options.context for different validation contexts
         const parentData = this.parent || this.options?.context || {};
-        const { startDate, endDate } = parentData;
+        const { start_date, end_date } = parentData;
 
-        if (!startDate || !endDate) return true;
+        if (!start_date || !end_date) return true;
 
         const signed = new Date(value);
-        const start = new Date(startDate);
-        const end = new Date(endDate);
+        const start = new Date(start_date);
+        const end = new Date(end_date);
 
         signed.setHours(0, 0, 0, 0);
         start.setHours(0, 0, 0, 0);
@@ -92,31 +95,31 @@ const contractSchema = yup.object({
       },
     ),
 
-  // Representative fields
-  brandRepresentativeName: yup.string().required("Please enter the brand representative's name"),
-  brandRepresentativeEmail: yup
+  // Representative fields - snake_case
+  brand_representative_name: yup.string().required("Please enter the brand representative's name"),
+  brand_representative_email: yup
     .string()
     .email("Please enter a valid email address")
     .required("Please enter the brand representative's email"),
-  webRepresentativeName: yup.string().required("Please enter the web representative's name"),
-  webRepresentativeEmail: yup
+  representative_name: yup.string().required("Please enter the web representative's name"),
+  representative_email: yup
     .string()
     .email("Please enter a valid email address")
     .required("Please enter the web representative's email"),
 
-  // Scope of work
-  scopeOfWork: yup.object({
+  // Scope of work - snake_case
+  scope_of_work: yup.object({
     description: yup.string().required("Please provide a project description"),
   }),
 
-  // Financial terms based on contract type - Updated to match new structure
-  financialTerms: yup
+  // Financial terms based on contract type - snake_case
+  financial_terms: yup
     .object()
     .when("type", {
       is: (type: string) => ["ADVERTISING", "BRAND_AMBASSADOR"].includes(type),
       then: (schema) =>
         schema.shape({
-          totalCost: yup
+          total_cost: yup
             .number()
             .typeError("Please enter a valid amount")
             .min(1, "Total cost must be greater than 0")
@@ -126,14 +129,14 @@ const contractSchema = yup.object({
             .min(1, "Please add at least one payment schedule item")
             .test("schedule-total-match", "Schedule total must match total cost", function (value) {
               const parentData = this.parent || {};
-              const totalCost = parentData.totalCost || 0;
+              const total_cost = parentData.total_cost || 0;
               if (!value || value.length === 0) return true;
 
               const scheduleTotal = value.reduce(
                 (sum: number, item: any) => sum + (item.amount || 0),
                 0,
               );
-              return Math.abs(totalCost - scheduleTotal) < 0.01;
+              return Math.abs(total_cost - scheduleTotal) < 0.01;
             }),
         }),
     })
@@ -141,19 +144,19 @@ const contractSchema = yup.object({
       is: "AFFILIATE",
       then: (schema) =>
         schema.shape({
-          basePerClick: yup
+          base_per_click: yup
             .number()
             .typeError("Please enter a valid amount")
             .min(0.01, "Base per click must be at least 0.01")
             .required("Please enter the base per click amount"),
-          paymentCycle: yup.string().required("Please select a payment cycle"),
+          payment_cycle: yup.string().required("Please select a payment cycle"),
           levels: yup
             .array()
             .min(1, "Please add at least one commission level")
             .test("valid-levels", "All levels must have valid values", function (value) {
               if (!value || value.length === 0) return true;
               return value.every(
-                (level: any) => level.level > 0 && level.minClicks >= 0 && level.multiplier > 0,
+                (level: any) => level.level > 0 && level.min_clicks >= 0 && level.multiplier > 0,
               );
             }),
           schedule: yup.array().min(1, "Please add at least one payment schedule item"),
@@ -163,7 +166,7 @@ const contractSchema = yup.object({
       is: "CO_PRODUCING",
       then: (schema) =>
         schema.shape({
-          capitalContribution: yup.object({
+          capital_contribution: yup.object({
             company: yup.object({
               description: yup.string().required("Please enter company contribution description"),
               value: yup
@@ -181,13 +184,13 @@ const contractSchema = yup.object({
                 .required("Please enter KOL contribution value"),
             }),
           }),
-          profitSplitCompanyPercent: yup
+          profit_split_company_percent: yup
             .number()
             .typeError("Please enter a valid percentage")
             .min(0, "Company profit share cannot be negative")
             .max(100, "Company profit share cannot exceed 100%")
             .required("Please enter the company's profit share percentage"),
-          profitSplitKolPercent: yup
+          profit_split_kol_percent: yup
             .number()
             .typeError("Please enter a valid percentage")
             .min(0, "KOL profit share cannot be negative")
@@ -198,7 +201,7 @@ const contractSchema = yup.object({
               "The total profit share must equal 100%. Please adjust the percentages.",
               function (value) {
                 const parentData = this.parent || {};
-                const companyPercent = parentData.profitSplitCompanyPercent || 0;
+                const companyPercent = parentData.profit_split_company_percent || 0;
                 return companyPercent + (value || 0) === 100;
               },
             ),
@@ -206,20 +209,25 @@ const contractSchema = yup.object({
         }),
     }),
 
-  // File upload validation
-  contractFiles: yup
+  // Legal terms - snake_case
+  legal_terms: yup.object({
+    compensation_percent: yup
+      .number()
+      .typeError("Please enter a valid percentage")
+      .min(0, "Compensation percentage cannot be negative")
+      .max(100, "Compensation percentage cannot exceed 100%")
+      .required("Please enter the compensation percentage"),
+  }),
+
+  // File upload validation - snake_case
+  contract_files: yup
     .array()
     .min(1, "Please upload at least one contract file")
     .required("Contract files are required"),
-  proposalFiles: yup
+  proposal_files: yup
     .array()
     .min(1, "Please upload at least one proposal file")
     .required("Proposal files are required"),
-  title: yup
-    .string()
-    .required("Contract title is required")
-    .min(5, "Contract title must be at least 5 characters long")
-    .max(200, "Contract title must not exceed 200 characters"),
 });
 
 // Real-time field validation
@@ -265,7 +273,7 @@ export const validateContract = async (formData: any) => {
     const errors: any = {};
     error.inner?.forEach((err: any) => {
       if (err.path) {
-        // Handle nested paths like 'financialTerms.totalCost'
+        // Handle nested paths like 'financial_terms.total_cost'
         const pathParts = err.path.split(".");
         if (pathParts.length === 1) {
           errors[pathParts[0]] = err.message;
@@ -273,7 +281,6 @@ export const validateContract = async (formData: any) => {
           if (!errors[pathParts[0]]) errors[pathParts[0]] = {};
           errors[pathParts[0]][pathParts[1]] = err.message;
         } else if (pathParts.length === 3) {
-          // Handle deeper nesting like 'financialTerms.capitalContribution.company'
           if (!errors[pathParts[0]]) errors[pathParts[0]] = {};
           if (!errors[pathParts[0]][pathParts[1]]) errors[pathParts[0]][pathParts[1]] = {};
           errors[pathParts[0]][pathParts[1]][pathParts[2]] = err.message;

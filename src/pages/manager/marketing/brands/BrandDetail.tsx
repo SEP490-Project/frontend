@@ -105,6 +105,16 @@ const BrandDetailPage: React.FC = () => {
     );
   }
 
+  // Thêm function để handle create contract với brand ID
+  const handleCreateContractWithBrand = () => {
+    navigate("/manage/marketing/contracts/create", {
+      state: {
+        preselectedBrandId: brandId,
+        brandData: brand, // Optional: truyền cả brand data để tránh fetch lại
+      },
+    });
+  };
+
   return (
     <div className="min-h-fit p-4 sm:p-6">
       <div className="mb-4">
@@ -285,7 +295,7 @@ const BrandDetailPage: React.FC = () => {
               </CardTitle>
               <Button
                 variant="default"
-                onClick={() => navigate("/manage/marketing/contracts/create")}
+                onClick={handleCreateContractWithBrand} // Sử dụng function mới
               >
                 <FaPlus className="w-4 h-4 mr-2" />
                 Create Contract
@@ -361,7 +371,10 @@ const BrandDetailPage: React.FC = () => {
                 <p className="text-gray-400 text-sm mb-4">
                   Get started by creating a new contract for this brand
                 </p>
-                <Button variant="default">
+                <Button
+                  variant="default"
+                  onClick={handleCreateContractWithBrand} // Sử dụng function mới
+                >
                   <FaPlus className="w-4 h-4 mr-2" />
                   Create First Contract
                 </Button>

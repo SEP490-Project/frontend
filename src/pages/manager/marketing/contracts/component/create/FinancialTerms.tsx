@@ -116,11 +116,11 @@ const CostBreakdown: React.FC<{
 
 const FinancialOverview: React.FC<{
   formData: any;
-  financialTerms: any;
+  financial_terms: any; // Changed from financialTerms to financial_terms
   onUpdate: (updates: any) => void;
   errors?: any;
-}> = ({ formData, financialTerms, onUpdate, errors = {} }) => {
-  const total = financialTerms.total_cost ?? 0;
+}> = ({ formData, financial_terms, onUpdate, errors = {} }) => {
+  const total = financial_terms.total_cost ?? 0;
   const percent = formData.deposit_percent ?? 0;
   const paid = formData.is_deposit_paid ?? false;
 
@@ -132,17 +132,20 @@ const FinancialOverview: React.FC<{
   // Lấy cost breakdown - ưu tiên array format trước, sau đó mới convert từ object
   const getCostBreakdownArray = () => {
     // Nếu có array format (từ UI), dùng luôn
-    if (financialTerms.cost_breakdown_array && Array.isArray(financialTerms.cost_breakdown_array)) {
-      return financialTerms.cost_breakdown_array;
+    if (
+      financial_terms.cost_breakdown_array &&
+      Array.isArray(financial_terms.cost_breakdown_array)
+    ) {
+      return financial_terms.cost_breakdown_array;
     }
 
     // Nếu không có array format nhưng có object format, convert từ object sang array
     if (
-      financialTerms.cost_breakdown &&
-      typeof financialTerms.cost_breakdown === "object" &&
-      !Array.isArray(financialTerms.cost_breakdown)
+      financial_terms.cost_breakdown &&
+      typeof financial_terms.cost_breakdown === "object" &&
+      !Array.isArray(financial_terms.cost_breakdown)
     ) {
-      return Object.entries(financialTerms.cost_breakdown).map(([label, value], index) => ({
+      return Object.entries(financial_terms.cost_breakdown).map(([label, value], index) => ({
         id: `item-${index}-${Date.now()}`,
         label,
         value: Number(value) || 0,
@@ -300,7 +303,7 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({
   errors = {},
 }) => {
   const contractType = formData?.type;
-  const financialTerms = formData?.financialTerms || {};
+  const financial_terms = formData?.financial_terms || {}; // Changed from financialTerms to financial_terms
 
   const handleUpdate = (updates: any) => {
     console.log("handleUpdate called with:", updates);
@@ -314,7 +317,7 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({
       onInputChange("is_deposit_paid", updates.is_deposit_paid);
     }
 
-    // Lọc ra các updates khác cho financialTerms
+    // Lọc ra các updates khác cho financial_terms
     const financialUpdates = Object.keys(updates).reduce((acc: any, key) => {
       if (key !== "deposit_percent" && key !== "is_deposit_paid") {
         // Đối với cost_breakdown, lưu trữ cả array format (để UI dùng) và object format (để backend)
@@ -381,7 +384,7 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({
     <div className="space-y-8">
       <FinancialOverview
         formData={formData}
-        financialTerms={financialTerms}
+        financial_terms={financial_terms} // Changed from financialTerms to financial_terms
         onUpdate={handleUpdate}
         errors={errors}
       />

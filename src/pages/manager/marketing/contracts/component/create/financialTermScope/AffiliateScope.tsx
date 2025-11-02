@@ -23,9 +23,9 @@ interface AffiliateScopeProps {
 }
 
 const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, errors = {} }) => {
-  const financialTerms = formData?.financialTerms || {};
-  const startDate = formData?.startDate;
-  const endDate = formData?.endDate;
+  const financial_terms = formData?.financial_terms || {};
+  const start_date = formData?.start_date;
+  const end_date = formData?.end_date;
 
   // Handle schedule generation from PaymentDateSelector - For PREVIEW ONLY
   const handleScheduleGenerated = React.useCallback(
@@ -52,17 +52,17 @@ const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, err
 
       <CardContent className="pt-6 space-y-6">
         {/* Contract Period Info */}
-        {startDate && endDate && (
+        {start_date && end_date && (
           <Card className="p-4 bg-blue-50 border-blue-200">
             <h4 className="font-medium text-blue-900 mb-2">Contract Period</h4>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="font-medium">Start Date:</span>{" "}
-                {new Date(startDate).toLocaleDateString("vi-VN")}
+                {new Date(start_date).toLocaleDateString("vi-VN")}
               </div>
               <div>
                 <span className="font-medium">End Date:</span>{" "}
-                {new Date(endDate).toLocaleDateString("vi-VN")}
+                {new Date(end_date).toLocaleDateString("vi-VN")}
               </div>
             </div>
           </Card>
@@ -72,7 +72,7 @@ const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, err
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <CurrencyInput
             label="Base Per Click (VND)"
-            value={financialTerms.base_per_click || 0}
+            value={financial_terms.base_per_click || 0}
             onChange={(value) => onUpdate({ base_per_click: value })}
             placeholder="1.000"
             error={errors.base_per_click}
@@ -80,7 +80,7 @@ const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, err
 
           <SelectField
             label="Payment Cycle"
-            value={financialTerms.payment_cycle || ""}
+            value={financial_terms.payment_cycle || ""}
             onChange={(value) =>
               onUpdate({
                 payment_cycle: value,
@@ -95,14 +95,14 @@ const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, err
         </div>
 
         {/* Payment Date Selector - Only show when cycle is selected */}
-        {financialTerms.payment_cycle && (
+        {financial_terms.payment_cycle && (
           <PaymentDateSelector
-            cycle={financialTerms.payment_cycle}
-            value={financialTerms.payment_date}
+            cycle={financial_terms.payment_cycle}
+            value={financial_terms.payment_date}
             onChange={(val) => onUpdate({ payment_date: val })}
             onScheduleGenerated={handleScheduleGenerated}
-            startDate={startDate}
-            endDate={endDate}
+            startDate={start_date}
+            endDate={end_date}
           />
         )}
 
@@ -112,10 +112,10 @@ const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, err
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <CurrencyInput
               label="Threshold (VND)"
-              value={financialTerms.tax_withholding?.threshold || 0}
+              value={financial_terms.tax_withholding?.threshold || 0}
               onChange={(value) =>
                 onUpdate({
-                  tax_withholding: { ...financialTerms.tax_withholding, threshold: value },
+                  tax_withholding: { ...financial_terms.tax_withholding, threshold: value },
                 })
               }
               placeholder="10.000.000"
@@ -125,11 +125,11 @@ const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, err
               <Label className="text-sm font-medium flex items-center">Tax Rate (%)</Label>
               <Input
                 type="number"
-                value={financialTerms.tax_withholding?.rate_percent || ""}
+                value={financial_terms.tax_withholding?.rate_percent || ""}
                 onChange={(e) =>
                   onUpdate({
                     tax_withholding: {
-                      ...financialTerms.tax_withholding,
+                      ...financial_terms.tax_withholding,
                       rate_percent: parseFloat(e.target.value) || 0,
                     },
                   })
@@ -144,7 +144,7 @@ const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, err
 
         {/* Commission Levels */}
         <CommissionLevels
-          levels={financialTerms.levels || []}
+          levels={financial_terms.levels || []}
           onUpdate={(levels) => onUpdate({ levels })}
         />
       </CardContent>

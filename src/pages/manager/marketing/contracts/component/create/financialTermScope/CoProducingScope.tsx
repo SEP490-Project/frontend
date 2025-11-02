@@ -18,9 +18,9 @@ interface CoProducingScopeProps {
 }
 
 const CoProducingScope: React.FC<CoProducingScopeProps> = ({ formData, onUpdate, errors = {} }) => {
-  const financialTerms = formData?.financialTerms || {};
-  const startDate = formData?.startDate;
-  const endDate = formData?.endDate;
+  const financial_terms = formData?.financial_terms || {};
+  const start_date = formData?.start_date;
+  const end_date = formData?.end_date;
 
   const handleScheduleGenerated = useCallback(
     (newSchedule: any[]) => {
@@ -47,17 +47,17 @@ const CoProducingScope: React.FC<CoProducingScopeProps> = ({ formData, onUpdate,
 
       <CardContent className="pt-6 space-y-6">
         {/* Contract Period */}
-        {startDate && endDate && (
+        {start_date && end_date && (
           <Card className="p-4 bg-blue-50 border-blue-200">
             <h4 className="font-medium text-blue-900 mb-2">Contract Period</h4>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="font-medium">Start Date:</span>{" "}
-                {new Date(startDate).toLocaleDateString("vi-VN")}
+                {new Date(start_date).toLocaleDateString("vi-VN")}
               </div>
               <div>
                 <span className="font-medium">End Date:</span>{" "}
-                {new Date(endDate).toLocaleDateString("vi-VN")}
+                {new Date(end_date).toLocaleDateString("vi-VN")}
               </div>
             </div>
           </Card>
@@ -72,7 +72,7 @@ const CoProducingScope: React.FC<CoProducingScopeProps> = ({ formData, onUpdate,
             </Label>
             <Input
               type="number"
-              value={financialTerms.profit_split_company_percent || ""}
+              value={financial_terms.profit_split_company_percent || ""}
               onChange={(e) =>
                 onUpdate({
                   profit_split_company_percent: parseFloat(e.target.value) || 0,
@@ -92,7 +92,7 @@ const CoProducingScope: React.FC<CoProducingScopeProps> = ({ formData, onUpdate,
             </Label>
             <Input
               type="number"
-              value={financialTerms.profit_split_kol_percent || ""}
+              value={financial_terms.profit_split_kol_percent || ""}
               onChange={(e) =>
                 onUpdate({
                   profit_split_kol_percent: parseFloat(e.target.value) || 0,
@@ -106,12 +106,10 @@ const CoProducingScope: React.FC<CoProducingScopeProps> = ({ formData, onUpdate,
           </div>
         </div>
 
-        {/* Total contract cost is managed in FinancialTerms (shared) - removed from scope */}
-
         {/* Profit Distribution Cycle */}
         <SelectField
           label="Profit Distribution Cycle"
-          value={financialTerms.profit_distribution_cycle || ""}
+          value={financial_terms.profit_distribution_cycle || ""}
           onChange={(value) =>
             onUpdate({
               profit_distribution_cycle: value,
@@ -125,26 +123,26 @@ const CoProducingScope: React.FC<CoProducingScopeProps> = ({ formData, onUpdate,
           error={errors.profit_distribution_cycle}
         />
 
-        {/* Payment Date Selector - Only show when cycle is selected, same as AffiliateScope */}
-        {financialTerms.profit_distribution_cycle && (
+        {/* Payment Date Selector - Only show when cycle is selected */}
+        {financial_terms.profit_distribution_cycle && (
           <PaymentDateSelector
-            cycle={financialTerms.profit_distribution_cycle}
-            value={financialTerms.profit_distribution_date}
+            cycle={financial_terms.profit_distribution_cycle}
+            value={financial_terms.profit_distribution_date}
             onChange={(val) => onUpdate({ profit_distribution_date: val })}
             onScheduleGenerated={handleScheduleGenerated}
-            startDate={startDate}
-            endDate={endDate}
+            startDate={start_date}
+            endDate={end_date}
           />
         )}
 
-        {/* Generated Distribution Schedule Display - Same structure as AffiliateScope */}
-        {financialTerms.schedule && financialTerms.schedule.length > 0 && (
+        {/* Generated Distribution Schedule Display */}
+        {financial_terms.schedule && financial_terms.schedule.length > 0 && (
           <Card className="p-4 bg-green-50 border-green-200">
             <h4 className="font-medium text-green-900 mb-3">
-              Generated Distribution Dates ({financialTerms.schedule.length} distributions)
+              Generated Distribution Dates ({financial_terms.schedule.length} distributions)
             </h4>
             <div className="space-y-2 max-h-48 overflow-y-auto">
-              {financialTerms.schedule.map((item: any, index: number) => (
+              {financial_terms.schedule.map((item: any, index: number) => (
                 <div
                   key={index}
                   className="flex justify-between items-center text-sm bg-white p-3 rounded"

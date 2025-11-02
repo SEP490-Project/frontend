@@ -84,8 +84,10 @@ const INITIAL_FORM_DATA = {
   // Add missing legal_terms property if needed by other code
   legal_terms: {},
   // Add missing contract_file_url and proposal_file_url if needed by other code
-  contract_file_url: "",
-  proposal_file_url: "",
+  contract_file_url:
+    "https://bshowsell-public.s3.ap-southeast-1.amazonaws.com/b758136a-f78c-4a36-985a-974c39d5cd0d/Contract File.docx",
+  proposal_file_url:
+    "https://bshowsell-public.s3.ap-southeast-1.amazonaws.com/b758136a-f78c-4a36-985a-974c39d5cd0d/Proposal File.pptx",
 };
 
 // Helper functions
@@ -192,14 +194,14 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
               item.hash_tag.length > 0 &&
               item.hash_tag.every((t: any) => t.trim() && t.trim() !== "#");
 
-            const hasMaterial = Array.isArray(item.material_url) && item.material_url.length > 0;
+            // const hasMaterial = Array.isArray(item.material_url) && item.material_url.length > 0;
 
             const hasKPIs =
               Array.isArray(item.kpis) &&
               item.kpis.length > 0 &&
               item.kpis.every((k: any) => k.metric?.trim() && k.target?.trim());
 
-            return hasBasicInfo && hasHashtags && hasMaterial && hasKPIs;
+            return hasBasicInfo && hasHashtags && hasKPIs;
           });
 
         const general_reqs = scope_of_work.general_requirements || [];
@@ -243,15 +245,10 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
               item.kpis.length > 0 &&
               item.kpis.some((k: any) => k.metric?.trim() && k.target?.trim());
 
-            const hasMaterial = Array.isArray(item.material_url) && item.material_url.length > 0;
+            // const hasMaterial = Array.isArray(item.material_url) && item.material_url.length > 0;
 
             return (
-              hasBasicInfo &&
-              hasHashtags &&
-              hasValidContentReqs &&
-              hasCreativeNotes &&
-              hasKPIs &&
-              hasMaterial
+              hasBasicInfo && hasHashtags && hasValidContentReqs && hasCreativeNotes && hasKPIs
             );
           });
 
@@ -305,8 +302,8 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
               Array.isArray(product.kpis) &&
               product.kpis.length > 0 &&
               product.kpis.some((k: any) => k.metric?.trim() && k.target?.trim());
-            const hasProductMaterial =
-              Array.isArray(product.material_url) && product.material_url.length > 0;
+            // const hasProductMaterial =
+            //   Array.isArray(product.material_url) && product.material_url.length > 0;
             const concepts = product.concepts || [];
             const hasValidConcepts =
               concepts.length > 0 &&
@@ -329,16 +326,14 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
                   Array.isArray(concept.kpis) &&
                   concept.kpis.length > 0 &&
                   concept.kpis.some((k: any) => k.metric?.trim() && k.target?.trim());
-                const hasConceptMaterial =
-                  Array.isArray(concept.material_url) && concept.material_url.length > 0;
+                // const hasConceptMaterial =
+                //   Array.isArray(concept.material_url) && concept.material_url.length > 0;
                 return (
                   hasConceptBasicInfo &&
                   hasCreativeNotes &&
                   hasHashtags &&
                   hasValidContentReqs &&
-                  hasConceptKPIs &&
-                  hasProductMaterial &&
-                  hasConceptMaterial
+                  hasConceptKPIs
                 );
               });
             return hasProductBasicInfo && hasProductKPIs && hasValidConcepts;
@@ -806,32 +801,32 @@ const AddContractPage: React.FC = () => {
       const contractPayload = {
         // Contract Basic Information
         parent_contract_id: null,
-        contract_number: formData.contractNumber,
+        contract_number: formData.contract_number, // Fixed field name
         title: formData.title,
         type: formData.type,
         status: "DRAFT",
 
         // Brand Information
-        brand_id: formData.brandId,
-        brand_bank_name: formData.brandBankName,
-        brand_bank_account_number: formData.brandBankAccountNumber,
-        brand_bank_account_holder: formData.brandBankAccountHolder,
+        brand_id: formData.brand_id, // Fixed field name
+        brand_bank_name: formData.brand_bank_name, // Fixed field name
+        brand_bank_account_number: formData.brand_bank_account_number, // Fixed field name
+        brand_bank_account_holder: formData.brand_bank_account_holder, // Fixed field name
 
         // Web Representative - field names chính xác
-        representative_name: formData.representativeName,
-        representative_role: formData.representativeRole,
-        representative_phone: formData.representativePhone,
-        representative_email: formData.representativeEmail,
-        representative_tax_number: formData.representativeTaxNumber,
-        representative_bank_name: formData.representativeBankName,
-        representative_bank_account_number: formData.representativeBankAccountNumber,
-        representative_bank_account_holder: formData.representativeBankAccountHolder,
+        representative_name: formData.representative_name, // Fixed field name
+        representative_role: formData.representative_role, // Fixed field name
+        representative_phone: formData.representative_phone, // Fixed field name
+        representative_email: formData.representative_email, // Fixed field name
+        representative_tax_number: formData.representative_tax_number, // Fixed field name
+        representative_bank_name: formData.representative_bank_name, // Fixed field name
+        representative_bank_account_number: formData.representative_bank_account_number, // Fixed field name
+        representative_bank_account_holder: formData.representative_bank_account_holder, // Fixed field name
 
         // Contract dates and location - FORMAT DATES PROPERLY
-        signed_date: formatDateForBackend(formData.signedDate),
-        signed_location: formData.signedLocation,
-        start_date: formatDateForBackend(formData.startDate),
-        end_date: formatDateForBackend(formData.endDate),
+        signed_date: formatDateForBackend(formData.signed_date), // Fixed field name
+        signed_location: formData.signed_location, // Fixed field name
+        start_date: formatDateForBackend(formData.start_date), // Fixed field name
+        end_date: formatDateForBackend(formData.end_date), // Fixed field name
         currency: "VND",
 
         ...(formData.deposit_percent && formData.deposit_percent > 0
@@ -843,8 +838,8 @@ const AddContractPage: React.FC = () => {
 
         // Scope of Work
         scope_of_work: {
-          general_requirements: formData.scopeOfWork?.general_requirements || [],
-          deliverables: formData.scopeOfWork?.deliverables || {},
+          general_requirements: formData.scope_of_work?.general_requirements || [],
+          deliverables: formData.scope_of_work?.deliverables || {},
         },
 
         // Financial Terms
@@ -857,35 +852,35 @@ const AddContractPage: React.FC = () => {
                 : formData.type === "CO_PRODUCING"
                   ? "SHARE"
                   : "FIXED",
-          payment_method: formData.financialTerms?.payment_method || "BANK_TRANSFER",
-          total_cost: formData.financialTerms?.total_cost || 0,
+          payment_method: formData.financial_terms?.payment_method || "BANK_TRANSFER",
+          total_cost: formData.financial_terms?.total_cost || 0,
 
           // Contract type specific terms
           ...(formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR"
             ? {
                 // cost_breakdown is already in correct format from handleUpdate conversion
-                cost_breakdown: formData.financialTerms?.cost_breakdown || {},
-                schedule: formData.financialTerms?.schedule || {},
+                cost_breakdown: formData.financial_terms?.cost_breakdown || {},
+                schedule: formData.financial_terms?.schedule || {},
               }
             : {}),
 
           ...(formData.type === "AFFILIATE"
             ? {
-                base_per_click: formData.financialTerms?.base_per_click || 0,
-                levels: formData.financialTerms?.levels || [],
-                payment_cycle: formData.financialTerms?.payment_cycle,
-                payment_date: formData.financialTerms?.payment_date,
-                tax_withholding: formData.financialTerms?.tax_withholding || {},
+                base_per_click: formData.financial_terms?.base_per_click || 0,
+                levels: formData.financial_terms?.levels || [],
+                payment_cycle: formData.financial_terms?.payment_cycle,
+                payment_date: formData.financial_terms?.payment_date,
+                tax_withholding: formData.financial_terms?.tax_withholding || {},
               }
             : {}),
 
           ...(formData.type === "CO_PRODUCING"
             ? {
                 profit_split_company_percent:
-                  formData.financialTerms?.profit_split_company_percent || 0,
-                profit_split_kol_percent: formData.financialTerms?.profit_split_kol_percent || 0,
-                profit_distribution_cycle: formData.financialTerms?.profit_distribution_cycle,
-                profit_distribution_date: formData.financialTerms?.profit_distribution_date,
+                  formData.financial_terms?.profit_split_company_percent || 0,
+                profit_split_kol_percent: formData.financial_terms?.profit_split_kol_percent || 0,
+                profit_distribution_cycle: formData.financial_terms?.profit_distribution_cycle,
+                profit_distribution_date: formData.financial_terms?.profit_distribution_date,
               }
             : {}),
         },
@@ -893,7 +888,7 @@ const AddContractPage: React.FC = () => {
         // Legal Terms
         legal_terms: {
           breach_of_contract: {
-            label: formData.legalTerms?.breach_of_contract?.label || "Breach of Contract",
+            label: formData.legal_terms?.breach_of_contract?.label || "Breach of Contract",
             items: [
               {
                 title: "Party A (Brand) breaks the rules",
@@ -904,9 +899,9 @@ const AddContractPage: React.FC = () => {
                 details: [
                   "Contract terminates immediately",
                   "Party B must refund the deposit",
-                  `Party B pays additional ${formData.legalTerms?.compensationPercent}% compensation`,
+                  `Party B pays additional ${formData.legal_terms?.compensation_percent}% compensation`,
                 ],
-                compensation_percent: formData.legalTerms?.compensationPercent,
+                compensation_percent: formData.legal_terms?.compensation_percent,
               },
               {
                 title: "Mutual agreement to terminate",
@@ -918,7 +913,7 @@ const AddContractPage: React.FC = () => {
             ],
           },
           standard_terms: {
-            label: formData.legalTerms?.standard_terms?.label || "Standard Terms",
+            label: formData.legal_terms?.standard_terms?.label || "Standard Terms",
             items: [
               {
                 title: "Confidentiality",

@@ -780,7 +780,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                         data={filteredBanks}
                         selectedId={
                           banks
-                            .find((bank: any) => bank.name === formData.brandBankName)
+                            .find((bank: any) => bank.name === formData.brand_bank_name)
                             ?.id?.toString() || ""
                         }
                         onSelect={handleBankSelect}
@@ -792,7 +792,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                         searchValue={bankSearch}
                         loading={bankLoading}
                       />
-                      <FieldError message={errors.brandBankName} />
+                      <FieldError message={errors.brand_bank_name} />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {[
@@ -811,17 +811,19 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                           <Label className="text-sm">{field.label}</Label>
                           {field.field === "brandBankAccountHolder" ? (
                             <Input
-                              value={formData.brandBankAccountHolder || ""}
+                              value={formData.brand_bank_account_holder || ""}
                               onChange={handleAccountHolderChange}
                               placeholder={field.placeholder}
-                              className={`h-11 ${errors.brandBankAccountHolder ? "border-red-500" : ""}`}
+                              className={`h-11 ${errors.brand_bank_account_holder ? "border-red-500" : ""}`}
                             />
                           ) : (
                             <BankAccountInput
-                              value={formData.brandBankAccountNumber || ""}
-                              onChange={(val) => handleFieldChange("brandBankAccountNumber", val)}
+                              value={formData.brand_bank_account_number || ""}
+                              onChange={(val) =>
+                                handleFieldChange("brand_bank_account_number", val)
+                              }
                               placeholder={field.placeholder}
-                              error={errors.brandBankAccountNumber}
+                              error={errors.brand_bank_account_number}
                             />
                           )}
                           <FieldError message={errors[field.field]} />
@@ -882,14 +884,14 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                         <Label className="text-sm font-medium">Bank Name</Label>
                         <Input
                           disabled
-                          value={formData.representativeBankName || ""}
+                          value={formData.representative_bank_name || ""}
                           onChange={(e) =>
-                            handleFieldChange("representativeBankName", e.target.value)
+                            handleFieldChange("representative_bank_name", e.target.value)
                           }
                           placeholder="Bank name"
                           className="h-11 bg-slate-50"
                         />
-                        <FieldError message={errors.representativeBankName} />
+                        <FieldError message={errors.representative_bank_name} />
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {webBankingFields.slice(1).map((field) => (

@@ -176,6 +176,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
           created_at: apiData.created_at,
           updated_at: apiData.updated_at,
           views: 0, // Add default views count
+          rejection_feedback: apiData.rejection_feedback,
         };
         // Show modal only after we have the complete data
         setSelectedContent(detailedContent);
@@ -242,12 +243,12 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     setShowRejectModal(true);
   };
 
-  const handleConfirmReject = async (reason: string) => {
+  const handleConfirmReject = async (feedback: string) => {
     if (!contentToReject || isRejectingContent) return;
 
     setIsRejectingContent(true);
     try {
-      const rejectResponse = await rejectExistingContent(contentToReject.id, reason);
+      const rejectResponse = await rejectExistingContent(contentToReject.id, feedback);
 
       // Check if rejection was successful
       if (rejectResponse.meta.requestStatus === "fulfilled") {
@@ -366,9 +367,10 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
           </Badge>
         );
       case "posted":
+      case "published":
         return (
           <Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-100">
-            Posted
+            Published
           </Badge>
         );
       default:

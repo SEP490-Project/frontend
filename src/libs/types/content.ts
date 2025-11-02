@@ -126,5 +126,5 @@ export interface PublishContentParams {
 
 export interface RejectContentParams {
   id: string;
-  reason: string;
+  feedback: string;
 }

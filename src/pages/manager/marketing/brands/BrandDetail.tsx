@@ -42,21 +42,17 @@ const BrandDetailPage: React.FC = () => {
     }
   }, [dispatch, brandId]);
 
-  // Helper function to format phone number from +84 to 0
   const formatPhoneNumber = (phone: string | null) => {
     if (!phone) return "N/A";
 
-    // If phone starts with +84, replace with 0
     if (phone.startsWith("+84")) {
       return "0" + phone.slice(3);
     }
 
-    // If phone starts with 84 (without +), replace with 0
     if (phone.startsWith("84") && phone.length > 10) {
       return "0" + phone.slice(2);
     }
 
-    // Return as is if already in correct format or other format
     return phone;
   };
 
@@ -97,7 +93,11 @@ const BrandDetailPage: React.FC = () => {
       <div className="min-h-screen flex flex-col items-center justify-center">
         <FaBuilding className="w-16 h-16 mb-4 text-gray-400" />
         <p className="text-xl font-medium mb-4">Brand information not found</p>
-        <Button onClick={() => navigate(-1)}>
+        <Button
+          variant="ghost"
+          onClick={() => navigate("/manage/marketing/brands")}
+          className="flex items-center"
+        >
           <FaArrowLeft className="w-4 h-4 mr-2" />
           Return
         </Button>
@@ -284,7 +284,7 @@ const BrandDetailPage: React.FC = () => {
                 Contracts ({contracts?.length || 0})
               </CardTitle>
               <Button
-                variant={"default"}
+                variant="default"
                 onClick={() => navigate("/manage/marketing/contracts/create")}
               >
                 <FaPlus className="w-4 h-4 mr-2" />
@@ -361,7 +361,7 @@ const BrandDetailPage: React.FC = () => {
                 <p className="text-gray-400 text-sm mb-4">
                   Get started by creating a new contract for this brand
                 </p>
-                <Button variant={"default"}>
+                <Button variant="default">
                   <FaPlus className="w-4 h-4 mr-2" />
                   Create First Contract
                 </Button>

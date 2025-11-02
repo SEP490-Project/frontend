@@ -2,11 +2,12 @@ import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Check, X, Loader2, Tag } from "lucide-react";
+import { ArrowLeft, Check, X, Loader2, Tag, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import type { Content } from "@/libs/types/content";
 import { manageContent } from "@/libs/services/manageContent";
 import { tiptapJsonToHtml, isTiptapJson } from "@/libs/helper/tiptapHelper";
+import RejectReasonModal from "./RejectFeedbackModal";
 
 interface ContentPreviewProps {
   contentId: string | null;
@@ -25,6 +26,7 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
   const [loading, setLoading] = useState(false);
   const [approving, setApproving] = useState(false);
   const [rejecting, setRejecting] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
 
   // Fetch content details when modal opens
   useEffect(() => {
@@ -75,23 +77,29 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
     }
   };
 
-  // Handle reject content
-  const handleRejectContent = async () => {
+  // Handle reject content - show modal
+  const handleRejectContent = () => {
+    setShowRejectModal(true);
+  };
+
+  // Handle confirm rejection with reason
+  const handleConfirmReject = async (feedback: string) => {
     if (!content) return;
 
     setRejecting(true);
     try {
-      // Using a default rejection reason. In a real app, this should show a modal for reason input
-      const reason = "Content requires revision to meet publication standards";
-      await manageContent.rejectContent(content.id, reason);
+      await manageContent.rejectContent(content.id, feedback);
       toast.success(`Content "${content.title}" has been rejected.`);
 
-      // Update content status locally
-      const updatedContent = { ...content, status: "REJECTED" };
+      // Update content status locally and include rejection feedback
+      const updatedContent = { ...content, status: "REJECTED", rejection_feedback: feedback };
       setContent(updatedContent);
       onContentUpdated?.(updatedContent);
 
-      // Close modal after a short delay
+      // Close modals
+      setShowRejectModal(false);
+
+      // Close main modal after a short delay
       setTimeout(() => {
         onClose();
       }, 1500);
@@ -100,6 +108,11 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
     } finally {
       setRejecting(false);
     }
+  };
+
+  // Handle cancel rejection
+  const handleCancelReject = () => {
+    setShowRejectModal(false);
   };
 
   // Format date for display
@@ -293,6 +306,19 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
                   </div>
                 </div>
 
+                {/* Rejection Feedback */}
+                {content.status === "REJECTED" && content.rejection_feedback && (
+                  <div className="border border-red-200 bg-red-50 rounded-lg p-4 mb-6">
+                    <div className="flex items-start space-x-3">
+                      <XCircle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium text-red-800 text-sm mb-1">Rejection Feedback</p>
+                        <p className="text-red-700 text-sm">{content.rejection_feedback}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Content Body */}
                 <div className="prose prose-base max-w-none text-gray-700 leading-relaxed">
                   {(() => {
@@ -347,6 +373,15 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
           </div>
         </div>
       </DialogContent>
+
+      {/* Reject Reason Modal */}
+      <RejectReasonModal
+        isOpen={showRejectModal}
+        onClose={handleCancelReject}
+        onConfirm={handleConfirmReject}
+        contentTitle={content?.title || ""}
+        isLoading={rejecting}
+      />
     </Dialog>
   );
 };

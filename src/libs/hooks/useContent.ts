@@ -95,8 +95,8 @@ export const useContentManager = () => {
   );
 
   const rejectExistingContent = useCallback(
-    (id: string, reason: string) => {
-      return dispatch(rejectContent({ id, reason }));
+    (id: string, feedback: string) => {
+      return dispatch(rejectContent({ id, feedback }));
     },
     [dispatch],
   );

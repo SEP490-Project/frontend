@@ -38,8 +38,8 @@ export const manageContent = {
     return api.patch(`/contents/${id}/approve`);
   },
 
-  rejectContent: (id: string, reason: string) => {
-    return api.patch(`/contents/${id}/reject`, { reason });
+  rejectContent: (id: string, feedback: string) => {
+    return api.patch(`/contents/${id}/reject`, { feedback });
   },
 
   submitContent: (id: string) => {

@@ -2,7 +2,7 @@ import React from "react";
 import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, CheckCircle, Tag } from "lucide-react";
+import { ArrowLeft, CheckCircle, Tag, XCircle } from "lucide-react";
 import type { LegacyContent } from "@/libs/utils/contentConverter";
 import { tiptapJsonToHtml, isTiptapJson } from "@/libs/helper/tiptapHelper";
 
@@ -51,16 +51,50 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
   const getStatusBadge = (status: string) => {
     const normalizedStatus = status?.toLowerCase();
     switch (normalizedStatus) {
+      case "approved":
+        return (
+          <Badge className="bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-100">
+            Approved
+          </Badge>
+        );
+      case "draft":
+        return (
+          <Badge className="bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-100">
+            Draft
+          </Badge>
+        );
+      case "await_staff":
+      case "pending":
+        return (
+          <Badge className="bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100">
+            Awaiting Review
+          </Badge>
+        );
+      case "await_brand":
+        return (
+          <Badge className="bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-100">
+            Awaiting Brand
+          </Badge>
+        );
+      case "rejected":
+        return (
+          <Badge className="bg-red-100 text-red-800 border-red-200 hover:bg-red-100">
+            Rejected
+          </Badge>
+        );
       case "posted":
       case "published":
-        return <Badge className="bg-green-100 text-green-800">Posted</Badge>;
-      case "draft":
-        return <Badge className="bg-gray-100 text-gray-800">Draft</Badge>;
-      case "pending":
-      case "await_staff":
-        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+        return (
+          <Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-100">
+            Published
+          </Badge>
+        );
       default:
-        return <Badge className="bg-gray-100 text-gray-800">{status || "Unknown"}</Badge>;
+        return (
+          <Badge variant="outline" className="text-gray-600">
+            {status || "Unknown"}
+          </Badge>
+        );
     }
   };
 
@@ -152,6 +186,21 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                 </div>
                 <div>{getStatusBadge(content.status)}</div>
               </div>
+
+              {/* Rejection Feedback */}
+              {content.status === "rejected" && content.rejection_feedback && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                  <div className="flex items-start gap-2">
+                    <XCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-medium text-red-800 mb-1">Reject Reason</h3>
+                      <p className="text-red-700 text-sm leading-relaxed">
+                        {content.rejection_feedback}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Content Body */}

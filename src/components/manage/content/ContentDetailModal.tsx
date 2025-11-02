@@ -119,15 +119,16 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                 )}
               </div>
             </div>
-            {content.status === "draft" && (
-              <Button
-                onClick={handleRequestApproval}
-                className="bg-[#FF9DB0] hover:bg-pink-600 text-white mr-2"
-              >
-                <CheckCircle className="w-4 h-4 mr-2" />
-                Request Approval
-              </Button>
-            )}
+            {content.status === "draft" ||
+              (content.status === "rejected" && (
+                <Button
+                  onClick={handleRequestApproval}
+                  className="bg-[#FF9DB0] hover:bg-pink-600 text-white mr-2"
+                >
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Request Approval
+                </Button>
+              ))}
           </div>
         </DialogHeader>
 

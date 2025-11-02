@@ -161,17 +161,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     try {
       // Fetch detailed content from API first
       const response = await manageContent.contentDetail(content.id);
-      console.log("=== API Response ===");
-      console.log("Full response.data:", response.data);
-
-      // Access the nested data object from the API response
       const apiData = response.data.data;
-      console.log("API data:", apiData);
-      console.log("created_at:", apiData?.created_at);
-      console.log("blog:", apiData?.blog);
-      console.log("blog.author:", apiData?.blog?.author);
-      console.log("blog.author.username:", apiData?.blog?.author?.username);
-
       if (apiData) {
         // Convert API response to LegacyContent format
         const detailedContent: LegacyContent = {
@@ -187,18 +177,12 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
           updated_at: apiData.updated_at,
           views: 0, // Add default views count
         };
-        console.log("=== Detailed Content ===");
-        console.log("date_time:", detailedContent.date_time);
-        console.log("actor:", detailedContent.actor);
-        console.log("status:", detailedContent.status);
-
         // Show modal only after we have the complete data
         setSelectedContent(detailedContent);
         setIsDetailModalOpen(true);
       }
     } catch (error) {
-      console.error("Error fetching content detail:", error);
-      toast.error("Failed to load content details");
+      toast.error(error instanceof Error ? error.message : "Failed to load content details");
     } finally {
       setIsLoadingDetail(false);
     }
@@ -301,6 +285,21 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     }
   };
 
+  const handlePublish = async (content: LegacyContent) => {
+    try {
+      const publishResponse = await publishExistingContent(content.id);
+
+      // Check if publishing was successful
+      if (publishResponse.meta.requestStatus === "fulfilled") {
+        fetchContents(filters);
+        toast.success(`Content "${content.title}" has been published successfully.`);
+      }
+    } catch (error) {
+      console.error("Error publishing content:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to publish content");
+    }
+  };
+
   const handleCreateNewClick = (contentType: ContentType) => {
     setSelectedContentType(contentType);
     setIsTaskSelectionOpen(true);
@@ -334,17 +333,50 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "posted":
-        return <Badge className="bg-green-100 text-green-800">Posted</Badge>;
+    switch (status.toLowerCase()) {
+      case "approved":
+        return (
+          <Badge className="bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-100">
+            Approved
+          </Badge>
+        );
       case "draft":
-        return <Badge className="bg-gray-100 text-gray-800">Draft</Badge>;
+        return (
+          <Badge className="bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-100">
+            Draft
+          </Badge>
+        );
+      case "await_staff":
       case "pending":
-        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+        return (
+          <Badge className="bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100">
+            Awaiting Review
+          </Badge>
+        );
+      case "await_brand":
+        return (
+          <Badge className="bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-100">
+            Awaiting Brand
+          </Badge>
+        );
       case "rejected":
-        return <Badge className="bg-red-100 text-red-800">Rejected</Badge>;
+        return (
+          <Badge className="bg-red-100 text-red-800 border-red-200 hover:bg-red-100">
+            Rejected
+          </Badge>
+        );
+      case "posted":
+        return (
+          <Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-100">
+            Posted
+          </Badge>
+        );
       default:
-        return <Badge className="bg-gray-100 text-gray-800">{status}</Badge>;
+        return (
+          <Badge variant="outline" className="text-gray-600">
+            {status}
+          </Badge>
+        );
     }
   };
 
@@ -431,10 +463,12 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="posted">Posted</SelectItem>
                 <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="await_staff">Awaiting Review</SelectItem>
+                <SelectItem value="await_brand">Awaiting Brand</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
                 <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="published">Published</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -583,7 +617,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                               Edit
                             </DropdownMenuItem>
                           )}
-                          {content.status === "pending" && (
+                          {(content.status === "await_staff" || content.status === "pending") && (
                             <>
                               <DropdownMenuItem
                                 onClick={() => handleApprove(content)}
@@ -600,6 +634,15 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                                 Reject
                               </DropdownMenuItem>
                             </>
+                          )}
+                          {content.status === "approved" && (
+                            <DropdownMenuItem
+                              onClick={() => handlePublish(content)}
+                              className="text-blue-600 hover:text-blue-700"
+                            >
+                              <Globe className="w-4 h-4 mr-2" />
+                              Publish
+                            </DropdownMenuItem>
                           )}
                           {/* Only show Delete for draft and rejected content */}
                           {(content.status === "draft" || content.status === "rejected") && (

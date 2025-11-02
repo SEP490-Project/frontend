@@ -2,6 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 import { contract } from "./thunk";
 import {
   getContractsByBrand,
+  getContractsByBrandId,
   approveContract,
   rejectContract,
   getContractById,
@@ -70,6 +71,19 @@ export const manageContractSlice = createSlice({
         state.pagination = action.payload.pagination;
       })
       .addCase(getContractsByBrand.rejected, (state) => {
+        state.loading = false;
+        state.contracts = [];
+      })
+
+      .addCase(getContractsByBrandId.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(getContractsByBrandId.fulfilled, (state, action) => {
+        state.loading = false;
+        state.contracts = action.payload.data || [];
+        state.pagination = action.payload.pagination;
+      })
+      .addCase(getContractsByBrandId.rejected, (state) => {
         state.loading = false;
         state.contracts = [];
       })

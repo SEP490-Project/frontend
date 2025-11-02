@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FaEye, FaPenToSquare, FaFilter, FaPlus } from "react-icons/fa6";
+import { FaEye, FaPenToSquare, FaPlus } from "react-icons/fa6";
 import { Loader2, Target } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import PaginationTable from "@/components/global/PaginationTable";
@@ -43,8 +43,9 @@ const CAMPAIGN_TYPE_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  ACTIVE: "bg-green-100 text-green-800 border-green-200",
-  INACTIVE: "bg-red-100 text-red-800 border-red-200",
+  COMPLETED: "bg-green-100 text-green-800 border-green-200",
+  CANCELED: "bg-red-100 text-red-800 border-red-200",
+  RUNNING: "bg-yellow-100 text-yellow-800 border-yellow-200",
 };
 
 const CAMPAIGN_TYPE_COLORS: Record<string, string> = {
@@ -105,13 +106,8 @@ const CampaignPage: React.FC = () => {
         </Button>
       </div>
 
-      {/* Filters */}
       <div className="bg-white rounded-lg shadow mb-4 p-4">
         <div className="flex items-center gap-4 flex-wrap">
-          <div className="flex items-center gap-2">
-            <FaFilter className="text-gray-500" />
-            <span className="text-sm font-medium">Filters:</span>
-          </div>
           <div className="flex-1 min-w-[200px]">
             <Input
               placeholder="Search by campaign name, description, or contract number..."
@@ -141,8 +137,9 @@ const CampaignPage: React.FC = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">All Status</SelectItem>
-                <SelectItem value="ACTIVE">Active</SelectItem>
-                <SelectItem value="INACTIVE">Inactive</SelectItem>
+                <SelectItem value="RUNNING">Running</SelectItem>
+                <SelectItem value="COMPLETED">Completed</SelectItem>
+                <SelectItem value="CANCELLED">Cancelled</SelectItem>
               </SelectContent>
             </Select>
           </div>

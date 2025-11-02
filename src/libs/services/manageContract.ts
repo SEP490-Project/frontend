@@ -25,6 +25,13 @@ export const manageContract = {
       },
     }),
 
+  getContractsByBrandId: (brandId: string, params: { page: number; limit: number }) =>
+    api.get(`/contracts/brands/${brandId}`, {
+      params: {
+        page: params.page,
+        limit: params.limit,
+      },
+    }),
   getContractById: (contractId: string) => api.get(`/contracts/${contractId}`),
 
   approveContract: (contractId: string) =>

@@ -45,11 +45,14 @@ export interface Content {
 export interface ContentListParams {
   page: number;
   limit: number;
-  keywords?: string;
+  sort_by?: string;
+  sort_order?: string;
   status?: string;
-  actor?: string;
-  date_from?: string;
-  date_to?: string;
+  type: string;
+  channel_id?: string;
+  search?: string;
+  from_date?: string;
+  to_date?: string;
 }
 
 export interface CreateContentRequest {

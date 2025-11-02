@@ -43,6 +43,25 @@ export const getContractsByBrand = createAsyncThunk(
   },
 );
 
+export const getContractsByBrandId = createAsyncThunk(
+  "contracts/getByBrandId",
+  async (req: ContractParams, { rejectWithValue }) => {
+    try {
+      if (!req.brand_id) throw new Error("Missing brand_id");
+
+      const response = await manageContract.getContractsByBrandId(req.brand_id, {
+        page: req.page ?? 1,
+        limit: req.limit ?? 10,
+      });
+
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message?: string }>;
+      return rejectWithValue(err.response?.data?.message || "Failed to fetch contracts");
+    }
+  },
+);
+
 export const approveContract = createAsyncThunk(
   "contracts/approve",
   async (contractId: string, { rejectWithValue }) => {

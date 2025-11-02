@@ -145,7 +145,7 @@ interface FormData {
   representative: RepresentativeData;
 }
 
-const AddBrandPage: React.FC = () => {
+const CreateBrandPage: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("brand");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -369,4 +369,4 @@ const AddBrandPage: React.FC = () => {
   );
 };
 
-export default AddBrandPage;
+export default CreateBrandPage;

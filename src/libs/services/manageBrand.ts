@@ -6,4 +6,5 @@ export const manageBrand = {
     api.get("/brands", { params }),
   addBrand: (data: AddBrand) => api.post("/brands/with-users", data),
   brandDetail: (id: string) => api.get(`/brands/${id}`),
+  updateBrand: (id: string, data: AddBrand) => api.put(`/brands/${id}`, data),
 };

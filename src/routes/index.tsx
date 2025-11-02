@@ -6,11 +6,15 @@ import { Contract, Campaign as BrandCampaign } from "@/pages/manager/brand";
 import {
   Brand,
   Campaign as MarketingCampaign,
+  CampaignDetail,
+  BrandDetail,
+  EditBrand,
   Contracts,
   CreateContract,
   ContractDetail,
   CreateCampaign,
   CreateBrand,
+  ContentApproval,
 } from "@/pages/manager/marketing";
 import ManageLayout from "@/layouts/ManageLayout";
 import Login from "@/pages/authentication/Login";
@@ -32,7 +36,6 @@ import {
   VariantsStep,
   DoneStep,
 } from "@/pages/manager/sale";
-import { ContentApproval } from "@/pages/manager/marketing/content-approval";
 import ContentPreviewPage from "@/pages/manager/marketing/content-approval/ContentPreviewPage";
 import AddProductStep from "@/components/manage/sale/AddProductStep";
 import ProductDetail from "@/pages/manager/sale/product/ProductDetail";
@@ -103,11 +106,14 @@ const AppRoutes = () => (
         <Route path="/manage/marketing" element={<ManageLayout />}>
           <Route path="brands" element={<Brand />} />
           <Route path="brands/create" element={<CreateBrand />} />
+          <Route path="brands/:id" element={<BrandDetail />} />
+          <Route path="brands/:id/edit" element={<EditBrand />} />
           <Route path="contracts" element={<Contracts />} />
           <Route path="contracts/create" element={<CreateContract />} />
           <Route path="contracts/:id" element={<ContractDetail />} />
           <Route path="campaigns" element={<MarketingCampaign />} />
           <Route path="campaigns/create" element={<CreateCampaign />} />
+          <Route path="campaigns/:id" element={<CampaignDetail />} />
           <Route path="content-approval" element={<ContentApproval />} />
           <Route path="content-approval/preview/:id" element={<ContentPreviewPage />} />
         </Route>

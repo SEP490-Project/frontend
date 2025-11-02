@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { brand, addBrand, brandDetail } from "./thunk";
+import { brand, addBrand, brandDetail, updateBrand } from "./thunk";
 import type { Brands } from "@/libs/types/brand";
 
 interface stateType {
@@ -57,6 +57,15 @@ export const manageBrandSlice = createSlice({
         state.brand = action.payload.data;
       })
       .addCase(brandDetail.rejected, (state) => {
+        state.loading = false;
+      })
+      .addCase(updateBrand.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(updateBrand.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(updateBrand.rejected, (state) => {
         state.loading = false;
       });
   },

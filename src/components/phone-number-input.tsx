@@ -41,7 +41,7 @@ export const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
   label,
   value,
   onChange,
-  placeholder = "Nhập số điện thoại (VD: 0901234567)",
+  placeholder = "Input Phone Number (VD: 0901234567)",
   error,
   disabled = false,
   className = "",
@@ -73,8 +73,7 @@ export const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
   };
 
   const showError =
-    error ||
-    (displayValue && !isValidVietnamPhone(displayValue) ? "Số điện thoại không hợp lệ" : "");
+    error || (displayValue && !isValidVietnamPhone(displayValue) ? "Invalid phone number" : "");
 
   return (
     <div className={`space-y-2 ${className}`}>

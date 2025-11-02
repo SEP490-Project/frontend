@@ -30,8 +30,6 @@ import { useAppDispatch } from "@/libs/stores";
 import { brand } from "@/libs/stores/brandManager/thunk";
 import type { Brands } from "@/libs/types/brand";
 import { useNavigate } from "react-router";
-
-// Chuyển interface Partner thành type từ API
 interface Partner extends Brands {
   isActive: boolean;
 }
@@ -276,6 +274,7 @@ const BrandPage: React.FC = () => {
                                 variant="ghost"
                                 size="sm"
                                 className="h-8 w-8 p-0 hover:bg-blue-50"
+                                onClick={() => navigate(`/manage/marketing/brands/${partner.id}`)}
                               >
                                 <FaEye className="text-blue-600" />
                               </Button>
@@ -292,7 +291,7 @@ const BrandPage: React.FC = () => {
                                 size="sm"
                                 className="h-8 w-8 p-0 hover:bg-yellow-50"
                                 onClick={() =>
-                                  navigate(`/manage/marketing/brands/edit/${partner.id}`)
+                                  navigate(`/manage/marketing/brands/${partner.id}/edit`)
                                 }
                               >
                                 <FaPenToSquare className="text-yellow-600" />

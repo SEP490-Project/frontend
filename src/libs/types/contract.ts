@@ -107,7 +107,7 @@ export interface ContractDetail {
 }
 
 export interface ContractParams {
-  brand_id: string;
+  brand_id?: string;
   page?: number;
   limit?: number;
   status?: string;

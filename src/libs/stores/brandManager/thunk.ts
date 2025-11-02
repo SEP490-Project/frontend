@@ -44,3 +44,16 @@ export const brandDetail = createAsyncThunk(
     }
   },
 );
+
+export const updateBrand = createAsyncThunk(
+  "/brands/update",
+  async (req: { id: string; data: AddBrand }, { rejectWithValue }) => {
+    try {
+      const response = await manageBrand.updateBrand(req.id, req.data);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Thất bại");
+    }
+  },
+);

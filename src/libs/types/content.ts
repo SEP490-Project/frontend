@@ -3,7 +3,7 @@ export interface Content {
   title: string;
   body: string;
   type: "POST";
-  status: "DRAFT" | "PENDING" | "APPROVED" | "REJECTED" | "PUBLISHED";
+  status: string;
   task_id: string;
   created_at: string;
   updated_at: string;
@@ -123,5 +123,5 @@ export interface PublishContentParams {
 
 export interface RejectContentParams {
   id: string;
-  reason: string;
+  feedback: string;
 }

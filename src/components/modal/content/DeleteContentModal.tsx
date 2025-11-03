@@ -1,4 +1,4 @@
-import { Trash } from "lucide-react";
+import { Trash, Loader2 } from "lucide-react";
 import {
   DialogClose,
   DialogContent,
@@ -11,9 +11,11 @@ import {
 export const DeleteContentModal = ({
   contentTitle,
   onConfirm,
+  isLoading = false,
 }: {
   contentTitle: string;
   onConfirm: () => void;
+  isLoading?: boolean;
 }): React.ReactElement => {
   return (
     <DialogContent>
@@ -36,13 +38,26 @@ export const DeleteContentModal = ({
       </p>
       <DialogFooter className="flex justify-end space-x-2">
         <DialogClose asChild>
-          <button className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Cancel</button>
+          <button
+            className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isLoading}
+          >
+            Cancel
+          </button>
         </DialogClose>
         <button
-          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           onClick={onConfirm}
+          disabled={isLoading}
         >
-          Delete
+          {isLoading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Deleting...
+            </>
+          ) : (
+            <>Delete</>
+          )}
         </button>
       </DialogFooter>
     </DialogContent>

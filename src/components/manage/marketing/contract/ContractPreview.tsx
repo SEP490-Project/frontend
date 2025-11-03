@@ -164,6 +164,20 @@ export const ContractPDF = ({ data }: { data: any }) => {
     });
   };
 
+  const formatDateTime = (dateStr?: string) => {
+    if (!dateStr) return "N/A";
+    const normalized = dateStr.replace(" ", "T");
+    const d = new Date(normalized);
+    if (Number.isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   const formatMoney = (amount?: number | null) => {
     const currency = data.currency || "VND";
     if (amount === undefined || amount === null) return `0 ${currency}`;
@@ -190,15 +204,15 @@ export const ContractPDF = ({ data }: { data: any }) => {
         return events.map((event: any, i: number) => (
           <View key={i} style={styles.deliverableSection}>
             <Text style={styles.deliverableTitle}>
-              {i + 1}. {data.title} - Event #{i + 1}
+              {i + 1}. {event.name} - Event #{i + 1}
             </Text>
             <Text style={styles.textBlock}>
               <Text style={styles.bold}>Location:</Text> {event.location || "N/A"}
             </Text>
             <Text style={styles.textBlock}>
               <Text style={styles.bold}>Date & Duration:</Text>{" "}
-              {formatDate(event.date || event.date_time || event.date_time_iso)} (Expected duration:{" "}
-              {event.expected_duration || "N/A"})
+              {formatDateTime(event.date || event.date_time || event.date_time_iso)} (Expected
+              duration: {event.expected_duration || "N/A"})
             </Text>
 
             {(event.activities ?? []).length > 0 && (
@@ -351,18 +365,37 @@ export const ContractPDF = ({ data }: { data: any }) => {
                     </Text>
                   )}
 
+                  {(item.content_requirements ?? []).length > 0 && (
+                    <View style={{ marginLeft: 20, marginTop: 4 }}>
+                      <Text style={styles.listItem}>
+                        • <Text style={styles.bold}>Content Requirements:</Text>
+                      </Text>
+                      {(item.content_requirements ?? []).map((req: string, j: number) => (
+                        <Text key={j} style={[styles.listItem, { marginLeft: 35 }]}>
+                          ○ {req}
+                        </Text>
+                      ))}
+                    </View>
+                  )}
+
                   {item.creative_notes && (
                     <Text style={styles.listItem}>
                       • <Text style={styles.bold}>Creative Notes:</Text> {item.creative_notes}
                     </Text>
                   )}
 
-                  {item.content_requirements?.length > 0 && (
-                    <View>
-                      <Text style={[styles.listItem, styles.bold]}>• Content Requirements:</Text>
-                      {item.content_requirements.map((req: string, j: number) => (
+                  {(item.kpis ?? []).length > 0 && (
+                    <View style={{ marginLeft: 20, marginTop: 4 }}>
+                      <Text style={styles.listItem}>
+                        • <Text style={styles.bold}>Key Performance Indicators (KPIs):</Text>
+                      </Text>
+                      {(item.kpis ?? []).map((kpi: any, j: number) => (
                         <Text key={j} style={[styles.listItem, { marginLeft: 35 }]}>
-                          ○ {req}
+                          ○ <Text style={styles.bold}>{kpi.metric || "Metric"}:</Text>{" "}
+                          {kpi.target ? `${kpi.target}` : "No target specified"}{" "}
+                          {kpi.description && (
+                            <Text style={{ fontStyle: "italic" }}>({kpi.description})</Text>
+                          )}
                         </Text>
                       ))}
                     </View>
@@ -409,10 +442,40 @@ export const ContractPDF = ({ data }: { data: any }) => {
                 </Text>
               )}
 
+              {(item.content_requirements ?? []).length > 0 && (
+                <View style={{ marginLeft: 20, marginTop: 4 }}>
+                  <Text style={styles.listItem}>
+                    • <Text style={styles.bold}>Content Requirements:</Text>
+                  </Text>
+                  {(item.content_requirements ?? []).map((req: string, j: number) => (
+                    <Text key={j} style={[styles.listItem, { marginLeft: 35 }]}>
+                      ○ {req}
+                    </Text>
+                  ))}
+                </View>
+              )}
+
               {item.creative_notes && (
                 <Text style={styles.listItem}>
                   • <Text style={styles.bold}>Creative Notes:</Text> {item.creative_notes}
                 </Text>
+              )}
+
+              {(item.kpis ?? []).length > 0 && (
+                <View style={{ marginLeft: 20, marginTop: 4 }}>
+                  <Text style={styles.listItem}>
+                    • <Text style={styles.bold}>Key Performance Indicators (KPIs):</Text>
+                  </Text>
+                  {(item.kpis ?? []).map((kpi: any, j: number) => (
+                    <Text key={j} style={[styles.listItem, { marginLeft: 35 }]}>
+                      ○ <Text style={styles.bold}>{kpi.metric || "Metric"}:</Text>{" "}
+                      {kpi.target ? `${kpi.target}` : "No target specified"}{" "}
+                      {kpi.description && (
+                        <Text style={{ fontStyle: "italic" }}>({kpi.description})</Text>
+                      )}
+                    </Text>
+                  ))}
+                </View>
               )}
             </View>
           ));

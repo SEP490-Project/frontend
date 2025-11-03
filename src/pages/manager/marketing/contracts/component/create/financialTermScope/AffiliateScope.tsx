@@ -2,12 +2,12 @@ import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { FaChartLine, FaCalendarDay, FaPercent } from "react-icons/fa6";
+import { FaChartLine, FaCalendarDay } from "react-icons/fa6";
 import {
-  CurrencyInput,
   SelectField,
   CommissionLevels,
   PaymentDateSelector,
+  CurrencyInput,
 } from "../shared/FinancialSharedComponent";
 
 const PAYMENT_CYCLE_OPTIONS = [
@@ -31,7 +31,6 @@ const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, err
   const handleScheduleGenerated = React.useCallback(
     (newSchedule: any[]) => {
       console.log("Schedule generated for preview:", newSchedule);
-      // Lưu schedule vào formData để hiển thị preview
       onUpdate({ schedule: newSchedule });
     },
     [onUpdate],
@@ -70,12 +69,12 @@ const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, err
         )}
 
         {/* Base Settings */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <CurrencyInput
             label="Base Per Click (VND)"
             value={financialTerms.base_per_click || 0}
             onChange={(value) => onUpdate({ base_per_click: value })}
-            placeholder="1,000"
+            placeholder="1.000"
             error={errors.base_per_click}
           />
 
@@ -119,14 +118,11 @@ const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, err
                   tax_withholding: { ...financialTerms.tax_withholding, threshold: value },
                 })
               }
-              placeholder="10,000,000"
+              placeholder="10.000.000"
             />
 
             <div className="space-y-1">
-              <Label className="text-sm font-medium flex items-center gap-2">
-                <FaPercent className="w-3 h-3" />
-                Tax Rate (%)
-              </Label>
+              <Label className="text-sm font-medium flex items-center">Tax Rate (%)</Label>
               <Input
                 type="number"
                 value={financialTerms.tax_withholding?.rate_percent || ""}
@@ -139,7 +135,6 @@ const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, err
                   })
                 }
                 placeholder="10"
-                className="h-11"
                 min="0"
                 max="100"
               />
@@ -152,36 +147,6 @@ const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, err
           levels={financialTerms.levels || []}
           onUpdate={(levels) => onUpdate({ levels })}
         />
-
-        {/* Generated Payment Schedule Display - PREVIEW ONLY, NOT VALIDATED */}
-        {financialTerms.schedule && financialTerms.schedule.length > 0 && (
-          <Card className="p-4 bg-blue-50 border-blue-200">
-            <h4 className="font-medium text-blue-900 mb-3">
-              Payment Schedule Preview ({financialTerms.schedule.length} payments)
-            </h4>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {financialTerms.schedule.map((item: any, index: number) => (
-                <div
-                  key={index}
-                  className="flex justify-between items-center text-sm bg-white p-3 rounded"
-                >
-                  <span className="font-medium">{item.milestone}</span>
-                  <div className="text-right">
-                    <div className="text-xs text-gray-600">
-                      {new Date(item.due_date).toLocaleDateString("vi-VN")}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-3 p-2 bg-blue-100 rounded text-xs text-blue-800">
-              <strong>Note:</strong> This is a preview of payment dates based on your selected
-              cycle. Actual payments will be calculated based on performance metrics and commission
-              levels.
-            </div>
-          </Card>
-        )}
       </CardContent>
     </Card>
   );

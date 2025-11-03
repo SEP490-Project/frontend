@@ -68,10 +68,10 @@ export default function ContractApproval({ brandId: propBrandId }: ContractAppro
   }
 
   // Get unique statuses for dropdown
-  const uniqueStatuses = [...new Set(contracts.map((item) => item.status))];
+  const uniqueStatuses = [...new Set((contracts || []).map((item) => item.status))];
 
   // Filter the data based on search and filters
-  const filteredData = contracts.filter((item) => {
+  const filteredData = (contracts || []).filter((item) => {
     const matchesSearch =
       item.brand_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.type.toLowerCase().includes(searchTerm.toLowerCase()) ||

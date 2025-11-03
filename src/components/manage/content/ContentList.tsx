@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useContentManager } from "@/libs/hooks/useContent";
+import { manageContent } from "@/libs/services/manageContent";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -41,23 +43,12 @@ import { RejectContentModal } from "@/components/modal/content/RejectContentModa
 import ContentDetailModal from "./ContentDetailModal";
 import TaskSelectionDialog from "./TaskSelectionDialog";
 import type { LegacyContent } from "@/libs/utils/contentConverter";
+import type { LegacyTask } from "@/libs/utils/taskConverter";
 
 type ContentType = "blog" | "video";
 
-interface ContentTask {
-  id: number;
-  title: string;
-  type: "Blog" | "Video" | "Post";
-  campaign: string;
-  status: "to-do" | "in-progress" | "completed";
-  details: {
-    description: string;
-    assignee: string;
-    dueTime: string;
-    priority: "High" | "Medium" | "Low";
-  };
-  color: string;
-}
+// Use LegacyTask type for consistency
+type ContentTask = LegacyTask;
 
 interface ContentListProps {
   onCreateNew?: (contentType: ContentType, task?: ContentTask) => void;
@@ -89,14 +80,18 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
 
   const [selectedContent, setSelectedContent] = useState<LegacyContent | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [isTaskSelectionOpen, setIsTaskSelectionOpen] = useState(false);
   const [selectedContentType, setSelectedContentType] = useState<ContentType>("blog");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [contentToDelete, setContentToDelete] = useState<LegacyContent | null>(null);
+  const [isDeletingContent, setIsDeletingContent] = useState(false);
   const [showRequestApprovalModal, setShowRequestApprovalModal] = useState(false);
   const [contentToSubmit, setContentToSubmit] = useState<LegacyContent | null>(null);
+  const [isSubmittingApproval, setIsSubmittingApproval] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [contentToReject, setContentToReject] = useState<LegacyContent | null>(null);
+  const [isRejectingContent, setIsRejectingContent] = useState(false);
 
   useEffect(() => {
     fetchContents(filters);
@@ -121,8 +116,9 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
   };
 
   const handleConfirmDelete = async () => {
-    if (!contentToDelete) return;
+    if (!contentToDelete || isDeletingContent) return;
 
+    setIsDeletingContent(true);
     try {
       const deleteResponse = await removeContent(contentToDelete.id);
 
@@ -140,6 +136,8 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
       // Close modal and clear state
       setShowDeleteModal(false);
       setContentToDelete(null);
+    } finally {
+      setIsDeletingContent(false);
     }
   };
 
@@ -157,9 +155,39 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     // This will be handled by specific buttons in the dropdown menu
   };
 
-  const handleViewContent = (content: LegacyContent) => {
-    setSelectedContent(content);
-    setIsDetailModalOpen(true);
+  const handleViewContent = async (content: LegacyContent) => {
+    setIsLoadingDetail(true);
+
+    try {
+      // Fetch detailed content from API first
+      const response = await manageContent.contentDetail(content.id);
+      const apiData = response.data.data;
+      if (apiData) {
+        // Convert API response to LegacyContent format
+        const detailedContent: LegacyContent = {
+          id: apiData.id,
+          title: apiData.title,
+          content_type: apiData.blog ? "blog" : "video",
+          status: apiData.status.toLowerCase(),
+          date_time: apiData.created_at,
+          actor: apiData.blog?.author?.username || "Unknown",
+          html_content: JSON.stringify(apiData.body), // Convert JSON body to string for storage
+          json_content: apiData.blog || apiData.video || {},
+          created_at: apiData.created_at,
+          updated_at: apiData.updated_at,
+          views: 0, // Add default views count
+          rejection_feedback: apiData.rejection_feedback,
+        };
+        // Show modal only after we have the complete data
+        setSelectedContent(detailedContent);
+        setIsDetailModalOpen(true);
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to load content details");
+    } finally {
+      setIsLoadingDetail(false);
+    }
+
     // Also call the parent onView if provided
     onView?.(content);
   };
@@ -179,8 +207,9 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
   };
 
   const handleConfirmRequestApproval = async () => {
-    if (!contentToSubmit) return;
+    if (!contentToSubmit || isSubmittingApproval) return;
 
+    setIsSubmittingApproval(true);
     try {
       const submitResponse = await submitExistingContent(contentToSubmit.id);
 
@@ -199,6 +228,8 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
       setShowRequestApprovalModal(false);
       setContentToSubmit(null);
       handleCloseDetailModal();
+    } finally {
+      setIsSubmittingApproval(false);
     }
   };
 
@@ -212,11 +243,12 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     setShowRejectModal(true);
   };
 
-  const handleConfirmReject = async (reason: string) => {
-    if (!contentToReject) return;
+  const handleConfirmReject = async (feedback: string) => {
+    if (!contentToReject || isRejectingContent) return;
 
+    setIsRejectingContent(true);
     try {
-      const rejectResponse = await rejectExistingContent(contentToReject.id, reason);
+      const rejectResponse = await rejectExistingContent(contentToReject.id, feedback);
 
       // Check if rejection was successful
       if (rejectResponse.meta.requestStatus === "fulfilled") {
@@ -231,6 +263,8 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
       // Close modals and clear state on error
       setShowRejectModal(false);
       setContentToReject(null);
+    } finally {
+      setIsRejectingContent(false);
     }
   };
 
@@ -252,14 +286,47 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     }
   };
 
+  const handlePublish = async (content: LegacyContent) => {
+    try {
+      const publishResponse = await publishExistingContent(content.id);
+
+      // Check if publishing was successful
+      if (publishResponse.meta.requestStatus === "fulfilled") {
+        fetchContents(filters);
+        toast.success(`Content "${content.title}" has been published successfully.`);
+      }
+    } catch (error) {
+      console.error("Error publishing content:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to publish content");
+    }
+  };
+
   const handleCreateNewClick = (contentType: ContentType) => {
     setSelectedContentType(contentType);
     setIsTaskSelectionOpen(true);
   };
 
-  const handleTaskSelect = (task: ContentTask) => {
+  const handleTaskSelect = (task: any) => {
+    // Accept either a LegacyTask (id as string) or ContentTask; normalize to ContentTask before forwarding.
     setIsTaskSelectionOpen(false);
-    onCreateNew?.(selectedContentType, task);
+    const normalizedTask: ContentTask = {
+      id: task?.id !== undefined && task?.id !== null ? String(task.id) : "0",
+      title: task?.title ?? "",
+      type: (task?.type as ContentTask["type"]) ?? "Blog",
+      campaign: task?.campaign ?? "",
+      status: (task?.status as ContentTask["status"]) ?? "to-do",
+      details: {
+        description: task?.details?.description ?? task?.description ?? "",
+        assignee: task?.details?.assignee ?? task?.assignee ?? "",
+        dueTime: task?.details?.dueTime ?? task?.dueTime ?? "",
+        priority:
+          (task?.details?.priority as ContentTask["details"]["priority"]) ??
+          task?.priority ??
+          "Medium",
+      },
+      color: task?.color ?? "#000000",
+    };
+    onCreateNew?.(selectedContentType, normalizedTask);
   };
 
   const handleTaskSelectionClose = () => {
@@ -267,15 +334,51 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "posted":
-        return <Badge className="bg-green-100 text-green-800">Posted</Badge>;
+    switch (status.toLowerCase()) {
+      case "approved":
+        return (
+          <Badge className="bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-100">
+            Approved
+          </Badge>
+        );
       case "draft":
-        return <Badge className="bg-gray-100 text-gray-800">Draft</Badge>;
+        return (
+          <Badge className="bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-100">
+            Draft
+          </Badge>
+        );
+      case "await_staff":
       case "pending":
-        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+        return (
+          <Badge className="bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100">
+            Awaiting Review
+          </Badge>
+        );
+      case "await_brand":
+        return (
+          <Badge className="bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-100">
+            Awaiting Brand
+          </Badge>
+        );
+      case "rejected":
+        return (
+          <Badge className="bg-red-100 text-red-800 border-red-200 hover:bg-red-100">
+            Rejected
+          </Badge>
+        );
+      case "posted":
+      case "published":
+        return (
+          <Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-100">
+            Published
+          </Badge>
+        );
       default:
-        return <Badge className="bg-gray-100 text-gray-800">{status}</Badge>;
+        return (
+          <Badge variant="outline" className="text-gray-600">
+            {status}
+          </Badge>
+        );
     }
   };
 
@@ -362,9 +465,12 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="posted">Posted</SelectItem>
                 <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="await_staff">Awaiting Review</SelectItem>
+                <SelectItem value="await_brand">Awaiting Brand</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="published">Published</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -499,15 +605,21 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start">
-                          <DropdownMenuItem onClick={() => handleViewContent(content)}>
+                          <DropdownMenuItem
+                            onClick={() => handleViewContent(content)}
+                            disabled={isLoadingDetail}
+                          >
                             <Eye className="w-4 h-4 mr-2" />
-                            View
+                            {isLoadingDetail ? "Loading..." : "View"}
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => onEdit?.(content)}>
-                            <Edit className="w-4 h-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          {content.status === "pending" && (
+                          {/* Only show Edit for draft and rejected content */}
+                          {(content.status === "draft" || content.status === "rejected") && (
+                            <DropdownMenuItem onClick={() => onEdit?.(content)}>
+                              <Edit className="w-4 h-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                          )}
+                          {(content.status === "await_staff" || content.status === "pending") && (
                             <>
                               <DropdownMenuItem
                                 onClick={() => handleApprove(content)}
@@ -525,13 +637,25 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                               </DropdownMenuItem>
                             </>
                           )}
-                          <DropdownMenuItem
-                            onClick={() => handleDelete(content)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
+                          {content.status === "approved" && (
+                            <DropdownMenuItem
+                              onClick={() => handlePublish(content)}
+                              className="text-blue-600 hover:text-blue-700"
+                            >
+                              <Globe className="w-4 h-4 mr-2" />
+                              Publish
+                            </DropdownMenuItem>
+                          )}
+                          {/* Only show Delete for draft and rejected content */}
+                          {(content.status === "draft" || content.status === "rejected") && (
+                            <DropdownMenuItem
+                              onClick={() => handleDelete(content)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
@@ -603,7 +727,8 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
       <Dialog
         open={showDeleteModal}
         onOpenChange={(open) => {
-          if (!open) {
+          // Prevent closing modal while deleting
+          if (!open && !isDeletingContent) {
             handleCancelDelete();
           }
         }}
@@ -611,6 +736,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
         <DeleteContentModal
           contentTitle={contentToDelete?.title || "content"}
           onConfirm={handleConfirmDelete}
+          isLoading={isDeletingContent}
         />
       </Dialog>
 
@@ -618,7 +744,8 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
       <Dialog
         open={showRequestApprovalModal}
         onOpenChange={(open) => {
-          if (!open) {
+          // Prevent closing modal while submitting
+          if (!open && !isSubmittingApproval) {
             handleCancelRequestApproval();
           }
         }}
@@ -626,6 +753,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
         <RequestApprovalModal
           contentTitle={contentToSubmit?.title || "content"}
           onConfirm={handleConfirmRequestApproval}
+          isLoading={isSubmittingApproval}
         />
       </Dialog>
 
@@ -633,7 +761,8 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
       <Dialog
         open={showRejectModal}
         onOpenChange={(open) => {
-          if (!open) {
+          // Prevent closing modal while rejecting
+          if (!open && !isRejectingContent) {
             handleCancelReject();
           }
         }}
@@ -641,6 +770,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
         <RejectContentModal
           contentTitle={contentToReject?.title || "content"}
           onConfirm={handleConfirmReject}
+          isLoading={isRejectingContent}
         />
       </Dialog>
     </div>

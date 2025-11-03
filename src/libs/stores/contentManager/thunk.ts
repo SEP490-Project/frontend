@@ -130,7 +130,7 @@ export const rejectContent = createAsyncThunk(
   "/contents/reject",
   async (params: RejectContentParams, { rejectWithValue }) => {
     try {
-      const response = await manageContent.rejectContent(params.id, params.reason);
+      const response = await manageContent.rejectContent(params.id, params.feedback);
       return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;

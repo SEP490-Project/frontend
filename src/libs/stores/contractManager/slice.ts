@@ -54,22 +54,24 @@ export const manageContractSlice = createSlice({
       })
       .addCase(contract.fulfilled, (state, action) => {
         state.loading = false;
-        state.contracts = action.payload.data;
+        state.contracts = action.payload.data || [];
         state.pagination = action.payload.pagination;
       })
       .addCase(contract.rejected, (state) => {
         state.loading = false;
+        state.contracts = [];
       })
       .addCase(getContractsByBrand.pending, (state) => {
         state.loading = true;
       })
       .addCase(getContractsByBrand.fulfilled, (state, action) => {
         state.loading = false;
-        state.contracts = action.payload.data;
+        state.contracts = action.payload.data || [];
         state.pagination = action.payload.pagination;
       })
       .addCase(getContractsByBrand.rejected, (state) => {
         state.loading = false;
+        state.contracts = [];
       })
 
       // Approve contract

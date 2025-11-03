@@ -1,10 +1,18 @@
-import React, { useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import React from "react";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { FaMoneyBillWave, FaRotateLeft } from "react-icons/fa6";
+import { Separator } from "@/components/ui/separator";
 import { CurrencyInput } from "./shared/FinancialSharedComponent";
+import {
+  FaMoneyBillWave,
+  FaCalculator,
+  FaFileInvoiceDollar,
+  FaPlus,
+  FaTrash,
+} from "react-icons/fa6";
 import {
   AdvertisingScope,
   AffiliateScope,
@@ -12,301 +20,357 @@ import {
   CoProducingScope,
 } from "./financialTermScope";
 
-// Add this import for the warning dialog
-import { WarningDialog } from "@/components/global/";
-
 interface FinancialTermsProps {
   formData: any;
   onUpdateFinancialTerms: (updates: any) => void;
+  onInputChange: (field: string, value: any) => void;
   errors?: any;
 }
 
-// ========================
-// DepositPayment Component
-// ========================
-const DepositPayment: React.FC<{
+const CostBreakdown: React.FC<{
+  breakdown?: { id: string; label: string; value: number }[];
+  onChange: (b: { id: string; label: string; value: number }[]) => void;
+  total: number;
+}> = ({ breakdown = [], onChange, total }) => {
+  const addItem = () => {
+    const id = `item-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    onChange([...breakdown, { id, label: "", value: 0 }]);
+  };
+
+  const updateItem = (id: string, key: "label" | "value", val: any) => {
+    const updatedBreakdown = breakdown.map((i) => (i.id === id ? { ...i, [key]: val } : i));
+    onChange(updatedBreakdown);
+  };
+
+  const removeItem = (id: string) => onChange(breakdown.filter((i) => i.id !== id));
+
+  const format = (n = 0) => new Intl.NumberFormat("vi-VN").format(n);
+  const subtotal = breakdown.reduce((s, i) => s + (Number(i.value) || 0), 0);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <Label className="text-sm font-semibold text-gray-800">Cost Breakdown</Label>
+        <Button onClick={addItem} variant="outline" size="sm" className="border-dashed border-2">
+          <FaPlus className="mr-2 h-4 w-4" /> Add Item
+        </Button>
+      </div>
+
+      <div className="space-y-3">
+        {breakdown.map((item) => (
+          <div
+            key={item.id}
+            className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] items-end gap-4 border border-gray-200 rounded-xl p-4 bg-white shadow-sm"
+          >
+            <div>
+              <Label className="text-xs font-semibold text-gray-600">Breakdown item</Label>
+              <Input
+                placeholder="Enter item"
+                value={item.label}
+                onChange={(e) => updateItem(item.id, "label", e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Label className="text-xs font-semibold text-gray-600">Cost (VND)</Label>
+              <CurrencyInput
+                value={item.value || 0}
+                onChange={(val) => updateItem(item.id, "value", val)}
+                placeholder="0"
+              />
+            </div>
+
+            <div className="flex justify-end pb-1 md:pb-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-red-500 hover:bg-red-50"
+                onClick={() => removeItem(item.id)}
+              >
+                <FaTrash className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 flex justify-between text-sm mt-3">
+        <span className="font-medium text-indigo-800">Subtotal:</span>
+        <span className="font-bold text-indigo-900">{format(subtotal)} VND</span>
+      </div>
+
+      {total > 0 && (
+        <div
+          className={`mt-2 text-sm ${
+            subtotal === total ? "text-green-600 font-medium" : "text-red-600 font-medium"
+          }`}
+        >
+          {subtotal === total
+            ? "Cost breakdown matches total contract cost."
+            : `Cost breakdown (${format(subtotal)} VND) does not match total contract cost (${format(total)} VND).`}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const FinancialOverview: React.FC<{
+  formData: any;
   financialTerms: any;
   onUpdate: (updates: any) => void;
   errors?: any;
-  contractType?: string;
-}> = ({ financialTerms, onUpdate, errors = {}, contractType }) => {
-  const [depositPaid, setDepositPaid] = useState(false);
-  const depositAmount = financialTerms.deposit_amount || 0;
-  const depositPercent = financialTerms.deposit_percent || 0;
+}> = ({ formData, financialTerms, onUpdate, errors = {} }) => {
+  const total = financialTerms.total_cost ?? 0;
+  const percent = formData.deposit_percent ?? 0;
+  const paid = formData.is_deposit_paid ?? false;
 
-  const getTotalContractCost = () => {
-    switch (contractType) {
-      case "ADVERTISING":
-      case "BRAND_AMBASSADOR":
-        return financialTerms.total_cost || 0;
-      default:
-        return 0; // affiliate và co-producing không tính theo tổng cost
+  // Tự tính tiền cọc
+  const deposit = (total * percent) / 100;
+  const remaining = total - deposit;
+  const fmt = (n = 0) => new Intl.NumberFormat("vi-VN").format(n);
+
+  // Lấy cost breakdown - ưu tiên array format trước, sau đó mới convert từ object
+  const getCostBreakdownArray = () => {
+    // Nếu có array format (từ UI), dùng luôn
+    if (financialTerms.cost_breakdown_array && Array.isArray(financialTerms.cost_breakdown_array)) {
+      return financialTerms.cost_breakdown_array;
     }
-  };
 
-  const totalContractCost = getTotalContractCost();
-
-  // ✅ phân loại đúng: 2 loại đầu dùng %, 2 loại sau dùng amount
-  const usePercentage = contractType === "ADVERTISING" || contractType === "BRAND_AMBASSADOR";
-
-  const calculatedDepositAmount = usePercentage
-    ? (totalContractCost * depositPercent) / 100
-    : depositAmount;
-
-  const finalDepositAmount = depositPaid ? 0 : calculatedDepositAmount;
-
-  const handleDepositPaidToggle = (checked: boolean) => {
-    setDepositPaid(checked);
-    if (checked) {
-      onUpdate({
-        deposit_amount: undefined,
-        deposit_percent: undefined,
-      });
+    // Nếu không có array format nhưng có object format, convert từ object sang array
+    if (
+      financialTerms.cost_breakdown &&
+      typeof financialTerms.cost_breakdown === "object" &&
+      !Array.isArray(financialTerms.cost_breakdown)
+    ) {
+      return Object.entries(financialTerms.cost_breakdown).map(([label, value], index) => ({
+        id: `item-${index}-${Date.now()}`,
+        label,
+        value: Number(value) || 0,
+      }));
     }
-  };
 
-  const handleDepositPercentChange = (percent: number) => {
-    onUpdate({ deposit_percent: percent, deposit_amount: undefined });
-  };
-
-  const handleDepositAmountChange = (amount: number) => {
-    onUpdate({ deposit_amount: amount, deposit_percent: undefined });
+    // Trả về array rỗng nếu không có data
+    return [];
   };
 
   return (
-    <Card className="p-4 bg-amber-50 border-amber-200">
-      <div className="flex items-center gap-3 mb-4">
-        <FaMoneyBillWave className="w-5 h-5 text-amber-600" />
-        <h4 className="font-semibold text-lg text-amber-900">Deposit Payment</h4>
-      </div>
-
-      <div className="space-y-4">
-        {/* Checkbox đã trả */}
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="deposit-paid"
-            checked={depositPaid}
-            onCheckedChange={handleDepositPaidToggle}
-          />
-          <Label htmlFor="deposit-paid" className="text-sm font-medium cursor-pointer">
-            Deposit has already been paid
-          </Label>
-        </div>
-
-        {/* Form nhập liệu */}
-        {!depositPaid && (
-          <div className="ml-6 space-y-4 border-l-2 border-amber-300 pl-4 py-2">
-            {usePercentage ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">Deposit Percentage (%)</Label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    step={0.1}
-                    value={depositPercent === 0 ? "" : depositPercent}
-                    onChange={(e) => handleDepositPercentChange(Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-amber-300 rounded-md bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-                    placeholder="10"
-                  />
-                  {errors.deposit_percent && (
-                    <p className="text-red-500 text-xs mt-1">{errors.deposit_percent}</p>
-                  )}
-                </div>
-
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">
-                    Total Contract Value (VND)
-                  </Label>
-                  <div className="p-2 bg-amber-100 border border-amber-300 rounded-md">
-                    <span className="text-sm font-bold text-amber-800">
-                      {totalContractCost.toLocaleString()} VND
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="max-w-xs">
-                <CurrencyInput
-                  label="Deposit Amount (VND)"
-                  value={depositAmount}
-                  onChange={handleDepositAmountChange}
-                  placeholder="5,000,000"
-                  error={errors.deposit_amount}
-                />
-                <p className="text-xs text-gray-600 mt-1">
-                  Upfront deposit required before contract execution.
-                </p>
-              </div>
-            )}
-
-            {/* Deposit status */}
-            {finalDepositAmount > 0 ? (
-              <div className="p-3 bg-red-100 border border-red-300 rounded-md">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                  <span className="text-sm font-bold text-red-800">Deposit Payment Required</span>
-                </div>
-                <p className="text-lg font-extrabold text-red-900 mt-1">
-                  {finalDepositAmount.toLocaleString()} VND
-                </p>
-              </div>
-            ) : (
-              <div className="p-3 bg-gray-100 border border-gray-300 rounded-md">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-                  <span className="text-sm font-medium text-gray-700">No Deposit Required</span>
-                </div>
-              </div>
-            )}
+    <Card className="border border-gray-200 shadow-md overflow-hidden">
+      <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50">
+        <div className="flex items-center gap-3">
+          <FaFileInvoiceDollar className="w-6 h-6 text-indigo-600" />
+          <div>
+            <CardTitle className="text-indigo-800">Financial Overview</CardTitle>
+            <CardDescription>Contract total, deposit, and payment summary</CardDescription>
           </div>
-        )}
+        </div>
+      </CardHeader>
 
-        {/* Đã thanh toán */}
-        {depositPaid && (
-          <div className="ml-6 p-3 bg-green-100 border border-green-300 rounded-md border-l-2 border-l-green-500 pl-4">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm font-bold text-green-800">Deposit Already Paid</span>
+      <CardContent className="space-y-6 pt-6">
+        {/* Total Contract */}
+        <CurrencyInput
+          label="Total Contract Cost (VND)"
+          value={total}
+          onChange={(v) => onUpdate({ total_cost: v })}
+          placeholder="10.000.000"
+          error={errors.total_cost}
+        />
+
+        <CostBreakdown
+          breakdown={getCostBreakdownArray()}
+          onChange={(b) => onUpdate({ cost_breakdown: b })}
+          total={total}
+        />
+
+        <Separator className="my-4" />
+
+        {/* Deposit Setup */}
+        <div className="space-y-5">
+          <div className="flex items-center gap-2">
+            <FaMoneyBillWave className="w-5 h-5 text-amber-600" />
+            <Label className="font-semibold text-base">Deposit Setup</Label>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label className="text-sm font-medium">Deposit Percentage (%)</Label>
+              <Input
+                type="number"
+                min={0}
+                step={0.1}
+                value={percent || ""}
+                enforceRange
+                placeholder="10"
+                onChange={(e) => {
+                  const newPercent = Number(e.target.value) || 0;
+                  onUpdate({ deposit_percent: newPercent });
+                }}
+              />
+              {errors.deposit_percent && (
+                <p className="text-xs text-red-500 mt-1">{errors.deposit_percent}</p>
+              )}
+            </div>
+
+            {/* Checkbox Paid */}
+            <div className="flex items-center space-x-2 pt-6">
+              <Checkbox
+                id="is-paid"
+                checked={paid}
+                onCheckedChange={(checked) => {
+                  console.log("Checkbox changed:", checked);
+                  onUpdate({ is_deposit_paid: checked });
+                }}
+              />
+              <Label htmlFor="is-paid" className="cursor-pointer text-sm">
+                Deposit already paid
+              </Label>
             </div>
           </div>
-        )}
-      </div>
+
+          {/* Deposit Amount (read-only) */}
+          <div>
+            <Label className="text-sm font-medium">Deposit Amount (VND)</Label>
+            <CurrencyInput value={deposit} placeholder="0" disabled />
+          </div>
+
+          {/* Summary Cards */}
+          <div className="grid md:grid-cols-3 gap-4 pt-3">
+            {/* Deposit */}
+            <Card
+              className={`transition border ${
+                deposit > 0
+                  ? paid
+                    ? "bg-green-50 border-green-200"
+                    : "bg-amber-50 border-amber-200"
+                  : "bg-gray-50 border-gray-200"
+              }`}
+            >
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-xs font-semibold text-gray-600">Deposit Amount</p>
+                    <p
+                      className={`text-lg font-bold ${paid ? "text-green-700" : "text-amber-700"}`}
+                    >
+                      {fmt(deposit)} VND
+                    </p>
+                  </div>
+                  <div
+                    className={`w-3 h-3 rounded-full ${paid ? "bg-green-500" : "bg-amber-500"}`}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Remaining */}
+            <Card className="bg-blue-50 border-blue-200">
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-xs font-semibold text-gray-600">Remaining Amount</p>
+                    <p className="text-lg font-bold text-blue-700">{fmt(remaining)} VND</p>
+                  </div>
+                  <FaCalculator className="w-4 h-4 text-blue-500" />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Total */}
+            <Card className="bg-indigo-50 border-indigo-200">
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-xs font-semibold text-gray-600">Total Contract</p>
+                    <p className="text-lg font-bold text-indigo-700">{fmt(total)} VND</p>
+                  </div>
+                  <FaFileInvoiceDollar className="w-4 h-4 text-indigo-500" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </CardContent>
     </Card>
   );
 };
 
-// Add this helper function to get default financial terms
-const getDefaultFinancialTerms = (type: string) => {
-  const baseTerms = {
-    payment_method: "BANK_TRANSFER",
-  };
-
-  switch (type) {
-    case "ADVERTISING":
-      return {
-        ...baseTerms,
-        model: "FIXED",
-        total_cost: 0,
-        cost_breakdown: {},
-        schedule: [],
-      };
-
-    case "BRAND_AMBASSADOR":
-      return {
-        ...baseTerms,
-        model: "FIXED",
-        total_cost: 0,
-        cost_breakdown: [],
-        schedule: [],
-      };
-
-    case "AFFILIATE":
-      return {
-        ...baseTerms,
-        model: "LEVELS",
-        base_per_click: 0,
-        levels: [],
-        payment_cycle: "",
-        payment_date: "",
-        tax_withholding: { threshold: 0, rate_percent: 0 },
-      };
-
-    case "CO_PRODUCING":
-      return {
-        ...baseTerms,
-        model: "SHARE",
-        profit_split_company_percent: 0,
-        profit_split_kol_percent: 0,
-        profit_distribution_cycle: "",
-        profit_distribution_date: [],
-      };
-
-    default:
-      return baseTerms;
-  }
-};
-
-// ========================
-// Main Component
-// ========================
 const FinancialTerms: React.FC<FinancialTermsProps> = ({
   formData,
   onUpdateFinancialTerms,
+  onInputChange,
   errors = {},
 }) => {
-  const [showResetModal, setShowResetModal] = useState(false);
-
   const contractType = formData?.type;
   const financialTerms = formData?.financialTerms || {};
 
-  // Reset function for financial terms only
-  const handleResetFinancialTerms = () => {
-    setShowResetModal(true);
+  const handleUpdate = (updates: any) => {
+    console.log("handleUpdate called with:", updates);
+
+    // Nếu update có deposit_percent hoặc is_deposit_paid, cập nhật trực tiếp formData
+    if (updates.deposit_percent !== undefined) {
+      onInputChange("deposit_percent", updates.deposit_percent);
+    }
+
+    if (updates.is_deposit_paid !== undefined) {
+      onInputChange("is_deposit_paid", updates.is_deposit_paid);
+    }
+
+    // Lọc ra các updates khác cho financialTerms
+    const financialUpdates = Object.keys(updates).reduce((acc: any, key) => {
+      if (key !== "deposit_percent" && key !== "is_deposit_paid") {
+        // Đối với cost_breakdown, lưu trữ cả array format (để UI dùng) và object format (để backend)
+        if (key === "cost_breakdown" && Array.isArray(updates[key])) {
+          // Lưu array format để UI có thể dùng
+          acc[`${key}_array`] = updates[key];
+
+          // Convert sang object format cho backend
+          const breakdownObject: Record<string, number> = {};
+          updates[key].forEach((item: { label: string; value: number }) => {
+            if (item.label && item.label.trim()) {
+              breakdownObject[item.label.trim()] = Number(item.value) || 0;
+            }
+          });
+          acc[key] = breakdownObject;
+        } else {
+          acc[key] = updates[key];
+        }
+      }
+      return acc;
+    }, {});
+
+    if (Object.keys(financialUpdates).length > 0) {
+      onUpdateFinancialTerms(financialUpdates);
+    }
   };
 
-  const confirmResetFinancialTerms = () => {
-    const defaultTerms = getDefaultFinancialTerms(contractType);
-    onUpdateFinancialTerms(defaultTerms);
-    setShowResetModal(false);
-  };
-
-  const cancelResetFinancialTerms = () => {
-    setShowResetModal(false);
-  };
-
-  // Check if there's any financial data to reset
-  const hasFinancialData = () => {
-    if (!financialTerms || Object.keys(financialTerms).length === 0) return false;
-
-    // Check if there's meaningful data beyond defaults
-    const defaultTerms = getDefaultFinancialTerms(contractType);
-    return JSON.stringify(financialTerms) !== JSON.stringify(defaultTerms);
-  };
-
-  if (!contractType) {
+  if (!contractType)
     return (
       <Card className="shadow-sm">
         <CardHeader>
-          <CardTitle className="text-xl">Financial Terms</CardTitle>
+          <CardTitle>Financial Terms</CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-center text-gray-500 py-12">Please select a contract type first</p>
+        <CardContent className="py-10 text-center text-gray-500">
+          <FaFileInvoiceDollar className="w-14 h-14 mx-auto mb-3 opacity-50" />
+          Please select a contract type first
         </CardContent>
       </Card>
     );
-  }
 
-  // Loại bỏ deposit_paid khi gửi update
-  const handleUpdateFinancialTerms = (updates: any) => {
-    const filtered = Object.fromEntries(
-      Object.entries(updates).filter(([key]) => key !== "deposit_paid"),
-    );
-    onUpdateFinancialTerms(filtered);
-  };
-
-  const renderContractTypeScope = () => {
-    const commonProps = {
-      formData,
-      onUpdate: handleUpdateFinancialTerms,
-      errors,
-    };
-
+  const renderScope = () => {
+    const common = { formData, onUpdate: handleUpdate, errors };
     switch (contractType) {
       case "ADVERTISING":
-        return <AdvertisingScope {...commonProps} />;
+        return <AdvertisingScope {...common} />;
       case "BRAND_AMBASSADOR":
-        return <BrandAmbassadorScope {...commonProps} />;
+        return <BrandAmbassadorScope {...common} />;
       case "AFFILIATE":
-        return <AffiliateScope {...commonProps} />;
+        return <AffiliateScope {...common} />;
       case "CO_PRODUCING":
-        return <CoProducingScope {...commonProps} />;
+        return <CoProducingScope {...common} />;
       default:
         return (
           <Card className="shadow-sm">
-            <CardContent className="py-12">
-              <p className="text-center text-gray-500">Unsupported contract type: {contractType}</p>
+            <CardContent className="py-10 text-center text-gray-500">
+              Unsupported contract type: {contractType}
             </CardContent>
           </Card>
         );
@@ -314,58 +378,14 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Action Buttons */}
-      <div className="flex justify-between items-center">
-        <div className="flex gap-2">
-          {hasFinancialData() && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleResetFinancialTerms}
-              className="flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50"
-            >
-              <FaRotateLeft className="w-4 h-4" />
-              Reset Financial Terms
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* Layout */}
-      <div className={"grid gap-6 grid-cols-1"}>
-        <div className="space-y-6">
-          <DepositPayment
-            financialTerms={financialTerms}
-            onUpdate={handleUpdateFinancialTerms}
-            errors={errors}
-            contractType={contractType}
-          />
-          {renderContractTypeScope()}
-        </div>
-      </div>
-
-      {/* Reset Financial Terms Modal */}
-      <WarningDialog
-        isOpen={showResetModal}
-        onOpenChange={setShowResetModal}
-        title="Reset Financial Terms"
-        description={`Are you sure you want to reset all financial terms for this ${contractType.toLowerCase().replace("_", " ")} contract?`}
-        warningMessage="Warning: The following financial data will be permanently deleted:"
-        warningItems={[
-          "Payment schedules and milestones",
-          "Cost breakdowns and amounts",
-          "Commission levels and rates",
-          "Profit sharing configurations",
-          "Deposit information",
-          "All other financial settings",
-        ]}
-        additionalInfo="This action will reset the financial terms to default values. Other contract information will remain unchanged."
-        onConfirm={confirmResetFinancialTerms}
-        onCancel={cancelResetFinancialTerms}
-        confirmText="Reset Financial Terms"
-        cancelText="Cancel"
+    <div className="space-y-8">
+      <FinancialOverview
+        formData={formData}
+        financialTerms={financialTerms}
+        onUpdate={handleUpdate}
+        errors={errors}
       />
+      {renderScope()}
     </div>
   );
 };

@@ -13,6 +13,7 @@ import { manageConfigReducer } from "./configManager/slice";
 import { categoryManagerReducer } from "./categoryManager/slice";
 import { attributeManagerReducer } from "./attributeManager/slice";
 import { conceptManagerReducer } from "./conceptManager/slice";
+import { manageTagReducer } from "./tagManager/slice";
 
 export const rootReducer = combineReducers({
   manageAuthen: manageAuthenReducer,
@@ -30,4 +31,5 @@ export const rootReducer = combineReducers({
   manageCategory: categoryManagerReducer,
   manageAttribute: attributeManagerReducer,
   manageConcept: conceptManagerReducer,
+  manageTag: manageTagReducer,
 });

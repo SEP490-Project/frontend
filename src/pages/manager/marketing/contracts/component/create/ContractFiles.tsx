@@ -2,7 +2,7 @@ import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { FileUploader } from "@/components/global";
+import { ContractUploader } from "@/components/global";
 
 interface ContractFilesProps {
   formData: any;
@@ -69,21 +69,20 @@ const ContractFiles: React.FC<ContractFilesProps> = ({
             <Label className="text-sm font-medium">
               Contract Document <span className="text-red-500">*</span>
             </Label>
-            <FileUploader
+            <ContractUploader
               userId={formData?.userId || "b758136a-f78c-4a36-985a-974c39d5cd0d"}
               accept=".pdf,.doc,.docx"
-              multiple={false} // Chỉ cho phép 1 file
+              multiple={false}
               maxSize={10}
               maxFiles={1}
               allowedTypes={["pdf", "doc", "docx"]}
               onFilesChange={onContractFilesChange}
               onUploadComplete={handleContractUploadComplete}
               onFilesRemove={handleContractFilesRemove}
-              showPreview={false}
               title="Contract File"
-              showSummary={true}
               className="w-full"
               initialFiles={formData?.contractFiles || []}
+              context="contract"
             />
             <p className="text-xs text-slate-500">
               Upload the main contract document (PDF, DOC, DOCX only, max 1 file, up to 10MB)
@@ -97,21 +96,20 @@ const ContractFiles: React.FC<ContractFilesProps> = ({
             <Label className="text-sm font-medium">
               Proposal Document <span className="text-red-500">*</span>
             </Label>
-            <FileUploader
+            <ContractUploader
               userId={formData?.userId || "b758136a-f78c-4a36-985a-974c39d5cd0d"}
               accept=".pdf,.doc,.docx,.ppt,.pptx"
-              multiple={false} // Chỉ cho phép 1 file
+              multiple={false}
               maxSize={10}
               maxFiles={1}
               allowedTypes={["pdf", "doc", "docx", "ppt", "pptx"]}
               onFilesChange={onProposalFilesChange}
               onUploadComplete={handleProposalUploadComplete}
               onFilesRemove={handleProposalFilesRemove}
-              showPreview={false}
               title="Proposal File"
-              showSummary={true}
               className="w-full"
               initialFiles={formData?.proposalFiles || []}
+              context="proposal"
             />
             <p className="text-xs text-slate-500">
               Upload the proposal document (PDF, DOC, DOCX, PPT, PPTX only, max 1 file, up to 10MB)

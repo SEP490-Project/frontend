@@ -106,7 +106,9 @@ const CoProducingScope: React.FC<CoProducingScopeProps> = ({ formData, onUpdate,
           </div>
         </div>
 
-        {/* Profit Distribution Cycle - Same structure as AffiliateScope */}
+        {/* Total contract cost is managed in FinancialTerms (shared) - removed from scope */}
+
+        {/* Profit Distribution Cycle */}
         <SelectField
           label="Profit Distribution Cycle"
           value={financialTerms.profit_distribution_cycle || ""}

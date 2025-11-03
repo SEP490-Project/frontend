@@ -21,7 +21,7 @@ import {
   CommandInput,
   CommandItem,
 } from "@/components/ui/command";
-import { X, Tag } from "lucide-react";
+import { X, Tag as TagIcon } from "lucide-react";
 
 import type { Content, CreateContentRequest } from "@/libs/types/content";
 import { ArrowLeft, User, Calendar, Target, FileText } from "lucide-react";
@@ -33,17 +33,10 @@ import {
 } from "@/libs/helper/taskUtils";
 import { useAuth } from "@/libs/hooks/useAuth";
 import { getBrandIdFromToken } from "@/libs/helper/helper";
-import { mockTags } from "@/pages/manager/content/mock-data/tag-mock-data";
+import { useNavigationBlocker } from "@/libs/hooks/useNavigationBlocker";
+import { useTag } from "@/libs/hooks/useTag";
 
-interface Tag {
-  id: string;
-  name: string;
-  description: string;
-  usage_count: number;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
-}
+import type { Tag } from "@/libs/types/tag";
 
 type ContentType = "blog" | "video";
 
@@ -58,21 +51,33 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
   const contentType = "blog";
   const [showPreview, setShowPreview] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
-  const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
+  const [showNavigationDialog, setShowNavigationDialog] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
 
   // Get user from auth state
   const { user } = useAuth();
 
-  // Get available tags (filtered to show only non-deleted)
-  const availableTags = mockTags.filter((tag) => tag.deleted_at === null);
+  // Get available tags from API
+  const { tags: availableTags, loading: tagsLoading, error: tagsError } = useTag();
+
+  // Initialize selected tags from editing content
+  const [selectedTags, setSelectedTags] = useState<Tag[]>(() => {
+    if (editingContent?.blog?.tags) {
+      // Map tag names from editing content to Tag objects
+      return editingContent.blog.tags
+        .map((tagName: string) => availableTags.find((tag) => tag.name === tagName))
+        .filter((tag): tag is Tag => tag !== undefined);
+    }
+    return [];
+  });
 
   // State for content tracking
   const [content, setContent] = React.useState<{ html: string; json: any } | null>(
     editingContent
       ? {
-          html: editingContent.html_content || "",
-          json: editingContent.json_content || null,
+          html: editingContent.body || "",
+          json: editingContent.body || null,
         }
       : null,
   );
@@ -115,20 +120,18 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
       const excerpt = plainText.substring(0, 150) + (plainText.length > 150 ? "..." : "");
 
       // Debug: Log user info to understand the issue
-      console.log("Current user from auth:", user);
-      console.log("User ID:", user?.id);
 
       const apiData: CreateContentRequest = {
         title: localTitle.trim(),
-        body: content.html,
+        body: content.json, // Export as JSON instead of HTML
         type: "POST",
         blog_fields: {
           author_id: user?.id || getBrandIdFromToken() || "",
           excerpt: excerpt,
           read_time: calculateReadTime(content.html),
-          tags: selectedTags.map((tag) => tag.id), // Convert selected tags to array of IDs
+          tags: selectedTags.map((tag) => tag.name), // Convert selected tags to array of names
         },
-        channels: ["website"],
+        channels: ["0a2a3dcb-71c2-474f-8d15-7400dd424b2b"],
         task_id: selectedTask?.id?.toString() || null,
         affiliate_link: null,
         ai_generated_text: null,
@@ -157,6 +160,15 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
     );
   }, [content, initialContent, localTitle, editingContent?.title]);
 
+  // Block browser navigation when there are unsaved changes
+  useNavigationBlocker({
+    when: hasUnsavedChanges,
+    onNavigationAttempt: (destinationUrl) => {
+      setPendingNavigation(destinationUrl);
+      setShowNavigationDialog(true);
+    },
+  });
+
   // Handle back navigation with unsaved changes check
   const handleBackClick = () => {
     if (hasUnsavedChanges) {
@@ -177,6 +189,21 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
     setShowUnsavedDialog(false);
   };
 
+  // Handle navigation dialog - stay on page
+  const handleStayOnPage = () => {
+    setShowNavigationDialog(false);
+    setPendingNavigation(null);
+  };
+
+  // Handle navigation dialog - proceed with navigation
+  const handleProceedNavigation = () => {
+    setShowNavigationDialog(false);
+    // Allow navigation by temporarily disabling the blocker
+    if (pendingNavigation) {
+      window.location.href = pendingNavigation;
+    }
+  };
+
   // Calculate estimated read time based on content
   const calculateReadTime = (htmlContent: string) => {
     // Remove HTML tags and get plain text
@@ -188,8 +215,7 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
     return readTime > 0 ? readTime : 1; // Minimum 1 minute
   };
 
-  const defaultContent =
-    "<h1>Heading1</h1><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quis lobortis nisl cursus bibendum et nulla accumsan sodales ornare. At urna viverra non suspendisse neque, lorem. Pretium condimentum pellentesque id gravida id eiam sit sed orci euismod. Rhoncus proin orci duis scelerisque molestie cursus tincidunt aliguam.</p><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quis lobortis nisl cursus bibendum et nulla accumsan sodales ornare. At urna viverra non suspendisse neque, lorem. Pretium condimentum pellentesque id gravida id eiam sit sed orci euismod. Rhoncus proin orci duis scelerisque molestie cursus tincidunt aliguam.</p>";
+  const defaultContent = "Edit your blog content here...";
 
   return (
     <div className="space-y-6">
@@ -349,7 +375,7 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
                   key={tag.id}
                   className="flex items-center gap-1 px-3 py-1 bg-[#FF9DB0] hover:bg-pink-600 text-white border-0"
                 >
-                  <Tag className="h-3 w-3" />
+                  <TagIcon className="h-3 w-3" />
                   {tag.name}
                   <Button
                     type="button"
@@ -381,7 +407,7 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
                       variant="outline"
                       className="justify-start gap-2 text-muted-foreground border-dashed hover:border-[#FF9DB0] hover:text-[#FF9DB0] transition-colors"
                     >
-                      <Tag className="h-4 w-4" />
+                      <TagIcon className="h-4 w-4" />
                       Add tags...
                     </Button>
                   )}
@@ -389,34 +415,48 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
                 <PopoverContent className="w-full p-0 bg-white border" align="start">
                   <Command className="bg-white">
                     <CommandInput placeholder="Search tags..." className="border-0 focus:ring-0" />
-                    <CommandEmpty>No tags found.</CommandEmpty>
-                    <CommandGroup className="max-h-64 overflow-auto">
-                      {availableTags
-                        .filter((tag) => !selectedTags.some((selected) => selected.id === tag.id))
-                        .map((tag) => (
-                          <CommandItem
-                            key={tag.id}
-                            value={tag.name}
-                            onSelect={() => handleTagSelect(tag)}
-                            className="cursor-pointer hover:bg-[#FF9DB0]/10 data-[selected]:bg-[#FFFFFF]/20"
-                          >
-                            <div className="flex items-center space-x-2 flex-1">
-                              <Tag className="h-4 w-4 text-[#FF9DB0]" />
-                              <div className="flex-1">
-                                <div className="font-medium">{tag.name}</div>
-                                {tag.description && (
-                                  <div className="text-sm text-muted-foreground">
-                                    {tag.description}
+                    {tagsLoading ? (
+                      <div className="p-4 text-center text-sm text-muted-foreground">
+                        Loading tags...
+                      </div>
+                    ) : tagsError ? (
+                      <div className="p-4 text-center text-sm text-red-500">
+                        Error loading tags: {tagsError}
+                      </div>
+                    ) : (
+                      <>
+                        <CommandEmpty>No tags found.</CommandEmpty>
+                        <CommandGroup className="max-h-64 overflow-auto">
+                          {availableTags
+                            .filter(
+                              (tag) => !selectedTags.some((selected) => selected.id === tag.id),
+                            )
+                            .map((tag) => (
+                              <CommandItem
+                                key={tag.id}
+                                value={tag.name}
+                                onSelect={() => handleTagSelect(tag)}
+                                className="cursor-pointer hover:bg-[#FF9DB0]/10 data-[selected]:bg-[#FFFFFF]/20"
+                              >
+                                <div className="flex items-center space-x-2 flex-1">
+                                  <TagIcon className="h-4 w-4 text-[#FF9DB0]" />
+                                  <div className="flex-1">
+                                    <div className="font-medium">{tag.name}</div>
+                                    {tag.description && (
+                                      <div className="text-sm text-muted-foreground">
+                                        {tag.description}
+                                      </div>
+                                    )}
                                   </div>
-                                )}
-                              </div>
-                              <div className="text-xs text-muted-foreground bg-[#FF9DB0]/10 px-2 py-1 rounded-full">
-                                {tag.usage_count} uses
-                              </div>
-                            </div>
-                          </CommandItem>
-                        ))}
-                    </CommandGroup>
+                                  <div className="text-xs text-muted-foreground bg-[#FF9DB0]/10 px-2 py-1 rounded-full">
+                                    {tag.usage_count} uses
+                                  </div>
+                                </div>
+                              </CommandItem>
+                            ))}
+                        </CommandGroup>
+                      </>
+                    )}
                   </Command>
                 </PopoverContent>
               </Popover>
@@ -427,7 +467,7 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
           <div className="space-y-2">
             <Label htmlFor="content">Content *</Label>
             <TiptapEditor
-              initialContent={editingContent ? editingContent.html_content : defaultContent}
+              initialContent={editingContent ? editingContent.body : defaultContent}
               onChange={handleContentChange}
             />
           </div>
@@ -490,6 +530,27 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
             </Button>
             <Button variant="destructive" onClick={handleDiscardChanges}>
               Discard Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Navigation Blocker Dialog - for in-app navigation */}
+      <Dialog open={showNavigationDialog} onOpenChange={setShowNavigationDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Leave Page?</DialogTitle>
+            <DialogDescription>
+              You have unsaved changes that will be lost if you navigate away from this page. Are
+              you sure you want to leave?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleStayOnPage}>
+              Stay on Page
+            </Button>
+            <Button variant="destructive" onClick={handleProceedNavigation}>
+              Leave Without Saving
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -6,7 +6,14 @@ import type { AddBrand } from "@/libs/types/brand";
 export const brand = createAsyncThunk(
   "/brands",
   async (
-    req: { page: number; limit: number; keywords?: string; status?: string },
+    req: {
+      page: number;
+      limit: number;
+      keywords?: string;
+      status?: string;
+      sort_by?: string;
+      sort_order?: string;
+    },
     { rejectWithValue },
   ) => {
     try {

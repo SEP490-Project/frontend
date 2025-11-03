@@ -12,7 +12,7 @@ export const manageContract = {
     page: number;
     limit: number;
     sort_by: string;
-    order: "asc" | "desc";
+    sort_order: string;
   }) => api.get("/contracts", { params }),
 
   getContractsByBrand: (params: ContractParams) =>

@@ -1,6 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { brand, addBrand, brandDetail, updateBrand } from "./thunk";
 import type { Brands } from "@/libs/types/brand";
+import { toast } from "sonner";
 
 interface stateType {
   loading: boolean;
@@ -43,11 +44,15 @@ export const manageBrandSlice = createSlice({
       .addCase(addBrand.pending, (state) => {
         state.loading = true;
       })
-      .addCase(addBrand.fulfilled, (state) => {
+      .addCase(addBrand.fulfilled, (state, action) => {
         state.loading = false;
+        const message = action.payload?.message || "Brand created successfully";
+        toast.success(message);
       })
-      .addCase(addBrand.rejected, (state) => {
+      .addCase(addBrand.rejected, (state, action) => {
         state.loading = false;
+        const message = (action.payload as string) || "Error creating brand. Please try again.";
+        toast.error(message);
       })
       .addCase(brandDetail.pending, (state) => {
         state.loading = true;
@@ -62,11 +67,15 @@ export const manageBrandSlice = createSlice({
       .addCase(updateBrand.pending, (state) => {
         state.loading = true;
       })
-      .addCase(updateBrand.fulfilled, (state) => {
+      .addCase(updateBrand.fulfilled, (state, action) => {
         state.loading = false;
+        const message = action.payload?.message || "Brand updated successfully";
+        toast.success(message);
       })
-      .addCase(updateBrand.rejected, (state) => {
+      .addCase(updateBrand.rejected, (state, action) => {
         state.loading = false;
+        const message = (action.payload as string) || "Failed to update brand.";
+        toast.error(message);
       });
   },
 });

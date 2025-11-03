@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FaEye, FaPenToSquare, FaGlobe, FaFilter } from "react-icons/fa6";
+import { FaEye, FaPenToSquare, FaGlobe, FaPlus } from "react-icons/fa6";
 import { Switch } from "@/components/ui/switch";
 import { Loader2 } from "lucide-react";
 import { StatusModal } from "@/components/modal/StatusModal";
@@ -30,6 +30,7 @@ import { useAppDispatch } from "@/libs/stores";
 import { brand } from "@/libs/stores/brandManager/thunk";
 import type { Brands } from "@/libs/types/brand";
 import { useNavigate } from "react-router";
+
 interface Partner extends Brands {
   isActive: boolean;
 }
@@ -45,30 +46,33 @@ const BrandPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [sortBy, setSortBy] = useState<string>("created_at");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const navigate = useNavigate();
-
-  // Use debounce hook instead of manual implementation
-  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   const dispatch = useAppDispatch();
   const { brands, loading, pagination } = useBrand();
 
-  // Fetch data when filters change
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
+  // Fetch data when filters, page, or sorting change
   useEffect(() => {
-    const params = {
+    const params: Record<string, any> = {
       page,
       limit: PAGE_SIZE,
       ...(debouncedSearchTerm && { keywords: debouncedSearchTerm }),
       ...(statusFilter !== "ALL" && { status: statusFilter }),
+      sort_by: sortBy,
+      sort_order: sortOrder,
     };
 
-    dispatch(brand(params));
-  }, [dispatch, page, debouncedSearchTerm, statusFilter]);
+    dispatch(brand(params as any));
+  }, [dispatch, page, debouncedSearchTerm, statusFilter, sortBy, sortOrder]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearchTerm, statusFilter]);
+  }, [debouncedSearchTerm, statusFilter, sortBy, sortOrder]);
 
   // Convert API brands to partners format
   const partners: Partner[] = useMemo(() => {
@@ -84,8 +88,27 @@ const BrandPage: React.FC = () => {
     }
   };
 
+  // Handle table header sorting
+  const handleSort = (column: string) => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(column);
+      setSortOrder("asc");
+    }
+  };
+
+  // Reset filters handler
+  const handleResetFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("ALL");
+    setSortBy("created_at");
+    setSortOrder("desc");
+  };
+
   return (
     <div className="min-h-fit p-4 sm:p-6">
+      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-xl sm:text-2xl font-semibold">Brands</h1>
@@ -94,22 +117,18 @@ const BrandPage: React.FC = () => {
           </p>
         </div>
         <Button
-          className="bg-primary hover:bg-[#f794a8] text-white"
+          className="bg-primary hover:bg-[#f794a8] text-white flex items-center gap-2"
           onClick={() => navigate("/manage/marketing/brands/create")}
         >
+          <FaPlus className="h-4 w-4" />
           Create Brand
         </Button>
       </div>
 
-      {/* Filters - Always visible */}
+      {/* Filters */}
       <div className="bg-white rounded-lg shadow mb-4 p-4">
-        <div className="flex items-center gap-4 flex-wrap">
-          <div className="flex items-center gap-2">
-            <FaFilter className="text-gray-500" />
-            <span className="text-sm font-medium">Filters:</span>
-          </div>
-
-          <div className="flex-1 min-w-[200px]">
+        <div className="flex flex-col sm:flex-row sm:items-end gap-2">
+          <div className="flex-1">
             <Input
               placeholder="Search by name"
               value={searchTerm}
@@ -118,7 +137,7 @@ const BrandPage: React.FC = () => {
             />
           </div>
 
-          <div className="min-w-[150px]">
+          <div className="sm:w-36">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger>
                 <SelectValue placeholder="Status" />
@@ -130,13 +149,48 @@ const BrandPage: React.FC = () => {
               </SelectContent>
             </Select>
           </div>
+
+          <div className="sm:w-36">
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sort By" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="created_at">Created At</SelectItem>
+                <SelectItem value="name">Name</SelectItem>
+                <SelectItem value="number_of_contracts">Total Contracts</SelectItem>
+                <SelectItem value="number_of_active_contracts">Active Contracts</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="sm:w-36">
+            <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as "asc" | "desc")}>
+              <SelectTrigger>
+                <SelectValue placeholder="Order" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="asc">Ascending</SelectItem>
+                <SelectItem value="desc">Descending</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="sm:w-24">
+            <Button
+              variant="secondary"
+              className="border-gray-300 w-full"
+              onClick={handleResetFilters}
+            >
+              Reset
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Table container with loading state */}
+      {/* Table */}
       <div className="bg-white rounded-lg overflow-hidden shadow">
         {loading ? (
-          // Loading state for table only
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <span className="ml-2">Loading brands...</span>
@@ -148,12 +202,27 @@ const BrandPage: React.FC = () => {
               <Table>
                 <TableHeader>
                   <TableRow className="border-b bg-gray-50">
-                    <TableHead className="font-semibold">Brand</TableHead>
+                    <TableHead
+                      className="font-semibold cursor-pointer"
+                      onClick={() => handleSort("name")}
+                    >
+                      Brand
+                    </TableHead>
                     <TableHead className="font-semibold">Email</TableHead>
                     <TableHead className="font-semibold">Phone</TableHead>
                     <TableHead className="font-semibold">Website</TableHead>
-                    <TableHead className="font-semibold">Total Contracts</TableHead>
-                    <TableHead className="font-semibold">Active Contracts</TableHead>
+                    <TableHead
+                      className="font-semibold cursor-pointer"
+                      onClick={() => handleSort("number_of_contracts")}
+                    >
+                      Total Contracts
+                    </TableHead>
+                    <TableHead
+                      className="font-semibold cursor-pointer"
+                      onClick={() => handleSort("number_of_active_contracts")}
+                    >
+                      Active Contracts
+                    </TableHead>
                     <TableHead className="font-semibold">Status</TableHead>
                     <TableHead className="font-semibold">Actions</TableHead>
                   </TableRow>
@@ -166,7 +235,7 @@ const BrandPage: React.FC = () => {
                         index % 2 === 0 ? "bg-white" : "bg-gray-25"
                       }`}
                     >
-                      {/* Partner Name + Logo */}
+                      {/* Brand Name + Logo */}
                       <TableCell className="py-4 max-w-xs">
                         <div className="flex items-center">
                           <img
@@ -189,25 +258,21 @@ const BrandPage: React.FC = () => {
                       </TableCell>
 
                       {/* Email */}
-                      <TableCell className="py-4">
-                        <div className="text-sm text-gray-600 max-w-xs truncate">
-                          {!isEmpty(partner.contact_email) ? (
-                            partner.contact_email
-                          ) : (
-                            <span className="text-gray-400 italic">No email</span>
-                          )}
-                        </div>
+                      <TableCell className="py-4 text-sm text-gray-600 max-w-xs truncate">
+                        {!isEmpty(partner.contact_email) ? (
+                          partner.contact_email
+                        ) : (
+                          <span className="text-gray-400 italic">No email</span>
+                        )}
                       </TableCell>
 
                       {/* Phone */}
-                      <TableCell className="py-4">
-                        <div className="text-sm text-gray-600">
-                          {!isEmpty(partner.contact_phone) ? (
-                            partner.contact_phone
-                          ) : (
-                            <span className="text-gray-400 italic">No phone</span>
-                          )}
-                        </div>
+                      <TableCell className="py-4 text-sm text-gray-600">
+                        {!isEmpty(partner.contact_phone) ? (
+                          partner.contact_phone
+                        ) : (
+                          <span className="text-gray-400 italic">No phone</span>
+                        )}
                       </TableCell>
 
                       {/* Website */}
@@ -247,7 +312,7 @@ const BrandPage: React.FC = () => {
                         </span>
                       </TableCell>
 
-                      {/* Status Switch */}
+                      {/* Status */}
                       <TableCell className="py-4">
                         <Dialog>
                           <DialogTrigger>
@@ -257,9 +322,7 @@ const BrandPage: React.FC = () => {
                             name={partner.name}
                             status={partner.isActive ? "Inactive" : "Active"}
                             onConfirm={() => {
-                              // TODO: Implement status change logic here
-                              // Example: dispatch an action to update status
-                              // dispatch(updateBrandStatus(partner.id, partner.isActive ? "INACTIVE" : "ACTIVE"));
+                              // TODO: dispatch status change
                             }}
                           />
                         </Dialog>
@@ -428,7 +491,7 @@ const BrandPage: React.FC = () => {
               ))}
             </div>
 
-            {/* No results message */}
+            {/* No results */}
             {partners.length === 0 && (
               <div className="text-center py-8 text-gray-500">
                 No brands found matching your criteria.

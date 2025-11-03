@@ -9,7 +9,6 @@ import * as yup from "yup";
 import { useAppDispatch } from "@/libs/stores";
 import { useBrand } from "@/libs/hooks/useBrand";
 import { addBrand } from "@/libs/stores/brandManager/thunk";
-import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
 // Helper: format URL
@@ -270,16 +269,12 @@ const CreateBrandPage: React.FC = () => {
         tax_number: formData.brand.tax_number,
       };
 
-      const result = await dispatch(addBrand(brandData)).unwrap();
-      toast.success(result.message || "Brand created successfully");
-
+      await dispatch(addBrand(brandData));
       setTimeout(() => {
         navigate("/manage/marketing/brands");
-      }, 1500);
-    } catch (error: any) {
-      console.error("Submit error:", error);
-      const message = error?.message || "Error creating brand. Please try again.";
-      toast.error(message);
+      }, 1000);
+    } catch {
+      return;
     } finally {
       setIsSubmitting(false);
     }

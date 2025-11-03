@@ -9,7 +9,8 @@ import { useAppDispatch } from "@/libs/stores";
 import { ContractPreviewModal } from "@/components/manage/marketing/contract/ContractPreviewModal";
 import { ContractPDF } from "@/components/manage/marketing/contract/ContractPreview";
 import { PDFDownloadLink } from "@react-pdf/renderer";
-import { FaEye, FaFileArrowDown, FaArrowLeft } from "react-icons/fa6";
+import { FaEye, FaFileArrowDown, FaArrowLeft, FaFileContract } from "react-icons/fa6";
+import { Loader2 } from "lucide-react";
 
 export default function ContractDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -22,8 +23,32 @@ export default function ContractDetailPage() {
     if (id) dispatch(getContractById(id));
   }, [dispatch, id]);
 
-  if (detailLoading) return <div className="text-center p-8">Loading...</div>;
-  if (!contractDetail) return <div className="text-center p-8">No contract found</div>;
+  if (detailLoading)
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <Loader2 className="h-10 w-10 animate-spin text-primary mb-2" />
+        <span className="text-gray-500">Loading Contract Detail</span>
+      </div>
+    );
+
+  if (!contractDetail)
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[40vh] text-center">
+        <FaFileContract className="w-14 h-14 text-gray-300 mb-4" />
+        <h2 className="text-lg font-semibold text-gray-700 mb-1">No Contract Found</h2>
+        <p className="text-gray-500 mb-4">
+          The contract you are looking for does not exist or has been removed.
+        </p>
+        <Button
+          variant="outline"
+          onClick={() => navigate("/manage/marketing/contracts")}
+          className="border-gray-300 flex items-center gap-2"
+        >
+          <FaArrowLeft className="w-4 h-4" />
+          Back to Contracts
+        </Button>
+      </div>
+    );
 
   const { type } = contractDetail;
 
@@ -41,7 +66,10 @@ export default function ContractDetailPage() {
           </Button>
 
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Contract Details</h1>
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <FaFileContract className="text-primary" />
+              Contract Details
+            </h1>
             <p className="text-gray-600">Contract number: {contractDetail.contract_number}</p>
           </div>
         </div>
@@ -50,7 +78,7 @@ export default function ContractDetailPage() {
           <Button
             onClick={() => setIsPreviewModalOpen(true)}
             variant="outline"
-            className="border-blue-300 text-blue-700 bg-white hover:bg-blue-100"
+            className="border-blue-300 text-blue-700 bg-white hover:bg-blue-100 flex items-center"
           >
             <FaEye className="h-4 w-4 mr-2" />
             Preview Contract
@@ -61,7 +89,10 @@ export default function ContractDetailPage() {
             fileName={`${contractDetail.title || "contract"}_${contractDetail.contract_number}.pdf`}
           >
             {({ loading }) => (
-              <Button disabled={loading} className="bg-red-600 hover:bg-red-700 text-white">
+              <Button
+                disabled={loading}
+                className="bg-red-600 hover:bg-red-700 text-white flex items-center"
+              >
                 <FaFileArrowDown className="h-4 w-4 mr-2" />
                 {loading ? "Generating..." : "Download PDF"}
               </Button>

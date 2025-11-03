@@ -123,17 +123,12 @@ const AddCampaignPage: React.FC = () => {
     const payload = toPayload();
 
     try {
-      const resultAction = await dispatch(createCampaign(payload));
-
-      if (createCampaign.fulfilled.match(resultAction)) {
-        toast.success("✅ Campaign created successfully!");
+      await dispatch(createCampaign(payload));
+      setTimeout(() => {
         navigate("/manage/marketing/campaigns");
-      } else {
-        toast.error("❌ Failed to create campaign: " + (resultAction.payload || "Unknown error"));
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error("❌ Something went wrong while creating campaign.");
+      }, 1000);
+    } catch {
+      return;
     }
   };
 

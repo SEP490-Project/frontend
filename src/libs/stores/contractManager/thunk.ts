@@ -16,7 +16,7 @@ export const contract = createAsyncThunk(
       page: number;
       limit: number;
       sort_by: string;
-      order: "asc" | "desc";
+      sort_order: string;
     },
     { rejectWithValue },
   ) => {

@@ -101,12 +101,10 @@ const CampaignPage: React.FC = () => {
     sortOrder,
   ]);
 
-  // Reset to page 1 when filters change
   useEffect(() => {
     setPage(1);
   }, [typeFilter, statusFilter, debouncedSearchTerm, startDate, endDate]);
 
-  // Thêm hàm reset filter
   const handleResetFilters = () => {
     setSearchTerm("");
     setTypeFilter("ALL");

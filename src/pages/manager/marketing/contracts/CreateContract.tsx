@@ -991,35 +991,46 @@ const AddContractPage: React.FC = () => {
     <div className="min-h-fit p-4 sm:p-6">
       <div className="max-w-7xl mx-auto pb-10">
         {/* Header - Thêm thông tin về preselected brand */}
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/manage/marketing/contracts")}
+            className="flex items-center shrink-0"
+          >
+            <FaArrowLeft className="w-4 h-4 mr-2" />
+            Return
+          </Button>
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:gap-6 flex-1 text-center sm:text-left">
             <div>
               <h1 className="text-xl sm:text-2xl font-semibold">Create New Contract</h1>
-              <p className="text-gray-600 mt-1">
+              <p className="text-gray-600 mt-1 text-sm sm:text-base">
                 {preselectedBrandId
-                  ? `Create a new contract for ${preselectedBrandData?.name || "selected brand"}`
+                  ? `Create a new contract for ${preselectedBrandData?.name || "selected brand"}.`
                   : "Create a new contract with defined terms and details."}
               </p>
+
+              {formData.type && (
+                <span
+                  className={`inline-flex items-center px-3 py-1 mt-2 rounded-full text-sm font-medium border ${contractTypeColor.bg} ${contractTypeColor.text} ${contractTypeColor.border}`}
+                >
+                  {CONTRACT_TYPE_OPTIONS.find((option) => option.value === formData.type)?.label ||
+                    "Not Selected"}
+                </span>
+              )}
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleReset}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-              disabled={isSubmitting}
-            >
-              <FaRotateLeft className="h-4 w-4 mr-2" />
-              Reset
-            </Button>
           </div>
-          {formData.type && (
-            <span
-              className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${contractTypeColor.bg} ${contractTypeColor.text} ${contractTypeColor.border}`}
-            >
-              {CONTRACT_TYPE_OPTIONS.find((option) => option.value === formData.type)?.label ||
-                "Not Selected"}
-            </span>
-          )}
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleReset}
+            className="text-red-600 hover:text-red-700 hover:bg-red-50 shrink-0"
+            disabled={isSubmitting}
+          >
+            <FaRotateLeft className="h-4 w-4 mr-2" />
+            Reset
+          </Button>
         </div>
 
         {/* Step Indicator */}

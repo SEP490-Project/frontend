@@ -12,7 +12,6 @@ import { AvatarUploader } from "@/components/global";
 import { useBrand } from "@/libs/hooks/useBrand";
 import { useAppDispatch } from "@/libs/stores";
 import { brandDetail, updateBrand } from "@/libs/stores/brandManager/thunk";
-import { toast } from "sonner";
 
 const EditBrandPage: React.FC = () => {
   const { id: brandId } = useParams<{ id: string }>();
@@ -70,7 +69,6 @@ const EditBrandPage: React.FC = () => {
     e.preventDefault();
     if (!brandId) return;
     try {
-      console.log("Submitting form data:", formData);
       const response = await dispatch(updateBrand({ id: brandId, data: formData }));
       if (response.meta.requestStatus === "fulfilled") {
         setFormData({
@@ -88,19 +86,18 @@ const EditBrandPage: React.FC = () => {
           representative_email: "",
           representative_citizen_id: "",
         });
-        toast.success("Brand updated successfully!");
         navigate(`/manage/marketing/brands/${brandId}`);
       }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to update brand.");
+    } catch {
+      return;
     }
   };
 
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
-        <Loader2 className="animate-spin w-12 h-12 mb-4 text-blue-600" />
-        <p className="text-lg font-medium">Loading brand information...</p>
+        <Loader2 className="animate-spin w-12 h-12 mb-4 text-primary" />
+        <p className="text-gray-500">Loading brand information</p>
       </div>
     );
   }

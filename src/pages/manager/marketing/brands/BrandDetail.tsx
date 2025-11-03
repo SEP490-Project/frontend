@@ -82,8 +82,8 @@ const BrandDetailPage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
-        <Loader2 className="animate-spin w-12 h-12 mb-4 text-blue-600" />
-        <p className="text-lg font-medium">Loading brand information...</p>
+        <Loader2 className="animate-spin w-12 h-12 mb-4 text-primary" />
+        <p className="text-gray-500">Loading Brand Information</p>
       </div>
     );
   }
@@ -293,10 +293,7 @@ const BrandDetailPage: React.FC = () => {
               <CardTitle className="text-xl font-semibold flex items-center text-gray-900">
                 Contracts ({contracts?.length || 0})
               </CardTitle>
-              <Button
-                variant="default"
-                onClick={handleCreateContractWithBrand} // Sử dụng function mới
-              >
+              <Button variant="default" onClick={handleCreateContractWithBrand}>
                 <FaPlus className="w-4 h-4 mr-2" />
                 Create Contract
               </Button>

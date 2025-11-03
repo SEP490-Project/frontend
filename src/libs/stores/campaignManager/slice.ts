@@ -1,6 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { campaign, createCampaign, getCampaignsByBrand, getCampaignById } from "./thunk";
 import type { CampaignData } from "@/libs/types/campaign";
+import { toast } from "sonner";
 
 interface stateType {
   loading: boolean;
@@ -55,13 +56,17 @@ export const manageCampaignSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(createCampaign.fulfilled, (state) => {
+      .addCase(createCampaign.fulfilled, (state, action) => {
         state.loading = false;
         state.error = null;
+        const message = action.payload.message || "Campaign created successfully";
+        toast.success(message);
       })
       .addCase(createCampaign.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+        const message = (action.payload as string) || "Failed to create campaign";
+        toast.error(message);
       })
       .addCase(getCampaignsByBrand.pending, (state) => {
         state.loading = true;

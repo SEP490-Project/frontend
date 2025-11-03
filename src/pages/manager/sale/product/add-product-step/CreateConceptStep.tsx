@@ -17,6 +17,8 @@ import { getItem, setItem } from "@/libs/local-storage";
 import { toast } from "sonner";
 import { Upload, X } from "lucide-react";
 import type { CreateConceptPayload } from "@/libs/types/concept";
+import { uploadFilesThunk } from "@/libs/stores/fileManager/thunk";
+import { useAuth } from "@/libs/hooks/useAuth";
 
 export const CreateConceptStep = () => {
   const { setOnSubmitStep, steps, currentStep, navigate, state, setIsDisabled } = useOutletContext<{
@@ -30,9 +32,11 @@ export const CreateConceptStep = () => {
   }>();
 
   const dispatch = useAppDispatch();
-  const { uploadFileInChunks, progress, isUploading, error: uploadError } = useChunkUpload();
+  const { user } = useAuth();
+  const { uploadFileInChunks, progress, isUploading } = useChunkUpload();
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
-  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const [bannerPreviews, setBannerPreviews] = useState<string[]>([]);
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false);
 
   const {
     register,
@@ -63,7 +67,10 @@ export const CreateConceptStep = () => {
     if (savedConcept) {
       reset(savedConcept);
       if (savedConcept.banner_url) {
-        setBannerPreview(savedConcept.banner_url);
+        const urls = Array.isArray(savedConcept.banner_url)
+          ? savedConcept.banner_url
+          : [savedConcept.banner_url];
+        setBannerPreviews(urls);
       }
       if (savedConcept.video_thumbnail) {
         setVideoPreview(savedConcept.video_thumbnail);
@@ -121,27 +128,61 @@ export const CreateConceptStep = () => {
     }
   };
 
-  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please upload a valid image file");
-      return;
+    // Validate all files
+    const validFiles: File[] = [];
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith("image/")) {
+        toast.error(`${file.name} is not a valid image file`);
+        continue;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name} exceeds 5MB limit`);
+        continue;
+      }
+      validFiles.push(file);
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Banner image size must be less than 5MB");
-      return;
-    }
+    if (validFiles.length === 0) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const imageUrl = event.target?.result as string;
-      setBannerPreview(imageUrl);
-      setValue("banner_url", imageUrl);
-    };
-    reader.readAsDataURL(file);
+    setIsUploadingBanner(true);
+    try {
+      toast.info(`Uploading ${validFiles.length} image(s)...`);
+
+      const response = await dispatch(
+        uploadFilesThunk({ userId: user?.id || "", files: validFiles }),
+      ).unwrap();
+
+      // Response is an object with URLs array
+      if (response && Object.keys(response).length > 0) {
+        const uploadedUrls = Object.values(response).flat();
+        const newBannerUrls = [...bannerPreviews, ...uploadedUrls];
+        setBannerPreviews(newBannerUrls);
+        setValue(
+          "banner_url",
+          newBannerUrls.length === 1 ? newBannerUrls[0] : newBannerUrls.join(","),
+        );
+        toast.success(`${validFiles.length} image(s) uploaded successfully!`);
+      } else {
+        toast.error("Failed to upload images");
+      }
+    } catch (error) {
+      console.error("Banner upload error:", error);
+      toast.error("Failed to upload images");
+    } finally {
+      setIsUploadingBanner(false);
+      // Reset input
+      e.target.value = "";
+    }
+  };
+
+  const handleRemoveBanner = (index: number) => {
+    const newPreviews = bannerPreviews.filter((_, i) => i !== index);
+    setBannerPreviews(newPreviews);
+    setValue("banner_url", newPreviews.length === 1 ? newPreviews[0] : newPreviews.join(","));
   };
 
   const handleRemoveVideo = () => {
@@ -150,11 +191,6 @@ export const CreateConceptStep = () => {
     }
     setVideoPreview(null);
     setValue("video_thumbnail", "");
-  };
-
-  const handleRemoveBanner = () => {
-    setBannerPreview(null);
-    setValue("banner_url", "");
   };
 
   const onSubmit = useCallback(
@@ -279,45 +315,61 @@ export const CreateConceptStep = () => {
               className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end"
             >
               <span className="text-red-600 mr-1">*</span>
-              Banner Image
+              Banner Images
             </Label>
             <div className="col-span-3 space-y-4">
-              {!bannerPreview ? (
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-colors">
-                  <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                  <p className="text-gray-600 mb-4">Upload banner image (Max 5MB)</p>
-                  <input
-                    type="file"
-                    id="banner-upload"
-                    accept="image/*"
-                    onChange={handleBannerUpload}
-                    className="hidden"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => document.getElementById("banner-upload")?.click()}
-                  >
-                    Choose Image
-                  </Button>
+              {/* <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                <p className="text-gray-600 mb-2">Upload banner images (Max 5MB each)</p>
+                <p className="text-sm text-gray-500 mb-4">
+                  You can select multiple images at once
+                </p> */}
+              <input
+                type="file"
+                id="banner-upload"
+                accept="image/*"
+                multiple
+                onChange={handleBannerUpload}
+                className="hidden"
+                disabled={isUploadingBanner}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => document.getElementById("banner-upload")?.click()}
+                disabled={isUploadingBanner}
+              >
+                {isUploadingBanner ? "Uploading..." : "Choose Images"}
+              </Button>
+
+              {/* Preview Grid */}
+              {bannerPreviews.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {bannerPreviews.map((url, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={url}
+                        alt={`Banner ${index + 1}`}
+                        className="w-full h-40 object-cover rounded-lg border-2 border-gray-200"
+                      />
+                      <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-40 transition-all rounded-lg flex items-center justify-center">
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleRemoveBanner(index)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-4 h-4 mr-1" />
+                          Remove
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ) : (
-                <div className="relative">
-                  <img
-                    src={bannerPreview}
-                    alt="Banner preview"
-                    className="w-full max-h-[300px] object-contain rounded-lg"
-                  />
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    onClick={handleRemoveBanner}
-                    className="absolute top-2 right-2"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
+              )}
+
+              {bannerPreviews.length > 0 && (
+                <p className="text-sm text-gray-600">{bannerPreviews.length} image(s) uploaded</p>
               )}
             </div>
           </div>
@@ -381,8 +433,6 @@ export const CreateConceptStep = () => {
                   <Progress value={progress} className="h-2" />
                 </div>
               )}
-
-              {uploadError && <p className="text-sm text-red-600">Upload error: {uploadError}</p>}
             </div>
           </div>
         </CardContent>

@@ -42,7 +42,7 @@ export default function ContractDetailPage() {
 
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Contract Details</h1>
-            <p className="text-gray-600">Contract #{contractDetail.contract_number}</p>
+            <p className="text-gray-600">Contract number: {contractDetail.contract_number}</p>
           </div>
         </div>
 
@@ -73,7 +73,15 @@ export default function ContractDetailPage() {
       <Card className="p-6 space-y-6 shadow-sm border border-gray-100">
         <ContractInformation data={contractDetail} />
         <ScopeOfWork type={type} data={contractDetail.scope_of_work} />
-        <FinancialTerms type={type} data={contractDetail.financial_terms} />
+        <FinancialTerms
+          type={type}
+          data={contractDetail.financial_terms}
+          deposit={{
+            amount: contractDetail.deposit_amount,
+            isPaid: contractDetail.is_deposit_paid,
+            percent: contractDetail.deposit_percent,
+          }}
+        />
         <LegalTerms data={contractDetail.legal_terms} />
       </Card>
 

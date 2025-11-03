@@ -34,6 +34,7 @@ export interface ContractDetail {
   type: string;
   status: string;
   deposit_amount: number;
+  deposit_percent: number;
   is_deposit_paid: boolean;
   brand: Brand;
   representative_name: string;

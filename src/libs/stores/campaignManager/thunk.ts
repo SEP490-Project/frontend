@@ -32,7 +32,17 @@ export const getCampaignById = createAsyncThunk(
 export const campaign = createAsyncThunk(
   "/campaigns",
   async (
-    req: { page: number; limit: number; keywords?: string; status?: string; type?: string },
+    req: {
+      page: number;
+      limit: number;
+      keyword?: string;
+      status?: string;
+      type?: string;
+      start_date: string;
+      end_date: string;
+      sort_by: string;
+      sort_order: string;
+    },
     { rejectWithValue },
   ) => {
     try {

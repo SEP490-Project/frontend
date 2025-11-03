@@ -27,12 +27,15 @@ import { useAppDispatch } from "@/libs/stores";
 import { campaign } from "@/libs/stores/campaignManager/thunk";
 import type { CampaignData } from "@/libs/types/campaign";
 import { useDebounce } from "@/libs/hooks/useDebounce";
+import { DatePicker } from "@/components/date-picker";
+import { formatDate } from "@/libs/helper/helper";
 
 const PAGE_SIZE = 10;
 
 const CAMPAIGN_STATUS_LABELS: Record<string, string> = {
-  ACTIVE: "Active",
-  INACTIVE: "Inactive",
+  RUNNING: "Running",
+  COMPLETED: "Completed",
+  CANCELED: "Canceled",
 };
 
 const CAMPAIGN_TYPE_LABELS: Record<string, string> = {
@@ -60,6 +63,11 @@ const CampaignPage: React.FC = () => {
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [searchTerm, setSearchTerm] = useState("");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  const [sortBy, setSortBy] = useState<string>("created_at");
+  const [sortOrder, setSortOrder] = useState<string>("desc");
+
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   const navigate = useNavigate();
@@ -68,30 +76,58 @@ const CampaignPage: React.FC = () => {
 
   // Fetch campaigns when filters change
   useEffect(() => {
-    const params = {
+    const params: Record<string, any> = {
       page,
       limit: PAGE_SIZE,
-      ...(debouncedSearchTerm && { keywords: debouncedSearchTerm }),
+      ...(debouncedSearchTerm && { keyword: debouncedSearchTerm }),
       ...(statusFilter !== "ALL" && { status: statusFilter }),
       ...(typeFilter !== "ALL" && { type: typeFilter }),
+      ...(startDate && { start_date: toISOStringDate(startDate) }),
+      ...(endDate && { end_date: toISOStringDate(endDate) }),
+      sort_by: sortBy,
+      sort_order: sortOrder,
     };
-    dispatch(campaign(params));
-  }, [dispatch, page, typeFilter, statusFilter, debouncedSearchTerm]);
+
+    dispatch(campaign(params as any));
+  }, [
+    dispatch,
+    page,
+    typeFilter,
+    statusFilter,
+    debouncedSearchTerm,
+    startDate,
+    endDate,
+    sortBy,
+    sortOrder,
+  ]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
     setPage(1);
-  }, [typeFilter, statusFilter, debouncedSearchTerm]);
+  }, [typeFilter, statusFilter, debouncedSearchTerm, startDate, endDate]);
 
-  // Format date
-  const formatDate = (dateStr: string) => {
-    if (!dateStr || dateStr.startsWith("0001")) return "-";
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("vi-VN");
+  // Thêm hàm reset filter
+  const handleResetFilters = () => {
+    setSearchTerm("");
+    setTypeFilter("ALL");
+    setStatusFilter("ALL");
+    setStartDate("");
+    setEndDate("");
+    setSortBy("created_at");
+    setSortOrder("desc");
+  };
+
+  // Helper để chuyển yyyy-MM-dd thành yyyy-MM-ddT00:00:00Z
+  const toISOStringDate = (dateStr: string) => {
+    if (!dateStr) return "";
+    // Đảm bảo đúng định dạng yyyy-MM-dd
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return "";
+    return `${dateStr}T00:00:00Z`;
   };
 
   return (
     <div className="min-h-fit p-4 sm:p-6">
+      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-xl sm:text-2xl font-semibold">Campaigns</h1>
@@ -106,17 +142,25 @@ const CampaignPage: React.FC = () => {
         </Button>
       </div>
 
+      {/* Filters */}
       <div className="bg-white rounded-lg shadow mb-4 p-4">
-        <div className="flex items-center gap-4 flex-wrap">
-          <div className="flex-1 min-w-[200px]">
+        {/* Hàng 1: Search, Type, Status, Reset */}
+        <div
+          className="
+          grid grid-cols-1 sm:grid-cols-4 gap-1 sm:gap-2 mb-1
+          items-end
+        "
+        >
+          <div className="sm:col-span-2">
             <Input
-              placeholder="Search by campaign name, description, or contract number..."
+              placeholder="Search by campaign name or description"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full"
+              autoComplete="off"
             />
           </div>
-          <div className="min-w-[150px]">
+          <div>
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger>
                 <SelectValue placeholder="Campaign Type" />
@@ -130,7 +174,7 @@ const CampaignPage: React.FC = () => {
               </SelectContent>
             </Select>
           </div>
-          <div className="min-w-[150px]">
+          <div className="flex gap-1">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger>
                 <SelectValue placeholder="Status" />
@@ -139,7 +183,66 @@ const CampaignPage: React.FC = () => {
                 <SelectItem value="ALL">All Status</SelectItem>
                 <SelectItem value="RUNNING">Running</SelectItem>
                 <SelectItem value="COMPLETED">Completed</SelectItem>
-                <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                <SelectItem value="CANCELED">Canceled</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              variant="secondary"
+              className="border-gray-300 px-3"
+              onClick={handleResetFilters}
+            >
+              Reset
+            </Button>
+          </div>
+        </div>
+        {/* Hàng 2: StartDate, EndDate, SortBy, SortOrder */}
+        <div
+          className="
+          grid grid-cols-2 sm:grid-cols-4 gap-1 sm:gap-2
+          items-end
+        "
+        >
+          <DatePicker
+            value={startDate}
+            onChange={(date) => {
+              setStartDate(date);
+              // Nếu endDate nhỏ hơn startDate mới thì reset endDate
+              if (endDate && date && endDate < date) setEndDate("");
+            }}
+            placeholder="Start Date"
+            dateFormat="dd/MM/yyyy"
+            className="w-full"
+            maxDate={endDate || undefined}
+          />
+          <DatePicker
+            value={endDate}
+            onChange={setEndDate}
+            placeholder="End Date"
+            dateFormat="dd/MM/yyyy"
+            className="w-full"
+            minDate={startDate || undefined}
+          />
+          <div>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sort By" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="created_at">Created At</SelectItem>
+                <SelectItem value="start_date">Start Date</SelectItem>
+                <SelectItem value="end_date">End Date</SelectItem>
+                <SelectItem value="name">Name</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Select value={sortOrder} onValueChange={setSortOrder}>
+              <SelectTrigger>
+                <SelectValue placeholder="Order" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="asc">Ascending</SelectItem>
+                <SelectItem value="desc">Descending</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -345,13 +448,6 @@ const CampaignPage: React.FC = () => {
                     ? "No campaigns match your current filters."
                     : "Get started by creating your first marketing campaign."}
                 </p>
-                <Button
-                  className="bg-primary hover:bg-[#f794a8] text-white"
-                  onClick={() => navigate("/manage/marketing/campaigns/create")}
-                >
-                  <FaPlus className="h-4 w-4 mr-2" />
-                  Create Campaign
-                </Button>
               </div>
             )}
 

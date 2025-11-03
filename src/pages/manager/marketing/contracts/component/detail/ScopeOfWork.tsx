@@ -5,7 +5,6 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  Briefcase,
   Calendar,
   MapPin,
   Hash,
@@ -39,17 +38,8 @@ export const ScopeOfWork: React.FC<{ type: string; data: any }> = ({ type, data 
 
   return (
     <div className="space-y-6">
-      {/* Header với type color */}
-      <div className="flex items-center gap-3">
-        <div className={`p-2 rounded-lg bg-${typeColor}-100`}>
-          <Briefcase className={`w-7 h-7 text-${typeColor}-600`} />
-        </div>
-        <div>
-          <h2 className="text-3xl font-bold text-gray-900">Scope of Work & Deliverables</h2>
-          <Badge className={`bg-${typeColor}-100 text-${typeColor}-800 mt-1`}>
-            {type.replace(/_/g, " ")}
-          </Badge>
-        </div>
+      <div className="flex items-center">
+        <h2 className="text-3xl font-bold text-gray-900">Scope of Work & Deliverables</h2>
       </div>
 
       {/* General Requirements với type color */}
@@ -209,35 +199,22 @@ export const ScopeOfWork: React.FC<{ type: string; data: any }> = ({ type, data 
                 <div className="flex items-center gap-2">
                   <Package className="w-5 h-5 text-blue-600" />
                   {a.name}
+                  <Badge className="bg-blue-100 text-blue-800">{a.platform}</Badge>
                 </div>
                 <Badge variant="outline" className="bg-white">
                   Item #{i + 1}
                 </Badge>
               </CardTitle>
-              {a.tagline && <p className="text-blue-700 text-sm font-medium">{a.tagline}</p>}
             </CardHeader>
             <CardContent className="p-6 space-y-4">
-              {/* Basic Info Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {a.tagline && (
                 <Card className={`border border-${typeColor}-200`}>
-                  <CardContent className="p-3 text-center">
-                    <p className="text-xs text-gray-500 mb-1">Platform</p>
-                    <Badge className="bg-blue-100 text-blue-800">{a.platform}</Badge>
+                  <CardContent className="p-4">
+                    <h4 className="font-medium text-gray-900 mb-2">Tagline</h4>
+                    <p className="text-sm text-gray-700">{a.tagline}</p>
                   </CardContent>
                 </Card>
-                <Card className={`border border-${typeColor}-200`}>
-                  <CardContent className="p-3 text-center">
-                    <p className="text-xs text-gray-500 mb-1">Duration</p>
-                    <p className="font-semibold text-gray-900">{a.duration_in_days} days</p>
-                  </CardContent>
-                </Card>
-                <Card className={`border border-${typeColor}-200`}>
-                  <CardContent className="p-3 text-center">
-                    <p className="text-xs text-gray-500 mb-1">Status</p>
-                    <Badge variant="secondary">Active</Badge>
-                  </CardContent>
-                </Card>
-              </div>
+              )}
 
               {/* Description */}
               {a.description && (
@@ -263,7 +240,7 @@ export const ScopeOfWork: React.FC<{ type: string; data: any }> = ({ type, data 
                         variant="outline"
                         className="text-blue-700 border-blue-300 hover:bg-blue-50"
                       >
-                        #{tag}
+                        {tag}
                       </Badge>
                     ))}
                   </div>

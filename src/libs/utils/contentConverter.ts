@@ -6,13 +6,13 @@ export interface LegacyContent {
   title: string;
   actor: string;
   date_time: string;
-  views: number;
   status: string;
   content_type: "blog" | "video";
   html_content: string;
   json_content: object;
   created_at: string;
   updated_at: string;
+  publish_date?: string;
   rejection_feedback?: string;
 }
 
@@ -63,13 +63,13 @@ export const convertApiContentToLegacy = (apiContent: Content): LegacyContent =>
     title: apiContent.title,
     actor: apiContent.blog?.author?.username || "System",
     date_time: apiContent.updated_at,
-    views: 0, // API doesn't provide views, default to 0
     status: mapApiStatusToLegacy(apiContent.status),
     content_type: contentType,
     html_content: apiContent.body,
     json_content: jsonContent,
     created_at: apiContent.created_at,
     updated_at: apiContent.updated_at,
+    publish_date: apiContent.publish_date,
     rejection_feedback: apiContent.rejection_feedback,
   };
 };

@@ -32,14 +32,11 @@ import {
   Video,
   Settings,
   Globe,
-  Check,
-  XCircle,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Dialog } from "@/components/ui/dialog";
 import { DeleteContentModal } from "@/components/modal/content/DeleteContentModal";
 import { RequestApprovalModal } from "@/components/modal/content/RequestApprovalModal";
-import { RejectContentModal } from "@/components/modal/content/RejectContentModal";
 import ContentDetailModal from "./ContentDetailModal";
 import TaskSelectionDialog from "./TaskSelectionDialog";
 import type { LegacyContent } from "@/libs/utils/contentConverter";
@@ -66,8 +63,6 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     removeContent,
     publishExistingContent,
     submitExistingContent,
-    approveExistingContent,
-    rejectExistingContent,
   } = useContentManager();
 
   const [filters, setFilters] = useState({
@@ -89,9 +84,6 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
   const [showRequestApprovalModal, setShowRequestApprovalModal] = useState(false);
   const [contentToSubmit, setContentToSubmit] = useState<LegacyContent | null>(null);
   const [isSubmittingApproval, setIsSubmittingApproval] = useState(false);
-  const [showRejectModal, setShowRejectModal] = useState(false);
-  const [contentToReject, setContentToReject] = useState<LegacyContent | null>(null);
-  const [isRejectingContent, setIsRejectingContent] = useState(false);
 
   useEffect(() => {
     fetchContents(filters);
@@ -175,7 +167,6 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
           json_content: apiData.blog || apiData.video || {},
           created_at: apiData.created_at,
           updated_at: apiData.updated_at,
-          views: 0, // Add default views count
           rejection_feedback: apiData.rejection_feedback,
         };
         // Show modal only after we have the complete data
@@ -236,54 +227,6 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
   const handleCancelRequestApproval = () => {
     setShowRequestApprovalModal(false);
     setContentToSubmit(null);
-  };
-
-  const handleReject = (content: LegacyContent) => {
-    setContentToReject(content);
-    setShowRejectModal(true);
-  };
-
-  const handleConfirmReject = async (feedback: string) => {
-    if (!contentToReject || isRejectingContent) return;
-
-    setIsRejectingContent(true);
-    try {
-      const rejectResponse = await rejectExistingContent(contentToReject.id, feedback);
-
-      // Check if rejection was successful
-      if (rejectResponse.meta.requestStatus === "fulfilled") {
-        fetchContents(filters);
-      }
-
-      // Always close modals and clear state
-      setShowRejectModal(false);
-      setContentToReject(null);
-    } catch (error) {
-      console.error("Error rejecting content:", error);
-      // Close modals and clear state on error
-      setShowRejectModal(false);
-      setContentToReject(null);
-    } finally {
-      setIsRejectingContent(false);
-    }
-  };
-
-  const handleCancelReject = () => {
-    setShowRejectModal(false);
-    setContentToReject(null);
-  };
-
-  const handleApprove = async (content: LegacyContent) => {
-    try {
-      const approveResponse = await approveExistingContent(content.id);
-
-      // Check if approval was successful
-      if (approveResponse.meta.requestStatus === "fulfilled") {
-        fetchContents(filters);
-      }
-    } catch (error) {
-      console.error("Error approving content:", error);
-    }
   };
 
   const handlePublish = async (content: LegacyContent) => {
@@ -518,7 +461,6 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                 <div className="col-span-3">Title</div>
                 <div className="col-span-2">Actor</div>
                 <div className="col-span-2">Time Created</div>
-                <div className="col-span-1">Views</div>
                 <div className="col-span-1">Type</div>
                 <div className="col-span-1">Channel</div>
                 <div className="col-span-1">Action</div>
@@ -550,10 +492,6 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                       <span className="text-gray-600 text-sm">
                         {formatDateTime(content.date_time)}
                       </span>
-                    </div>
-
-                    <div className="col-span-1 flex items-center">
-                      <span className="text-gray-600">{content.views}</span>
                     </div>
 
                     <div className="col-span-1 flex items-center">
@@ -619,24 +557,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                               Edit
                             </DropdownMenuItem>
                           )}
-                          {(content.status === "await_staff" || content.status === "pending") && (
-                            <>
-                              <DropdownMenuItem
-                                onClick={() => handleApprove(content)}
-                                className="text-green-600 hover:text-green-700"
-                              >
-                                <Check className="w-4 h-4 mr-2" />
-                                Approve
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleReject(content)}
-                                className="text-pink-600 hover:text-pink-700"
-                              >
-                                <XCircle className="w-4 h-4 mr-2" />
-                                Reject
-                              </DropdownMenuItem>
-                            </>
-                          )}
+
                           {content.status === "approved" && (
                             <DropdownMenuItem
                               onClick={() => handlePublish(content)}
@@ -754,23 +675,6 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
           contentTitle={contentToSubmit?.title || "content"}
           onConfirm={handleConfirmRequestApproval}
           isLoading={isSubmittingApproval}
-        />
-      </Dialog>
-
-      {/* Reject Content Modal */}
-      <Dialog
-        open={showRejectModal}
-        onOpenChange={(open) => {
-          // Prevent closing modal while rejecting
-          if (!open && !isRejectingContent) {
-            handleCancelReject();
-          }
-        }}
-      >
-        <RejectContentModal
-          contentTitle={contentToReject?.title || "content"}
-          onConfirm={handleConfirmReject}
-          isLoading={isRejectingContent}
         />
       </Dialog>
     </div>

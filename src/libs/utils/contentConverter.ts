@@ -6,7 +6,6 @@ export interface LegacyContent {
   title: string;
   actor: string;
   date_time: string;
-  views: number;
   status: string;
   content_type: "blog" | "video";
   html_content: string;
@@ -63,7 +62,6 @@ export const convertApiContentToLegacy = (apiContent: Content): LegacyContent =>
     title: apiContent.title,
     actor: apiContent.blog?.author?.username || "System",
     date_time: apiContent.updated_at,
-    views: 0, // API doesn't provide views, default to 0
     status: mapApiStatusToLegacy(apiContent.status),
     content_type: contentType,
     html_content: apiContent.body,

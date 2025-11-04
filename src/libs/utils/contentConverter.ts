@@ -12,6 +12,7 @@ export interface LegacyContent {
   json_content: object;
   created_at: string;
   updated_at: string;
+  publish_date?: string;
   rejection_feedback?: string;
 }
 
@@ -68,6 +69,7 @@ export const convertApiContentToLegacy = (apiContent: Content): LegacyContent =>
     json_content: jsonContent,
     created_at: apiContent.created_at,
     updated_at: apiContent.updated_at,
+    publish_date: apiContent.publish_date,
     rejection_feedback: apiContent.rejection_feedback,
   };
 };

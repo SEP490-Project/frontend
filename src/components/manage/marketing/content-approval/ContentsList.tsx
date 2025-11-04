@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -20,8 +20,8 @@ import {
 } from "@/components/ui/table";
 import { Eye, Filter } from "lucide-react";
 import { PaginationTable } from "@/components/global";
+import { useContentManager } from "@/libs/hooks/useContent";
 import type { Content, ContentListParams } from "@/libs/types/content";
-import { manageContent } from "@/libs/services/manageContent";
 import ContentPreview from "./ContentPreview";
 
 interface ContentsListProps {
@@ -29,17 +29,9 @@ interface ContentsListProps {
 }
 
 const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
-  const [contents, setContents] = useState<Content[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { loading, contentList, pagination, fetchContents } = useContentManager();
+
   const [selectedContentId, setSelectedContentId] = useState<string | null>(null);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-    total_pages: 1,
-    has_next: false,
-    has_prev: false,
-  });
 
   // Filter states
   const [filters, setFilters] = useState<ContentListParams>({
@@ -52,31 +44,16 @@ const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
 
   const [searchInput, setSearchInput] = useState("");
 
-  // Fetch contents
-  const fetchContents = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await manageContent.contents(filters);
-      // Type assertion to ensure proper typing
-      const contentData = response.data.data as Content[];
-      // Filter to only show blog content and exclude draft status for marketing
-      const blogContent = contentData.filter(
-        (content) =>
-          // content.content_type === "blog" &&
-          content.status === "AWAIT_STAFF" || content.status === "POSTED",
-      );
-      setContents(blogContent);
-      setPagination(response.data.pagination);
-    } catch (error) {
-      console.error("Error fetching contents:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [filters]);
+  // Filter contents to only show blog content and exclude draft status for marketing
+  const filteredContents = contentList.filter(
+    (content) =>
+      // content.content_type === "blog" &&
+      content.status === "await_staff" || content.status === "posted",
+  );
 
   useEffect(() => {
-    fetchContents();
-  }, [fetchContents]);
+    fetchContents(filters);
+  }, [filters, fetchContents]);
 
   // Handle search
   const handleSearch = () => {
@@ -123,32 +100,33 @@ const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
 
   // Format status badge with pink theme colors
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "POSTED":
+    switch (status.toLowerCase()) {
+      case "posted":
         return (
           <Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-100">
             Posted
           </Badge>
         );
-      case "AWAIT_STAFF":
+      case "await_staff":
+      case "awaiting review":
         return (
           <Badge className="bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100">
             Awaiting Review
           </Badge>
         );
-      case "APPROVED":
+      case "approved":
         return (
           <Badge className="bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-100">
             Approved
           </Badge>
         );
-      case "REJECTED":
+      case "rejected":
         return (
           <Badge className="bg-red-100 text-red-800 border-red-200 hover:bg-red-100">
             Rejected
           </Badge>
         );
-      case "DRAFT":
+      case "draft":
         return (
           <Badge className="bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-100">
             Draft
@@ -177,23 +155,34 @@ const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
   };
 
   // Handle view content
-  const handleViewContent = (content: Content) => {
+  const handleViewContent = (content: any) => {
     setSelectedContentId(content.id);
-    onViewContent?.(content);
+    // Convert store content format to Content format for compatibility
+    const contentForModal: Content = {
+      id: content.id,
+      title: content.title,
+      status: content.status.toUpperCase(), // Convert to uppercase for API compatibility
+      created_at: content.date_time || content.created_at,
+      actor: content.actor,
+      publish_date: (content as any).publish_date,
+      blog: {
+        author: {
+          username: content.actor,
+        },
+      },
+    } as Content;
+    onViewContent?.(contentForModal);
   };
 
   // Handle close modal
   const handleCloseModal = () => {
     setSelectedContentId(null);
-    // Refresh the content list to reflect any status changes
-    fetchContents();
   };
 
   // Handle content updated from detail view
-  const handleContentUpdated = (updatedContent: Content) => {
-    setContents((prevContents) =>
-      prevContents.map((content) => (content.id === updatedContent.id ? updatedContent : content)),
-    );
+  const handleContentUpdated = () => {
+    // Refresh the content list to get updated data from store
+    fetchContents(filters);
   };
 
   return (
@@ -286,14 +275,14 @@ const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
                     </div>
                   </TableCell>
                 </TableRow>
-              ) : contents.length === 0 ? (
+              ) : filteredContents.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-gray-500">
                     No blog content found
                   </TableCell>
                 </TableRow>
               ) : (
-                contents.map((content) => (
+                filteredContents.map((content) => (
                   <TableRow key={content.id} className="hover:bg-gray-50">
                     <TableCell>
                       <div className="min-w-0">
@@ -314,12 +303,10 @@ const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
                     <TableCell>{getChannelBadge()}</TableCell>
                     <TableCell>{getStatusBadge(content.status)}</TableCell>
                     <TableCell className="text-sm text-gray-600 hidden md:table-cell">
-                      {formatPublishedDate(
-                        content.status === "POSTED" ? content.publish_date : null,
-                      )}
+                      {formatPublishedDate(content.publish_date)}
                     </TableCell>
                     <TableCell className="text-sm text-gray-600 hidden lg:table-cell">
-                      {content?.blog?.author?.username}
+                      {content.actor}
                     </TableCell>
                     <TableCell className="text-sm text-gray-600 hidden lg:table-cell">
                       {formatDate(content.created_at)}
@@ -345,7 +332,7 @@ const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
         </div>
 
         {/* Pagination */}
-        {pagination.total > 0 && (
+        {pagination && pagination.total > 0 && (
           <PaginationTable
             page={pagination.page}
             totalItems={pagination.total}
@@ -356,7 +343,7 @@ const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
       </Card>
 
       {/* Results Summary */}
-      {!loading && contents.length > 0 && (
+      {!loading && filteredContents.length > 0 && pagination && (
         <div className="text-sm text-gray-500">
           Showing {(pagination.page - 1) * pagination.limit + 1}-
           {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}

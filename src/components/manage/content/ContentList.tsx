@@ -310,10 +310,9 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
           </Badge>
         );
       case "posted":
-      case "published":
         return (
           <Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-100">
-            Published
+            Posted
           </Badge>
         );
       default:
@@ -413,7 +412,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                 <SelectItem value="await_brand">Awaiting Brand</SelectItem>
                 <SelectItem value="approved">Approved</SelectItem>
                 <SelectItem value="rejected">Rejected</SelectItem>
-                <SelectItem value="published">Published</SelectItem>
+                <SelectItem value="posted">Posted</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -564,7 +563,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                               className="text-blue-600 hover:text-blue-700"
                             >
                               <Globe className="w-4 h-4 mr-2" />
-                              Publish
+                              Post content
                             </DropdownMenuItem>
                           )}
                           {/* Only show Delete for draft and rejected content */}

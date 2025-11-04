@@ -63,7 +63,7 @@ const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
       const blogContent = contentData.filter(
         (content) =>
           // content.content_type === "blog" &&
-          content.status === "AWAIT_STAFF" || content.status === "PUBLISHED",
+          content.status === "AWAIT_STAFF" || content.status === "POSTED",
       );
       setContents(blogContent);
       setPagination(response.data.pagination);
@@ -124,10 +124,10 @@ const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
   // Format status badge with pink theme colors
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "PUBLISHED":
+      case "POSTED":
         return (
           <Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-100">
-            Published
+            Posted
           </Badge>
         );
       case "AWAIT_STAFF":
@@ -245,7 +245,7 @@ const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="PUBLISHED">Published</SelectItem>
+                  <SelectItem value="POSTED">Posted</SelectItem>
                   <SelectItem value="AWAIT_STAFF">Awaiting Review</SelectItem>
                   <SelectItem value="APPROVED">Approved</SelectItem>
                   <SelectItem value="REJECTED">Rejected</SelectItem>
@@ -315,11 +315,11 @@ const ContentsList: React.FC<ContentsListProps> = ({ onViewContent }) => {
                     <TableCell>{getStatusBadge(content.status)}</TableCell>
                     <TableCell className="text-sm text-gray-600 hidden md:table-cell">
                       {formatPublishedDate(
-                        content.status === "PUBLISHED" ? content.date_time : null,
+                        content.status === "POSTED" ? content.publish_date : null,
                       )}
                     </TableCell>
                     <TableCell className="text-sm text-gray-600 hidden lg:table-cell">
-                      {content.actor}
+                      {content?.blog?.author?.username}
                     </TableCell>
                     <TableCell className="text-sm text-gray-600 hidden lg:table-cell">
                       {formatDate(content.created_at)}

@@ -5,7 +5,7 @@ export interface LegacyTask {
   id: string; // Keep original UUID - no conversion needed
   title: string;
   type: string; // Keep original API type instead of converting
-  campaign: string;
+  campaign_name: string;
   status: "to-do" | "in-progress" | "completed";
   details: {
     description: string;
@@ -27,7 +27,7 @@ export const convertApiTaskToLegacy = (apiTask: Task): LegacyTask => {
     id: apiTask.id, // Keep original UUID - simple and clean
     title: apiTask.name,
     type: apiTask.type, // Keep original API type without conversion
-    campaign: `Campaign ${apiTask.campaign_id.slice(-6)}`, // Use part of campaign_id as campaign name
+    campaign_name: apiTask.campaign_name, // Use part of campaign_id as campaign name
     status: mapApiStatusToLegacy(apiTask.status),
     details: {
       description: (() => {

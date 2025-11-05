@@ -10,6 +10,7 @@ export interface Task {
   assigned_to_id: string;
   assigned_to_name: string;
   assigned_to_role: string;
+  campaign_name: string;
   campaign_id: string;
   contract_id: string;
   milestone_id: string;
@@ -94,6 +95,7 @@ export interface TaskListMarketing {
   updated_at: string;
   milestone_id: string;
   campaign_id: string;
+  campaign_name: string;
   contract_id: string;
 }
 

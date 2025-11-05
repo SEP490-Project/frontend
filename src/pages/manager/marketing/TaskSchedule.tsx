@@ -2,7 +2,6 @@ import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-
 import { TaskSidebar, TaskDetail, TaskList } from "@/components/manage/marketing/task";
 import { useAppDispatch } from "@/libs/stores";
 import { getTaskList, getTaskDetail } from "@/libs/stores/taskManager/thunk";

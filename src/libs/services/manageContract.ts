@@ -1,5 +1,4 @@
 import api from "@/libs/api";
-import type { ContractParams } from "@/libs/types/contract";
 
 export const manageContract = {
   brand: (params: {
@@ -15,15 +14,17 @@ export const manageContract = {
     sort_order: string;
   }) => api.get("/contracts", { params }),
 
-  getContractsByBrand: (params: ContractParams) =>
-    api.get("/contracts/brands/profile", {
-      params: {
-        page: params.page,
-        limit: params.limit,
-        status: params.status,
-        type: params.type,
-      },
-    }),
+  getContractsByBrand: (params: {
+    page: number;
+    limit: number;
+    sort_by: string;
+    sort_order: string;
+    type?: string;
+    status?: string;
+    keyword?: string;
+    start_date?: string;
+    end_date?: string;
+  }) => api.get("/contracts/brands/profile", { params }),
 
   getContractsByBrandId: (brandId: string, params: { page: number; limit: number }) =>
     api.get(`/contracts/brands/${brandId}`, {

@@ -32,7 +32,20 @@ export const contract = createAsyncThunk(
 
 export const getContractsByBrand = createAsyncThunk(
   "contracts/getByBrand",
-  async (req: ContractParams, { rejectWithValue }) => {
+  async (
+    req: {
+      page: number;
+      limit: number;
+      sort_by: string;
+      sort_order: string;
+      type?: string;
+      status?: string;
+      keyword?: string;
+      start_date?: string;
+      end_date?: string;
+    },
+    { rejectWithValue },
+  ) => {
     try {
       const response = await manageContract.getContractsByBrand(req);
       return response.data;

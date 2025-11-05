@@ -6,8 +6,6 @@ import {
   FaUserGear,
   FaRegUser,
   FaRegCircleQuestion,
-  FaRegFileLines,
-  FaFolderOpen,
   FaHashtag,
   FaCalendarDays,
   FaFilePen,
@@ -172,8 +170,17 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const roleBasedTabs: Record<string, TabItem[]> = {
     BRAND_PARTNER: [
-      { href: "/manage/brand/contracts", label: "Contracts", icon: <FaRegFileLines size={18} /> },
-      { href: "/manage/brand/campaigns", label: "Campaigns", icon: <FaFolderOpen size={18} /> },
+      { href: "/manage/brand/contracts", label: "Contracts", icon: <FaFileContract size={18} /> },
+      {
+        href: "/manage/brand/campaigns",
+        label: "Campaigns & Tasks",
+        icon: <FaListCheck size={18} />,
+      },
+      {
+        href: "/manage/brand/contract-payment",
+        label: "Contract Payment",
+        icon: <FaMoneyBillTransfer size={18} />,
+      },
     ],
     MARKETING_STAFF: [
       { href: "/manage/marketing/brands", label: "Brands", icon: <FaHandshake size={18} /> },

@@ -2,7 +2,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Homepage from "@/pages/Homepage";
 import NotFound from "@/pages/NotFound";
 import { Account, Notification, Dashboard } from "@/pages/manager/shared";
-import { Contract, Campaign as BrandCampaign } from "@/pages/manager/brand";
+import { Contract, Campaign as BrandCampaign, ContractPaymentBrand } from "@/pages/manager/brand";
+import BrandContractDetail from "@/pages/manager/brand/ContractDetail";
 import {
   Brand,
   Campaign as MarketingCampaign,
@@ -126,7 +127,9 @@ const AppRoutes = () => (
       <Route element={<PrivateRoute allowedRoles={["BRAND_PARTNER"]} />}>
         <Route path="/manage/brand" element={<ManageLayout />}>
           <Route path="contracts" element={<Contract />} />
+          <Route path="contracts/:id" element={<BrandContractDetail />} />
           <Route path="campaigns" element={<BrandCampaign />} />
+          <Route path="contract-payment" element={<ContractPaymentBrand />} />
         </Route>
       </Route>
 

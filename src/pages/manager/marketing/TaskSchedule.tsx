@@ -8,7 +8,7 @@ import { getTaskList, getTaskDetail } from "@/libs/stores/taskManager/thunk";
 import type { TaskListMarketing } from "@/libs/types/task";
 import { useTaskMarketing } from "@/libs/hooks/useTaskMarketing";
 
-function TaskSchedule() {
+const TaskSchedule: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showTaskDetail, setShowTaskDetail] = useState(false);
   const [selectedTask, setSelectedTask] = useState<TaskListMarketing | null>(null);
@@ -169,6 +169,6 @@ function TaskSchedule() {
       </div>
     </div>
   );
-}
+};
 
 export default TaskSchedule;

@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { contract } from "./thunk";
 import {
+  contract,
   getContractsByBrand,
   getContractsByBrandId,
   approveContract,
@@ -8,8 +8,7 @@ import {
   getContractById,
   createContract,
 } from "./thunk";
-import type { ContractDetail } from "@/libs/types/contract";
-import type { ContractBase } from "@/libs/types/contract";
+import type { ContractDetail, ContractBase } from "@/libs/types/contract";
 
 interface stateType {
   loading: boolean;

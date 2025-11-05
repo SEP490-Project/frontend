@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FaEye, FaPenToSquare, FaGlobe, FaPlus } from "react-icons/fa6";
+import { FaEye, FaPenToSquare, FaGlobe, FaPlus, FaHandshake } from "react-icons/fa6";
 import { Switch } from "@/components/ui/switch";
 import { Loader2 } from "lucide-react";
 import { StatusModal } from "@/components/modal/StatusModal";
@@ -30,6 +30,7 @@ import { useAppDispatch } from "@/libs/stores";
 import { brand } from "@/libs/stores/brandManager/thunk";
 import type { Brands } from "@/libs/types/brand";
 import { useNavigate } from "react-router";
+import { motion } from "framer-motion";
 
 interface Partner extends Brands {
   isActive: boolean;
@@ -37,7 +38,6 @@ interface Partner extends Brands {
 
 const PAGE_SIZE = 10;
 
-// Helper function to check if a value is empty (null, undefined, or empty string)
 const isEmpty = (value: string | null | undefined): boolean => {
   return !value || value.trim() === "";
 };
@@ -55,7 +55,6 @@ const BrandPage: React.FC = () => {
 
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  // Fetch data when filters, page, or sorting change
   useEffect(() => {
     const params: Record<string, any> = {
       page,
@@ -69,12 +68,10 @@ const BrandPage: React.FC = () => {
     dispatch(brand(params as any));
   }, [dispatch, page, debouncedSearchTerm, statusFilter, sortBy, sortOrder]);
 
-  // Reset to page 1 when filters change
   useEffect(() => {
     setPage(1);
   }, [debouncedSearchTerm, statusFilter, sortBy, sortOrder]);
 
-  // Convert API brands to partners format
   const partners: Partner[] = useMemo(() => {
     return brands.map((brandItem) => ({
       ...brandItem,
@@ -88,7 +85,6 @@ const BrandPage: React.FC = () => {
     }
   };
 
-  // Handle table header sorting
   const handleSort = (column: string) => {
     if (sortBy === column) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
@@ -98,7 +94,6 @@ const BrandPage: React.FC = () => {
     }
   };
 
-  // Reset filters handler
   const handleResetFilters = () => {
     setSearchTerm("");
     setStatusFilter("ALL");
@@ -106,38 +101,67 @@ const BrandPage: React.FC = () => {
     setSortOrder("desc");
   };
 
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 },
+  };
+
+  const headerVariants = {
+    hidden: { opacity: 0, y: -20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+  };
+
+  const filterVariants = {
+    hidden: { opacity: 0, x: -20 },
+    visible: { opacity: 1, x: 0, transition: { duration: 0.4 } },
+  };
+
   return (
     <div className="min-h-fit p-4 sm:p-6">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <motion.div
+        className="flex justify-between items-center mb-6"
+        variants={headerVariants}
+        initial="hidden"
+        animate="visible"
+      >
         <div>
-          <h1 className="text-xl sm:text-2xl font-semibold">Brands</h1>
-          <p className="text-gray-600 mt-1">
+          <motion.h1 className="text-xl sm:text-2xl font-semibold" variants={itemVariants}>
+            Brands
+          </motion.h1>
+          <motion.p className="text-gray-600 mt-1" variants={itemVariants}>
             Manage all your brand assets, identity guidelines, and usage documentation
-          </p>
+          </motion.p>
         </div>
-        <Button
-          className="bg-primary hover:bg-[#f794a8] text-white flex items-center gap-2"
-          onClick={() => navigate("/manage/marketing/brands/create")}
-        >
-          <FaPlus className="h-4 w-4" />
-          Create Brand
-        </Button>
-      </div>
+        <motion.div variants={itemVariants}>
+          <Button
+            className="bg-primary hover:bg-[#f794a8] text-white flex items-center gap-2"
+            onClick={() => navigate("/manage/marketing/brands/create")}
+          >
+            <FaPlus className="h-4 w-4" />
+            Create Brand
+          </Button>
+        </motion.div>
+      </motion.div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow mb-4 p-4">
+      <motion.div
+        className="bg-white rounded-lg shadow mb-4 p-4"
+        variants={filterVariants}
+        initial="hidden"
+        animate="visible"
+      >
         <div className="flex flex-col sm:flex-row sm:items-end gap-2">
-          <div className="flex-1">
+          <motion.div className="flex-1" variants={itemVariants}>
             <Input
               placeholder="Search by name"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full"
             />
-          </div>
+          </motion.div>
 
-          <div className="sm:w-36">
+          <motion.div className="sm:w-36" variants={itemVariants}>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger>
                 <SelectValue placeholder="Status" />
@@ -148,9 +172,9 @@ const BrandPage: React.FC = () => {
                 <SelectItem value="INACTIVE">Inactive</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+          </motion.div>
 
-          <div className="sm:w-36">
+          <motion.div className="sm:w-36" variants={itemVariants}>
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger>
                 <SelectValue placeholder="Sort By" />
@@ -162,9 +186,9 @@ const BrandPage: React.FC = () => {
                 <SelectItem value="number_of_active_contracts">Active Contracts</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+          </motion.div>
 
-          <div className="sm:w-36">
+          <motion.div className="sm:w-36" variants={itemVariants}>
             <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as "asc" | "desc")}>
               <SelectTrigger>
                 <SelectValue placeholder="Order" />
@@ -174,9 +198,9 @@ const BrandPage: React.FC = () => {
                 <SelectItem value="desc">Descending</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+          </motion.div>
 
-          <div className="sm:w-24">
+          <motion.div className="sm:w-24" variants={itemVariants}>
             <Button
               variant="secondary"
               className="border-gray-300 w-full"
@@ -184,9 +208,9 @@ const BrandPage: React.FC = () => {
             >
               Reset
             </Button>
-          </div>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Table */}
       <div className="bg-white rounded-lg overflow-hidden shadow">
@@ -229,13 +253,13 @@ const BrandPage: React.FC = () => {
                 </TableHeader>
                 <TableBody>
                   {partners.map((partner, index) => (
-                    <TableRow
+                    <motion.tr
                       key={partner.id}
-                      className={`border-b hover:bg-gray-50 ${
-                        index % 2 === 0 ? "bg-white" : "bg-gray-25"
-                      }`}
+                      layout="position"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: index * 0.05 }}
                     >
-                      {/* Brand Name + Logo */}
                       <TableCell className="py-4 max-w-xs">
                         <div className="flex items-center">
                           <img
@@ -257,7 +281,6 @@ const BrandPage: React.FC = () => {
                         </div>
                       </TableCell>
 
-                      {/* Email */}
                       <TableCell className="py-4 text-sm text-gray-600 max-w-xs truncate">
                         {!isEmpty(partner.contact_email) ? (
                           partner.contact_email
@@ -266,7 +289,6 @@ const BrandPage: React.FC = () => {
                         )}
                       </TableCell>
 
-                      {/* Phone */}
                       <TableCell className="py-4 text-sm text-gray-600">
                         {!isEmpty(partner.contact_phone) ? (
                           partner.contact_phone
@@ -275,7 +297,6 @@ const BrandPage: React.FC = () => {
                         )}
                       </TableCell>
 
-                      {/* Website */}
                       <TableCell className="py-4">
                         {!isEmpty(partner.website) ? (
                           <div className="flex items-center gap-2">
@@ -298,21 +319,18 @@ const BrandPage: React.FC = () => {
                         )}
                       </TableCell>
 
-                      {/* Total Contracts */}
                       <TableCell className="py-4">
                         <span className="font-semibold text-lg text-gray-900">
                           {partner.number_of_contracts || 0}
                         </span>
                       </TableCell>
 
-                      {/* Active Contracts */}
                       <TableCell className="py-4">
                         <span className="font-semibold text-lg text-green-600">
                           {partner.number_of_active_contracts || 0}
                         </span>
                       </TableCell>
 
-                      {/* Status */}
                       <TableCell className="py-4">
                         <Dialog>
                           <DialogTrigger>
@@ -322,13 +340,12 @@ const BrandPage: React.FC = () => {
                             name={partner.name}
                             status={partner.isActive ? "Inactive" : "Active"}
                             onConfirm={() => {
-                              // TODO: dispatch status change
+                              console.log("Status changed");
                             }}
                           />
                         </Dialog>
                       </TableCell>
 
-                      {/* Actions */}
                       <TableCell className="py-4">
                         <div className="flex gap-1">
                           <Tooltip>
@@ -366,7 +383,7 @@ const BrandPage: React.FC = () => {
                           </Tooltip>
                         </div>
                       </TableCell>
-                    </TableRow>
+                    </motion.tr>
                   ))}
                 </TableBody>
               </Table>
@@ -374,138 +391,173 @@ const BrandPage: React.FC = () => {
 
             {/* Mobile Card List */}
             <div className="md:hidden divide-y">
-              {partners.map((partner) => (
-                <div key={partner.id} className="p-4 flex flex-col gap-3 bg-white">
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={
-                        !isEmpty(partner.logo_url)
-                          ? partner.logo_url!
-                          : `https://via.placeholder.com/40x40/3B82F6/FFFFFF?text=${partner.name.charAt(0)}`
-                      }
-                      alt={partner.name}
-                      className="w-12 h-12 rounded border-2 border-gray-200 object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = `https://via.placeholder.com/40x40/3B82F6/FFFFFF?text=${partner.name.charAt(0)}`;
-                      }}
-                    />
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-900">{partner.name}</div>
-                      <Badge
-                        className={
-                          partner.status === "ACTIVE"
-                            ? "bg-green-100 text-green-800 border-green-200"
-                            : "bg-red-100 text-red-800 border-red-200"
+              <motion.div
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  visible: {
+                    transition: { staggerChildren: 0.05 },
+                  },
+                }}
+              >
+                {partners.map((partner) => (
+                  <motion.div
+                    key={partner.id}
+                    className="p-4 flex flex-col gap-3 bg-white"
+                    variants={itemVariants}
+                  >
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={
+                          !isEmpty(partner.logo_url)
+                            ? partner.logo_url!
+                            : `https://via.placeholder.com/40x40/3B82F6/FFFFFF?text=${partner.name.charAt(0)}`
                         }
-                      >
-                        {partner.status}
-                      </Badge>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm text-gray-500">Total Contracts</div>
-                      <div className="font-semibold text-lg">
-                        {partner.number_of_contracts || 0}
-                      </div>
-                      <div className="text-sm text-gray-500">Active</div>
-                      <div className="font-semibold text-green-600">
-                        {partner.number_of_active_contracts || 0}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 text-sm text-gray-600">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">Email:</span>
-                      <span>
-                        {!isEmpty(partner.contact_email) ? (
-                          partner.contact_email
-                        ) : (
-                          <span className="text-gray-400 italic">No email</span>
-                        )}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">Phone:</span>
-                      <span>
-                        {!isEmpty(partner.contact_phone) ? (
-                          partner.contact_phone
-                        ) : (
-                          <span className="text-gray-400 italic">No phone</span>
-                        )}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">Website:</span>
-                      {!isEmpty(partner.website) ? (
-                        <div className="flex items-center gap-1">
-                          <FaGlobe className="text-blue-500" />
-                          <a
-                            href={
-                              partner.website!.startsWith("http")
-                                ? partner.website!
-                                : `https://${partner.website}`
-                            }
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-blue-600 hover:underline"
-                          >
-                            Website
-                          </a>
-                        </div>
-                      ) : (
-                        <span className="text-gray-400 italic">No website</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex gap-1 pt-2">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-blue-50">
-                          <FaEye className="text-blue-600" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>View brand</p>
-                      </TooltipContent>
-                    </Tooltip>
-
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 hover:bg-yellow-50"
-                          onClick={() => navigate(`/manage/marketing/brands/edit/${partner.id}`)}
+                        alt={partner.name}
+                        className="w-12 h-12 rounded border-2 border-gray-200 object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = `https://via.placeholder.com/40x40/3B82F6/FFFFFF?text=${partner.name.charAt(0)}`;
+                        }}
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-900">{partner.name}</div>
+                        <Badge
+                          className={
+                            partner.status === "ACTIVE"
+                              ? "bg-green-100 text-green-800 border-green-200"
+                              : "bg-red-100 text-red-800 border-red-200"
+                          }
                         >
-                          <FaPenToSquare className="text-yellow-600" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Edit brand</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                </div>
-              ))}
+                          {partner.status}
+                        </Badge>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm text-gray-500">Total Contracts</div>
+                        <div className="font-semibold text-lg">
+                          {partner.number_of_contracts || 0}
+                        </div>
+                        <div className="text-sm text-gray-500">Active</div>
+                        <div className="font-semibold text-green-600">
+                          {partner.number_of_active_contracts || 0}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 text-sm text-gray-600">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Email:</span>
+                        <span>
+                          {!isEmpty(partner.contact_email) ? (
+                            partner.contact_email
+                          ) : (
+                            <span className="text-gray-400 italic">No email</span>
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Phone:</span>
+                        <span>
+                          {!isEmpty(partner.contact_phone) ? (
+                            partner.contact_phone
+                          ) : (
+                            <span className="text-gray-400 italic">No phone</span>
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Website:</span>
+                        {!isEmpty(partner.website) ? (
+                          <div className="flex items-center gap-1">
+                            <FaGlobe className="text-blue-500" />
+                            <a
+                              href={
+                                partner.website!.startsWith("http")
+                                  ? partner.website!
+                                  : `https://${partner.website}`
+                              }
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-blue-600 hover:underline"
+                            >
+                              Website
+                            </a>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 italic">No website</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-1 pt-2">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-blue-50"
+                          >
+                            <FaEye className="text-blue-600" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>View brand</p>
+                        </TooltipContent>
+                      </Tooltip>
+
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-yellow-50"
+                            onClick={() => navigate(`/manage/marketing/brands/edit/${partner.id}`)}
+                          >
+                            <FaPenToSquare className="text-yellow-600" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Edit brand</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
             </div>
 
             {/* No results */}
             {partners.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                No brands found matching your criteria.
-              </div>
+              <motion.div
+                className="text-center py-16"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <FaHandshake className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No brands found</h3>
+                <p className="text-gray-500 mb-4">
+                  {searchTerm || statusFilter !== "ALL"
+                    ? "No brands match your current filters."
+                    : "Get started by creating your first brand."}
+                </p>
+              </motion.div>
             )}
 
             {/* Pagination */}
             {pagination && pagination.total > 0 && (
-              <PaginationTable
-                page={pagination.page}
-                totalItems={pagination.total}
-                pageSize={PAGE_SIZE}
-                onPageChange={handlePageChange}
-              />
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: partners.length * 0.05 + 0.2 }}
+              >
+                <PaginationTable
+                  page={pagination.page}
+                  totalItems={pagination.total}
+                  pageSize={PAGE_SIZE}
+                  onPageChange={handlePageChange}
+                />
+              </motion.div>
             )}
           </>
         )}

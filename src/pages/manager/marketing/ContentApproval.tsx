@@ -211,17 +211,28 @@ export const ContentApprovalPage: React.FC<ContentsListProps> = ({ onViewContent
 
           <div className="sm:w-40">
             <DatePicker
-              label="From"
               value={filters.from_date}
-              onChange={(v) => setFilters({ ...filters, from_date: v })}
+              onChange={(date) => {
+                setFilters((prev) => ({
+                  ...prev,
+                  from_date: date,
+                  to_date: prev.to_date && date && prev.to_date < date ? "" : prev.to_date,
+                }));
+              }}
+              placeholder="Start Date"
+              dateFormat="dd/MM/yyyy"
+              className="w-full"
+              maxDate={filters.to_date || undefined}
             />
           </div>
-
           <div className="sm:w-40">
             <DatePicker
-              label="To"
               value={filters.to_date}
-              onChange={(v) => setFilters({ ...filters, to_date: v })}
+              onChange={(date) => setFilters((prev) => ({ ...prev, to_date: date }))}
+              placeholder="End Date"
+              dateFormat="dd/MM/yyyy"
+              className="w-full"
+              minDate={filters.from_date || undefined}
             />
           </div>
 

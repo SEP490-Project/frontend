@@ -15,6 +15,7 @@ import {
   CreateCampaign,
   CreateBrand,
   ContentApproval,
+  TaskSchedule,
 } from "@/pages/manager/marketing";
 import ManageLayout from "@/layouts/ManageLayout";
 import Login from "@/pages/authentication/Login";
@@ -114,8 +115,9 @@ const AppRoutes = () => (
           <Route path="campaigns" element={<MarketingCampaign />} />
           <Route path="campaigns/create" element={<CreateCampaign />} />
           <Route path="campaigns/:id" element={<CampaignDetail />} />
-          <Route path="content-approval" element={<ContentApproval />} />
-          <Route path="content-approval/preview/:id" element={<ContentPreviewPage />} />
+          <Route path="contents-approval" element={<ContentApproval />} />
+          <Route path="contents-approval/preview/:id" element={<ContentPreviewPage />} />
+          <Route path="task-schedule" element={<TaskSchedule />} />
         </Route>
       </Route>
 

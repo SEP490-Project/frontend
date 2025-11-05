@@ -21,7 +21,7 @@ import {
   FaListCheck,
   FaXmark,
   FaPowerOff,
-  FaClipboardList,
+  FaFileSignature,
 } from "react-icons/fa6";
 import { useAuth } from "@/libs/hooks/useAuth";
 import { useAppDispatch } from "@/libs/stores";
@@ -183,13 +183,18 @@ const Sidebar: React.FC<SidebarProps> = ({
       },
       {
         href: "/manage/marketing/campaigns",
-        label: "Campaigns",
+        label: "Campaigns & Tasks",
         icon: <FaListCheck size={18} />,
       },
       {
-        href: "/manage/marketing/content-approval",
-        label: "Contents",
-        icon: <FaClipboardList size={18} />,
+        href: "/manage/marketing/contents-approval",
+        label: "Review Contents",
+        icon: <FaFileSignature size={18} />,
+      },
+      {
+        href: "/manage/marketing/task-schedule",
+        label: "Task Schedule",
+        icon: <FaCalendarDays size={18} />,
       },
     ],
     SALES_STAFF: [

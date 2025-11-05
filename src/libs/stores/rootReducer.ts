@@ -14,6 +14,7 @@ import { categoryManagerReducer } from "./categoryManager/slice";
 import { attributeManagerReducer } from "./attributeManager/slice";
 import { manageTagReducer } from "./tagManager/slice";
 import { manageChannelReducer } from "./channelManager/slice";
+import { manageTaskReducer } from "./taskManager/slice";
 
 export const rootReducer = combineReducers({
   manageAuthen: manageAuthenReducer,
@@ -32,4 +33,5 @@ export const rootReducer = combineReducers({
   manageAttribute: attributeManagerReducer,
   manageTag: manageTagReducer,
   manageChannel: manageChannelReducer,
+  manageTask: manageTaskReducer,
 });

@@ -173,6 +173,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     BRAND_PARTNER: [
       { href: "/manage/brand/contracts", label: "Contracts", icon: <FaRegFileLines size={18} /> },
       { href: "/manage/brand/campaigns", label: "Campaigns", icon: <FaFolderOpen size={18} /> },
+      { href: "/manage/brand/payment", label: "Payment", icon: <FaMoneyCheckDollar size={18} /> },
     ],
     MARKETING_STAFF: [
       { href: "/manage/marketing/brands", label: "Brands", icon: <FaHandshake size={18} /> },

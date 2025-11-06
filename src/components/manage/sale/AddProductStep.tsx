@@ -3,9 +3,13 @@ import { MiniStepper, Stepper } from "./Stepper";
 import { Button } from "@/components/ui/button";
 import { ProductFormMode } from "@/enums/product";
 import { useState, useMemo } from "react";
-import { removeItem } from "@/libs/local-storage";
+import { getItem, removeItem } from "@/libs/local-storage";
+import { useAppDispatch } from "@/libs/stores";
+import { updateProductStateThunk } from "@/libs/stores/stateManager/thunk";
+import type { ProductData, ProductResponse } from "@/libs/types/product";
 
 const AddProductStep = () => {
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { state, pathname } = useLocation();
   const [onSubmitStep, setOnSubmitStep] = useState<null | (() => Promise<void>)>(null);
@@ -87,6 +91,18 @@ const AddProductStep = () => {
     }
   };
 
+  const handleSubmitForReview = async () => {
+    try {
+      const productId = getItem<ProductResponse<ProductData>>("currentProduct")?.data?.id;
+      if (!productId) return;
+      dispatch(updateProductStateThunk({ productId: productId, newState: "SUBMITTED" }));
+    } catch (error) {
+      console.error("Failed to submit product for review:", error);
+    } finally {
+      handleNext();
+    }
+  };
+
   return (
     <div>
       <div className="min-h-screen">
@@ -110,9 +126,15 @@ const AddProductStep = () => {
               <Button variant={"outline"} size={"sm"} onClick={handleBack}>
                 Back
               </Button>
-              <Button size={"sm"} onClick={handleNext} disabled={isDisabled}>
-                {currentStep >= steps.length ? "Finish" : "Next"}
-              </Button>
+              {state?.productType === "LIMITED" ? (
+                <Button size={"sm"} onClick={handleSubmitForReview} disabled={isDisabled}>
+                  Submit for Review
+                </Button>
+              ) : (
+                <Button size={"sm"} onClick={handleNext} disabled={isDisabled}>
+                  {currentStep >= steps.length ? "Finish" : "Next"}
+                </Button>
+              )}
             </div>
           </div>
         </div>

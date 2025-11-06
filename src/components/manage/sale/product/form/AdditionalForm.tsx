@@ -15,9 +15,6 @@ export const AdditionalInfoForm = ({ form }: AdditionalInfoFormProps) => {
 
   const today = new Date(Date.now() + 86400000).toISOString().split("T")[0];
 
-  const premiereDateStr = premiereDate ? String(premiereDate) : "";
-  const startSaleDateStr = startSaleDate ? String(startSaleDate) : "";
-
   useEffect(() => {
     if (premiereDate && startSaleDate) {
       const premDate = new Date(premiereDate);
@@ -81,7 +78,7 @@ export const AdditionalInfoForm = ({ form }: AdditionalInfoFormProps) => {
         <Input
           id="startSaleDate"
           type="date"
-          min={premiereDateStr || today}
+          min={premiereDate || today}
           className="col-span-3"
           autoComplete="off"
           {...register("limited_attribute.availability_start_date")}
@@ -100,7 +97,7 @@ export const AdditionalInfoForm = ({ form }: AdditionalInfoFormProps) => {
         <Input
           id="endSaleDate"
           type="date"
-          min={startSaleDateStr || today}
+          min={startSaleDate || today}
           className="col-span-3"
           autoComplete="off"
           {...register("limited_attribute.availability_end_date")}

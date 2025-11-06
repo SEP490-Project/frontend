@@ -12,5 +12,5 @@ export const managePayment = {
 
   // Generate PayOS payment link for contract payment
   generatePaymentLink: (contractPaymentId: string, req: PaymentLinkRequest) =>
-    api.post(`/contract_payments/${contractPaymentId}/payment-link`, req),
+    api.post(`/contract_payments/${contractPaymentId}/payment-link`, {}, { params: req }),
 };

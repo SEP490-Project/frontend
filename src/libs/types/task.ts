@@ -103,7 +103,8 @@ export interface TaskListMarketingDetail {
   id: string;
   name: string;
   description: {
-    details: string;
+    description: string;
+    material_url: string[];
   };
   deadline: string;
   type: string;

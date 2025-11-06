@@ -1,4 +1,3 @@
-export { default as TaskList } from "./TaskList";
-export { default as TaskSidebar } from "./TaskSidebar";
-export { default as TaskDetail } from "./TaskDetail";
 export { default as Calendar } from "./Calendar";
+export { default as TaskDetailSlider } from "./TaskDetailSlider";
+export { default as TaskListModalWithDetail } from "./TaskListModalWithDetail";

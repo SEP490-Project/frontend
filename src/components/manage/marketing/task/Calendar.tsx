@@ -1,17 +1,50 @@
-import { ChevronUp, ChevronDown } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { FaBox, FaFileLines, FaCalendarDays, FaGlobe, FaFilter } from "react-icons/fa6";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { motion, AnimatePresence } from "framer-motion";
-import type { Task } from "@/libs/types/task";
+import type { TaskListMarketing } from "@/libs/types/task";
 
-const daysOfWeek = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+const daysOfWeekShort = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+const taskTypes = [
+  { name: "ALL", label: "All Tasks", color: "#6b7280", icon: <FaFilter className="h-4 w-4" /> },
+  { name: "PRODUCT", label: "Product", color: "#f7c06d", icon: <FaBox className="h-4 w-4" /> },
+  {
+    name: "CONTENT",
+    label: "Content",
+    color: "#ff88fa",
+    icon: <FaFileLines className="h-4 w-4" />,
+  },
+  { name: "EVENT", label: "Event", color: "#6ad1ff", icon: <FaCalendarDays className="h-4 w-4" /> },
+  { name: "OTHER", label: "Other", color: "#9976ff", icon: <FaGlobe className="h-4 w-4" /> },
+];
 
 interface CalendarProps {
   currentDate: Date;
   setCurrentDate: (date: Date) => void;
-  tasks: Task[];
+  tasks: TaskListMarketing[];
+  onDateClick: (date: Date) => void;
+  activeFilter: string;
+  onFilterChange: (type: string) => void;
+  taskCounts: Record<string, number>;
 }
 
-function Calendar({ currentDate, setCurrentDate, tasks }: CalendarProps) {
+function Calendar({
+  currentDate,
+  setCurrentDate,
+  tasks,
+  onDateClick,
+  activeFilter,
+  onFilterChange,
+  taskCounts,
+}: CalendarProps) {
   const today = new Date();
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -24,8 +57,8 @@ function Calendar({ currentDate, setCurrentDate, tasks }: CalendarProps) {
   const lastDayOfPrevMonth = new Date(year, month, 0);
   const daysInPrevMonth = lastDayOfPrevMonth.getDate();
 
-  const hasTasksOnDate = (date: Date): boolean => {
-    return tasks.some((task) => {
+  const getTasksForDate = (date: Date): TaskListMarketing[] => {
+    return tasks.filter((task) => {
       const taskDate = new Date(task.deadline);
       return (
         taskDate.getFullYear() === date.getFullYear() &&
@@ -35,8 +68,24 @@ function Calendar({ currentDate, setCurrentDate, tasks }: CalendarProps) {
     });
   };
 
+  const getTaskTypeColor = (type: string) => {
+    switch (type) {
+      case "PRODUCT":
+        return "#f7c06d";
+      case "CONTENT":
+        return "#ff88fa";
+      case "EVENT":
+        return "#6ad1ff";
+      case "OTHER":
+        return "#9976ff";
+      default:
+        return "#e5e7eb";
+    }
+  };
+
   const calendarDays = [];
 
+  // Previous month days
   for (let i = firstDayWeekday - 1; i >= 0; i--) {
     calendarDays.push({
       day: daysInPrevMonth - i,
@@ -46,6 +95,7 @@ function Calendar({ currentDate, setCurrentDate, tasks }: CalendarProps) {
     });
   }
 
+  // Current month days
   for (let day = 1; day <= daysInMonth; day++) {
     calendarDays.push({
       day,
@@ -55,6 +105,7 @@ function Calendar({ currentDate, setCurrentDate, tasks }: CalendarProps) {
     });
   }
 
+  // Next month days
   const remainingDays = 42 - calendarDays.length;
   for (let day = 1; day <= remainingDays; day++) {
     calendarDays.push({
@@ -75,111 +126,178 @@ function Calendar({ currentDate, setCurrentDate, tasks }: CalendarProps) {
     setCurrentDate(newDate);
   };
 
-  const isToday = (date: Date) => {
-    return date.toDateString() === today.toDateString();
-  };
-
-  const isSelected = (date: Date) => {
-    return date.toDateString() === currentDate.toDateString();
-  };
+  const isToday = (date: Date) => date.toDateString() === today.toDateString();
 
   const monthYearKey = `${year}-${month}`;
 
   return (
-    <div className="bg-card rounded-lg border border-border p-4">
-      <div className="flex items-center justify-between mb-4">
-        <AnimatePresence mode="wait">
-          <motion.span
-            key={monthYearKey}
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            transition={{ duration: 0.3 }}
-            className="font-medium text-foreground"
-          >
-            {currentDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
-          </motion.span>
-        </AnimatePresence>
-        <div className="flex flex-col">
+    <div className="flex flex-col bg-white h-full rounded-2xl">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-border/20">
+        <div className="flex items-center gap-4">
           <Button
             variant="ghost"
             size="sm"
-            className="h-4 p-0 hover:scale-125 transition-transform duration-200"
             onClick={() => navigateMonth("prev")}
+            className="h-8 w-8 p-0 hover:bg-gray-100"
           >
-            <ChevronUp className="h-3 w-3" />
+            <ChevronLeft className="h-4 w-4" />
           </Button>
+
+          <AnimatePresence mode="wait">
+            <motion.h1
+              key={monthYearKey}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              transition={{ duration: 0.25 }}
+              className="text-xl font-semibold text-foreground"
+            >
+              {currentDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+            </motion.h1>
+          </AnimatePresence>
+
           <Button
             variant="ghost"
             size="sm"
-            className="h-4 p-0 hover:scale-125 transition-transform duration-200"
             onClick={() => navigateMonth("next")}
+            className="h-8 w-8 p-0 hover:bg-gray-100"
           >
-            <ChevronDown className="h-3 w-3" />
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {/* Filter */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                {taskTypes.find((t) => t.name === activeFilter)?.icon}
+                <span>{taskTypes.find((t) => t.name === activeFilter)?.label}</span>
+                <Badge variant="secondary" className="ml-1">
+                  {taskCounts[activeFilter] || 0}
+                </Badge>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              {taskTypes.map((type) => (
+                <DropdownMenuItem
+                  key={type.name}
+                  onClick={() => onFilterChange(type.name)}
+                  className={`gap-3 ${activeFilter === type.name ? "bg-accent" : ""}`}
+                >
+                  <div
+                    className="w-4 h-4 rounded flex items-center justify-center text-white text-xs"
+                    style={{ backgroundColor: type.color }}
+                  >
+                    {type.icon}
+                  </div>
+                  <span className="flex-1">{type.label}</span>
+                  <Badge variant="outline" className="text-xs">
+                    {taskCounts[type.name] || 0}
+                  </Badge>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Button
+            variant="default"
+            onClick={() => setCurrentDate(new Date())}
+            className="px-4 py-2"
+          >
+            Today
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 mb-2">
-        {daysOfWeek.map((day) => (
-          <div key={day} className="text-center text-sm font-medium text-muted-foreground py-1">
-            {day}
+      {/* Days of Week */}
+      <div className="grid grid-cols-7 border-b border-border/20">
+        {daysOfWeekShort.map((day) => (
+          <div key={day} className="p-2 text-center">
+            <div className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+              {day}
+            </div>
           </div>
         ))}
       </div>
 
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={monthYearKey}
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 1.05 }}
-          transition={{ duration: 0.3 }}
-          className="grid grid-cols-7 gap-1 place-items-center"
-        >
-          {calendarDays.map((dayObj) => {
-            const isTodayDate = isToday(dayObj.date);
-            const isSelectedDate = isSelected(dayObj.date);
-            const hasTasks = hasTasksOnDate(dayObj.date);
+      {/* Calendar Grid */}
+      <div className="flex-1 overflow-hidden px-6 py-4">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={monthYearKey}
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.02 }}
+            transition={{ duration: 0.3 }}
+            className="grid grid-cols-7 auto-rows-[80px]"
+          >
+            {calendarDays.map((dayObj) => {
+              const isTodayDate = isToday(dayObj.date);
+              const dayTasks = getTasksForDate(dayObj.date);
+              const displayTasks = dayTasks.slice(0, 4);
+              const hasMoreTasks = dayTasks.length > 4;
 
-            return (
-              <div
-                key={dayObj.key}
-                className={`
-                  text-center cursor-pointer rounded-lg transition-all duration-10 ease-out relative h-10 w-10 mx-auto
-                  flex flex-col items-center justify-center 
-                  group
-                  ${
-                    isSelectedDate
-                      ? "bg-primary text-primary-foreground font-medium shadow-md"
-                      : isTodayDate
-                        ? "bg-accent text-accent-foreground font-medium"
-                        : !dayObj.isCurrentMonth
-                          ? "text-muted-foreground"
-                          : "text-foreground"
-                  }
-                `}
-                onClick={() => setCurrentDate(dayObj.date)}
-              >
-                <span
-                  className={`text-sm leading-none relative transition-all duration-300 ease-out group-hover:font-bold ${
-                    isSelectedDate || isTodayDate ? "font-medium" : ""
-                  }`}
+              return (
+                <div
+                  key={dayObj.key}
+                  className={`
+                    border-r border-b border-border/20 p-2 cursor-pointer transition-all duration-200 
+                    hover:bg-gray-50 flex flex-col justify-between overflow-hidden
+                    ${!dayObj.isCurrentMonth ? "bg-gray-50/50" : "bg-white"}
+                  `}
+                  onClick={() => {
+                    if (dayTasks.length > 0) onDateClick(dayObj.date);
+                  }}
                 >
-                  {dayObj.day}
-                  {hasTasks && (
-                    <div
-                      className={`absolute left-1/2 transform -translate-x-1/2 bottom-[-2px] h-0.5 w-4 rounded-full transition-all duration-300 ${
-                        isSelectedDate ? "bg-primary-foreground" : "bg-primary"
+                  {/* Day Number + More */}
+                  <div className="flex items-center justify-between">
+                    <span
+                      className={`text-sm font-medium ${
+                        isTodayDate
+                          ? "bg-primary text-primary-foreground w-5 h-5 rounded-full flex items-center justify-center text-xs"
+                          : !dayObj.isCurrentMonth
+                            ? "text-muted-foreground/60"
+                            : "text-foreground"
                       }`}
-                    />
+                    >
+                      {dayObj.day}
+                    </span>
+                    {hasMoreTasks && (
+                      <span className="text-[10px] text-muted-foreground font-medium">
+                        +{dayTasks.length - 4}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Task Dots */}
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {displayTasks.map((task, index) => (
+                      <motion.div
+                        key={task.id}
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ duration: 0.2, delay: index * 0.05 }}
+                        className="w-2 h-2 rounded-full shadow-sm"
+                        style={{ backgroundColor: getTaskTypeColor(task.type) }}
+                        title={task.name}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Task Preview */}
+                  {displayTasks.length > 0 && (
+                    <p className="text-[10px] text-muted-foreground line-clamp-1 mt-1 leading-tight">
+                      {displayTasks[0].name}
+                    </p>
                   )}
-                </span>
-              </div>
-            );
-          })}
-        </motion.div>
-      </AnimatePresence>
+                </div>
+              );
+            })}
+          </motion.div>
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

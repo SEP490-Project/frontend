@@ -30,7 +30,11 @@ const initialState: stateType = {
 export const manageTaskSlice = createSlice({
   name: "manageTask",
   initialState,
-  reducers: {},
+  reducers: {
+    clearTaskDetail: (state) => {
+      state.taskDetail = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(getTaskList.pending, (state) => {
@@ -68,4 +72,5 @@ export const manageTaskSlice = createSlice({
   },
 });
 
+export const { clearTaskDetail } = manageTaskSlice.actions;
 export const { reducer: manageTaskReducer, actions: manageTaskActions } = manageTaskSlice;

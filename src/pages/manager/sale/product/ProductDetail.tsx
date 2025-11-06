@@ -26,6 +26,7 @@ import type {
   ProductVariant,
   ProductAttribute,
   VariantWithImage,
+  LimitedProductData,
 } from "@/libs/types/product";
 import { MdHeight, MdWidthNormal } from "react-icons/md";
 
@@ -178,6 +179,56 @@ const ProductDetail: React.FC = () => {
                     {product.created_at ? new Date(product.created_at).toLocaleString() : "N/A"}
                   </p>
                 </div>
+              </div>
+            </div>
+          </div>
+          <div className="px-6 pb-6">
+            <h2 className="text-lg font-semibold mb-4">Additional Information</h2>
+            <div className="grid md:grid-cols-2 grid-cols-1 gap-2">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-500 mb-2">Max Stock</p>
+                <p className="font-semibold text-gray-900">
+                  {isLimited
+                    ? (product as LimitedProductData).limited_product?.max_stock || "N/A"
+                    : "N/A"}{" "}
+                  items
+                </p>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg mt-4 md:mt-0">
+                <p className="text-sm text-gray-500 mb-2">Bought Limit</p>
+                <p className="font-semibold text-gray-900">
+                  {isLimited
+                    ? (product as LimitedProductData).limited_product?.bought_limit || "N/A"
+                    : "N/A"}
+                </p>
+              </div>
+            </div>
+            <div className="grid md:grid-cols-3 grid-cols-1 gap-2">
+              <div className="bg-gray-50 p-4 rounded-lg mt-4">
+                <p className="text-sm text-gray-500 mb-2">Premiere Date</p>
+                <p className="font-semibold text-gray-900">
+                  {isLimited
+                    ? (product as LimitedProductData).limited_product?.premiere_date || "N/A"
+                    : "N/A"}
+                </p>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg mt-4">
+                <p className="text-sm text-gray-500 mb-2">Start Date</p>
+                <p className="font-semibold text-gray-900">
+                  {isLimited
+                    ? (product as LimitedProductData).limited_product?.availability_start_date ||
+                      "N/A"
+                    : "N/A"}
+                </p>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg mt-4">
+                <p className="text-sm text-gray-500 mb-2">End Date</p>
+                <p className="font-semibold text-gray-900">
+                  {isLimited
+                    ? (product as LimitedProductData).limited_product?.availability_end_date ||
+                      "N/A"
+                    : "N/A"}
+                </p>
               </div>
             </div>
           </div>

@@ -135,6 +135,7 @@ const AppRoutes = () => (
           <Route path="contracts" element={<Contract />} />
           <Route path="contracts/:id" element={<BrandContractDetail />} />
           <Route path="campaigns" element={<BrandCampaign />} />
+          <Route path="campaigns/:id" element={<CampaignDetail userRole="brand" />} />
           <Route path="contract-payment" element={<ContractPaymentBrand />} />
         </Route>
       </Route>

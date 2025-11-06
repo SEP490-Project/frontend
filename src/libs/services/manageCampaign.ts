@@ -15,4 +15,9 @@ export const manageCampaign = {
   }) => api.get("/campaigns", { params }),
 
   CreateCampaign: (request: CampaignRequest) => api.post("/campaigns", request),
+
+  approveCampaign: (req: string) => api.patch(`/campaigns/${req}/approve`),
+
+  rejectCampaign: (req: string, reason?: string) =>
+    api.patch(`/campaigns/${req}/reject`, { reason }),
 };

@@ -37,7 +37,6 @@ const CAMPAIGN_STATUS_LABELS: Record<string, string> = {
   COMPLETED: "Completed",
   CANCELED: "Canceled",
   DRAFT: "Draft",
-  PAUSED: "Paused",
 };
 
 const CAMPAIGN_TYPE_LABELS: Record<string, string> = {
@@ -52,7 +51,6 @@ const STATUS_COLORS: Record<string, string> = {
   CANCELED: "bg-red-100 text-red-800 border-red-200",
   RUNNING: "bg-yellow-100 text-yellow-800 border-yellow-200",
   DRAFT: "bg-gray-100 text-gray-800 border-gray-200",
-  PAUSED: "bg-orange-100 text-orange-800 border-orange-200",
 };
 
 const CAMPAIGN_TYPE_COLORS: Record<string, string> = {
@@ -178,7 +176,6 @@ const CampaignPage: React.FC = () => {
                 <SelectItem value="COMPLETED">Completed</SelectItem>
                 <SelectItem value="CANCELED">Canceled</SelectItem>
                 <SelectItem value="DRAFT">Draft</SelectItem>
-                <SelectItem value="PAUSED">Paused</SelectItem>
               </SelectContent>
             </Select>
             <Button

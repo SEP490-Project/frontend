@@ -1,15 +1,17 @@
 export interface ContractPayment {
   id: string;
   contract_id: string;
-  payment_number: string;
+  contract_title: string;
+  contract_number: string;
+  brand_id: string;
+  brand_name: string;
+  installment_percentage: number;
   amount: number;
-  currency: string;
   status: "PENDING" | "PAID" | "OVERDUE" | "CANCELLED";
   due_date: string;
   paid_date?: string;
-  description?: string;
-  payment_method?: string;
-  transaction_id?: string;
+  payment_method: string;
+  note: string;
   created_at: string;
   updated_at: string;
 }
@@ -25,6 +27,9 @@ export interface ContractPaymentProfile {
 }
 
 export interface ContractPaymentDetail extends ContractPayment {
+  payment_number: string;
+  currency: string;
+  description: string;
   contract: {
     id: string;
     title: string;

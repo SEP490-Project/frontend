@@ -27,7 +27,6 @@ import { useAppDispatch } from "@/libs/stores";
 import { getCampaignsByBrand } from "@/libs/stores/campaignManager/thunk";
 import type { CampaignData } from "@/libs/types/campaign";
 import { useDebounce } from "@/libs/hooks/useDebounce";
-import { DatePicker } from "@/components/date-picker";
 import { formatDate } from "@/libs/helper/helper";
 import { motion } from "framer-motion";
 
@@ -68,10 +67,6 @@ const CampaignPage: React.FC = () => {
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [searchTerm, setSearchTerm] = useState("");
-  const [startDate, setStartDate] = useState<string>("");
-  const [endDate, setEndDate] = useState<string>("");
-  const [sortBy, setSortBy] = useState<string>("created_at");
-  const [sortOrder, setSortOrder] = useState<string>("desc");
 
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
@@ -87,43 +82,19 @@ const CampaignPage: React.FC = () => {
       ...(debouncedSearchTerm && { keyword: debouncedSearchTerm }),
       ...(statusFilter !== "ALL" && { status: statusFilter }),
       ...(typeFilter !== "ALL" && { type: typeFilter }),
-      ...(startDate && { start_date: toISOStringDate(startDate) }),
-      ...(endDate && { end_date: toISOStringDate(endDate) }),
-      sort_by: sortBy,
-      sort_order: sortOrder,
     };
 
     dispatch(getCampaignsByBrand(params as any));
-  }, [
-    dispatch,
-    page,
-    typeFilter,
-    statusFilter,
-    debouncedSearchTerm,
-    startDate,
-    endDate,
-    sortBy,
-    sortOrder,
-  ]);
+  }, [dispatch, page, typeFilter, statusFilter, debouncedSearchTerm]);
 
   useEffect(() => {
     setPage(1);
-  }, [typeFilter, statusFilter, debouncedSearchTerm, startDate, endDate]);
+  }, [typeFilter, statusFilter, debouncedSearchTerm]);
 
   const handleResetFilters = () => {
     setSearchTerm("");
     setTypeFilter("ALL");
     setStatusFilter("ALL");
-    setStartDate("");
-    setEndDate("");
-    setSortBy("created_at");
-    setSortOrder("desc");
-  };
-
-  const toISOStringDate = (dateStr: string) => {
-    if (!dateStr) return "";
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return "";
-    return `${dateStr}T00:00:00Z`;
   };
 
   const itemVariants = {
@@ -217,60 +188,6 @@ const CampaignPage: React.FC = () => {
             >
               Reset
             </Button>
-          </motion.div>
-        </div>
-        <div
-          className="
-          grid grid-cols-2 sm:grid-cols-4 gap-1 sm:gap-2
-          items-end
-        "
-        >
-          <motion.div variants={itemVariants}>
-            <DatePicker
-              value={startDate}
-              onChange={(date) => {
-                setStartDate(date);
-                if (endDate && date && endDate < date) setEndDate("");
-              }}
-              placeholder="Start Date"
-              dateFormat="dd/MM/yyyy"
-              className="w-full"
-              maxDate={endDate || undefined}
-            />
-          </motion.div>
-          <motion.div variants={itemVariants}>
-            <DatePicker
-              value={endDate}
-              onChange={setEndDate}
-              placeholder="End Date"
-              dateFormat="dd/MM/yyyy"
-              className="w-full"
-              minDate={startDate || undefined}
-            />
-          </motion.div>
-          <motion.div variants={itemVariants}>
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sort By" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="created_at">Created At</SelectItem>
-                <SelectItem value="start_date">Start Date</SelectItem>
-                <SelectItem value="end_date">End Date</SelectItem>
-                <SelectItem value="name">Name</SelectItem>
-              </SelectContent>
-            </Select>
-          </motion.div>
-          <motion.div variants={itemVariants}>
-            <Select value={sortOrder} onValueChange={setSortOrder}>
-              <SelectTrigger>
-                <SelectValue placeholder="Order" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="asc">Ascending</SelectItem>
-                <SelectItem value="desc">Descending</SelectItem>
-              </SelectContent>
-            </Select>
           </motion.div>
         </div>
       </motion.div>

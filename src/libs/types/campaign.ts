@@ -34,6 +34,7 @@ export interface CampaignParams {
   limit: number;
   status?: string;
   type?: string;
+  keyword?: string;
 }
 
 export interface CampaignResponse {

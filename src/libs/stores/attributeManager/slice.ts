@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { getAllVariantAttributesForAdminThunk, getAllVariantAttributesThunk } from "./thunk";
+import { getAllVariantAttributesThunk } from "./thunk";
 import type { VariantAttributeResponse } from "@/libs/types/variant-attribute";
 
 const attributeManagerSlice = createSlice({
@@ -11,18 +11,6 @@ const attributeManagerSlice = createSlice({
   },
   reducers: {},
   extraReducers: (builder) => {
-    builder.addCase(getAllVariantAttributesForAdminThunk.pending, (state) => {
-      state.loading = true;
-      state.error = null;
-    });
-    builder.addCase(getAllVariantAttributesForAdminThunk.fulfilled, (state, action) => {
-      state.loading = false;
-      state.attributes = action.payload;
-    });
-    builder.addCase(getAllVariantAttributesForAdminThunk.rejected, (state, action) => {
-      state.loading = false;
-      state.error = action.payload as string | null;
-    });
     builder.addCase(getAllVariantAttributesThunk.pending, (state) => {
       state.loading = true;
       state.error = null;

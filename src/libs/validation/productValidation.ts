@@ -14,11 +14,6 @@ export const createStandardProductSchema: yup.ObjectSchema<CreateProductPayload>
   category_id: yup.string().required("Category is required"),
   brand_id: yup.string().required("Brand is required"),
   description: yup.string().nullable().optional(),
-  price: yup
-    .number()
-    .positive("Price must be a positive number")
-    .min(1000, "Price must be at least 1000")
-    .required("Price is required"),
 });
 
 export const createLimitedProductSchema: yup.ObjectSchema<CreateLimitedProductPayload> = yup.object(
@@ -27,11 +22,6 @@ export const createLimitedProductSchema: yup.ObjectSchema<CreateLimitedProductPa
     category_id: yup.string().required("Category is required"),
     brand_id: yup.string().required("Brand is required"),
     description: yup.string().nullable().optional(),
-    price: yup
-      .number()
-      .positive("Price must be a positive number")
-      .min(1000, "Price must be at least 1000")
-      .required("Price is required"),
     task_id: yup.string().optional(),
     limited_attribute: yup
       .object({
@@ -47,7 +37,7 @@ export const createLimitedProductSchema: yup.ObjectSchema<CreateLimitedProductPa
           .min(1, "Max stock must be at least 1")
           .required("Max stock is required"),
         is_free_shipping: yup.boolean().required(),
-        concept_id: yup.string().optional(),
+        concept_id: yup.string().nullable().optional(),
       })
       .required("Limited attributes are required"),
   },
@@ -77,8 +67,7 @@ export const productVariantSchema: yup.ObjectSchema<ProductVariant> = yup.object
     .array()
     .of(
       yup.object({
-        description: yup.string().nullable().optional(),
-        ingredients: yup.string().required("Ingredients are required"),
+        attribute_id: yup.string().required("Attribute ID is required"),
         unit: yup.mixed<AttributeUnit>().required("Unit is required"),
         value: yup
           .number()

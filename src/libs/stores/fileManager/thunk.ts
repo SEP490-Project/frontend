@@ -1,5 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { manageFile } from "@/libs/services/manageFile";
+import manageFile from "@/libs/services/manageFile";
 import type { FilePayload, UploadResponse } from "@/libs/types/file";
 
 export const uploadFilesThunk = createAsyncThunk<UploadResponse, FilePayload>(
@@ -9,7 +9,7 @@ export const uploadFilesThunk = createAsyncThunk<UploadResponse, FilePayload>(
       const formData = new FormData();
       formData.append("userId", payload.userId);
       payload.files.forEach((file) => {
-        formData.append("files", file); // append nhiều file
+        formData.append("files", file);
       });
 
       const response = await manageFile.uploadFiles(formData);

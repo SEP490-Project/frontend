@@ -1,6 +1,12 @@
-import api from "@/libs/api";
+import api from "../api";
 
-export const manageFile = {
+const manageFile = {
+  uploadChunkedFile: async (file: FormData) =>
+    api.post("/files/videos/upload-chunk", file, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }),
   uploadFiles: (data: FormData, onProgress?: (percent: number) => void) =>
     api.post("/files/upload", data, {
       onUploadProgress: (event) => {
@@ -11,3 +17,5 @@ export const manageFile = {
       },
     }),
 };
+
+export default manageFile;

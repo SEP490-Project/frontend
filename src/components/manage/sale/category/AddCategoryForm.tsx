@@ -66,7 +66,7 @@ export const AddCategoryForm = ({ onSuccess, loading }: AddCategoryFormProps) =>
       payload.description = formData.description;
     }
 
-    if (formData.parent_category_id) {
+    if (formData.parent_category_id && formData.parent_category_id !== " ") {
       payload.parent_category_id = formData.parent_category_id;
     }
 
@@ -112,7 +112,7 @@ export const AddCategoryForm = ({ onSuccess, loading }: AddCategoryFormProps) =>
             <SelectValue placeholder="Select parent category (optional)" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value=" ">None</SelectItem>
+            <SelectItem value={" "}>None</SelectItem>
             {filteredParentCategories?.map((category) => (
               <SelectItem key={category.id} value={category.id}>
                 {category.name}

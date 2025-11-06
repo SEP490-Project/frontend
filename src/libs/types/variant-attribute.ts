@@ -1,9 +1,12 @@
+import type { Pagination } from "./common";
+
 export interface VariantAttributeResponse {
   success: boolean;
   status_code: number;
   status: string;
   message: string;
   data: VariantAttributeData[];
+  pagination: Pagination;
 }
 
 export interface VariantAttributeData {

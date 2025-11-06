@@ -161,7 +161,7 @@ const ManageContent = () => {
 
   return (
     <TaskProvider>
-      <div className="min-h-screen p-5">
+      <div className="min-h-fit p-4 sm:p-6">
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Main Content */}
           {viewMode === "list" ? (

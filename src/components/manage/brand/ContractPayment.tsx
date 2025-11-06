@@ -158,26 +158,36 @@ const ContractPayment = () => {
   const [showPaymentLinkDialog, setShowPaymentLinkDialog] = useState(false);
   const [showPaymentLoadingModal, setShowPaymentLoadingModal] = useState(false);
 
-  // Load payments on component mount and when filters change
+  // Load payments on component mount and when page changes
   useEffect(() => {
     const params = {
       page: currentPage,
       limit: pageSize,
-      ...(statusFilter !== "ALL" && { status: statusFilter as any }),
     };
     fetchPaymentsProfile(params);
-  }, [currentPage, pageSize, statusFilter, fetchPaymentsProfile]);
+  }, [currentPage, pageSize, fetchPaymentsProfile]);
 
-  // Filter payments based on search term
+  // Filter payments based on search term and status (frontend only)
   const filteredPayments = useMemo(() => {
-    if (!searchTerm) return payments;
-    return payments.filter(
-      (payment) =>
-        payment.contract_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        payment.contract_title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        payment.note?.toLowerCase().includes(searchTerm.toLowerCase()),
-    );
-  }, [payments, searchTerm]);
+    let filtered = payments;
+
+    // Filter by status
+    if (statusFilter !== "ALL") {
+      filtered = filtered.filter((payment) => payment.status === statusFilter);
+    }
+
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (payment) =>
+          payment.contract_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          payment.contract_title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          payment.note?.toLowerCase().includes(searchTerm.toLowerCase()),
+      );
+    }
+
+    return filtered;
+  }, [payments, searchTerm, statusFilter]);
 
   // Handle refresh
   const handleRefresh = () => {
@@ -198,24 +208,23 @@ const ContractPayment = () => {
 
     try {
       const response = await generatePaymentLink(payment.id, {
-        description: `Payment for ${payment.contract_number}`,
-        return_url: `${window.location.origin}/payments/success`,
-        cancel_url: `${window.location.origin}/payments/cancel`,
+        return_url: `${window.location.origin}/manage/brand/payment`,
+        cancel_url: `${window.location.origin}/manage/brand/payment`,
       });
 
       // Close loading modal
       setShowPaymentLoadingModal(false);
 
-      // Redirect to checkout URL using the response directly
+      // Redirect to checkout URL in current tab
       if (response?.checkoutUrl) {
-        window.open(response.checkoutUrl, "_blank");
-        toast.success("Đang chuyển hướng đến trang thanh toán...");
+        window.location.href = response.checkoutUrl;
+        toast.success("Redirecting to payment page...");
       } else {
-        toast.error("Không nhận được URL thanh toán");
+        toast.error("No checkout URL received");
       }
     } catch (error) {
       setShowPaymentLoadingModal(false);
-      toast.error("Không thể tạo liên kết thanh toán");
+      toast.error("Failed to generate payment link");
       console.error("Payment link generation failed:", error);
     }
   };
@@ -780,10 +789,10 @@ const ContractPayment = () => {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-primary">
                 <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                Đang xử lý thanh toán
+                Processing Payment
               </DialogTitle>
               <DialogDescription className="text-muted-foreground">
-                Vui lòng đợi trong khi chúng tôi tạo liên kết thanh toán...
+                Please wait while we generate your payment link...
               </DialogDescription>
             </DialogHeader>
 
@@ -794,11 +803,9 @@ const ContractPayment = () => {
                   <div className="absolute top-0 left-0 h-16 w-16 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm text-muted-foreground">
-                    Đang kết nối đến cổng thanh toán...
-                  </p>
+                  <p className="text-sm text-muted-foreground">Connecting to payment gateway...</p>
                   <p className="text-xs text-muted-foreground/70 mt-1">
-                    Quá trình này có thể mất vài giây
+                    This may take a few seconds
                   </p>
                 </div>
               </div>

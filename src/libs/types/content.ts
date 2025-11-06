@@ -128,3 +128,39 @@ export interface RejectContentParams {
   id: string;
   feedback: string;
 }
+
+export interface ListContent {
+  id: string;
+  task_id: string;
+  title: string;
+  body: object;
+  type: string;
+  status: string;
+  publish_date?: string;
+  created_at: string;
+  updated_at: string;
+  rejection_feedback?: string;
+  affiliate_link?: string;
+  ai_generated_text?: string;
+  blog?: {
+    content_id: string;
+    author_id: string;
+    author: {
+      email: string;
+      id: string;
+      username: string;
+    };
+    tags: string[];
+    excerpt: string;
+    read_time: number;
+    created_at: string;
+    updated_at: string;
+  };
+  content_channels: {
+    auto_post_status: string;
+    channel_id: string;
+    channel_name: string;
+    id: string;
+    post_date?: string;
+  }[];
+}

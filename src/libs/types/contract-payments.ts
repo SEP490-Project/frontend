@@ -11,6 +11,27 @@ export interface ContractPaymentParams {
   sort_order?: string;
 }
 
+export interface CreatePaymentParams {
+  contract_payment_id: string;
+  return_url?: string;
+  cancel_url?: string;
+}
+
+export interface PaymentLink {
+  accountName: string;
+  accountNumber: string;
+  amount: number;
+  bin: string;
+  checkoutUrl: string;
+  currency: string;
+  description: string;
+  expiredAt: number;
+  orderCode: number;
+  paymentLinkId: string;
+  qrCode: string;
+  status: string;
+}
+
 export interface ContractPayment {
   id: string;
   contract_id: string;

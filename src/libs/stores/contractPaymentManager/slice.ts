@@ -1,12 +1,19 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { getContractPayment, getContractPaymentBrand, getContractPaymentDetail } from "./thunk";
-import type { ContractPayment } from "@/libs/types/contract-payments";
+import {
+  getContractPayment,
+  getContractPaymentBrand,
+  getContractPaymentDetail,
+  createPaymentLink,
+} from "./thunk";
+import type { ContractPayment, PaymentLink } from "@/libs/types/contract-payments";
 
 interface stateType {
   loading: boolean;
   contractPayments: ContractPayment[];
   contractPaymentBrand: ContractPayment[];
   contractPaymentDetail: ContractPayment | null;
+  paymentLink: PaymentLink | null;
+  loadingPayment: boolean;
   pagination: {
     page: number;
     limit: number;
@@ -22,6 +29,8 @@ const initialState: stateType = {
   contractPayments: [],
   contractPaymentBrand: [],
   contractPaymentDetail: null,
+  paymentLink: null,
+  loadingPayment: false,
   pagination: null,
 };
 
@@ -53,6 +62,17 @@ export const manageContractPaymentSlice = createSlice({
       })
       .addCase(getContractPaymentBrand.rejected, (state) => {
         state.loading = false;
+      })
+
+      .addCase(createPaymentLink.pending, (state) => {
+        state.loadingPayment = true;
+      })
+      .addCase(createPaymentLink.fulfilled, (state, action) => {
+        state.loadingPayment = false;
+        state.paymentLink = action.payload.data || null;
+      })
+      .addCase(createPaymentLink.rejected, (state) => {
+        state.loadingPayment = false;
       })
 
       .addCase(getContractPaymentDetail.pending, (state) => {

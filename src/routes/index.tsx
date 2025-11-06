@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Homepage from "@/pages/Homepage";
 import NotFound from "@/pages/NotFound";
+import CancelPayment from "@/pages/CancelPayment";
+import SuccessPayment from "@/pages/SuccessPayment";
 import { Account, Notification, Dashboard } from "@/pages/manager/shared";
 import { Contract, Campaign as BrandCampaign, ContractPaymentBrand } from "@/pages/manager/brand";
 import BrandContractDetail from "@/pages/manager/brand/ContractDetail";
@@ -50,6 +52,8 @@ const AppRoutes = () => (
     <Routes>
       <Route element={<CustomerLayout />}>
         <Route path="/" element={<Homepage />} />
+        <Route path="/cancel-payment" element={<CancelPayment />} />
+        <Route path="/payment-success" element={<SuccessPayment />} />
       </Route>
 
       <Route element={<PublicRoute />}>

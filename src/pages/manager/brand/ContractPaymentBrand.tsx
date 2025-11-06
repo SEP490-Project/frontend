@@ -24,14 +24,18 @@ import DataSelector from "@/components/global/DataSelector";
 import { useContractPayment } from "@/libs/hooks/useContractPayment";
 import { useBrand } from "@/libs/hooks/useBrand";
 import { useAppDispatch } from "@/libs/stores";
-import { getContractPaymentBrand } from "@/libs/stores/contractPaymentManager/thunk";
+import {
+  getContractPaymentBrand,
+  createPaymentLink,
+} from "@/libs/stores/contractPaymentManager/thunk";
 import { brand as fetchBrands } from "@/libs/stores/brandManager/thunk";
 import type { ContractPayment } from "@/libs/types/contract-payments";
 import { useDebounce } from "@/libs/hooks/useDebounce";
 import { DatePicker } from "@/components/date-picker";
 import { formatDate } from "@/libs/helper/helper";
 import { motion } from "framer-motion";
-import { PaymentDetailModal } from "@/components/manage/marketing/contract-payment";
+import { PaymentDetailModal, PaymentModal } from "@/components/manage/marketing/contract-payment";
+import { toast } from "sonner";
 
 const PAGE_SIZE = 10;
 
@@ -74,6 +78,65 @@ const ContractPaymentBrandPage: React.FC = () => {
   const [sortOrder, setSortOrder] = useState<string>("desc");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
+  const [loadingPaymentId, setLoadingPaymentId] = useState<string | null>(null);
+  const [modalPaymentLoading, setModalPaymentLoading] = useState(false);
+
+  // Payment modal states
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
+  const handlePayNow = async (contract_payment_id: string) => {
+    try {
+      setLoadingPaymentId(contract_payment_id);
+      const baseUrl = import.meta.env.VITE_APP_BASE_URL || window.location.origin;
+      const returnUrl = `${baseUrl}/payment-success`;
+      const cancelUrl = `${baseUrl}/payment-cancel`;
+
+      const result = await dispatch(
+        createPaymentLink({
+          contract_payment_id,
+          return_url: returnUrl,
+          cancel_url: cancelUrl,
+        }),
+      );
+      if (result?.payload) {
+        setIsPaymentModalOpen(true);
+      } else {
+        toast.error("Could not get payment information. Please try again.");
+      }
+    } catch {
+      toast.error("An error occurred while creating payment link.");
+    } finally {
+      setLoadingPaymentId(null);
+    }
+  };
+
+  // Handle Pay Now from modal (separate loading state)
+  const handlePayNowFromModal = async (contract_payment_id: string) => {
+    try {
+      setModalPaymentLoading(true);
+      const baseUrl = import.meta.env.VITE_APP_BASE_URL || window.location.origin;
+      const returnUrl = `${baseUrl}/payment-success`;
+      const cancelUrl = `${baseUrl}/payment-cancel`;
+
+      const result = await dispatch(
+        createPaymentLink({
+          contract_payment_id,
+          return_url: returnUrl,
+          cancel_url: cancelUrl,
+        }),
+      );
+      if (result?.payload) {
+        setIsModalOpen(false);
+        setIsPaymentModalOpen(true);
+      } else {
+        toast.error("Could not get payment information. Please try again.");
+      }
+    } catch {
+      toast.error("An error occurred while creating payment link.");
+    } finally {
+      setModalPaymentLoading(false);
+    }
+  };
 
   // Brand DataSelector states
   const [brandSearch, setBrandSearch] = useState("");
@@ -82,7 +145,12 @@ const ContractPaymentBrandPage: React.FC = () => {
   const debouncedBrandSearch = useDebounce(brandSearch, 400);
 
   const dispatch = useAppDispatch();
-  const { contractPaymentBrand: contractPayments, loading, pagination } = useContractPayment();
+  const {
+    contractPaymentBrand: contractPayments,
+    loading,
+    pagination,
+    paymentLink,
+  } = useContractPayment();
   const { brands, loading: brandLoading, pagination: brandPagination } = useBrand();
 
   // Fetch brands for DataSelector
@@ -469,6 +537,27 @@ const ContractPaymentBrandPage: React.FC = () => {
                               <p>View Details</p>
                             </TooltipContent>
                           </Tooltip>
+                          {payment.status === "PENDING" && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  className="h-8 px-3 text-xs font-semibold bg-primary text-white"
+                                  onClick={() => handlePayNow(payment.id)}
+                                >
+                                  {loadingPaymentId === payment.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    "Pay Now"
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Pay this contract payment</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
                         </div>
                       </TableCell>
                     </motion.tr>
@@ -550,6 +639,27 @@ const ContractPaymentBrandPage: React.FC = () => {
                           <p>View Details</p>
                         </TooltipContent>
                       </Tooltip>
+                      {payment.status === "PENDING" && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="h-8 px-3 text-xs font-semibold bg-primary text-white"
+                              onClick={() => handlePayNow(payment.id)}
+                            >
+                              {loadingPaymentId === payment.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                "Pay Now"
+                              )}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Pay this contract payment</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
                     </div>
                   </motion.div>
                 ))}
@@ -601,6 +711,14 @@ const ContractPaymentBrandPage: React.FC = () => {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         paymentId={selectedPaymentId}
+        showPayNowButton={true}
+        onPayNow={handlePayNowFromModal}
+        isPaymentLoading={modalPaymentLoading}
+      />
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        paymentData={paymentLink}
       />
     </div>
   );

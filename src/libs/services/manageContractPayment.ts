@@ -1,5 +1,5 @@
 import api from "@/libs/api";
-import type { ContractPaymentParams } from "@/libs/types/contract-payments";
+import type { ContractPaymentParams, CreatePaymentParams } from "@/libs/types/contract-payments";
 
 export const manageContractPayment = {
   getContractPaymentBrand: (params?: ContractPaymentParams) => {
@@ -8,6 +8,13 @@ export const manageContractPayment = {
 
   getContractPayment: (params?: ContractPaymentParams) => {
     return api.get("/contract_payments", { params });
+  },
+
+  createPaymentLink: (req: CreatePaymentParams) => {
+    return api.post(`/contract_payments/${req.contract_payment_id}/payment-link`, {
+      return_url: req.return_url,
+      cancel_url: req.cancel_url,
+    });
   },
 
   getContractPaymentDetail: (req: string) => {

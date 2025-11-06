@@ -20,6 +20,9 @@ interface PaymentDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   paymentId: string | null;
+  showPayNowButton?: boolean;
+  onPayNow?: (paymentId: string) => void;
+  isPaymentLoading?: boolean;
 }
 
 const CONTRACT_PAYMENT_STATUS_LABELS: Record<string, string> = {
@@ -48,7 +51,14 @@ const PAYMENT_METHOD_COLORS: Record<string, string> = {
   CHECK: "bg-orange-100 text-orange-800 border-orange-200",
 };
 
-function PaymentDetailModal({ isOpen, onClose, paymentId }: PaymentDetailModalProps) {
+function PaymentDetailModal({
+  isOpen,
+  onClose,
+  paymentId,
+  showPayNowButton = false,
+  onPayNow,
+  isPaymentLoading = false,
+}: PaymentDetailModalProps) {
   const dispatch = useAppDispatch();
   const { contractPaymentDetail, loading } = useContractPayment();
 
@@ -224,7 +234,23 @@ function PaymentDetailModal({ isOpen, onClose, paymentId }: PaymentDetailModalPr
           </div>
         )}
 
-        <div className="flex justify-end pt-4 border-t">
+        <div className="flex justify-end gap-3 pt-4 border-t">
+          {showPayNowButton && contractPaymentDetail?.status === "PENDING" && onPayNow && (
+            <Button
+              onClick={() => onPayNow(contractPaymentDetail.id)}
+              className="bg-primary hover:bg-primary/90"
+              disabled={isPaymentLoading}
+            >
+              {isPaymentLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Processing...
+                </>
+              ) : (
+                "Pay Now"
+              )}
+            </Button>
+          )}
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>

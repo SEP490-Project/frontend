@@ -1,6 +1,7 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { AxiosError } from "axios";
 import { manageContractPayment } from "@/libs/services/manageContractPayment";
+import type { CreatePaymentParams } from "@/libs/types/contract-payments";
 
 export const getContractPayment = createAsyncThunk(
   "/contract_payments",
@@ -48,6 +49,19 @@ export const getContractPaymentBrand = createAsyncThunk(
   ) => {
     try {
       const response = await manageContractPayment.getContractPaymentBrand(req);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Thất bại");
+    }
+  },
+);
+
+export const createPaymentLink = createAsyncThunk(
+  "/contract_payments/payment_link",
+  async (req: CreatePaymentParams, { rejectWithValue }) => {
+    try {
+      const response = await manageContractPayment.createPaymentLink(req);
       return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;

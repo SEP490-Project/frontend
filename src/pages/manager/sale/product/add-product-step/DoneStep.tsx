@@ -48,13 +48,13 @@ const DoneStep = () => {
     };
   }, [navigate, setIsDisabled, setOnSubmitStep]);
   return (
-    <div className="bg-white p-6 rounded-lg mt-6 shadow-md">
+    <div className="bg-white p-6 rounded-lg mt-6 mb-12 shadow-md">
       <Card className="border-none shadow-none">
         <CardContent className="py-8">
           {/* Success Header */}
           <div className="flex flex-col items-center justify-center mb-8">
             <div className="mb-4">
-              <CheckCircle2 className="w-20 h-20 text-green-500" />
+              <CheckCircle2 className="w-20 h-20 text-primary" />
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Product Created Successfully!</h2>
             <p className="text-gray-600 text-center max-w-md">
@@ -113,12 +113,14 @@ const DoneStep = () => {
                     {variants.map((variant, index) => (
                       <div
                         key={variant.id || index}
-                        className="border-l-4 border-blue-500 pl-4 py-2 bg-gray-50 rounded"
+                        className="border-l-4 border-primary pl-4 py-2 bg-gray-50 rounded"
                       >
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                           <div>
                             <p className="text-sm text-gray-600">Variant Name</p>
-                            <p className="font-medium text-gray-900">{variant.name}</p>
+                            <p className="font-medium text-gray-900">
+                              {variant.capacity} {variant.capacity_unit} {variant.container_type}
+                            </p>
                           </div>
                           {variant.price && (
                             <div>

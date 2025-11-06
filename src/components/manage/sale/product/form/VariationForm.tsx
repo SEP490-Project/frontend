@@ -249,6 +249,124 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
       </div>
 
       <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Size & Dimensions</h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="weight" className="text-sm font-medium">
+              Weight (g) <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="weight"
+              type="number"
+              step="0.01"
+              {...register("weight", {
+                valueAsNumber: true,
+                onChange: (e) => {
+                  const number = Number(e.target.value);
+                  if (number < 0) {
+                    e.target.value = "0";
+                  }
+                },
+              })}
+              onPaste={(e) => {
+                const pastedData = e.clipboardData.getData("text");
+                const number = Number(pastedData);
+                if (number < 0) {
+                  e.preventDefault();
+                }
+              }}
+              placeholder="0"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="height" className="text-sm font-medium">
+              Height (cm) <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="height"
+              type="number"
+              step="0.01"
+              {...register("height", {
+                valueAsNumber: true,
+                onChange: (e) => {
+                  const number = Number(e.target.value);
+                  if (number < 0) {
+                    e.target.value = "0";
+                  }
+                },
+              })}
+              onPaste={(e) => {
+                const pastedData = e.clipboardData.getData("text");
+                const number = Number(pastedData);
+                if (number < 0) {
+                  e.preventDefault();
+                }
+              }}
+              placeholder="0"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="width" className="text-sm font-medium">
+              Width (cm) <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="width"
+              type="number"
+              step="0.01"
+              {...register("width", {
+                valueAsNumber: true,
+                onChange: (e) => {
+                  const number = Number(e.target.value);
+                  if (number < 0) {
+                    e.target.value = "0";
+                  }
+                },
+              })}
+              onPaste={(e) => {
+                const pastedData = e.clipboardData.getData("text");
+                const number = Number(pastedData);
+                if (number < 0) {
+                  e.preventDefault();
+                }
+              }}
+              placeholder="0"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="length" className="text-sm font-medium">
+              Length (cm) <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="length"
+              type="number"
+              step="0.01"
+              {...register("length", {
+                valueAsNumber: true,
+                onChange: (e) => {
+                  const number = Number(e.target.value);
+                  if (number < 0) {
+                    e.target.value = "0";
+                  }
+                },
+              })}
+              onPaste={(e) => {
+                const pastedData = e.clipboardData.getData("text");
+                const number = Number(pastedData);
+                if (number < 0) {
+                  e.preventDefault();
+                }
+              }}
+              placeholder="0"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-4">
         <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Capacity & Container</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

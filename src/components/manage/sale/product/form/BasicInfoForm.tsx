@@ -17,6 +17,7 @@ import type {
   CreateLimitedProductPayload,
   ProductFormProps,
   ProductData,
+  ProductResponse,
 } from "@/libs/types/product";
 import {
   createLimitedProductThunk,
@@ -48,7 +49,7 @@ export const BasicInfoForm = ({
     formState: { errors },
     watch,
   } = form;
-  const productBasicInfos = getItem<ProductData>("currentProduct");
+  const productBasicInfos = getItem<ProductResponse<ProductData>>("currentProduct")?.data;
   const isLimitedProduct = state?.productType === "LIMITED";
 
   const [name, category_id, brand_id] = watch(["name", "category_id", "brand_id"]);
@@ -63,6 +64,10 @@ export const BasicInfoForm = ({
   const onSubmit = useCallback(
     async (payload: CreateProductPayload | CreateLimitedProductPayload) => {
       try {
+        if (productBasicInfos?.id) {
+          navigate(steps[currentStep]?.path, { state });
+          return;
+        }
         const result = await dispatch(
           state.productType === "STANDARD"
             ? createStandardProductThunk(payload as CreateProductPayload)
@@ -145,7 +150,7 @@ export const BasicInfoForm = ({
   useEffect(() => {
     if (setOnSubmitStep) {
       // Check if product already exists in localStorage
-      const existingProduct = getItem<ProductData>("currentProduct");
+      const existingProduct = getItem<ProductResponse<ProductData>>("currentProduct")?.data;
 
       if (existingProduct && existingProduct.id) {
         // Product already created, just navigate to next step

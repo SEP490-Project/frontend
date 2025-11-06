@@ -69,7 +69,13 @@ const createVariantProductThunk = createAsyncThunk(
     { rejectWithValue },
   ) => {
     try {
-      const response = await manageProduct.createProductVariants(payload, productId);
+      const formatPayload = {
+        ...payload,
+        story: {
+          content: payload.story || "",
+        },
+      };
+      const response = await manageProduct.createProductVariants(formatPayload, productId);
       return response.data as ProductResponse<ProductData>;
     } catch (error: AxiosError | unknown) {
       const err = error as AxiosError<{ message: string }>;

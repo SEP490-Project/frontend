@@ -87,7 +87,13 @@ const DoneStep = () => {
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Product Type</p>
-                    <Badge variant={product.type === "LIMITED" ? "destructive" : "default"}>
+                    <Badge
+                      className={
+                        product.type === "STANDARD"
+                          ? "bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200 "
+                          : "bg-orange-100 text-orange-800 border border-orange-200 hover:bg-orange-200"
+                      }
+                    >
                       {product.type}
                     </Badge>
                   </div>

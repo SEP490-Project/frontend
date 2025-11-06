@@ -53,6 +53,17 @@ export interface ProductData {
   created_at: Date;
 }
 
+export interface LimitedProductData extends ProductData {
+  limited_product?: {
+    max_stock: number;
+    is_free_shipping: boolean;
+    bought_limit: number;
+    premiere_date: string;
+    availability_start_date: string;
+    availability_end_date: string;
+  };
+}
+
 export interface ProductVariant {
   id?: string;
   attributes: ProductAttribute[];
@@ -71,8 +82,6 @@ export interface ProductVariant {
   story?: string | null;
   type: string;
   uses: string | null;
-  created_at: string;
-  updated_at: string;
   weight: number;
   height: number;
   length: number;

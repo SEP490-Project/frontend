@@ -1,7 +1,7 @@
 import { useOutletContext, type NavigateFunction } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2, Plus, ImageIcon, Box, Upload } from "lucide-react";
+import { Trash2, Plus, ImageIcon, Upload } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -68,6 +68,10 @@ const VariantsStep = () => {
       expiry_date: null,
       manufacture_date: null,
       instructions: "",
+      weight: 0,
+      height: 0,
+      length: 0,
+      width: 0,
     },
   });
 
@@ -185,7 +189,7 @@ const VariantsStep = () => {
     if (variants.length > 0) {
       setIsDisabled(false);
       setOnSubmitStep(() => async () => {
-        navigate(steps[currentStep]?.path);
+        navigate(steps[currentStep]?.path, { state });
       });
     } else {
       setIsDisabled(true);
@@ -302,24 +306,18 @@ const VariantsStep = () => {
                   <div className="flex-1">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        <div className="flex items-center mb-2">
+                        <div className="flex items-center gap-2">
                           <CardTitle className="text-lg font-semibold text-gray-900">
-                            {variant.name}
+                            {variant.capacity} {variant.capacity_unit} {variant.container_type} -{" "}
+                            <span className="font-medium">
+                              {convertNumberToCurrency(variant.price || 0)}
+                            </span>
                           </CardTitle>
                           {variant.is_default && (
-                            <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
+                            <span className="px-2 py-1 text-xs font-medium border border-primary text-primary rounded-full">
                               Default
                             </span>
                           )}
-                        </div>
-                        <div className="flex flex-wrap gap-2 text-sm text-gray-600">
-                          <span className="inline-flex items-center gap-1">
-                            {convertNumberToCurrency(Number(variant?.price?.toFixed(2)))}
-                          </span>
-                          <span className="inline-flex items-center gap-1">
-                            <Box className="w-4 h-4" />
-                            {variant.capacity} {variant.capacity_unit}
-                          </span>
                         </div>
                       </div>
                       {variant.id && (
@@ -334,24 +332,21 @@ const VariantsStep = () => {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 text-sm mt-4">
-                      <div>
-                        <p className="text-gray-500 font-medium mb-1">Container Type</p>
-                        <p className="text-gray-900">{variant.container_type}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500 font-medium mb-1">Dispenser Type</p>
-                        <p className="text-gray-900">{variant.dispenser_type}</p>
-                      </div>
-                      {variant.current_stock !== undefined && state.productType === "LIMITED" && (
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div className="md:flex gap-4">
                         <div>
-                          <p className="text-gray-500 font-medium mb-1">Current Stock</p>
-                          <p className="text-gray-900">{variant.current_stock} units</p>
+                          <p className="text-gray-500 font-medium mb-1">Dispenser Type</p>
+                          <p className="text-gray-900">{variant.dispenser_type}</p>
                         </div>
-                      )}
+                        {variant.current_stock !== undefined && state.productType === "LIMITED" && (
+                          <div>
+                            <p className="text-gray-500 font-medium mb-1">Current Stock</p>
+                            <p className="text-gray-900">{variant.current_stock} units</p>
+                          </div>
+                        )}
+                      </div>
                       {variant.attributes?.length > 0 && (
                         <div className="col-span-2">
-                          <p className="text-gray-500 font-medium mb-1">Attributes</p>
                           <div className="flex flex-wrap gap-2">
                             {variant.attributes.map((attr, attrIndex) => (
                               <span

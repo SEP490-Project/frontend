@@ -89,4 +89,8 @@ export const productVariantSchema: yup.ObjectSchema<ProductVariant> = yup.object
   story: yup.string().nullable().optional(),
   type: yup.string().required("Type is required"),
   uses: yup.string().nullable().default(null),
+  weight: yup.number().required("Weight is required"),
+  height: yup.number().required("Height is required"),
+  length: yup.number().required("Length is required"),
+  width: yup.number().required("Width is required"),
 });

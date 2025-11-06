@@ -3,6 +3,7 @@ import Homepage from "@/pages/Homepage";
 import NotFound from "@/pages/NotFound";
 import { Account, Notification, Dashboard } from "@/pages/manager/shared";
 import { Contract, Campaign as BrandCampaign, Payment } from "@/pages/manager/brand";
+import ContractPaymentDetail from "@/components/manage/brand/ContractPaymentDetail";
 import {
   Brand,
   Campaign as MarketingCampaign,
@@ -120,6 +121,7 @@ const AppRoutes = () => (
           <Route path="contracts" element={<Contract />} />
           <Route path="campaigns" element={<BrandCampaign />} />
           <Route path="payment" element={<Payment />} />
+          <Route path="payment/:paymentId" element={<ContractPaymentDetail />} />
         </Route>
       </Route>
 

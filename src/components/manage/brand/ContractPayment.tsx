@@ -45,6 +45,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { usePayment } from "@/libs/hooks/usePayment";
 import { toast } from "sonner";
 import type { ContractPayment as ContractPaymentType } from "@/libs/types/payment";
@@ -141,12 +142,12 @@ const ContractPayment = () => {
     linkLoading,
     paymentLink,
     fetchPaymentsProfile,
-    fetchPaymentDetail,
     generatePaymentLink,
     clearPaymentDetail,
     clearPaymentLink,
     refreshPayments,
   } = usePayment();
+  const navigate = useNavigate();
 
   // Local state
   const [searchTerm, setSearchTerm] = useState("");
@@ -195,10 +196,8 @@ const ContractPayment = () => {
   };
 
   // Handle view payment detail
-  const handleViewDetail = async (payment: ContractPaymentType) => {
-    setSelectedPayment(payment);
-    setShowDetailDialog(true);
-    await fetchPaymentDetail(payment.id);
+  const handleViewDetail = (payment: ContractPaymentType) => {
+    navigate(`/manage/brand/payment/${payment.id}`);
   };
 
   // Handle generate payment link and redirect to checkout

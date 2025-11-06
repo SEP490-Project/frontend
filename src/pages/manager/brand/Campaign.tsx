@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FaEye, FaPlus, FaListCheck } from "react-icons/fa6";
+import { FaEye, FaListCheck } from "react-icons/fa6";
 import { Loader2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import PaginationTable from "@/components/global/PaginationTable";
@@ -158,15 +158,6 @@ const CampaignPage: React.FC = () => {
             Manage and track your marketing campaigns
           </motion.p>
         </div>
-        <motion.div variants={itemVariants}>
-          <Button
-            className="bg-primary hover:bg-[#f794a8] text-white flex items-center gap-2"
-            onClick={() => navigate("/manage/brand/campaigns/create")}
-          >
-            <FaPlus className="h-4 w-4" />
-            Create Campaign
-          </Button>
-        </motion.div>
       </motion.div>
 
       {/* Filters */}

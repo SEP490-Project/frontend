@@ -156,6 +156,7 @@ const ContractPayment = () => {
   const [selectedPayment, setSelectedPayment] = useState<ContractPaymentType | null>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [showPaymentLinkDialog, setShowPaymentLinkDialog] = useState(false);
+  const [showPaymentLoadingModal, setShowPaymentLoadingModal] = useState(false);
 
   // Load payments on component mount and when filters change
   useEffect(() => {
@@ -165,7 +166,7 @@ const ContractPayment = () => {
       ...(statusFilter !== "ALL" && { status: statusFilter as any }),
     };
     fetchPaymentsProfile(params);
-  }, [currentPage, pageSize, statusFilter]);
+  }, [currentPage, pageSize, statusFilter, fetchPaymentsProfile]);
 
   // Filter payments based on search term
   const filteredPayments = useMemo(() => {
@@ -190,28 +191,39 @@ const ContractPayment = () => {
     await fetchPaymentDetail(payment.id);
   };
 
-  // Handle generate payment link
+  // Handle generate payment link and redirect to checkout
   const handleGeneratePaymentLink = async (payment: ContractPaymentType) => {
     setSelectedPayment(payment);
+    setShowPaymentLoadingModal(true);
 
     try {
-      await generatePaymentLink(payment.id, {
+      const response = await generatePaymentLink(payment.id, {
         description: `Payment for ${payment.contract_number}`,
-        return_url: `${window.location.origin}/payments`,
-        cancel_url: `${window.location.origin}/payments`,
+        return_url: `${window.location.origin}/payments/success`,
+        cancel_url: `${window.location.origin}/payments/cancel`,
       });
 
-      setShowPaymentLinkDialog(true);
-      toast.success("Payment link generated successfully!");
-    } catch {
-      toast.error("Failed to generate payment link");
+      // Close loading modal
+      setShowPaymentLoadingModal(false);
+
+      // Redirect to checkout URL using the response directly
+      if (response?.checkoutUrl) {
+        window.open(response.checkoutUrl, "_blank");
+        toast.success("Đang chuyển hướng đến trang thanh toán...");
+      } else {
+        toast.error("Không nhận được URL thanh toán");
+      }
+    } catch (error) {
+      setShowPaymentLoadingModal(false);
+      toast.error("Không thể tạo liên kết thanh toán");
+      console.error("Payment link generation failed:", error);
     }
   };
 
   // Handle copy payment link
   const handleCopyPaymentLink = () => {
-    if (paymentLink?.payment_link) {
-      navigator.clipboard.writeText(paymentLink.payment_link);
+    if (paymentLink?.checkoutUrl) {
+      navigator.clipboard.writeText(paymentLink.checkoutUrl);
       toast.success("Payment link copied to clipboard!");
     }
   };
@@ -717,18 +729,28 @@ const ContractPayment = () => {
           ) : paymentLink ? (
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-500">Payment ID</label>
-                <p className="text-sm text-gray-900 mt-1">{paymentLink.payment_id}</p>
+                <label className="text-sm font-medium text-gray-500">Payment Link ID</label>
+                <p className="text-sm text-gray-900 mt-1">{paymentLink.paymentLinkId}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Order Code</label>
+                <p className="text-sm text-gray-900 mt-1">{paymentLink.orderCode}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">Expires At</label>
                 <p className="text-sm text-gray-900 mt-1">
-                  {new Date(paymentLink.expires_at).toLocaleString()}
+                  {new Date(paymentLink.expiredAt * 1000).toLocaleString()}
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Amount</label>
+                <p className="text-sm text-gray-900 mt-1 font-semibold">
+                  {formatCurrency(paymentLink.amount, paymentLink.currency)}
                 </p>
               </div>
               <div className="flex gap-2">
                 <Button
-                  onClick={() => window.open(paymentLink.payment_link, "_blank")}
+                  onClick={() => window.open(paymentLink.checkoutUrl, "_blank")}
                   className="flex-1"
                 >
                   <ExternalLink className="h-4 w-4 mr-2" />
@@ -748,6 +770,40 @@ const ContractPayment = () => {
               Close
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment Loading Modal */}
+      <Dialog open={showPaymentLoadingModal}>
+        <DialogContent className="sm:max-w-md [&>button]:hidden pointer-events-none">
+          <div className="pointer-events-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-primary">
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                Đang xử lý thanh toán
+              </DialogTitle>
+              <DialogDescription className="text-muted-foreground">
+                Vui lòng đợi trong khi chúng tôi tạo liên kết thanh toán...
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="flex items-center justify-center py-8">
+              <div className="flex flex-col items-center gap-4">
+                <div className="relative">
+                  <div className="h-16 w-16 rounded-full border-4 border-muted"></div>
+                  <div className="absolute top-0 left-0 h-16 w-16 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">
+                    Đang kết nối đến cổng thanh toán...
+                  </p>
+                  <p className="text-xs text-muted-foreground/70 mt-1">
+                    Quá trình này có thể mất vài giây
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

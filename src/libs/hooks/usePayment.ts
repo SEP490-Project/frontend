@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { managePayment } from "@/libs/services/managePayment";
 import type {
   ContractPayment,
@@ -38,7 +38,10 @@ interface UsePaymentReturn {
   // Methods
   fetchPaymentsProfile: (params?: PaymentProfileParams) => Promise<void>;
   fetchPaymentDetail: (paymentId: string) => Promise<void>;
-  generatePaymentLink: (paymentId: string, request: PaymentLinkRequest) => Promise<void>;
+  generatePaymentLink: (
+    paymentId: string,
+    request: PaymentLinkRequest,
+  ) => Promise<PaymentLinkResponse | null>;
   clearPaymentDetail: () => void;
   clearPaymentLink: () => void;
   refreshPayments: () => Promise<void>;
@@ -69,61 +72,67 @@ export const usePayment = (): UsePaymentReturn => {
   const [linkLoading, setLinkLoading] = useState(false);
   const [linkError, setLinkError] = useState<string | null>(null);
 
-  const fetchPaymentsProfile = async (params: PaymentProfileParams = { page: 1, limit: 10 }) => {
-    try {
-      setLoading(true);
-      setError(null);
+  const fetchPaymentsProfile = useCallback(
+    async (params: PaymentProfileParams = { page: 1, limit: 10 }) => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      const response = await managePayment.getContractPaymentsProfile(params);
-      const profileResponse = response.data as {
-        success: boolean;
-        data: ContractPayment[];
-        pagination: {
-          page: number;
-          limit: number;
-          total: number;
-          total_pages: number;
-          has_next: boolean;
-          has_prev: boolean;
+        const response = await managePayment.getContractPaymentsProfile(params);
+        const profileResponse = response.data as {
+          success: boolean;
+          data: ContractPayment[];
+          pagination: {
+            page: number;
+            limit: number;
+            total: number;
+            total_pages: number;
+            has_next: boolean;
+            has_prev: boolean;
+          };
         };
-      };
 
-      if (profileResponse.success) {
-        setPayments(profileResponse.data || []);
-        setPagination(profileResponse.pagination);
+        if (profileResponse.success) {
+          setPayments(profileResponse.data || []);
+          setPagination(profileResponse.pagination);
 
-        // Calculate payment profile from the data
-        const totalPayments = profileResponse.data.length;
-        const totalAmount = profileResponse.data.reduce((sum, payment) => sum + payment.amount, 0);
-        const paidAmount = profileResponse.data
-          .filter((payment) => payment.status === "PAID")
-          .reduce((sum, payment) => sum + payment.amount, 0);
-        const pendingAmount = profileResponse.data
-          .filter((payment) => payment.status === "PENDING")
-          .reduce((sum, payment) => sum + payment.amount, 0);
-        const overdueAmount = profileResponse.data
-          .filter((payment) => payment.status === "OVERDUE")
-          .reduce((sum, payment) => sum + payment.amount, 0);
+          // Calculate payment profile from the data
+          const totalPayments = profileResponse.data.length;
+          const totalAmount = profileResponse.data.reduce(
+            (sum, payment) => sum + payment.amount,
+            0,
+          );
+          const paidAmount = profileResponse.data
+            .filter((payment) => payment.status === "PAID")
+            .reduce((sum, payment) => sum + payment.amount, 0);
+          const pendingAmount = profileResponse.data
+            .filter((payment) => payment.status === "PENDING")
+            .reduce((sum, payment) => sum + payment.amount, 0);
+          const overdueAmount = profileResponse.data
+            .filter((payment) => payment.status === "OVERDUE")
+            .reduce((sum, payment) => sum + payment.amount, 0);
 
-        setPaymentProfile({
-          total_payments: totalPayments,
-          total_amount: totalAmount,
-          paid_amount: paidAmount,
-          pending_amount: pendingAmount,
-          overdue_amount: overdueAmount,
-          currency: "VND", // Default currency
-          payments: profileResponse.data,
-        });
-      } else {
+          setPaymentProfile({
+            total_payments: totalPayments,
+            total_amount: totalAmount,
+            paid_amount: paidAmount,
+            pending_amount: pendingAmount,
+            overdue_amount: overdueAmount,
+            currency: "VND", // Default currency
+            payments: profileResponse.data,
+          });
+        } else {
+          setError("Failed to fetch payment profile");
+        }
+      } catch (err) {
+        console.error("Error fetching payment profile:", err);
         setError("Failed to fetch payment profile");
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error("Error fetching payment profile:", err);
-      setError("Failed to fetch payment profile");
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [],
+  );
 
   const fetchPaymentDetail = async (paymentId: string) => {
     try {
@@ -159,7 +168,10 @@ export const usePayment = (): UsePaymentReturn => {
     }
   };
 
-  const generatePaymentLink = async (paymentId: string, request: PaymentLinkRequest) => {
+  const generatePaymentLink = async (
+    paymentId: string,
+    request: PaymentLinkRequest,
+  ): Promise<PaymentLinkResponse | null> => {
     try {
       setLinkLoading(true);
       setLinkError(null);
@@ -169,12 +181,15 @@ export const usePayment = (): UsePaymentReturn => {
 
       if (linkResponse.success) {
         setPaymentLink(linkResponse.data);
+        return linkResponse.data;
       } else {
         setLinkError("Failed to generate payment link");
+        return null;
       }
     } catch (err) {
       console.error("Error generating payment link:", err);
       setLinkError("Failed to generate payment link");
+      throw err;
     } finally {
       setLinkLoading(false);
     }

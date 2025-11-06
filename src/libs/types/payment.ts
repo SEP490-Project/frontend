@@ -47,9 +47,18 @@ export interface PaymentLinkRequest {
 }
 
 export interface PaymentLinkResponse {
-  payment_link: string;
-  payment_id: string;
-  expires_at: string;
+  bin: string;
+  accountNumber: string;
+  accountName: string;
+  currency: string;
+  paymentLinkId: string;
+  amount: number;
+  description: string;
+  orderCode: number;
+  expiredAt: number;
+  status: string;
+  checkoutUrl: string;
+  qrCode: string;
 }
 
 export interface PaymentProfileParams {

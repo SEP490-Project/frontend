@@ -21,7 +21,6 @@ import { Loader2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import PaginationTable from "@/components/global/PaginationTable";
 import DataSelector from "@/components/global/DataSelector";
-import { useNavigate } from "react-router";
 import { useContractPayment } from "@/libs/hooks/useContractPayment";
 import { useBrand } from "@/libs/hooks/useBrand";
 // import { useContract } from "@/libs/hooks/useContract";
@@ -34,6 +33,7 @@ import { useDebounce } from "@/libs/hooks/useDebounce";
 import { DatePicker } from "@/components/date-picker";
 import { formatDate } from "@/libs/helper/helper";
 import { motion } from "framer-motion";
+import { PaymentDetailModal } from "@/components/manage/marketing/contract-payment";
 
 const PAGE_SIZE = 10;
 
@@ -74,6 +74,8 @@ const ContractPaymentPage: React.FC = () => {
   const [dueDateTo, setDueDateTo] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("created_at");
   const [sortOrder, setSortOrder] = useState<string>("desc");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
 
   // Brand DataSelector states
   const [brandSearch, setBrandSearch] = useState("");
@@ -87,7 +89,6 @@ const ContractPaymentPage: React.FC = () => {
   //   const [allContracts, setAllContracts] = useState<any[]>([]);
   //   const debouncedContractSearch = useDebounce(contractSearch, 400);
 
-  const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { contractPayments, loading, pagination } = useContractPayment();
   const { brands, loading: brandLoading, pagination: brandPagination } = useBrand();
@@ -222,6 +223,16 @@ const ContractPaymentPage: React.FC = () => {
     setSortOrder("desc");
     setBrandSearch("");
     // setContractSearch("");
+  };
+
+  const handleViewPayment = (paymentId: string) => {
+    setSelectedPaymentId(paymentId);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedPaymentId(null);
   };
 
   const toISOStringDate = (dateStr: string) => {
@@ -548,9 +559,7 @@ const ContractPaymentPage: React.FC = () => {
                                 variant="ghost"
                                 size="sm"
                                 className="h-8 w-8 p-0 hover:bg-blue-50"
-                                onClick={() =>
-                                  navigate(`/manage/marketing/contract-payments/${payment.id}`)
-                                }
+                                onClick={() => handleViewPayment(payment.id)}
                               >
                                 <FaEye className="h-4 w-4 text-blue-600" />
                               </Button>
@@ -631,9 +640,7 @@ const ContractPaymentPage: React.FC = () => {
                             variant="ghost"
                             size="sm"
                             className="h-8 w-8 p-0 hover:bg-blue-50"
-                            onClick={() =>
-                              navigate(`/manage/marketing/contract-payments/${payment.id}`)
-                            }
+                            onClick={() => handleViewPayment(payment.id)}
                           >
                             <FaEye className="h-4 w-4 text-blue-600" />
                           </Button>
@@ -689,6 +696,11 @@ const ContractPaymentPage: React.FC = () => {
           </>
         )}
       </div>
+      <PaymentDetailModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        paymentId={selectedPaymentId}
+      />
     </div>
   );
 };

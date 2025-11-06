@@ -16,7 +16,7 @@ import CreateAttributeDialog from "./CreateAttributeDialog";
 import { Trash } from "lucide-react";
 import { DeleteModal } from "@/components/modal/DeleteModal";
 import { useAppDispatch } from "@/libs/stores";
-import { getAllVariantAttributesForAdminThunk } from "@/libs/stores/attributeManager/thunk";
+import { getAllVariantAttributesThunk } from "@/libs/stores/attributeManager/thunk";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/libs/stores";
 
@@ -34,12 +34,12 @@ const Attribute: React.FC = () => {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    dispatch(getAllVariantAttributesForAdminThunk({ page, limit, search }));
+    dispatch(getAllVariantAttributesThunk({ page, limit, search }));
   }, [dispatch, page, limit, search]);
 
   const handleCreated = async () => {
     // Refresh list after create using Redux thunk
-    await dispatch(getAllVariantAttributesForAdminThunk({ page: 1, limit, search: "" }));
+    await dispatch(getAllVariantAttributesThunk({ page: 1, limit, search: "" }));
     setSearch("");
     setPage(1);
   };

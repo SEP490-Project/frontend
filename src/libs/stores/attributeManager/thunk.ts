@@ -14,16 +14,4 @@ const getAllVariantAttributesThunk = createAsyncThunk(
   },
 );
 
-const getAllVariantAttributesForAdminThunk = createAsyncThunk(
-  "attributeManager/getAllVariantAttributesForAdmin",
-  async (params: GetVariantAttributesParams, thunkAPI) => {
-    try {
-      const response = await manageAttribute.getAllVariantAttributesForAdmin(params);
-      return response.data;
-    } catch (error) {
-      return thunkAPI.rejectWithValue(error);
-    }
-  },
-);
-
-export { getAllVariantAttributesThunk, getAllVariantAttributesForAdminThunk };
+export { getAllVariantAttributesThunk };

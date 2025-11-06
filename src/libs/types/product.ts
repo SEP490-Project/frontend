@@ -71,6 +71,12 @@ export interface ProductVariant {
   story?: string | null;
   type: string;
   uses: string | null;
+  created_at: string;
+  updated_at: string;
+  weight: number;
+  height: number;
+  length: number;
+  width: number;
 }
 
 export interface VariantWithImage extends ProductVariant {

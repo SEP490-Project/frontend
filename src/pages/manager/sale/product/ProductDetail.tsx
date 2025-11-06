@@ -12,6 +12,8 @@ import {
   Box,
   Zap,
   Star,
+  Weight,
+  RulerDimensionLine,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +27,7 @@ import type {
   ProductAttribute,
   VariantWithImage,
 } from "@/libs/types/product";
+import { MdHeight, MdWidthNormal } from "react-icons/md";
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -107,7 +110,7 @@ const ProductDetail: React.FC = () => {
         <div className="bg-white rounded-lg shadow mb-3">
           <div className="p-6">
             <h2 className="flex items-center gap-2 text-lg font-semibold mb-4">
-              <Info className="h-5 w-5 text-primary" />
+              <Info className="h-5 w-5" />
               Basic Information
             </h2>
             <div className="space-y-4">
@@ -118,8 +121,8 @@ const ProductDetail: React.FC = () => {
                     <Badge
                       className={
                         product.type === "STANDARD"
-                          ? "bg-blue-100 text-blue-800 border border-blue-200 lowercase"
-                          : "bg-orange-100 text-orange-800 border border-orange-200 lowercase"
+                          ? "bg-blue-100 text-blue-800 border border-blue-200"
+                          : "bg-orange-100 text-orange-800 border border-orange-200"
                       }
                     >
                       {product.type}
@@ -127,8 +130,8 @@ const ProductDetail: React.FC = () => {
                     <Badge
                       className={
                         product.is_active
-                          ? "bg-green-100 text-green-800 border border-green-200 lowercase"
-                          : "bg-red-100 text-red-800 border border-red-200 lowercase"
+                          ? "bg-green-100 text-green-800 border border-green-200"
+                          : "bg-red-100 text-red-800 border border-red-200"
                       }
                     >
                       {product.is_active ? "Active" : "Inactive"}
@@ -181,9 +184,9 @@ const ProductDetail: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-3">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 mb-12 bg-white rounded-lg shadow">
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg shadow overflow-hidden r">
+          <div className=" overflow-hidden">
             <div className="flex flex-col justify-center items-center p-6">
               <div className="bg-gray-100 rounded-lg aspect-square overflow-hidden mb-4 w-full">
                 <img
@@ -204,10 +207,10 @@ const ProductDetail: React.FC = () => {
                     <button
                       key={index}
                       onClick={() => setSelectedImageIndex(index)}
-                      className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                      className={`relative aspect-square rounded-lg overflow-hidden transition-all cursor-pointer ${
                         selectedImageIndex === index
-                          ? "border-primary ring-2 ring-primary ring-offset-2"
-                          : "border-gray-200 hover:border-gray-300"
+                          ? "border-primary ring-2 ring-primary"
+                          : "border-gray-300 hover:ring-1 hover:ring-gray-400"
                       }`}
                     >
                       <img
@@ -223,12 +226,12 @@ const ProductDetail: React.FC = () => {
           </div>
         </div>
 
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 border-l border-gray-200">
           {product.variants && product.variants.length > 0 && (
-            <div className="bg-white rounded-lg shadow">
+            <div>
               <div className="p-6">
                 <h2 className="flex items-center gap-2 text-lg font-semibold mb-4">
-                  <Package className="h-5 w-5 text-primary" />
+                  <Package className="h-5 w-5" />
                   Product Variants
                 </h2>
                 <Tabs defaultValue={selectedVariant?.id || product.variants[0]?.id}>
@@ -257,17 +260,17 @@ const ProductDetail: React.FC = () => {
                     <TabsContent key={variant.id} value={variant.id || ""} className="mt-4">
                       <div className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                          <div className="bg-gradient-to-br from-primary/10 to-primary/5 p-4 rounded-lg border border-primary/20">
+                          <div className="p-4 rounded-lg border border-gray-200">
                             <p className="text-sm text-gray-600 mb-1 flex items-center gap-1">
                               <DollarSign className="h-4 w-4" />
                               Price
                             </p>
-                            <p className="font-bold text-primary">
+                            <p className="font-semibold">
                               {variant.price?.toLocaleString() || "N/A"}đ
                             </p>
                           </div>
 
-                          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                          <div className="p-4 rounded-lg border border-gray-200">
                             <p className="text-sm text-gray-600 mb-1 flex items-center gap-1">
                               <Droplet className="h-4 w-4" />
                               Capacity
@@ -277,7 +280,7 @@ const ProductDetail: React.FC = () => {
                             </p>
                           </div>
 
-                          <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                          <div className="p-4 rounded-lg border border-gray-200">
                             <p className="text-sm text-gray-600 mb-1 flex items-center gap-1">
                               <Box className="h-4 w-4" />
                               Container Type
@@ -287,7 +290,7 @@ const ProductDetail: React.FC = () => {
                             </p>
                           </div>
 
-                          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                          <div className="p-4 rounded-lg border border-gray-200">
                             <p className="text-sm text-gray-600 mb-1 flex items-center gap-1">
                               <Zap className="h-4 w-4" />
                               Dispenser Type
@@ -297,8 +300,40 @@ const ProductDetail: React.FC = () => {
                             </p>
                           </div>
 
+                          <div className="p-4 rounded-lg border border-gray-200">
+                            <p className="text-sm text-gray-600 mb-1 flex items-center gap-1">
+                              <Weight className="h-4 w-4" />
+                              Weight
+                            </p>
+                            <p className="font-semibold text-gray-900">{variant.weight} g</p>
+                          </div>
+
+                          <div className="p-4 rounded-lg border border-gray-200">
+                            <p className="text-sm text-gray-600 mb-1 flex items-center gap-1">
+                              <MdHeight className="h-4 w-4" />
+                              Height
+                            </p>
+                            <p className="font-semibold text-gray-900">{variant.height} cm</p>
+                          </div>
+
+                          <div className="p-4 rounded-lg border border-gray-200">
+                            <p className="text-sm text-gray-600 mb-1 flex items-center gap-1">
+                              <MdWidthNormal className="h-4 w-4" />
+                              Width
+                            </p>
+                            <p className="font-semibold text-gray-900">{variant.width} cm</p>
+                          </div>
+
+                          <div className="p-4 rounded-lg border border-gray-200">
+                            <p className="text-sm text-gray-600 mb-1 flex items-center gap-1">
+                              <RulerDimensionLine className="h-4 w-4" />
+                              Length
+                            </p>
+                            <p className="font-semibold text-gray-900">{variant.length} cm</p>
+                          </div>
+
                           {variant.manufacture_date && (
-                            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <div className="p-4 rounded-lg border border-gray-200">
                               <p className="text-sm text-gray-600 mb-1 flex items-center gap-1">
                                 <Calendar className="h-4 w-4" />
                                 Manufacture Date
@@ -310,7 +345,7 @@ const ProductDetail: React.FC = () => {
                           )}
 
                           {variant.expiry_date && (
-                            <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+                            <div className="p-4 rounded-lg border border-gray-200">
                               <p className="text-sm text-gray-600 mb-1 flex items-center gap-1">
                                 <Clock className="h-4 w-4" />
                                 Expiry Date
@@ -323,7 +358,7 @@ const ProductDetail: React.FC = () => {
 
                           {selectedVariant?.current_stock !== undefined ||
                             (isLimited && (
-                              <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                              <div className="p-4 rounded-lg border border-gray-200">
                                 <p className="text-sm text-orange-700 font-medium mb-1 flex items-center gap-1">
                                   <ShoppingCart className="h-4 w-4" />
                                   Current Stock
@@ -337,7 +372,7 @@ const ProductDetail: React.FC = () => {
 
                         {selectedVariant?.story ||
                           (isLimited && (
-                            <div className="md:col-span-2 bg-orange-50 p-4 rounded-lg border border-orange-200">
+                            <div className="p-4 rounded-lg border border-gray-200">
                               <p className="text-sm text-orange-700 font-medium mb-2 flex items-center gap-1">
                                 <span>
                                   <Star className="h-5 w-5" />
@@ -349,7 +384,7 @@ const ProductDetail: React.FC = () => {
                           ))}
 
                         {variant.description && (
-                          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                          <div className="p-4 rounded-lg border border-gray-200">
                             <p className="text-sm text-gray-600 font-medium mb-2 flex items-center gap-1">
                               <FileText className="h-4 w-4" />
                               Description
@@ -359,8 +394,8 @@ const ProductDetail: React.FC = () => {
                         )}
 
                         {variant.instructions && (
-                          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                            <p className="text-sm text-blue-900 font-medium mb-2">
+                          <div className="p-4 rounded-lg border border-gray-200">
+                            <p className="text-sm text-gray-600 font-medium mb-2">
                               Usage Instructions
                             </p>
                             <p className="text-gray-900">{variant.instructions}</p>
@@ -368,8 +403,8 @@ const ProductDetail: React.FC = () => {
                         )}
 
                         {variant.uses && (
-                          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                            <p className="text-sm text-green-900 font-medium mb-2">Uses</p>
+                          <div className="p-4 rounded-lg border border-gray-200">
+                            <p className="text-sm text-gray-600 font-medium mb-2">Uses</p>
                             <p className="text-gray-900">{variant.uses}</p>
                           </div>
                         )}
@@ -380,28 +415,17 @@ const ProductDetail: React.FC = () => {
                               <Package className="h-5 w-5" />
                               Attributes
                             </h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="flex gap-2">
                               {variant.attributes.map((attr: ProductAttribute, idx: number) => (
-                                <div
-                                  key={idx}
-                                  className="bg-gradient-to-r from-gray-50 to-white p-4 rounded-lg border border-gray-200"
-                                >
-                                  <div className="flex justify-between items-start mb-2">
-                                    <p className="text-sm font-medium text-gray-900">
-                                      Attribute {idx + 1}
+                                <div key={idx} className="rounded-lg border p-2 border-gray-200">
+                                  <div className="flex justify-between items-start gap-2">
+                                    {attr.ingredient && (
+                                      <p className="text-sm">{attr.ingredient} :</p>
+                                    )}
+                                    <p className="text-sm">
+                                      {attr.value} ({attr.unit})
                                     </p>
-                                    <Badge variant="outline" className="text-xs">
-                                      {attr.value} {attr.unit}
-                                    </Badge>
                                   </div>
-                                  {attr.description && (
-                                    <p className="text-sm text-gray-600 mb-1">{attr.description}</p>
-                                  )}
-                                  {attr.ingredient && (
-                                    <p className="text-xs text-gray-500 italic">
-                                      Ingredient: {attr.ingredient}
-                                    </p>
-                                  )}
                                 </div>
                               ))}
                             </div>

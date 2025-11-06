@@ -4,7 +4,7 @@ import type { createCategoryPayload, ProductCategoryParams } from "../types/cate
 const manageCategories = {
   getAllCategories: (params?: ProductCategoryParams) => api.get("categories", { params }),
   createCategory: (data: createCategoryPayload) => api.post("categories", data),
-  deleteCategory: (categoryId: string) => api.patch(`categories/${categoryId}`),
+  deleteCategory: (categoryId: string) => api.delete(`categories/${categoryId}`),
   assignParentCategory: (categoryId: string, parentCategoryId: string) =>
     api.patch(`categories/${categoryId}/parent?parent_id=${parentCategoryId}`),
 };

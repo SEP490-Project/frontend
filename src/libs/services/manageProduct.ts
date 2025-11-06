@@ -3,7 +3,6 @@ import type {
   CreateProductPayload,
   CreateVariantImagePayload,
   ProductParams,
-  ProductVariant,
 } from "../types/product";
 
 const manageProduct = {
@@ -14,7 +13,7 @@ const manageProduct = {
   createLimitedProduct: (data: CreateProductPayload) => api.post("products/limited", data),
   addConceptToLimitedProduct: (productId: string, conceptId: string) =>
     api.post(`products/limited/${productId}/concept/${conceptId}`),
-  createProductVariants: (data: ProductVariant, productId: string) =>
+  createProductVariants: (data: any, productId: string) =>
     api.post(`products/${productId}/variants`, data),
   createVariantsImage: (variant_id: string, payload: CreateVariantImagePayload) =>
     api.post(`products/variants/${variant_id}/images`, payload, {

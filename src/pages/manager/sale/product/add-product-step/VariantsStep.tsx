@@ -1,7 +1,7 @@
 import { useOutletContext, type NavigateFunction } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2, Plus, ImageIcon, Package, Box, Upload } from "lucide-react";
+import { Trash2, Plus, ImageIcon, Box, Upload } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +13,12 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { productVariantSchema } from "@/libs/validation/productValidation";
 import { VariationForm } from "@/components/manage/sale/product/form/VariationForm";
-import type { ProductData, ProductVariant, VariantWithImage } from "@/libs/types/product";
+import type {
+  ProductData,
+  ProductResponse,
+  ProductVariant,
+  VariantWithImage,
+} from "@/libs/types/product";
 import { useEffect, useState, useRef } from "react";
 import { useAppDispatch, type RootState } from "@/libs/stores";
 import {
@@ -67,7 +72,9 @@ const VariantsStep = () => {
   });
 
   useEffect(() => {
-    const productId = String(getItem<ProductData>("currentProduct")?.id || "");
+    const productId = String(
+      getItem<ProductResponse<ProductData>>("currentProduct")?.data.id || "",
+    );
     if (productId) {
       dispatch(getProductDetailThunk(productId));
     } else {
@@ -98,12 +105,11 @@ const VariantsStep = () => {
     } else {
       setItem("currentProductVariants", updatedVariants);
     }
-
     toast.success("Variant removed from list");
   };
 
   const handleImageUpload = async (variantId: string, file: File) => {
-    const currentProduct = getItem<ProductData>("currentProduct");
+    const currentProduct = getItem<ProductResponse<ProductData>>("currentProduct")?.data;
 
     if (!currentProduct) {
       toast.error("No product found. Please create a product first.");
@@ -119,10 +125,6 @@ const VariantsStep = () => {
 
     setIsLoading(true);
     try {
-      console.log("Uploading image for variant:", variant, file);
-      console.log("Variant name:", variant.name);
-      console.log("File details:", file.name, file.size, file.type);
-
       const formData = new FormData();
       formData.append("file", file, file.name);
       formData.append("is_primary", "true");
@@ -153,7 +155,7 @@ const VariantsStep = () => {
   };
 
   const handleAddVariant = async (data: ProductVariant) => {
-    const currentProduct = getItem<ProductData>("currentProduct");
+    const currentProduct = getItem<ProductResponse<ProductData>>("currentProduct")?.data;
 
     if (!currentProduct) {
       toast.error("No product found. Please create a product first.");
@@ -191,7 +193,7 @@ const VariantsStep = () => {
   }, [variants.length, setIsDisabled, setOnSubmitStep, navigate, steps, currentStep]);
 
   return (
-    <div className="bg-white p-6 rounded-lg mt-6 shadow-md">
+    <div className="bg-white p-6 rounded-lg mt-6 mb-12 shadow-md">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h2 className="text-xl font-bold text-gray-900">Product Variants</h2>
@@ -221,6 +223,7 @@ const VariantsStep = () => {
               state={state}
               isDisabled={false}
               setIsDisabled={setIsDisabled}
+              dispatch={dispatch}
             />
           </DialogContent>
         </Dialog>
@@ -299,7 +302,7 @@ const VariantsStep = () => {
                   <div className="flex-1">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
+                        <div className="flex items-center mb-2">
                           <CardTitle className="text-lg font-semibold text-gray-900">
                             {variant.name}
                           </CardTitle>
@@ -310,10 +313,6 @@ const VariantsStep = () => {
                           )}
                         </div>
                         <div className="flex flex-wrap gap-2 text-sm text-gray-600">
-                          <span className="inline-flex items-center gap-1">
-                            <Package className="w-4 h-4" />
-                            Type: {variant.type}
-                          </span>
                           <span className="inline-flex items-center gap-1">
                             {convertNumberToCurrency(Number(variant?.price?.toFixed(2)))}
                           </span>
@@ -344,7 +343,7 @@ const VariantsStep = () => {
                         <p className="text-gray-500 font-medium mb-1">Dispenser Type</p>
                         <p className="text-gray-900">{variant.dispenser_type}</p>
                       </div>
-                      {variant.current_stock !== undefined && (
+                      {variant.current_stock !== undefined && state.productType === "LIMITED" && (
                         <div>
                           <p className="text-gray-500 font-medium mb-1">Current Stock</p>
                           <p className="text-gray-900">{variant.current_stock} units</p>
@@ -359,7 +358,7 @@ const VariantsStep = () => {
                                 key={attrIndex}
                                 className="px-3 py-1 bg-gray-100 text-gray-700 rounded-md text-xs"
                               >
-                                {attr.ingredients}: {attr.value} {attr.unit}
+                                {attr.ingredient}: {attr.value} {attr.unit}
                               </span>
                             ))}
                           </div>

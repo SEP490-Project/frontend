@@ -12,6 +12,7 @@ import { manageFileReducer } from "./fileManager/slice";
 import { manageConfigReducer } from "./configManager/slice";
 import { categoryManagerReducer } from "./categoryManager/slice";
 import { attributeManagerReducer } from "./attributeManager/slice";
+import { conceptManagerReducer } from "./conceptManager/slice";
 import { manageTagReducer } from "./tagManager/slice";
 import { manageChannelReducer } from "./channelManager/slice";
 import { manageTaskReducer } from "./taskManager/slice";
@@ -33,6 +34,7 @@ export const rootReducer = combineReducers({
   manageConfig: manageConfigReducer,
   manageCategory: categoryManagerReducer,
   manageAttribute: attributeManagerReducer,
+  manageConcept: conceptManagerReducer,
   manageTag: manageTagReducer,
   manageChannel: manageChannelReducer,
   manageTask: manageTaskReducer,

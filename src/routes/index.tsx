@@ -43,6 +43,7 @@ import ContentPreviewPage from "@/pages/manager/marketing/content-approval/Conte
 import AddProductStep from "@/components/manage/sale/AddProductStep";
 import ProductDetail from "@/pages/manager/sale/product/ProductDetail";
 import { User, VariantAttribute } from "@/pages/manager/admin";
+import { CreateConceptStep } from "@/pages/manager/sale/product/add-product-step/CreateConceptStep";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -92,6 +93,7 @@ const AppRoutes = () => (
           <Route path="product" element={<Product />} />
           <Route path="product/create" element={<AddProductStep />}>
             <Route index element={<BasicInfoStep />} />
+            <Route path="concept" element={<CreateConceptStep />} />
             <Route path="variants" element={<VariantsStep />} />
             <Route path="done" element={<DoneStep />} />
           </Route>

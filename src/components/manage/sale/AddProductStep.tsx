@@ -11,14 +11,23 @@ const AddProductStep = () => {
   const [onSubmitStep, setOnSubmitStep] = useState<null | (() => Promise<void>)>(null);
   const [isDisabled, setIsDisabled] = useState(true);
 
-  const steps = useMemo(
-    () => [
+  const steps = useMemo(() => {
+    const baseSteps = [
       { path: "/manage/sale/product/create", label: "Basic Info" },
       { path: "/manage/sale/product/create/variants", label: "Variants" },
       { path: "/manage/sale/product/create/done", label: "Done" },
-    ],
-    [],
-  );
+    ];
+
+    if (state?.productType === "LIMITED") {
+      return [
+        baseSteps[0],
+        { path: "/manage/sale/product/create/concept", label: "Concept" },
+        ...baseSteps.slice(1),
+      ];
+    }
+
+    return baseSteps;
+  }, [state?.productType]);
 
   const getCurrentStep = () => {
     const exactMatch = steps.findIndex((step) => pathname === step.path);
@@ -49,9 +58,11 @@ const AddProductStep = () => {
     if (currentStep > 1) {
       navigate(steps[currentStep - 2]?.path, { state });
     } else {
-      // Clear localStorage when going back from first step
+      // Clean up localStorage when exiting the creation flow
       removeItem("currentProduct");
       removeItem("currentProductVariants");
+      removeItem("currentConcept");
+      removeItem("currentConceptId");
       navigate("/manage/sale/product", { state });
     }
   };
@@ -71,10 +82,6 @@ const AddProductStep = () => {
           return "Create Product (Standard)";
         }
         break;
-      case ProductFormMode.EDIT:
-        return "Edit Product";
-      case ProductFormMode.VIEW:
-        return "View Product";
       default:
         return null;
     }

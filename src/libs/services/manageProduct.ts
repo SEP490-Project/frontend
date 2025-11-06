@@ -12,6 +12,8 @@ const manageProduct = {
   getProductByTaskId: (taskId: string) => api.get(`tasks/${taskId}/products`),
   createStandardProduct: (data: CreateProductPayload) => api.post("products/standard", data),
   createLimitedProduct: (data: CreateProductPayload) => api.post("products/limited", data),
+  addConceptToLimitedProduct: (productId: string, conceptId: string) =>
+    api.post(`products/limited/${productId}/concept/${conceptId}`),
   createProductVariants: (data: ProductVariant, productId: string) =>
     api.post(`products/${productId}/variants`, data),
   createVariantsImage: (variant_id: string, payload: CreateVariantImagePayload) =>

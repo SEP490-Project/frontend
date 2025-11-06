@@ -51,18 +51,14 @@ export const BasicInfoForm = ({
   const productBasicInfos = getItem<ProductData>("currentProduct");
   const isLimitedProduct = state?.productType === "LIMITED";
 
-  const [name, category_id, brand_id, price] = watch(["name", "category_id", "brand_id", "price"]);
+  const [name, category_id, brand_id] = watch(["name", "category_id", "brand_id"]);
 
-  // Watch limited attributes if it's a limited product
-  const limitedAttributeWatch = isLimitedProduct
-    ? watch([
-        "limited_attribute.premiere_date",
-        "limited_attribute.availability_start_date",
-        "limited_attribute.availability_end_date",
-        "limited_attribute.bought_limit",
-        "limited_attribute.max_stock",
-      ] as any)
-    : [];
+  // Watch limited attributes outside of useEffect so they trigger re-renders
+  const premiere_date = watch("limited_attribute.premiere_date" as any);
+  const availability_start_date = watch("limited_attribute.availability_start_date" as any);
+  const availability_end_date = watch("limited_attribute.availability_end_date" as any);
+  const bought_limit = watch("limited_attribute.bought_limit" as any);
+  const max_stock = watch("limited_attribute.max_stock" as any);
 
   const onSubmit = useCallback(
     async (payload: CreateProductPayload | CreateLimitedProductPayload) => {
@@ -89,6 +85,7 @@ export const BasicInfoForm = ({
     toast.error(errors[Object.keys(errors)[0]].message);
   }, []);
 
+  // Validate form and enable/disable next button
   useEffect(() => {
     if (setIsDisabled) {
       // Base validation for both types
@@ -97,24 +94,13 @@ export const BasicInfoForm = ({
           name.trim() !== "" &&
           category_id &&
           brand_id &&
-          price &&
-          price >= 1000 &&
           !errors.name &&
           !errors.category_id &&
-          !errors.brand_id &&
-          !errors.price,
+          !errors.brand_id,
       );
 
       // Additional validation for LIMITED products
       if (isLimitedProduct) {
-        const [
-          premiere_date,
-          availability_start_date,
-          availability_end_date,
-          bought_limit,
-          max_stock,
-        ] = limitedAttributeWatch as any[];
-
         const isLimitedFormValid = Boolean(
           premiere_date &&
             availability_start_date &&
@@ -132,38 +118,50 @@ export const BasicInfoForm = ({
     name,
     category_id,
     brand_id,
-    price,
     errors,
     setIsDisabled,
     isLimitedProduct,
-    limitedAttributeWatch,
+    premiere_date,
+    availability_start_date,
+    availability_end_date,
+    bought_limit,
+    max_stock,
   ]);
 
+  // Load existing product data once on mount
   useEffect(() => {
-    if (productBasicInfos && productBasicInfos.id) {
+    const existingProduct = getItem<ProductData>("currentProduct");
+    if (existingProduct && existingProduct.id) {
       form.reset({
-        name: productBasicInfos.name,
-        category_id: productBasicInfos.category?.id?.toString() || "",
-        brand_id: productBasicInfos.brand_id?.toString() || "",
-        price: productBasicInfos.price,
-        description: productBasicInfos.description || null,
+        name: existingProduct.name,
+        category_id: existingProduct.category?.id?.toString() || "",
+        brand_id: existingProduct.brand_id?.toString() || "",
+        description: existingProduct.description || null,
       } as any);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (setOnSubmitStep) {
-      if (productBasicInfos && productBasicInfos.id) {
+      // Check if product already exists in localStorage
+      const existingProduct = getItem<ProductData>("currentProduct");
+
+      if (existingProduct && existingProduct.id) {
+        // Product already created, just navigate to next step
         setOnSubmitStep(() => async () => {
           navigate(steps[currentStep]?.path, { state });
         });
         return;
       }
+
+      // Product not created yet, set up the submit handler
       const submitHandler = async () => {
         await handleSubmit(onSubmit, onError)();
       };
       setOnSubmitStep(() => submitHandler);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setOnSubmitStep, productBasicInfos?.id]);
 
   useEffect(() => {
@@ -266,40 +264,6 @@ export const BasicInfoForm = ({
               </SelectContent>
             </Select>
           )}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">
-        <label
-          htmlFor="productPrice"
-          className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end"
-        >
-          <span className="text-red-600">*</span>
-          Price (VND)
-        </label>
-        <Input
-          id="productPrice"
-          type="number"
-          min={0}
-          placeholder="Price must be at least 1000"
-          className=" col-span-3"
-          autoComplete="off"
-          {...register("price", {
-            valueAsNumber: true,
-            onChange: (e) => {
-              const number = Number(e.target.value);
-              if (number < 0) {
-                e.target.value = "0";
-              }
-            },
-          })}
-          onPaste={(e) => {
-            const pastedData = e.clipboardData.getData("text");
-            const number = Number(pastedData);
-            if (number < 0) {
-              e.preventDefault();
-            }
-          }}
         />
       </div>
 

@@ -12,8 +12,9 @@ RUN npm run build
 # Stage 2: Serve the application with Nginx
 FROM nginx:alpine AS final
 
-ENV API_HOST=https://api.bshowsell.site
-ENV API_PORT=443
+# ENV API_HOST=https://api.bshowsell.site
+# ENV API_PORT=443
+ENV API_URL=https://api.bshowsell.site/api/v1
 
 # Remove the default Nginx config
 RUN rm /etc/nginx/conf.d/default.conf
@@ -22,4 +23,4 @@ COPY nginx/default.conf.template /etc/nginx/conf.d/default.conf.template
 COPY --from=build /app/dist /usr/share/nginx/html
 
 EXPOSE 80
-CMD ["/bin/sh", "-c", "envsubst '$API_HOST $API_PORT' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"]
+CMD ["/bin/sh", "-c", "envsubst '$API_URL' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"]

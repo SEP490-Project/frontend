@@ -126,7 +126,7 @@ const AddProductStep = () => {
               <Button variant={"outline"} size={"sm"} onClick={handleBack}>
                 Back
               </Button>
-              {state?.productType === "LIMITED" ? (
+              {state?.productType === "LIMITED" && currentStep === steps.length ? (
                 <Button size={"sm"} onClick={handleSubmitForReview} disabled={isDisabled}>
                   Submit for Review
                 </Button>

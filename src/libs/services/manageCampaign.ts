@@ -16,6 +16,8 @@ export const manageCampaign = {
 
   CreateCampaign: (request: CampaignRequest) => api.post("/campaigns", request),
 
+  createInternalCampaign: (request: CampaignRequest) => api.post("/campaigns/internal", request),
+
   approveCampaign: (req: string) => api.patch(`/campaigns/${req}/approve`),
 
   rejectCampaign: (req: string, reason?: string) =>

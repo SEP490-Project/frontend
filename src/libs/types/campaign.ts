@@ -54,7 +54,7 @@ export interface CampaignResponse {
 }
 
 export interface CampaignRequest {
-  contract_id: string;
+  contract_id?: string;
   name: string;
   description: string;
   start_date: string;

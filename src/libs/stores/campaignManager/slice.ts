@@ -2,6 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 import {
   campaign,
   createCampaign,
+  createInternalCampaign,
   getCampaignsByBrand,
   getCampaignById,
   approveCampaign,
@@ -73,6 +74,22 @@ export const manageCampaignSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
         const message = (action.payload as string) || "Failed to create campaign";
+        toast.error(message);
+      })
+      .addCase(createInternalCampaign.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(createInternalCampaign.fulfilled, (state, action) => {
+        state.loading = false;
+        state.error = null;
+        const message = action.payload.message || "Internal campaign created successfully";
+        toast.success(message);
+      })
+      .addCase(createInternalCampaign.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        const message = (action.payload as string) || "Failed to create internal campaign";
         toast.error(message);
       })
       .addCase(getCampaignsByBrand.pending, (state) => {

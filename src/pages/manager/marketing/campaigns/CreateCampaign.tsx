@@ -1,11 +1,11 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Campaign, Task, Review } from "./component";
 import { parse } from "date-fns";
 import type { CampaignRequest } from "@/libs/types/campaign";
 import { useAppDispatch } from "@/libs/stores";
-import { createCampaign } from "@/libs/stores/campaignManager/thunk";
+import { createCampaign, createInternalCampaign } from "@/libs/stores/campaignManager/thunk";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -70,6 +70,7 @@ interface ContractBase {
 const AddCampaignPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"campaign" | "milestone" | "review">("campaign");
   const [selectedContract, setSelectedContract] = useState<ContractBase | null>(null);
+  const [campaignMode, setCampaignMode] = useState<"contract" | "internal">("contract");
   const [campaignData, setCampaignData] = useState<CampaignData>({
     name: "",
     type: "",
@@ -83,14 +84,21 @@ const AddCampaignPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
+  // Reset milestones when campaign mode changes
+  useEffect(() => {
+    setMilestones([]);
+    setSelectedContract(null);
+  }, [campaignMode]);
+
   const isCampaignValid = useMemo(() => {
-    return (
-      !!campaignData.name &&
-      !!campaignData.contract_id &&
-      !!campaignData.start_date &&
-      !!campaignData.end_date
-    );
-  }, [campaignData]);
+    const baseValid = !!campaignData.name && !!campaignData.start_date && !!campaignData.end_date;
+
+    if (campaignMode === "contract") {
+      return baseValid && !!campaignData.contract_id;
+    } else {
+      return baseValid && !!campaignData.type;
+    }
+  }, [campaignData, campaignMode]);
 
   const toPayload = (): CampaignRequest => ({
     contract_id: campaignData.contract_id,
@@ -126,7 +134,14 @@ const AddCampaignPage: React.FC = () => {
     const payload = toPayload();
 
     try {
-      await dispatch(createCampaign(payload));
+      if (campaignMode === "contract") {
+        await dispatch(createCampaign(payload));
+        toast.success("Contract-based campaign created successfully!");
+      } else {
+        await dispatch(createInternalCampaign(payload));
+        toast.success("Internal campaign created successfully!");
+      }
+
       setTimeout(() => {
         navigate("/manage/marketing/campaigns");
       }, 1000);
@@ -146,6 +161,7 @@ const AddCampaignPage: React.FC = () => {
     });
     setMilestones([]);
     setSelectedContract(null);
+    setCampaignMode("contract");
     setActiveTab("campaign");
   };
 
@@ -208,7 +224,9 @@ const AddCampaignPage: React.FC = () => {
                   </div>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Current Step</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    {campaignMode === "contract" ? "Contract Campaign" : "Internal Campaign"}
+                  </p>
                   <p className="text-sm font-semibold text-gray-900">
                     {activeTab === "campaign"
                       ? "Campaign Details"
@@ -303,6 +321,8 @@ const AddCampaignPage: React.FC = () => {
                     campaignData={campaignData}
                     setCampaignData={setCampaignData}
                     campaignTypes={campaignTypes}
+                    campaignMode={campaignMode}
+                    setCampaignMode={setCampaignMode}
                     isCampaignValid={isCampaignValid}
                     onNext={() => setActiveTab("milestone")}
                     onReset={handleReset}
@@ -316,6 +336,7 @@ const AddCampaignPage: React.FC = () => {
                     setMilestones={setMilestones}
                     selectedContract={selectedContract}
                     campaignType={campaignData.type}
+                    campaignMode={campaignMode}
                     onBack={() => setActiveTab("campaign")}
                     onNext={() => setActiveTab("review")}
                   />

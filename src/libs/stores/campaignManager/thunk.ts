@@ -68,6 +68,19 @@ export const createCampaign = createAsyncThunk(
   },
 );
 
+export const createInternalCampaign = createAsyncThunk(
+  "/campaigns/create/internal",
+  async (req: CampaignRequest, { rejectWithValue }) => {
+    try {
+      const response = await manageCampaign.createInternalCampaign(req);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Thất bại");
+    }
+  },
+);
+
 export const approveCampaign = createAsyncThunk(
   "/campaigns/approve",
   async (req: string, { rejectWithValue }) => {

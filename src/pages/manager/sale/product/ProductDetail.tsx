@@ -183,7 +183,10 @@ const ProductDetail: React.FC = () => {
             </div>
           </div>
           <div className="px-6 pb-6">
-            <h2 className="text-lg font-semibold mb-4">Additional Information</h2>
+            <h2 className="flex items-center gap-2 text-lg font-semibold mb-4">
+              <Info className="h-5 w-5" />
+              Additional Information
+            </h2>
             <div className="grid md:grid-cols-2 grid-cols-1 gap-2">
               <div className="bg-gray-50 p-4 rounded-lg">
                 <p className="text-sm text-gray-500 mb-2">Max Stock</p>
@@ -407,32 +410,30 @@ const ProductDetail: React.FC = () => {
                             </div>
                           )}
 
-                          {selectedVariant?.current_stock !== undefined ||
-                            (isLimited && (
-                              <div className="p-4 rounded-lg border border-gray-200">
-                                <p className="text-sm text-orange-700 font-medium mb-1 flex items-center gap-1">
-                                  <ShoppingCart className="h-4 w-4" />
-                                  Current Stock
-                                </p>
-                                <p className="font-bold text-orange-900">
-                                  {variant.current_stock} units
-                                </p>
-                              </div>
-                            ))}
+                          {selectedVariant?.current_stock && isLimited && (
+                            <div className="p-4 rounded-lg border border-orange-200 bg-yellow-50">
+                              <p className="text-sm text-orange-700 font-medium mb-1 flex items-center gap-1">
+                                <ShoppingCart className="h-4 w-4" />
+                                Current Stock
+                              </p>
+                              <p className="font-bold text-orange-900">
+                                {variant.current_stock} units
+                              </p>
+                            </div>
+                          )}
                         </div>
 
-                        {selectedVariant?.story ||
-                          (isLimited && (
-                            <div className="p-4 rounded-lg border border-gray-200">
-                              <p className="text-sm text-orange-700 font-medium mb-2 flex items-center gap-1">
-                                <span>
-                                  <Star className="h-5 w-5" />
-                                </span>
-                                Story
-                              </p>
-                              <p className="text-gray-900">{variant.story || "Test"}</p>
-                            </div>
-                          ))}
+                        {selectedVariant?.current_stock && isLimited && (
+                          <div className="p-4 rounded-lg border border-orange-200 bg-yellow-50">
+                            <p className="text-sm text-orange-700 font-medium mb-2 flex items-center gap-1">
+                              <span>
+                                <Star className="h-5 w-5" />
+                              </span>
+                              Story
+                            </p>
+                            <p className="text-gray-900">{variant.story || "Test"}</p>
+                          </div>
+                        )}
 
                         {variant.description && (
                           <div className="p-4 rounded-lg border border-gray-200">

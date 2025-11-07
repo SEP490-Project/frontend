@@ -235,6 +235,124 @@ const ProductDetail: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {isLimited && (product as LimitedProductData).concept && (
+            <div className="px-6 pb-6">
+              <h2 className="flex items-center gap-2 text-lg font-semibold mb-4">
+                <Star className="h-5 w-5" />
+                Concept Information
+              </h2>
+              <div className="space-y-4">
+                <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg border border-purple-200">
+                  <p className="text-sm text-purple-700 mb-1">Concept Name</p>
+                  <p className="text-xl font-bold text-purple-900">
+                    {(product as LimitedProductData).concept?.name || "N/A"}
+                  </p>
+                </div>
+
+                {(product as LimitedProductData).concept?.description && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-500 mb-2">Description</p>
+                    <p className="text-gray-900">
+                      {(product as LimitedProductData).concept?.description}
+                    </p>
+                  </div>
+                )}
+
+                <div className="grid md:grid-cols-2 grid-cols-1 gap-4">
+                  {(product as LimitedProductData).concept?.status && (
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-500 mb-2">Status</p>
+                      <Badge
+                        className={
+                          (product as LimitedProductData).concept?.status === "ACTIVE"
+                            ? "bg-green-100 text-green-800 border border-green-200"
+                            : "bg-gray-100 text-gray-800 border border-gray-200"
+                        }
+                      >
+                        {(product as LimitedProductData).concept?.status}
+                      </Badge>
+                    </div>
+                  )}
+
+                  {(product as LimitedProductData).concept?.start_date && (
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-500 mb-2">Concept Start Date</p>
+                      <p className="font-semibold text-gray-900">
+                        {new Date(
+                          (product as LimitedProductData).concept?.start_date || "",
+                        ).toLocaleDateString()}
+                      </p>
+                    </div>
+                  )}
+
+                  {(product as LimitedProductData).concept?.end_date && (
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-500 mb-2">Concept End Date</p>
+                      <p className="font-semibold text-gray-900">
+                        {new Date(
+                          (product as LimitedProductData).concept?.end_date || "",
+                        ).toLocaleDateString()}
+                      </p>
+                    </div>
+                  )}
+
+                  {(product as LimitedProductData).concept?.created_at && (
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-500 mb-2">Created At</p>
+                      <p className="font-semibold text-gray-900">
+                        {new Date(
+                          (product as LimitedProductData).concept?.created_at || "",
+                        ).toLocaleString()}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {(product as LimitedProductData).concept?.video_thumbnail && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-500 mb-2">Concept Video</p>
+                    <video
+                      controls
+                      className="w-full rounded-lg border border-gray-200"
+                      style={{ maxHeight: "400px" }}
+                    >
+                      <source
+                        src={(product as LimitedProductData).concept?.video_thumbnail}
+                        type="video/mp4"
+                      />
+                      Your browser does not support the video tag.
+                    </video>
+                  </div>
+                )}
+
+                {(product as LimitedProductData).concept?.banner_url && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-500 mb-2">Concept Banners</p>
+                    <div className="grid md:grid-cols-3 grid-cols-1 gap-4">
+                      {(product as LimitedProductData).concept?.banner_url
+                        .split(",")
+                        .map((url: string, index: number) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={url.trim()}
+                              alt={`Concept Banner ${index + 1}`}
+                              className="w-full h-48 object-cover rounded-lg border border-gray-200 hover:opacity-90 transition-opacity cursor-pointer"
+                              onClick={() => window.open(url.trim(), "_blank")}
+                            />
+                            <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-10 transition-all rounded-lg flex items-center justify-center">
+                              <p className="text-white opacity-0 group-hover:opacity-100 text-sm font-medium">
+                                Click to view full size
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

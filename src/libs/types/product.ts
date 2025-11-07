@@ -1,6 +1,7 @@
 import type { FieldValues, UseFormReturn } from "react-hook-form";
 import type { NavigateFunction } from "react-router";
 import type { Pagination } from "./common";
+import type { ConceptData } from "./concept";
 
 export type ProductType = "STANDARD" | "LIMITED";
 export type CapacityUnit = "ML" | "L" | "G" | "KG" | "OZ";
@@ -62,6 +63,7 @@ export interface LimitedProductData extends ProductData {
     availability_start_date: string;
     availability_end_date: string;
   };
+  concept?: ConceptData;
 }
 
 export interface ProductVariant {

@@ -387,10 +387,10 @@ const ContractPaymentBrandPage: React.FC = () => {
               </SelectContent>
             </Select>
           </motion.div>
-          <motion.div className="flex gap-1" variants={itemVariants}>
+          <motion.div variants={itemVariants}>
             <Button
               variant="secondary"
-              className="border-gray-300 px-3"
+              className="border-gray-300 px-3 w-full"
               onClick={handleResetFilters}
             >
               Reset

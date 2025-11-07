@@ -19,7 +19,6 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
   onConfirmCreate,
 }) => {
   if (!contractData) return null;
-  console.log("Contract Data for Preview:", contractData);
 
   const formatContractDataForPreview = (formData: any) => {
     const formatDateForPreview = (dateString: string): string => {
@@ -30,28 +29,47 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
       return date.toISOString();
     };
 
+    // Check if this is existing contract data (from API) or form data (from create form)
+    const isExistingContract = formData.brand && typeof formData.brand === "object";
+
     return {
       contract_number: formData.contract_number, // snake_case
       title: formData.title,
       type: formData.type,
-      status: "DRAFT",
+      status: formData.status || "DRAFT",
       signed_date: formatDateForPreview(formData.signed_date), // snake_case
       signed_location: formData.signed_location, // snake_case
       start_date: formatDateForPreview(formData.start_date), // snake_case
       end_date: formatDateForPreview(formData.end_date), // snake_case
-      currency: "VND",
+      currency: formData.currency || "VND",
 
-      brand: {
-        name: formData.brand_name || "Brand Name", // snake_case
-        representative_name: formData.brand_representative_name, // snake_case
-        representative_role: formData.brand_representative_role, // snake_case
-        contact_name: formData.brand_representative_name, // snake_case
-        address: formData.brand_address || "Brand Address", // snake_case
-        tax_number: formData.brand_tax_number, // snake_case
-        bank_name: formData.brand_bank_name, // snake_case
-        bank_account_number: formData.brand_bank_account_number, // snake_case
-        bank_account_holder: formData.brand_bank_account_holder, // snake_case
-      },
+      brand: isExistingContract
+        ? {
+            // For existing contract data from API
+            name: formData.brand?.name || "Brand Name",
+            representative_name: formData.brand?.representative_name,
+            representative_role: formData.brand?.representative_role,
+            contact_name: formData.brand?.representative_name || formData.brand?.contact_name,
+            contact_email: formData.brand?.contact_email,
+            contact_phone: formData.brand?.contact_phone,
+            address: formData.brand?.address || "Brand Address",
+            tax_number: formData.brand?.tax_number,
+            bank_name: formData.brand?.bank_name,
+            bank_account_number: formData.brand?.bank_account_number,
+            bank_account_holder: formData.brand?.bank_account_holder,
+          }
+        : {
+            // For form data from create contract
+            name: formData.brand_name || "Brand Name", // snake_case
+            representative_name: formData.brand_representative_name, // snake_case
+            representative_role: formData.brand_representative_role, // snake_case
+            contact_name: formData.brand_representative_name, // snake_case
+            address: formData.brand_address || "Brand Address", // snake_case
+            tax_number: formData.brand_tax_number, // snake_case
+            bank_name: formData.brand_bank_name, // snake_case
+            bank_account_number: formData.brand_bank_account_number, // snake_case
+            bank_account_holder: formData.brand_bank_account_holder, // snake_case
+          },
 
       representative_name: formData.representative_name, // snake_case
       representative_role: formData.representative_role, // snake_case
@@ -64,64 +82,48 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
 
       deposit_percent: formData.deposit_percent ?? undefined,
       deposit_amount:
-        formData.deposit_percent && formData.deposit_percent > 0
+        formData.deposit_amount ??
+        (formData.deposit_percent && formData.deposit_percent > 0
           ? (formData.financial_terms?.total_cost || 0) * (formData.deposit_percent / 100) // snake_case
-          : (formData.deposit_amount ?? undefined),
+          : undefined),
+      is_deposit_paid: formData.is_deposit_paid,
 
-      scope_of_work: {
-        // snake_case
-        general_requirements: formData.scope_of_work?.general_requirements || [], // snake_case
-        deliverables: formData.scope_of_work?.deliverables || {},
-      },
+      scope_of_work: formData.scope_of_work
+        ? {
+            // snake_case
+            general_requirements: formData.scope_of_work?.general_requirements || [], // snake_case
+            deliverables: formData.scope_of_work?.deliverables || {},
+          }
+        : {
+            general_requirements: [],
+            deliverables: {},
+          },
 
-      financial_terms: {
-        // snake_case
-        model:
-          formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR"
-            ? "FIXED"
-            : formData.type === "AFFILIATE"
-              ? "LEVELS"
-              : formData.type === "CO_PRODUCING"
-                ? "SHARE"
-                : "FIXED",
-        payment_method: formData.financial_terms?.payment_method || "BANK_TRANSFER", // snake_case
+      financial_terms: formData.financial_terms
+        ? {
+            // Copy existing financial_terms structure
+            ...formData.financial_terms,
+            // Ensure payment_method has a default
+            payment_method: formData.financial_terms?.payment_method || "BANK_TRANSFER", // snake_case
+          }
+        : {
+            // snake_case
+            model:
+              formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR"
+                ? "FIXED"
+                : formData.type === "AFFILIATE"
+                  ? "LEVELS"
+                  : formData.type === "CO_PRODUCING"
+                    ? "SHARE"
+                    : "FIXED",
+            payment_method: "BANK_TRANSFER", // snake_case
+          },
 
-        ...(formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR"
-          ? {
-              total_cost: formData.financial_terms?.total_cost || 0, // snake_case
-              cost_breakdown: formData.financial_terms?.cost_breakdown || {}, // snake_case
-              schedule: formData.financial_terms?.schedule || [],
-            }
-          : {}),
-
-        ...(formData.type === "AFFILIATE"
-          ? {
-              base_per_click: formData.financial_terms?.base_per_click || 0, // snake_case
-              levels: formData.financial_terms?.levels || [],
-              payment_cycle: formData.financial_terms?.payment_cycle, // snake_case
-              payment_date: formData.financial_terms?.payment_date, // snake_case
-              tax_withholding: formData.financial_terms?.tax_withholding || {}, // snake_case
-            }
-          : {}),
-
-        ...(formData.type === "CO_PRODUCING"
-          ? {
-              // snake_case
-              profit_split_company_percent:
-                formData.financial_terms?.profit_split_company_percent || 0,
-              profit_split_kol_percent: formData.financial_terms?.profit_split_kol_percent || 0, // snake_case
-              profit_distribution_cycle: formData.financial_terms?.profit_distribution_cycle, // snake_case
-              profit_distribution_date: formData.financial_terms?.profit_distribution_date, // snake_case
-              capital_contribution: formData.financial_terms?.capital_contribution || {}, // snake_case
-            }
-          : {}),
-      },
-
-      legal_terms: {
+      legal_terms: formData.legal_terms || {
         // snake_case
         breach_of_contract: {
           // snake_case
-          label: formData.legal_terms?.breach_of_contract?.label || "Breach of Contract", // snake_case
+          label: "Breach of Contract", // snake_case
           items: [
             {
               title: "Party A (Brand) breaks the rules",
@@ -132,9 +134,9 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
               details: [
                 "Contract terminates immediately",
                 "Party B must refund the deposit",
-                `Party B pays additional ${formData.legal_terms?.compensation_percent || 10}% compensation`, // snake_case
+                "Party B pays additional 10% compensation", // snake_case
               ],
-              compensation_percent: formData.legal_terms?.compensation_percent || 10, // snake_case
+              compensation_percent: 10, // snake_case
             },
             {
               title: "Mutual agreement to terminate",
@@ -147,7 +149,7 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
         },
         standard_terms: {
           // snake_case
-          label: formData.legal_terms?.standard_terms?.label || "Standard Terms", // snake_case
+          label: "Standard Terms", // snake_case
           items: [
             {
               title: "Confidentiality",

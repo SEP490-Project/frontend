@@ -419,9 +419,11 @@ const ContractPaymentPage: React.FC = () => {
                 <SelectItem value="CREDIT_CARD">Credit Card</SelectItem>
               </SelectContent>
             </Select>
+          </motion.div>
+          <motion.div variants={itemVariants}>
             <Button
               variant="secondary"
-              className="border-gray-300 px-3"
+              className="border-gray-300 px-3 w-full"
               onClick={handleResetFilters}
             >
               Reset

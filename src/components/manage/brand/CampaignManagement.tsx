@@ -22,12 +22,14 @@ import { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { useCampaign } from "@/libs/hooks/useCampaign";
 import { getCampaignsByBrand, getCampaignById } from "@/libs/stores/campaignManager/thunk";
+import { clearCampaignDetail } from "@/libs/stores/campaignManager/slice";
 import type { AppDispatch } from "@/libs/stores";
 import type { CampaignData } from "@/libs/types/campaign";
+import CampaignDetail from "./CampaignDetail";
 
 export default function CampaignManagement() {
   const dispatch = useDispatch<AppDispatch>();
-  const { loading, campaigns, pagination, error, detailLoading, campaignDetail } = useCampaign();
+  const { loading, campaigns, pagination, error, detailLoading } = useCampaign();
 
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -35,6 +37,8 @@ export default function CampaignManagement() {
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [loadingCampaignDetail, setLoadingCampaignDetail] = useState(false);
+  const [selectedCampaignDetail, setSelectedCampaignDetail] = useState<CampaignData | null>(null);
 
   // Fetch campaigns when component mounts, page or status changes
   useEffect(() => {
@@ -79,12 +83,31 @@ export default function CampaignManagement() {
 
   // Handle campaign view
   const handleViewCampaign = async (campaign: CampaignData) => {
-    setIsModalOpen(true);
+    setLoadingCampaignDetail(true);
+
+    // Clear previous campaign detail
+    dispatch(clearCampaignDetail());
 
     try {
-      await dispatch(getCampaignById(campaign.id));
+      // First fetch the campaign details
+      const result = await dispatch(getCampaignById(campaign.id));
+
+      // Check if the request was successful
+      if (getCampaignById.fulfilled.match(result)) {
+        // Set the campaign detail directly from the API response
+        setSelectedCampaignDetail(result.payload);
+        setIsModalOpen(true);
+      } else if (getCampaignById.rejected.match(result)) {
+        console.error("Failed to fetch campaign details:", result.payload);
+        setSelectedCampaignDetail(null);
+        setIsModalOpen(true); // Still open modal to show error state
+      }
     } catch (error) {
       console.error("Failed to fetch campaign details:", error);
+      // Still open modal to show error state
+      setIsModalOpen(true);
+    } finally {
+      setLoadingCampaignDetail(false);
     }
   };
 
@@ -433,9 +456,14 @@ export default function CampaignManagement() {
                       >
                         <button
                           onClick={() => handleViewCampaign(item)}
-                          className="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-50 flex items-center justify-center"
+                          disabled={loadingCampaignDetail}
+                          className="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-50 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <Eye className="h-4 w-4" />
+                          {loadingCampaignDetail ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
                         </button>
                       </td>
                     </tr>
@@ -519,9 +547,14 @@ export default function CampaignManagement() {
                       </span>
                       <button
                         onClick={() => handleViewCampaign(item)}
-                        className="text-blue-600 hover:text-blue-800 p-2 rounded-full hover:bg-blue-50"
+                        disabled={loadingCampaignDetail}
+                        className="text-blue-600 hover:text-blue-800 p-2 rounded-full hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <Eye className="h-4 w-4" />
+                        {loadingCampaignDetail ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -635,272 +668,28 @@ export default function CampaignManagement() {
         </div>
 
         {/* Campaign Detail Modal */}
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <Dialog
+          open={isModalOpen}
+          onOpenChange={(open) => {
+            setIsModalOpen(open);
+            if (!open) {
+              // Reset states when modal closes
+              setLoadingCampaignDetail(false);
+              setSelectedCampaignDetail(null);
+            }
+          }}
+        >
           <DialogContent className="max-w-6xl w-[95vw] h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-xl">Campaign Details</DialogTitle>
               <DialogDescription>
                 {detailLoading
                   ? "Loading campaign details..."
-                  : `Campaign: ${campaignDetail?.name || "Unknown"}`}
+                  : `Campaign: ${selectedCampaignDetail?.name || "Unknown"}`}
               </DialogDescription>
             </DialogHeader>
 
-            {detailLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                <span className="ml-3 text-gray-500">Loading campaign details...</span>
-              </div>
-            ) : campaignDetail ? (
-              <div className="space-y-6">
-                {/* Campaign Overview */}
-                <div className="bg-gray-50 rounded-lg border border-gray-200 p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <Target className="h-5 w-5 text-blue-600" />
-                    <h2 className="text-lg font-semibold text-gray-900">Campaign Overview</h2>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Campaign Name</label>
-                      <p className="text-sm text-gray-900 mt-1">{campaignDetail.name}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Campaign Type</label>
-                      <p className="text-sm text-gray-900 mt-1">{campaignDetail.type}</p>
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="text-sm font-medium text-gray-500">Description</label>
-                      <p className="text-sm text-gray-900 mt-1">
-                        {campaignDetail.description || "No description provided"}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Status</label>
-                      <div className="mt-1">
-                        <span
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusStyles(campaignDetail.status)}`}
-                        >
-                          {campaignDetail.status}
-                        </span>
-                      </div>
-                    </div>
-                    {campaignDetail.number_of_tasks && (
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Total Tasks</label>
-                        <p className="text-sm text-gray-900 mt-1">
-                          {campaignDetail.number_of_tasks} tasks
-                        </p>
-                      </div>
-                    )}
-                    {campaignDetail.percentage_completed !== undefined && (
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Progress</label>
-                        <div className="mt-1">
-                          <div className="flex items-center">
-                            <div className="flex-1 bg-gray-200 rounded-full h-2 mr-2">
-                              <div
-                                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                                style={{ width: `${campaignDetail.percentage_completed}%` }}
-                              ></div>
-                            </div>
-                            <span className="text-sm font-medium text-gray-900">
-                              {campaignDetail.percentage_completed.toFixed(1)}%
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Contract Information */}
-                <div className="bg-blue-50 rounded-lg border border-blue-200 p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <svg
-                      className="h-5 w-5 text-blue-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      />
-                    </svg>
-                    <h2 className="text-lg font-semibold text-gray-900">Contract Information</h2>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Contract Title</label>
-                      <p className="text-sm text-gray-900 mt-1">{campaignDetail.contract_title}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Contract Number</label>
-                      <p className="text-sm text-gray-900 mt-1">{campaignDetail.contract_number}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Contract ID</label>
-                      <p className="text-xs text-gray-900 mt-1 font-mono">
-                        {campaignDetail.contract_id}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Timeline */}
-                <div className="bg-green-50 rounded-lg border border-green-200 p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <Calendar className="h-5 w-5 text-green-600" />
-                    <h2 className="text-lg font-semibold text-gray-900">Timeline</h2>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Start Date</label>
-                      <p className="text-sm text-gray-900 mt-1">
-                        {formatDate(campaignDetail.start_date)}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">End Date</label>
-                      <p className="text-sm text-gray-900 mt-1">
-                        {formatDate(campaignDetail.end_date)}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Duration</label>
-                      <p className="text-sm text-gray-900 mt-1">
-                        {Math.ceil(
-                          (new Date(campaignDetail.end_date).getTime() -
-                            new Date(campaignDetail.start_date).getTime()) /
-                            (1000 * 60 * 60 * 24),
-                        )}{" "}
-                        days
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Created</label>
-                      <p className="text-sm text-gray-900 mt-1">
-                        {formatDate(campaignDetail.created_at)}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Last Updated</label>
-                      <p className="text-sm text-gray-900 mt-1">
-                        {formatDate(campaignDetail.updated_at)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Milestones */}
-                {campaignDetail.milestones && campaignDetail.milestones.length > 0 && (
-                  <div className="bg-purple-50 rounded-lg border border-purple-200 p-6">
-                    <div className="flex items-center gap-3 mb-4">
-                      <svg
-                        className="h-5 w-5 text-purple-600"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                      <h2 className="text-lg font-semibold text-gray-900">Milestones</h2>
-                    </div>
-
-                    <div className="space-y-4">
-                      {campaignDetail.milestones.map((milestone, index) => (
-                        <div
-                          key={milestone.id}
-                          className="bg-white rounded-lg border border-purple-100 p-4"
-                        >
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex-1">
-                              <h4 className="text-sm font-medium text-gray-900 break-words">
-                                Milestone {index + 1}
-                              </h4>
-                              <p className="text-sm text-gray-600 mt-1 break-words">
-                                {milestone.description}
-                              </p>
-                            </div>
-                            <div className="ml-4 flex items-center space-x-2">
-                              <span
-                                className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                  milestone.status === "COMPLETED"
-                                    ? "bg-green-100 text-green-800"
-                                    : milestone.status === "IN_PROGRESS"
-                                      ? "bg-blue-100 text-blue-800"
-                                      : milestone.status === "NOT_STARTED"
-                                        ? "bg-gray-100 text-gray-800"
-                                        : "bg-yellow-100 text-yellow-800"
-                                }`}
-                              >
-                                {milestone.status.replace("_", " ")}
-                              </span>
-                              {milestone.behind_schedule && (
-                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                                  Behind Schedule
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                            <div>
-                              <label className="text-xs font-medium text-gray-500">Due Date</label>
-                              <p className="text-sm text-gray-900 mt-1">
-                                {formatDate(milestone.due_date)}
-                              </p>
-                            </div>
-                            {milestone.completed_at && (
-                              <div>
-                                <label className="text-xs font-medium text-gray-500">
-                                  Completed
-                                </label>
-                                <p className="text-sm text-gray-900 mt-1">
-                                  {formatDate(milestone.completed_at)}
-                                </p>
-                              </div>
-                            )}
-                            <div>
-                              <label className="text-xs font-medium text-gray-500">Tasks</label>
-                              <p className="text-sm text-gray-900 mt-1">
-                                {milestone.number_of_tasks} tasks
-                              </p>
-                            </div>
-                            <div>
-                              <label className="text-xs font-medium text-gray-500">Progress</label>
-                              <div className="mt-1">
-                                <div className="flex items-center">
-                                  <div className="flex-1 bg-gray-200 rounded-full h-1.5 mr-2">
-                                    <div
-                                      className="bg-purple-600 h-1.5 rounded-full transition-all duration-300"
-                                      style={{ width: `${milestone.completion_percentage}%` }}
-                                    ></div>
-                                  </div>
-                                  <span className="text-xs font-medium text-gray-900">
-                                    {milestone.completion_percentage.toFixed(1)}%
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : error ? (
+            {error ? (
               <div className="flex items-center justify-center py-12">
                 <div className="text-center">
                   <svg
@@ -927,30 +716,7 @@ export default function CampaignManagement() {
                 </div>
               </div>
             ) : (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-center">
-                  <svg
-                    className="w-12 h-12 mx-auto text-gray-400 mb-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
-                  <p className="text-gray-500">No campaign details available</p>
-                  <button
-                    onClick={() => setIsModalOpen(false)}
-                    className="mt-3 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 text-sm"
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
+              <CampaignDetail campaign={selectedCampaignDetail} loading={detailLoading} />
             )}
           </DialogContent>
         </Dialog>

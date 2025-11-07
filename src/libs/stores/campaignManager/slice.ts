@@ -34,6 +34,9 @@ export const manageCampaignSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    clearCampaignDetail: (state) => {
+      state.campaignDetail = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -96,6 +99,6 @@ export const manageCampaignSlice = createSlice({
   },
 });
 
-export const { clearError } = manageCampaignSlice.actions;
+export const { clearError, clearCampaignDetail } = manageCampaignSlice.actions;
 export const { reducer: manageCampaignReducer, actions: manageCampaignActions } =
   manageCampaignSlice;

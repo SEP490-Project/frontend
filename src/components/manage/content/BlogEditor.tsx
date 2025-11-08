@@ -1,7 +1,7 @@
 import TiptapEditor from "@/components/global/Editor";
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,13 +24,7 @@ import {
 import { X, Tag as TagIcon } from "lucide-react";
 
 import type { Content, CreateContentRequest } from "@/libs/types/content";
-import { ArrowLeft, User, Calendar, Target, FileText } from "lucide-react";
-import {
-  getTaskStatusDisplay,
-  getTaskCampaignDisplay,
-  getStatusBadgeVariant,
-  getStatusBadgeClassName,
-} from "@/libs/helper/taskUtils";
+import { ArrowLeft, Calendar } from "lucide-react";
 import { useAuth } from "@/libs/hooks/useAuth";
 import { getBrandIdFromToken } from "@/libs/helper/helper";
 import { useNavigationBlocker } from "@/libs/hooks/useNavigationBlocker";
@@ -144,8 +138,8 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
   // Keep track of initial content to detect unsaved changes
   const initialContent = React.useMemo(
     () => ({
-      html: editingContent ? editingContent.html_content : "",
-      json: editingContent ? editingContent.json_content : null,
+      html: editingContent ? editingContent.body : "",
+      json: editingContent ? editingContent.body : null,
     }),
     [editingContent],
   );
@@ -244,92 +238,6 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
           {editingContent ? "Update Content" : "Save Content"}
         </Button>
       </div>
-
-      {/* Task Details Panel */}
-      {selectedTask && (
-        <Card className="border-l-4 border-l-blue-500">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2 text-lg">
-              <FileText className="w-5 h-5 text-blue-600" />
-              <span>Task: {selectedTask.title || "Untitled Task"}</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Campaign */}
-              <div className="flex items-center space-x-2">
-                <Target className="w-4 h-4 text-purple-600" />
-                <span className="text-sm font-medium text-gray-700">Campaign:</span>
-                <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                  {getTaskCampaignDisplay(selectedTask)}
-                </Badge>
-              </div>
-
-              {/* Status */}
-              <div className="flex items-center space-x-2">
-                <div
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: selectedTask.color || "#gray" }}
-                />
-                <span className="text-sm font-medium text-gray-700">Status:</span>
-                <Badge
-                  variant={getStatusBadgeVariant(getTaskStatusDisplay(selectedTask))}
-                  className={getStatusBadgeClassName(getTaskStatusDisplay(selectedTask))}
-                >
-                  {getTaskStatusDisplay(selectedTask)}
-                </Badge>
-              </div>
-
-              {/* Assignee */}
-              {selectedTask.details?.assignee && (
-                <div className="flex items-center space-x-2">
-                  <User className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm font-medium text-gray-700">Assignee:</span>
-                  <span className="text-sm text-gray-600">{selectedTask.details.assignee}</span>
-                </div>
-              )}
-
-              {/* Due Time */}
-              {selectedTask.details?.dueTime && (
-                <div className="flex items-center space-x-2">
-                  <Calendar className="w-4 h-4 text-green-600" />
-                  <span className="text-sm font-medium text-gray-700">Due:</span>
-                  <span className="text-sm text-gray-600">{selectedTask.details.dueTime}</span>
-                </div>
-              )}
-
-              {/* Priority */}
-              {selectedTask.details?.priority && (
-                <div className="flex items-center space-x-2 md:col-span-2">
-                  <span className="text-sm font-medium text-gray-700">Priority:</span>
-                  <Badge
-                    variant="outline"
-                    className={
-                      selectedTask.details.priority === "High"
-                        ? "bg-red-50 text-red-700 border-red-200"
-                        : selectedTask.details.priority === "Medium"
-                          ? "bg-orange-50 text-orange-700 border-orange-200"
-                          : "bg-blue-50 text-blue-700 border-blue-200"
-                    }
-                  >
-                    {selectedTask.details.priority}
-                  </Badge>
-                </div>
-              )}
-            </div>
-
-            {/* Description */}
-            {selectedTask.details?.description && (
-              <div className="border-t pt-4">
-                <span className="text-sm font-medium text-gray-700 block mb-2">Description:</span>
-                <p className="text-sm text-gray-600 leading-relaxed bg-gray-50 p-3 rounded-md">
-                  {selectedTask.details.description}
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
 
       {/* Editor */}
       <Card>

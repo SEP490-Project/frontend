@@ -62,12 +62,17 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
     switch (type) {
       case "CONTENT":
         return "#f7c06d";
+      case "MARKETING":
+        return "#ff88fa";
+      case "PRODUCT":
+        return "#9976ff";
       default:
         return "#9976ff";
     }
   };
 
   const formatDate = (dateString: string): string => {
+    if (!dateString) return "No date available";
     try {
       return new Date(dateString).toLocaleString("en-US", {
         year: "numeric",
@@ -83,6 +88,7 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
   };
 
   const getStatusDisplay = (status: string): string => {
+    if (!status) return "Unknown";
     return status.replace("_", " ");
   };
 
@@ -101,16 +107,73 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
 
   const getDescription = (): string => {
     if (!selectedTask.description) return "No description available";
-    if (typeof selectedTask.description === "string") return selectedTask.description;
-    if (typeof selectedTask.description === "object") {
+
+    // Handle nested description object structure
+    if (typeof selectedTask.description === "object" && selectedTask.description !== null) {
+      const desc = selectedTask.description as any;
+      if (desc.description && typeof desc.description === "string") {
+        return desc.description;
+      }
+      // Fallback to JSON representation if structure is different
       try {
-        return JSON.stringify(selectedTask.description);
+        return JSON.stringify(selectedTask.description, null, 2);
       } catch {
         return "No description available";
       }
     }
+
+    if (typeof selectedTask.description === "string") {
+      return selectedTask.description;
+    }
+
     return "No description available";
   };
+
+  const getMaterialUrls = (): string[] => {
+    if (!selectedTask.description || typeof selectedTask.description !== "object") {
+      return [];
+    }
+
+    const desc = selectedTask.description as any;
+    if (desc.material_url && Array.isArray(desc.material_url)) {
+      return desc.material_url;
+    }
+
+    return [];
+  };
+
+  const getCampaignInfo = () => {
+    const campaign = (selectedTask as any).campaign_details;
+    if (campaign && typeof campaign === "object") {
+      return {
+        name: campaign.name || "Unknown Campaign",
+        description: campaign.description || campaign?.description?.details || "No description",
+        type: campaign.type || "Unknown",
+        status: campaign.status || "Unknown",
+        startDate: campaign.start_date || "",
+        endDate: campaign.end_date || "",
+      };
+    }
+    return null;
+  };
+
+  const getMilestoneInfo = () => {
+    const milestone = (selectedTask as any).milestone_details;
+    if (milestone && typeof milestone === "object") {
+      return {
+        description: milestone.description || "No description",
+        dueDate: milestone.due_date || "",
+        status: milestone.status || "Unknown",
+        completionPercentage: milestone.completion_percentage || 0,
+        behindSchedule: milestone.behind_schedule || false,
+      };
+    }
+    return null;
+  };
+
+  const materialUrls = getMaterialUrls();
+  const campaignInfo = getCampaignInfo();
+  const milestoneInfo = getMilestoneInfo();
 
   return (
     <motion.div
@@ -172,6 +235,29 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
           <div className="space-y-4">
             <p className="text-gray-700 leading-relaxed">{getDescription()}</p>
 
+            {/* Material URLs */}
+            {materialUrls.length > 0 && (
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Materials ({materialUrls.length})
+                </h4>
+                <div className="space-y-2">
+                  {materialUrls.map((url, index) => (
+                    <a
+                      key={index}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-blue-600 hover:text-blue-800 underline text-sm break-all"
+                    >
+                      Material {index + 1}: {url.split("/").pop() || url}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-white p-4 rounded-lg border border-gray-100">
                 <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
@@ -212,58 +298,103 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
           </div>
         </motion.section>
 
-        {/* Additional Task Information */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.3 }}
-          className="bg-gradient-to-br from-blue-50 to-white rounded-2xl p-6 border border-blue-200 shadow-sm"
-        >
-          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Briefcase className="h-5 w-5 text-blue-600" />
-            Task Information
-          </h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="bg-white p-4 rounded-lg border border-gray-100">
-              <p className="text-sm text-gray-500 mb-1">Task ID</p>
-              <p className="font-semibold text-gray-900">{selectedTask.id}</p>
-            </div>
-
-            <div className="bg-white p-4 rounded-lg border border-gray-100">
-              <p className="text-sm text-gray-500 mb-1">Campaign ID</p>
-              <p className="font-semibold text-gray-900">{selectedTask.campaign_id}</p>
-            </div>
-
-            <div className="bg-white p-4 rounded-lg border border-gray-100">
-              <p className="text-sm text-gray-500 mb-1">Contract ID</p>
-              <p className="font-semibold text-gray-900">{selectedTask.contract_id}</p>
-            </div>
-
-            <div className="bg-white p-4 rounded-lg border border-gray-100">
-              <p className="text-sm text-gray-500 mb-1">Created Date</p>
-              <p className="font-semibold text-gray-900">{formatDate(selectedTask.created_at)}</p>
-            </div>
-
-            <div className="bg-white p-4 rounded-lg border border-gray-100">
-              <p className="text-sm text-gray-500 mb-1">Role</p>
-              <p className="font-semibold text-gray-900">{selectedTask.assigned_to_role}</p>
-            </div>
-
-            {selectedTask.created_by_name && (
+        {/* Campaign Information */}
+        {campaignInfo && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.3 }}
+            className="bg-gradient-to-br from-purple-50 to-white rounded-2xl p-6 border border-purple-200 shadow-sm"
+          >
+            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <Briefcase className="h-5 w-5 text-purple-600" />
+              Campaign Information
+            </h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div className="bg-white p-4 rounded-lg border border-gray-100">
-                <p className="text-sm text-gray-500 mb-1">Created By</p>
-                <p className="font-semibold text-gray-900">{selectedTask.created_by_name}</p>
+                <p className="text-sm text-gray-500 mb-1">Campaign Name</p>
+                <p className="font-semibold text-gray-900">{campaignInfo.name}</p>
               </div>
-            )}
 
-            {selectedTask.milestone_id && (
               <div className="bg-white p-4 rounded-lg border border-gray-100">
-                <p className="text-sm text-gray-500 mb-1">Milestone ID</p>
-                <p className="font-semibold text-gray-900">{selectedTask.milestone_id}</p>
+                <p className="text-sm text-gray-500 mb-1">Campaign Type</p>
+                <p className="font-semibold text-gray-900">{campaignInfo.type}</p>
               </div>
-            )}
-          </div>
-        </motion.section>
+
+              <div className="bg-white p-4 rounded-lg border border-gray-100">
+                <p className="text-sm text-gray-500 mb-1">Start Date</p>
+                <p className="font-semibold text-gray-900">{formatDate(campaignInfo.startDate)}</p>
+              </div>
+
+              <div className="bg-white p-4 rounded-lg border border-gray-100">
+                <p className="text-sm text-gray-500 mb-1">End Date</p>
+                <p className="font-semibold text-gray-900">{formatDate(campaignInfo.endDate)}</p>
+              </div>
+
+              <div className="bg-white p-4 rounded-lg border border-gray-100 lg:col-span-2">
+                <p className="text-sm text-gray-500 mb-1">Campaign Description</p>
+                <p className="font-semibold text-gray-900">{campaignInfo.description}</p>
+              </div>
+            </div>
+          </motion.section>
+        )}
+
+        {/* Milestone Information */}
+        {milestoneInfo && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.4 }}
+            className="bg-gradient-to-br from-green-50 to-white rounded-2xl p-6 border border-green-200 shadow-sm"
+          >
+            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-green-600" />
+              Milestone Information
+            </h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="bg-white p-4 rounded-lg border border-gray-100">
+                <p className="text-sm text-gray-500 mb-1">Milestone Description</p>
+                <p className="font-semibold text-gray-900">{milestoneInfo.description}</p>
+              </div>
+
+              <div className="bg-white p-4 rounded-lg border border-gray-100">
+                <p className="text-sm text-gray-500 mb-1">Due Date</p>
+                <p className="font-semibold text-gray-900">{formatDate(milestoneInfo.dueDate)}</p>
+              </div>
+
+              <div className="bg-white p-4 rounded-lg border border-gray-100">
+                <p className="text-sm text-gray-500 mb-1">Completion</p>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${milestoneInfo.completionPercentage}%` }}
+                    ></div>
+                  </div>
+                  <span className="text-sm font-semibold text-gray-900">
+                    {milestoneInfo.completionPercentage}%
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-white p-4 rounded-lg border border-gray-100">
+                <p className="text-sm text-gray-500 mb-1">Status</p>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`inline-flex px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(milestoneInfo.status)}`}
+                  >
+                    {getStatusDisplay(milestoneInfo.status)}
+                  </span>
+                  {milestoneInfo.behindSchedule && (
+                    <span className="inline-flex px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+                      Behind Schedule
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </motion.section>
+        )}
       </div>
     </motion.div>
   );

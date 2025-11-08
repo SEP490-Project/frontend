@@ -618,7 +618,6 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
       <TaskSelectionDialog
         isOpen={isTaskSelectionOpen}
         onClose={handleTaskSelectionClose}
-        contentType={selectedContentType}
         onTaskSelect={handleTaskSelect}
       />
 

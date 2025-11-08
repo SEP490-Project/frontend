@@ -138,8 +138,8 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
   // Keep track of initial content to detect unsaved changes
   const initialContent = React.useMemo(
     () => ({
-      html: editingContent ? editingContent.html_content : "",
-      json: editingContent ? editingContent.json_content : null,
+      html: editingContent ? editingContent.body : "",
+      json: editingContent ? editingContent.body : null,
     }),
     [editingContent],
   );

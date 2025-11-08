@@ -12,22 +12,19 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Calendar, User, Eye, FileText, Video, Loader2 } from "lucide-react";
 import React from "react";
 import { useTaskManager } from "@/libs/hooks/useTask";
-import { convertApiTaskToLegacy, type LegacyTask } from "@/libs/utils/taskConverter";
 import { manageTask } from "@/libs/services/manageTask";
 import { toast } from "sonner";
-
-// Use the legacy task type for backward compatibility
-type ContentTask = LegacyTask;
+import type { Task } from "@/libs/types/task";
 
 interface TaskSelectionDialogProps {
   isOpen: boolean;
   onClose: () => void;
   contentType: "blog" | "video";
-  onTaskSelect: (task: ContentTask) => void;
+  onTaskSelect: (task: Task) => void;
 }
 
 interface TaskDetailViewProps {
-  task: ContentTask;
+  task: Task;
   onBack: () => void;
   onSelectForContent: () => void;
 }
@@ -38,22 +35,66 @@ const TaskSelectionDialog: React.FC<TaskSelectionDialogProps> = ({
   contentType,
   onTaskSelect,
 }) => {
-  const [selectedTask, setSelectedTask] = React.useState<ContentTask | null>(null);
-  const [viewingTask, setViewingTask] = React.useState<ContentTask | null>(null);
+  const [selectedTask, setSelectedTask] = React.useState<Task | null>(null);
+  const [viewingTask, setViewingTask] = React.useState<Task | null>(null);
   const [loadingTaskDetail, setLoadingTaskDetail] = React.useState(false);
 
   const { loading, tasks, error, fetchTasksByProfile } = useTaskManager();
 
-  const availableTasks: ContentTask[] = React.useMemo(() => {
-    return tasks.map(convertApiTaskToLegacy).filter(
-      (task) =>
-        task.type.toLowerCase() === contentType &&
-        // You can add more filters here, like status filtering
-        true,
-    );
+  // Utility functions
+  const getTaskColor = (type: string): string => {
+    switch (type) {
+      case "CONTENT":
+        return "#f7c06d";
+      case "MARKETING":
+        return "#ff88fa";
+      case "PRODUCT":
+        return "#9976ff";
+      default:
+        return "#9976ff";
+    }
+  };
+
+  const formatDate = (dateString: string): string => {
+    try {
+      return new Date(dateString).toLocaleString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+    } catch {
+      return "No deadline";
+    }
+  };
+
+  const getDescription = (task: Task): string => {
+    if (!task.description) return "No description available";
+    if (typeof task.description === "string") return task.description;
+    if (typeof task.description === "object") {
+      try {
+        return JSON.stringify(task.description);
+      } catch {
+        return "No description available";
+      }
+    }
+    return "No description available";
+  };
+
+  const availableTasks: Task[] = React.useMemo(() => {
+    return tasks.filter((task) => {
+      // Filter by content type - adjust these type mappings as needed
+      const isMatchingType =
+        (contentType === "blog" && task.type === "CONTENT") ||
+        (contentType === "video" && (task.type === "MARKETING" || task.type === "PRODUCT"));
+
+      return isMatchingType;
+    });
   }, [tasks, contentType]);
 
-  const handleTaskSelect = (task: ContentTask) => {
+  const handleTaskSelect = (task: Task) => {
     setSelectedTask(task);
   };
 
@@ -71,14 +112,12 @@ const TaskSelectionDialog: React.FC<TaskSelectionDialogProps> = ({
     onClose();
   };
 
-  const handleViewTaskDetail = async (task: ContentTask) => {
+  const handleViewTaskDetail = async (task: Task) => {
     try {
       setLoadingTaskDetail(true);
       const response = await manageTask.getTaskById(task.id);
       if (response.data.success) {
-        // Convert the detailed API task to legacy format for display
-        const detailedTask = convertApiTaskToLegacy(response.data.data);
-        setViewingTask(detailedTask);
+        setViewingTask(response.data.data);
       } else {
         toast.error("Failed to load task details");
       }
@@ -149,6 +188,9 @@ const TaskSelectionDialog: React.FC<TaskSelectionDialogProps> = ({
                     onSelect={handleTaskSelect}
                     onViewDetail={handleViewTaskDetail}
                     isLoadingDetail={loadingTaskDetail}
+                    getTaskColor={getTaskColor}
+                    formatDate={formatDate}
+                    getDescription={getDescription}
                   />
                 ))
               )}
@@ -174,25 +216,24 @@ const TaskSelectionDialog: React.FC<TaskSelectionDialogProps> = ({
 };
 
 const TaskCard: React.FC<{
-  task: ContentTask;
-  onSelect: (task: ContentTask) => void;
-  selectedTask: ContentTask | null;
-  onViewDetail: (task: ContentTask) => void;
+  task: Task;
+  onSelect: (task: Task) => void;
+  selectedTask: Task | null;
+  onViewDetail: (task: Task) => void;
   isLoadingDetail?: boolean;
-}> = ({ task, onSelect, selectedTask, onViewDetail, isLoadingDetail = false }) => {
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "High":
-        return "text-red-600";
-      case "Medium":
-        return "text-amber-600";
-      case "Low":
-        return "text-gray-600";
-      default:
-        return "text-gray-600";
-    }
-  };
-
+  getTaskColor: (type: string) => string;
+  formatDate: (dateString: string) => string;
+  getDescription: (task: Task) => string;
+}> = ({
+  task,
+  onSelect,
+  selectedTask,
+  onViewDetail,
+  isLoadingDetail = false,
+  getTaskColor,
+  formatDate,
+  getDescription,
+}) => {
   return (
     <Card
       onClick={() => onSelect(task)}
@@ -204,7 +245,7 @@ const TaskCard: React.FC<{
         <div className="flex items-start gap-3">
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-            style={{ backgroundColor: task.color }}
+            style={{ backgroundColor: getTaskColor(task.type) }}
           >
             <div className="w-3 h-3 bg-white rounded-full"></div>
           </div>
@@ -212,25 +253,23 @@ const TaskCard: React.FC<{
             <CardTitle
               className={`text-base ${selectedTask?.id === task.id ? "text-[#FF9DB0]" : ""}`}
             >
-              {task.title}
+              {task.name}
             </CardTitle>
             <CardDescription className="flex items-center gap-4 text-sm">
               <span className="flex items-center gap-1">
                 <User className="h-3 w-3" />
-                {task.details.assignee}
+                {task.assigned_to_name}
               </span>
               <span className="flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
-                {task.details.dueTime}
+                {formatDate(task.deadline)}
               </span>
-              <span className={`font-medium ${getPriorityColor(task.details.priority)}`}>
-                {task.details.priority} Priority
-              </span>
+              <span className="font-medium text-amber-600">Medium Priority</span>
             </CardDescription>
           </div>
         </div>
         <div className="flex gap-2">
-          {task.type === "Video" ? (
+          {task.type === "MARKETING" || task.type === "PRODUCT" ? (
             <Video className="h-8 w-8 text-purple-500" />
           ) : (
             <FileText className="h-8 w-8 text-blue-500" />
@@ -261,24 +300,52 @@ const TaskCard: React.FC<{
         </div>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-muted-foreground">{task.details.description}</p>
+        <p className="text-sm text-muted-foreground">{getDescription(task)}</p>
       </CardContent>
     </Card>
   );
 };
 
 const TaskDetailView: React.FC<TaskDetailViewProps> = ({ task, onBack, onSelectForContent }) => {
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "High":
-        return "bg-red-100 text-red-800 border-red-200";
-      case "Medium":
-        return "bg-amber-100 text-amber-800 border-amber-200";
-      case "Low":
-        return "bg-gray-100 text-gray-800 border-gray-200";
+  const getTaskColor = (type: string): string => {
+    switch (type) {
+      case "CONTENT":
+        return "#f7c06d";
+      case "MARKETING":
+        return "#ff88fa";
+      case "PRODUCT":
+        return "#9976ff";
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
+        return "#9976ff";
     }
+  };
+
+  const formatDate = (dateString: string): string => {
+    try {
+      return new Date(dateString).toLocaleString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+    } catch {
+      return "No deadline";
+    }
+  };
+
+  const getDescription = (task: Task): string => {
+    if (!task.description) return "No description available";
+    if (typeof task.description === "string") return task.description;
+    if (typeof task.description === "object") {
+      try {
+        return JSON.stringify(task.description);
+      } catch {
+        return "No description available";
+      }
+    }
+    return "No description available";
   };
 
   return (
@@ -302,14 +369,14 @@ const TaskDetailView: React.FC<TaskDetailViewProps> = ({ task, onBack, onSelectF
         <div className="flex items-start gap-4">
           <div
             className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
-            style={{ backgroundColor: task.color }}
+            style={{ backgroundColor: getTaskColor(task.type) }}
           >
             <div className="w-5 h-5 bg-white rounded-full"></div>
           </div>
           <div className="flex-1">
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">{task.title}</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">{task.name}</h3>
             <div className="flex items-center gap-2 mb-3">
-              {task.type === "Video" ? (
+              {task.type === "MARKETING" || task.type === "PRODUCT" ? (
                 <Video className="h-4 w-4 text-purple-500" />
               ) : (
                 <FileText className="h-4 w-4 text-blue-500" />
@@ -326,7 +393,7 @@ const TaskDetailView: React.FC<TaskDetailViewProps> = ({ task, onBack, onSelectF
               <User className="h-4 w-4" />
               Assignee
             </div>
-            <p className="font-medium text-gray-900">{task.details.assignee}</p>
+            <p className="font-medium text-gray-900">{task.assigned_to_name}</p>
           </div>
 
           <div className="bg-gray-50 p-4 rounded-lg">
@@ -334,15 +401,13 @@ const TaskDetailView: React.FC<TaskDetailViewProps> = ({ task, onBack, onSelectF
               <Calendar className="h-4 w-4" />
               Due Date
             </div>
-            <p className="font-medium text-gray-900">{task.details.dueTime}</p>
+            <p className="font-medium text-gray-900">{formatDate(task.deadline)}</p>
           </div>
 
           <div className="bg-gray-50 p-4 rounded-lg md:col-span-2">
-            <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">Priority Level</div>
-            <span
-              className={`inline-flex px-3 py-1 rounded-full text-sm font-medium border ${getPriorityColor(task.details.priority)}`}
-            >
-              {task.details.priority} Priority
+            <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">Status</div>
+            <span className="inline-flex px-3 py-1 rounded-full text-sm font-medium border bg-amber-100 text-amber-800 border-amber-200">
+              {task.status.replace("_", " ")}
             </span>
           </div>
         </div>
@@ -350,7 +415,7 @@ const TaskDetailView: React.FC<TaskDetailViewProps> = ({ task, onBack, onSelectF
         {/* Task Description */}
         <div className="bg-white border rounded-lg p-4">
           <h4 className="font-medium text-gray-900 mb-2">Description</h4>
-          <p className="text-gray-700 leading-relaxed">{task.details.description}</p>
+          <p className="text-gray-700 leading-relaxed">{getDescription(task)}</p>
         </div>
       </div>
 

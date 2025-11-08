@@ -40,15 +40,12 @@ import { RequestApprovalModal } from "@/components/modal/content/RequestApproval
 import ContentDetailModal from "./ContentDetailModal";
 import TaskSelectionDialog from "./TaskSelectionDialog";
 import type { LegacyContent } from "@/libs/utils/contentConverter";
-import type { LegacyTask } from "@/libs/utils/taskConverter";
+import type { Task } from "@/libs/types/task";
 
 type ContentType = "blog" | "video";
 
-// Use LegacyTask type for consistency
-type ContentTask = LegacyTask;
-
 interface ContentListProps {
-  onCreateNew?: (contentType: ContentType, task?: ContentTask) => void;
+  onCreateNew?: (contentType: ContentType, task?: Task) => void;
   onEdit?: (content: LegacyContent) => void;
   onView?: (content: LegacyContent) => void;
 }
@@ -249,27 +246,9 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     setIsTaskSelectionOpen(true);
   };
 
-  const handleTaskSelect = (task: any) => {
-    // Accept either a LegacyTask (id as string) or ContentTask; normalize to ContentTask before forwarding.
+  const handleTaskSelect = (task: Task) => {
     setIsTaskSelectionOpen(false);
-    const normalizedTask: ContentTask = {
-      id: task?.id !== undefined && task?.id !== null ? String(task.id) : "0",
-      title: task?.title ?? "",
-      type: (task?.type as ContentTask["type"]) ?? "Blog",
-      campaign: task?.campaign ?? "",
-      status: (task?.status as ContentTask["status"]) ?? "to-do",
-      details: {
-        description: task?.details?.description ?? task?.description ?? "",
-        assignee: task?.details?.assignee ?? task?.assignee ?? "",
-        dueTime: task?.details?.dueTime ?? task?.dueTime ?? "",
-        priority:
-          (task?.details?.priority as ContentTask["details"]["priority"]) ??
-          task?.priority ??
-          "Medium",
-      },
-      color: task?.color ?? "#000000",
-    };
-    onCreateNew?.(selectedContentType, normalizedTask);
+    onCreateNew?.(selectedContentType, task);
   };
 
   const handleTaskSelectionClose = () => {

@@ -35,7 +35,7 @@ import {
 } from "@/pages/manager/sale";
 import { ContentApproval } from "@/pages/manager/marketing/content-approval";
 import ContentPreviewPage from "@/pages/manager/marketing/content-approval/ContentPreviewPage";
-import AddProductStep from "@/components/manage/sale/AddProductStep";
+import AddProductStep from "@/components/manage/sale/product/AddProductStep";
 import ProductDetail from "@/pages/manager/sale/product/ProductDetail";
 import { User, VariantAttribute } from "@/pages/manager/admin";
 import { CreateConceptStep } from "@/pages/manager/sale/product/add-product-step/CreateConceptStep";
@@ -96,7 +96,6 @@ const AppRoutes = () => (
           <Route path="product/:id" element={<ProductDetail />} />
           <Route path="category" element={<Category />} />
           <Route path="order" element={<Order />} />
-          {/* <Route path="order/:id" element={<OrderDetail />} /> */}
           <Route path="review" element={<Review />} />
           <Route path="transaction" element={<Transaction />} />
         </Route>

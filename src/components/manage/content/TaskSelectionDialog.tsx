@@ -144,10 +144,11 @@ const TaskSelectionDialog: React.FC<TaskSelectionDialogProps> = ({
           <>
             <DialogHeader>
               <DialogTitle className="text-lg font-medium leading-6 text-gray-900">
-                Select Task for Content
+                Select Task for Content Select Task for Content
               </DialogTitle>
               <DialogDescription>
-                Choose a task from the list below to create content for
+                Choose a task from the list below to create content for Choose a task from the list
+                below to create content for
               </DialogDescription>
             </DialogHeader>
 

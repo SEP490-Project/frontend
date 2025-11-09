@@ -30,7 +30,7 @@ const Attribute: React.FC = () => {
   const error = useSelector((state: RootState) => state?.manageAttribute?.error);
 
   const [page, setPage] = useState(1);
-  const [limit] = useState(7);
+  const [limit] = useState(10);
   const [search, setSearch] = useState("");
 
   useEffect(() => {

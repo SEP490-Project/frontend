@@ -47,7 +47,7 @@ const Product: React.FC = () => {
   const error = useSelector((state: any) => state?.manageProduct?.error);
   const [params, setParams] = useState<ProductParams>({
     page: 1,
-    limit: 5,
+    limit: 10,
   });
 
   const navigate = useNavigate();

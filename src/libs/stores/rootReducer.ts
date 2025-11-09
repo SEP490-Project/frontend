@@ -16,6 +16,7 @@ import { conceptManagerReducer } from "./conceptManager/slice";
 import { manageTagReducer } from "./tagManager/slice";
 import { managePaymentReducer } from "./paymentManager/slice";
 import { stateManagerReducer } from "./stateManager/slice";
+import { orderManagerReducer } from "./orderManager/slice";
 
 export const rootReducer = combineReducers({
   manageAuthen: manageAuthenReducer,
@@ -36,4 +37,5 @@ export const rootReducer = combineReducers({
   manageTag: manageTagReducer,
   managePayment: managePaymentReducer,
   manageState: stateManagerReducer,
+  manageOrder: orderManagerReducer,
 });

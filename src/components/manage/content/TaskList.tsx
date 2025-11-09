@@ -1,39 +1,44 @@
-import { Eye, FileText, Video, Image } from "lucide-react";
+import { Eye, FileText, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import React from "react";
 import { motion } from "framer-motion";
-
 import { useTaskManager } from "@/libs/hooks/useTask";
-import { groupTasksByDate, type LegacyTasksByDate } from "@/libs/utils/taskConverter";
+import type { Task } from "@/libs/types/task";
 
 interface TaskListProps {
   currentDate: Date;
   onViewTask?: (taskId: string) => void;
 }
 
-// Utility functions
-const getTaskIcon = (type: string) => {
-  switch (type) {
-    case "Video":
-      return <Video className="h-4 w-4 text-white" />;
-    case "Blog":
-      return <FileText className="h-4 w-4 text-white" />;
-    case "Post":
-      return <Image className="h-4 w-4 text-white" />;
-    default:
-      return <div className="w-2 h-2 bg-white rounded-full" />;
-  }
-};
-
 export function TaskList({ currentDate, onViewTask }: TaskListProps) {
   const { tasks } = useTaskManager();
 
-  // Convert API tasks to legacy format grouped by date
-  const tasksByDate: LegacyTasksByDate[] = React.useMemo(() => {
-    return groupTasksByDate(tasks);
-  }, [tasks]);
+  // Utility functions
+  const getTaskIcon = (type: string) => {
+    switch (type) {
+      case "MARKETING":
+      case "PRODUCT":
+        return <Video className="h-4 w-4 text-white" />;
+      case "CONTENT":
+        return <FileText className="h-4 w-4 text-white" />;
+      default:
+        return <div className="w-2 h-2 bg-white rounded-full" />;
+    }
+  };
+
+  const getTaskColor = (type: string): string => {
+    switch (type) {
+      case "CONTENT":
+        return "#f7c06d";
+      case "MARKETING":
+        return "#ff88fa";
+      case "PRODUCT":
+        return "#9976ff";
+      default:
+        return "#9976ff";
+    }
+  };
 
   const handleViewTaskDetail = (taskId: string) => {
     onViewTask?.(taskId);
@@ -56,17 +61,15 @@ export function TaskList({ currentDate, onViewTask }: TaskListProps) {
   };
 
   // Get tasks for a specific date
-  const getTasksForDate = (date: Date) => {
+  const getTasksForDate = (date: Date): Task[] => {
     const targetDate = new Date(date);
     targetDate.setHours(0, 0, 0, 0);
 
-    const dayTasks = tasksByDate.find((taskGroup) => {
-      const taskDate = new Date(taskGroup.date);
+    return tasks.filter((task) => {
+      const taskDate = new Date(task.deadline);
       taskDate.setHours(0, 0, 0, 0);
       return taskDate.getTime() === targetDate.getTime();
     });
-
-    return dayTasks?.items || [];
   };
 
   const weekDays = getWeekDays();
@@ -116,7 +119,7 @@ export function TaskList({ currentDate, onViewTask }: TaskListProps) {
                     </div>
                   </div>
                 ) : (
-                  dayTasks.map((task, taskIndex) => (
+                  dayTasks.map((task: Task, taskIndex: number) => (
                     <motion.div
                       key={task.id}
                       initial={{ opacity: 0, scale: 0.9 }}
@@ -126,23 +129,23 @@ export function TaskList({ currentDate, onViewTask }: TaskListProps) {
                     >
                       <Card
                         className="group cursor-pointer hover:shadow-md transition-all duration-200 border-l-4 overflow-hidden w-64"
-                        style={{ borderLeftColor: task.color }}
+                        style={{ borderLeftColor: getTaskColor(task.type) }}
                         onClick={() => handleViewTaskDetail(task.id)}
                       >
                         <CardContent className="p-3">
                           <div className="flex items-start gap-2">
                             <div
                               className="w-6 h-6 rounded-sm flex items-center justify-center flex-shrink-0 shadow-sm"
-                              style={{ backgroundColor: task.color }}
+                              style={{ backgroundColor: getTaskColor(task.type) }}
                             >
                               {getTaskIcon(task.type)}
                             </div>
                             <div className="flex-1 min-w-0">
                               <h4 className="text-sm font-medium text-foreground leading-tight mb-1 group-hover:text-primary transition-colors">
-                                {task.title}
+                                {task.name}
                               </h4>
                               <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
-                                {task.campaign}
+                                {`Campaign ${task.campaign_id.slice(-6)}`}
                               </p>
                               <div className="flex items-center justify-between">
                                 <Badge variant="secondary" className="text-xs px-2 py-0.5 h-auto">

@@ -39,18 +39,15 @@ import { DeleteContentModal } from "@/components/modal/content/DeleteContentModa
 import { RequestApprovalModal } from "@/components/modal/content/RequestApprovalModal";
 import ContentDetailModal from "./ContentDetailModal";
 import TaskSelectionDialog from "./TaskSelectionDialog";
-import type { LegacyContent } from "@/libs/utils/contentConverter";
-import type { LegacyTask } from "@/libs/utils/taskConverter";
+import type { Content } from "@/libs/types/content";
+import type { Task } from "@/libs/types/task";
 
 type ContentType = "blog" | "video";
 
-// Use LegacyTask type for consistency
-type ContentTask = LegacyTask;
-
 interface ContentListProps {
-  onCreateNew?: (contentType: ContentType, task?: ContentTask) => void;
-  onEdit?: (content: LegacyContent) => void;
-  onView?: (content: LegacyContent) => void;
+  onCreateNew?: (contentType: ContentType, task?: Task) => void;
+  onEdit?: (content: Content) => void;
+  onView?: (content: Content) => void;
 }
 
 const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }) => {
@@ -73,16 +70,16 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     actor: "",
   });
 
-  const [selectedContent, setSelectedContent] = useState<LegacyContent | null>(null);
+  const [selectedContent, setSelectedContent] = useState<Content | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [isTaskSelectionOpen, setIsTaskSelectionOpen] = useState(false);
   const [selectedContentType, setSelectedContentType] = useState<ContentType>("blog");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [contentToDelete, setContentToDelete] = useState<LegacyContent | null>(null);
+  const [contentToDelete, setContentToDelete] = useState<Content | null>(null);
   const [isDeletingContent, setIsDeletingContent] = useState(false);
   const [showRequestApprovalModal, setShowRequestApprovalModal] = useState(false);
-  const [contentToSubmit, setContentToSubmit] = useState<LegacyContent | null>(null);
+  const [contentToSubmit, setContentToSubmit] = useState<Content | null>(null);
   const [isSubmittingApproval, setIsSubmittingApproval] = useState(false);
 
   useEffect(() => {
@@ -102,7 +99,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     setFilters((prev) => ({ ...prev, page }));
   };
 
-  const handleDelete = (content: LegacyContent) => {
+  const handleDelete = (content: Content) => {
     setContentToDelete(content);
     setShowDeleteModal(true);
   };
@@ -138,8 +135,8 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     setContentToDelete(null);
   };
 
-  const handleToggleStatus = async (content: LegacyContent) => {
-    if (content.status === "draft") {
+  const handleToggleStatus = async (content: Content) => {
+    if (content.status === "DRAFT") {
       await publishExistingContent(content.id);
       fetchContents(filters);
     }
@@ -147,34 +144,28 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     // This will be handled by specific buttons in the dropdown menu
   };
 
-  const handleViewContent = async (content: LegacyContent) => {
+  const handleViewContent = async (content: Content) => {
     setIsLoadingDetail(true);
 
     try {
       // Fetch detailed content from API first
       const response = await manageContent.contentDetail(content.id);
       const apiData = response.data.data;
-      if (apiData) {
-        // Convert API response to LegacyContent format
-        const detailedContent: LegacyContent = {
-          id: apiData.id,
-          title: apiData.title,
-          content_type: apiData.blog ? "blog" : "video",
-          status: apiData.status.toLowerCase(),
-          date_time: apiData.created_at,
-          actor: apiData.blog?.author?.username || "Unknown",
-          html_content: JSON.stringify(apiData.body), // Convert JSON body to string for storage
-          json_content: apiData.blog || apiData.video || {},
-          created_at: apiData.created_at,
-          updated_at: apiData.updated_at,
-          rejection_feedback: apiData.rejection_feedback,
-        };
+      if (apiData && apiData.length > 0) {
+        // Use the API response directly as Content
+        const detailedContent: Content = apiData[0];
         // Show modal only after we have the complete data
         setSelectedContent(detailedContent);
         setIsDetailModalOpen(true);
+      } else {
+        // Fallback: use the content passed to the function
+        setSelectedContent(content);
+        setIsDetailModalOpen(true);
       }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to load content details");
+    } catch {
+      // On error, still try to show the content we have
+      setSelectedContent(content);
+      setIsDetailModalOpen(true);
     } finally {
       setIsLoadingDetail(false);
     }
@@ -229,7 +220,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     setContentToSubmit(null);
   };
 
-  const handlePublish = async (content: LegacyContent) => {
+  const handlePublish = async (content: Content) => {
     try {
       const publishResponse = await publishExistingContent(content.id);
 
@@ -249,27 +240,9 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     setIsTaskSelectionOpen(true);
   };
 
-  const handleTaskSelect = (task: any) => {
-    // Accept either a LegacyTask (id as string) or ContentTask; normalize to ContentTask before forwarding.
+  const handleTaskSelect = (task: Task) => {
     setIsTaskSelectionOpen(false);
-    const normalizedTask: ContentTask = {
-      id: task?.id !== undefined && task?.id !== null ? String(task.id) : "0",
-      title: task?.title ?? "",
-      type: (task?.type as ContentTask["type"]) ?? "Blog",
-      campaign: task?.campaign ?? "",
-      status: (task?.status as ContentTask["status"]) ?? "to-do",
-      details: {
-        description: task?.details?.description ?? task?.description ?? "",
-        assignee: task?.details?.assignee ?? task?.assignee ?? "",
-        dueTime: task?.details?.dueTime ?? task?.dueTime ?? "",
-        priority:
-          (task?.details?.priority as ContentTask["details"]["priority"]) ??
-          task?.priority ??
-          "Medium",
-      },
-      color: task?.color ?? "#000000",
-    };
-    onCreateNew?.(selectedContentType, normalizedTask);
+    onCreateNew?.(selectedContentType, task);
   };
 
   const handleTaskSelectionClose = () => {
@@ -277,39 +250,41 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "approved":
+    const normalizedStatus = status?.toUpperCase();
+    switch (normalizedStatus) {
+      case "APPROVED":
         return (
           <Badge className="bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-100">
             Approved
           </Badge>
         );
-      case "draft":
+      case "DRAFT":
         return (
           <Badge className="bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-100">
             Draft
           </Badge>
         );
-      case "await_staff":
-      case "pending":
+      case "AWAIT_STAFF":
+      case "PENDING":
         return (
           <Badge className="bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100">
             Awaiting Review
           </Badge>
         );
-      case "await_brand":
+      case "AWAIT_BRAND":
         return (
           <Badge className="bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-100">
             Awaiting Brand
           </Badge>
         );
-      case "rejected":
+      case "REJECTED":
         return (
           <Badge className="bg-red-100 text-red-800 border-red-200 hover:bg-red-100">
             Rejected
           </Badge>
         );
-      case "posted":
+      case "POSTED":
+      case "PUBLISHED":
         return (
           <Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-100">
             Posted
@@ -483,25 +458,27 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
 
                     <div className="col-span-2 flex items-center">
                       <User className="w-4 h-4 mr-2 text-gray-400" />
-                      <span className="text-gray-600">{content.actor}</span>
+                      <span className="text-gray-600">
+                        {content.blog?.author?.username || "System"}
+                      </span>
                     </div>
 
                     <div className="col-span-2 flex items-center">
                       <Calendar className="w-4 h-4 mr-2 text-gray-400" />
                       <span className="text-gray-600 text-sm">
-                        {formatDateTime(content.date_time)}
+                        {formatDateTime(content.updated_at)}
                       </span>
                     </div>
 
                     <div className="col-span-1 flex items-center">
                       <div className="flex items-center">
-                        {content.content_type === "video" ? (
-                          <Video className="w-4 h-4 mr-1 text-purple-500" />
-                        ) : (
+                        {content.blog ? (
                           <FileText className="w-4 h-4 mr-1 text-blue-500" />
+                        ) : (
+                          <Video className="w-4 h-4 mr-1 text-purple-500" />
                         )}
                         <span className="text-gray-600 capitalize">
-                          {content.content_type || "blog"}
+                          {content.blog ? "blog" : "video"}
                         </span>
                       </div>
                     </div>
@@ -510,14 +487,15 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                       <div className="flex items-center">
                         {(() => {
                           // For video content, ensure channel is either facebook or tiktok
-                          let channel = (content as any).channel || "website";
-                          if (content.content_type === "video") {
+                          const contentType = content.blog ? "blog" : "video";
+                          let channel = content.content_channels?.[0]?.channel_name || "website";
+                          if (contentType === "video") {
                             // If it's a video and channel is not facebook or tiktok, default to facebook
                             if (!["facebook", "tiktok"].includes(channel.toLowerCase())) {
                               channel = "facebook";
                             }
                           }
-                          const channelInfo = getChannelDisplay(channel, content.content_type);
+                          const channelInfo = getChannelDisplay(channel, contentType);
                           return (
                             <>
                               <span className="mr-1">{channelInfo.icon}</span>
@@ -550,14 +528,14 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                             {isLoadingDetail ? "Loading..." : "View"}
                           </DropdownMenuItem>
                           {/* Only show Edit for draft and rejected content */}
-                          {(content.status === "draft" || content.status === "rejected") && (
+                          {(content.status === "DRAFT" || content.status === "REJECTED") && (
                             <DropdownMenuItem onClick={() => onEdit?.(content)}>
                               <Edit className="w-4 h-4 mr-2" />
                               Edit
                             </DropdownMenuItem>
                           )}
 
-                          {content.status === "approved" && (
+                          {content.status === "APPROVED" && (
                             <DropdownMenuItem
                               onClick={() => handlePublish(content)}
                               className="text-blue-600 hover:text-blue-700"
@@ -567,7 +545,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                             </DropdownMenuItem>
                           )}
                           {/* Only show Delete for draft and rejected content */}
-                          {(content.status === "draft" || content.status === "rejected") && (
+                          {(content.status === "DRAFT" || content.status === "REJECTED") && (
                             <DropdownMenuItem
                               onClick={() => handleDelete(content)}
                               className="text-red-600 hover:text-red-700"
@@ -639,7 +617,6 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
       <TaskSelectionDialog
         isOpen={isTaskSelectionOpen}
         onClose={handleTaskSelectionClose}
-        contentType={selectedContentType}
         onTaskSelect={handleTaskSelect}
       />
 

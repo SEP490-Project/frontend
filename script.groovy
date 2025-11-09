@@ -48,6 +48,7 @@ def runTests() {
 
 // ---------- Build Frontend ----------
 def buildFrontend() {
+    sh 'ls -la .'
     sh 'npm run build'
 }
 

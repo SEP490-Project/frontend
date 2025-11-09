@@ -54,18 +54,18 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
 
   const [videoContent, setVideoContent] = useState<VideoContent>({
-    platform: editingContent ? (editingContent.json_content as any)?.platform || "" : "",
-    description: editingContent ? (editingContent.json_content as any)?.description || "" : "",
+    platform: editingContent ? editingContent.content_channels?.[0]?.channel_name || "" : "",
+    description: editingContent ? editingContent.body || "" : "",
     videoFile: null,
-    videoUrl: editingContent ? (editingContent.json_content as any)?.videoUrl || "" : "",
+    videoUrl: "", // Videos are not pre-loaded from editing content
   });
 
   // Keep track of initial values to detect unsaved changes
   const initialContent = React.useMemo(
     () => ({
-      platform: editingContent ? (editingContent.json_content as any)?.platform || "" : "",
-      description: editingContent ? (editingContent.json_content as any)?.description || "" : "",
-      videoUrl: editingContent ? (editingContent.json_content as any)?.videoUrl || "" : "",
+      platform: editingContent ? editingContent.content_channels?.[0]?.channel_name || "" : "",
+      description: editingContent ? editingContent.body || "" : "",
+      videoUrl: "", // Videos are not pre-loaded from editing content
     }),
     [editingContent],
   );

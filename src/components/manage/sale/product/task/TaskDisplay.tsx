@@ -2,13 +2,15 @@ import { TaskProvider, useTaskManager } from "@/libs/contexts/TaskContext";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Tag } from "lucide-react";
+import { Clock, Eye, File, Tag } from "lucide-react";
 import { format } from "date-fns";
 import type { Task } from "@/libs/types/task";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router";
 import { useAppDispatch } from "@/libs/stores";
 import { updateTaskStateThunk } from "@/libs/stores/stateManager/thunk";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { TaskDetailDisplay } from "./TaskDetailDisplay";
 
 export const TaskDisplay = () => {
   return (
@@ -47,10 +49,12 @@ const TaskCard = ({
   task,
   onClick,
   isSelected,
+  setOnOpenTaskDetail,
 }: {
   task: Task;
   onClick: () => void;
   isSelected: boolean;
+  setOnOpenTaskDetail: (open: boolean) => void;
 }) => {
   const isOverdue =
     new Date(task.deadline) < new Date() && task.status.toLowerCase() !== "completed";
@@ -62,8 +66,34 @@ const TaskCard = ({
     >
       <CardHeader className="pb-1">
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-lg font-semibold line-clamp-2">{task.name}</CardTitle>
-          <Badge className={`${getStatusColor(task.status)} shrink-0`}>{task.status}</Badge>
+          <div className="flex gap-2">
+            <CardTitle className="text-lg font-semibold line-clamp-2">{task.name}</CardTitle>
+            <Badge className={`${getStatusColor(task.status)} shrink-0`}>{task.status}</Badge>
+          </div>
+          <div className="flex gap-2">
+            <Tooltip>
+              <TooltipTrigger>
+                <Button size={"icon"} variant={"outline"}>
+                  <File className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Download Proposal</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger>
+                <Button
+                  size={"icon"}
+                  variant={"outline"}
+                  onClick={() => {
+                    setOnOpenTaskDetail(true);
+                  }}
+                >
+                  <Eye className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>View Details</TooltipContent>
+            </Tooltip>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-3">
@@ -88,6 +118,7 @@ export const TaskList = () => {
   const navigate = useNavigate();
   const { loading, tasks, fetchTasksByProfile } = useTaskManager();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [onOpenTaskDetail, setOnOpenTaskDetail] = useState(false);
 
   const filterIncompleteTasks = (tasks: Task[]) => {
     return tasks.filter((task) => ["todo", "in_progress"].includes(task.status.toLowerCase()));
@@ -138,6 +169,7 @@ export const TaskList = () => {
             task={task}
             onClick={() => setSelectedTask(task)}
             isSelected={selectedTask === task}
+            setOnOpenTaskDetail={setOnOpenTaskDetail}
           />
         ))}
       </div>
@@ -146,6 +178,12 @@ export const TaskList = () => {
           Next
         </Button>
       </div>
+
+      <TaskDetailDisplay
+        taskId={selectedTask?.id}
+        onOpen={onOpenTaskDetail}
+        setOnOpen={setOnOpenTaskDetail}
+      />
     </div>
   );
 };

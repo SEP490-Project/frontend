@@ -29,7 +29,7 @@ export const manageTask = {
   }) => api.get("/tasks", { params }),
 
   assignTask: (params: { task_id: string; user_id: string }) => {
-    return api.post(`/tasks/${params.task_id}/assign/${params.user_id}`);
+    return api.patch(`/tasks/${params.task_id}/assign/${params.user_id}`);
   },
 
   getTaskDetailMarketing: (taskId: string) => {

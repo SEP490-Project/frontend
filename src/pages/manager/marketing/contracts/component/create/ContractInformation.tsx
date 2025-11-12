@@ -64,16 +64,16 @@ const CONTRACT_TYPE_COLORS = {
   CO_PRODUCING: { bg: "bg-violet-100", text: "text-violet-800", border: "border-violet-200" },
 };
 
-// map config keys (snake_case) to form fields (camelCase)
+// map config keys (snake_case) to form fields (snake_case)
 const REP_CONFIG_TO_FORM_MAP: Record<string, string> = {
-  representative_name: "representativeName",
-  representative_role: "representativeRole",
-  representative_phone: "representativePhone",
-  representative_email: "representativeEmail",
-  representative_tax_number: "representativeTaxNumber",
-  representative_bank_name: "representativeBankName",
-  representative_bank_account_number: "representativeBankAccountNumber",
-  representative_bank_account_holder: "representativeBankAccountHolder",
+  representative_name: "representative_name",
+  representative_role: "representative_role",
+  representative_phone: "representative_phone",
+  representative_email: "representative_email",
+  representative_tax_number: "representative_tax_number",
+  representative_bank_name: "representative_bank_name",
+  representative_bank_account_number: "representative_bank_account_number",
+  representative_bank_account_holder: "representative_bank_account_holder",
 };
 
 // Small presentational components
@@ -248,36 +248,56 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
   }, [pagination?.has_next, brandLoading]);
 
   const handleBrandSelect = (brandId: string | null) => {
-    onInputChange("brandId", brandId || "");
+    onInputChange("brand_id", brandId || "");
+    // Sửa logic này - chỉ đóng khi không có brandId
     if (!brandId) {
       setBrandDetailsOpen(false);
     }
+    // Không cần set true ở đây vì useEffect sẽ handle
   };
 
   const handleBankSelect = (bankId: string | null) => {
     const selectedBank = banks.find((bank) => String(bank.id) === String(bankId));
-    onInputChange("brandBankName", selectedBank ? selectedBank.name : "");
+    onInputChange("brand_bank_name", selectedBank ? selectedBank.name : "");
   };
 
+  // Effect để auto-fetch brand detail nếu brand_id đã có sẵn
   useEffect(() => {
-    if (formData.brandId && formData.brandId !== brand?.id) {
-      dispatch(fetchBrandDetail(formData.brandId));
+    if (formData.brand_id) {
+      // Nếu có brand_id nhưng chưa có brand data hoặc brand data không khớp
+      if (!brand || formData.brand_id !== brand.id) {
+        console.log("Fetching brand detail for ID:", formData.brand_id); // Debug log
+        dispatch(fetchBrandDetail(formData.brand_id));
+      }
+      // Luôn mở brand details khi có brand_id
       setBrandDetailsOpen(true);
-    } else if (!formData.brandId) {
+    } else {
+      // Đóng brand details khi không có brand_id
       setBrandDetailsOpen(false);
     }
-  }, [formData.brandId, brand?.id, dispatch]);
+  }, [formData.brand_id, brand?.id, dispatch]);
+
+  // Thêm useEffect để debug
+  useEffect(() => {
+    console.log("Brand details state:", {
+      brandDetailsOpen,
+      hasBrandId: !!formData.brand_id,
+      brandData: !!brand,
+      brandId: formData.brand_id,
+      currentBrandId: brand?.id,
+    });
+  }, [brandDetailsOpen, formData.brand_id, brand]);
 
   useEffect(() => {
-    if (brand && formData.brandId) {
+    if (brand && formData.brand_id) {
       const brandRepData = {
-        brandRepresentativeName: brand.representative_name || "",
-        brandRepresentativeRole: brand.representative_role || "",
-        brandRepresentativePhone: brand.contact_phone || "",
-        brandRepresentativeEmail: brand.contact_email || "",
-        brandTaxNumber: brand.tax_number || "",
-        brandName: brand.name || "",
-        brandAddress: brand.address || "",
+        brand_representative_name: brand.representative_name || "",
+        brand_representative_role: brand.representative_role || "",
+        brand_representative_phone: brand.contact_phone || "",
+        brand_representative_email: brand.contact_email || "",
+        brand_tax_number: brand.tax_number || "",
+        brand_name: brand.name || "",
+        brand_address: brand.address || "",
       };
 
       let hasChanges = false;
@@ -314,35 +334,35 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
     const updatedForm = { ...formData, [field]: value };
     onInputChange(field, value);
 
-    if (field === "signedDate") {
-      onInputChange("startDate", value);
-      updatedForm.startDate = value;
+    if (field === "signed_date") {
+      onInputChange("start_date", value);
+      updatedForm.start_date = value;
     }
 
     if (onFieldValidation) {
       const validation = await validateField(field, value, updatedForm);
       onFieldValidation(field, validation.isValid ? null : validation.error);
 
-      if (field === "signedDate") {
-        const createdAt = new Date(); // thời điểm hiện tại
+      if (field === "signed_date") {
+        const createdAt = new Date();
         const signedDate = new Date(value);
         if (signedDate < createdAt) {
-          onFieldValidation("signedDate", "Signed Date cannot be earlier than today.");
+          onFieldValidation("signed_date", "Signed Date cannot be earlier than today.");
         } else {
-          onFieldValidation("signedDate", null);
+          onFieldValidation("signed_date", null);
         }
       }
 
       if (
-        (field === "signedDate" && updatedForm.endDate) ||
-        (field === "endDate" && updatedForm.signedDate)
+        (field === "signed_date" && updatedForm.end_date) ||
+        (field === "end_date" && updatedForm.signed_date)
       ) {
-        const signedDate = new Date(updatedForm.signedDate);
-        const endDate = new Date(updatedForm.endDate);
+        const signedDate = new Date(updatedForm.signed_date);
+        const endDate = new Date(updatedForm.end_date);
         if (endDate < signedDate) {
-          onFieldValidation("endDate", "End Date must be later than or equal to Signed Date.");
+          onFieldValidation("end_date", "End date must be later than or equal to signed date.");
         } else {
-          onFieldValidation("endDate", null);
+          onFieldValidation("end_date", null);
         }
       }
     }
@@ -355,85 +375,85 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^A-Z\s]/g, "");
-    handleFieldChange("brandBankAccountHolder", normalized);
+    handleFieldChange("brand_bank_account_holder", normalized);
     e.target.value = normalized;
   };
 
   const brandRepresentativeFields = [
-    { label: "Company Name", field: "brandName", placeholder: "Company name", disabled: true },
+    { label: "Company Name", field: "brand_name", placeholder: "Company name", disabled: true },
     {
       label: "Company Address",
-      field: "brandAddress",
+      field: "brand_address",
       placeholder: "Company address",
       disabled: true,
     },
     {
       label: "Representative Name",
-      field: "brandRepresentativeName",
+      field: "brand_representative_name",
       placeholder: "Representative full name",
       required: true,
       disabled: true,
     },
     {
       label: "Representative Role",
-      field: "brandRepresentativeRole",
+      field: "brand_representative_role",
       placeholder: "Job title/role",
       disabled: true,
     },
     {
       label: "Phone Number",
-      field: "brandRepresentativePhone",
+      field: "brand_representative_phone",
       placeholder: "0xxx xxx xxx",
       disabled: true,
     },
     {
       label: "Email Address",
-      field: "brandRepresentativeEmail",
+      field: "brand_representative_email",
       placeholder: "example@company.com",
       type: "email",
       required: true,
       disabled: true,
     },
-    { label: "Tax Number", field: "brandTaxNumber", placeholder: "Tax code", disabled: true },
+    { label: "Tax Number", field: "brand_tax_number", placeholder: "Tax code", disabled: true },
   ];
 
   const webRepresentativeFields = [
     {
       label: "Full Name",
-      field: "representativeName",
+      field: "representative_name",
       placeholder: "KOL/Blogger full name",
       required: true,
     },
     {
       label: "Role",
-      field: "representativeRole",
+      field: "representative_role",
       placeholder: "e.g., Content Creator, KOL, Blogger",
     },
-    { label: "Phone Number", field: "representativePhone", placeholder: "xxx xxx xxx" },
+    { label: "Phone Number", field: "representative_phone", placeholder: "xxx xxx xxx" },
     {
       label: "Email Address",
-      field: "representativeEmail",
+      field: "representative_email",
       placeholder: "email@example.com",
       type: "email",
       required: true,
     },
     {
       label: "Tax Number",
-      field: "representativeTaxNumber",
+      field: "representative_tax_number",
       placeholder: "Personal tax identification number",
     },
   ];
 
   const webBankingFields = [
-    { label: "Bank Name", field: "representativeBankName", placeholder: "Select bank" },
+    { label: "Bank Name", field: "representative_bank_name", placeholder: "Select bank" },
     {
       label: "Account Number",
-      field: "representativeBankAccountNumber",
+      field: "representative_bank_account_number",
       placeholder: "Account number",
     },
     {
       label: "Account Holder",
-      field: "representativeBankAccountHolder",
+      field: "representative_bank_account_holder",
       placeholder: "Account holder full name",
     },
   ];
@@ -516,13 +536,17 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
             <Card className="rounded-2xl shadow-md border border-slate-200">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">Brand Selection</CardTitle>
-                <p className="text-sm text-slate-500">Search and pick the partner brand.</p>
+                <p className="text-sm text-slate-500">
+                  {formData.brand_id
+                    ? "Selected brand (you can change if needed)"
+                    : "Search and pick the partner brand."}
+                </p>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <DataSelector
                     data={allBrands}
-                    selectedId={formData.brandId}
+                    selectedId={formData.brand_id}
                     onSelect={handleBrandSelect}
                     renderItem={(b) => <MemoBrandCard brand={b} isSelection={true} />}
                     getLabel={(b) => b.name}
@@ -533,8 +557,9 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                     onScrollEnd={loadMoreBrands}
                     loading={brandLoading}
                   />
+
                   <AnimatePresence>
-                    {brandDetailsOpen && brand && formData.brandId && (
+                    {brandDetailsOpen && formData.brand_id && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
@@ -547,7 +572,24 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                             Brand Information
                           </h2>
                         </div>
-                        <MemoBrandCard brand={brand} isSelection={false} />
+
+                        {/* Hiển thị loading state nếu đang fetch brand */}
+                        {brandLoading && !brand ? (
+                          <div className="flex items-center justify-center p-8 bg-gray-50 rounded-lg">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                            <span className="ml-2 text-sm text-gray-600">
+                              Loading brand information...
+                            </span>
+                          </div>
+                        ) : brand ? (
+                          <MemoBrandCard brand={brand} isSelection={false} />
+                        ) : (
+                          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <p className="text-sm text-yellow-800">
+                              Brand information not found. Please select another brand.
+                            </p>
+                          </div>
+                        )}
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -591,32 +633,32 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                     <FieldError message={errors.title} />
                   </div>
                   <AddressSelector
-                    value={formData.signedLocation || ""}
-                    onChange={(address) => handleFieldChange("signedLocation", address)}
+                    value={formData.signed_location || ""}
+                    onChange={(address) => handleFieldChange("signed_location", address)}
                     label="Signed Location"
                     placeholder="Search for contract signing location..."
                     required
-                    error={errors.signedLocation}
+                    error={errors.signed_location}
                   />
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Contract Number *</Label>
                     <Input
-                      value={formData.contractNumber || ""}
-                      onChange={(e) => handleFieldChange("contractNumber", e.target.value)}
+                      value={formData.contract_number || ""}
+                      onChange={(e) => handleFieldChange("contract_number", e.target.value)}
                       placeholder="Contract number e.g. CT-2025-001"
-                      className={`h-11 ${errors.contractNumber ? "border-red-500" : ""}`}
+                      className={`h-11 ${errors.contract_number ? "border-red-500" : ""}`}
                     />
-                    <FieldError message={errors.contractNumber} />
+                    <FieldError message={errors.contract_number} />
                   </div>
                   <DatePicker
                     label="Signed Date"
-                    value={formData.signedDate || ""}
+                    value={formData.signed_date || ""}
                     onChange={(value: string) => {
-                      handleFieldChange("signedDate", value);
-                      handleFieldChange("startDate", value);
+                      handleFieldChange("signed_date", value);
+                      handleFieldChange("start_date", value);
                     }}
                     placeholder="Select signed date"
-                    error={errors.signedDate}
+                    error={errors.signed_date}
                     required
                     minDate={new Date().toISOString().split("T")[0]}
                   />
@@ -626,8 +668,8 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                       <div>
                         <Label className="text-xs">Start Date</Label>
                         <DatePicker
-                          value={formData.startDate || ""}
-                          onChange={(value: string) => handleFieldChange("startDate", value)}
+                          value={formData.start_date || ""}
+                          onChange={(value: string) => handleFieldChange("start_date", value)}
                           placeholder="Auto-filled from Signed Date"
                           disabled
                         />
@@ -636,14 +678,14 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                       <div>
                         <Label className="text-xs">End Date *</Label>
                         <DatePicker
-                          value={formData.endDate || ""}
-                          onChange={(value: string) => handleFieldChange("endDate", value)}
+                          value={formData.end_date || ""}
+                          onChange={(value: string) => handleFieldChange("end_date", value)}
                           placeholder="Select end date"
-                          error={errors.endDate}
+                          error={errors.end_date}
                           required
-                          minDate={formData.startDate || formData.signedDate || undefined}
+                          minDate={formData.start_date || formData.signed_date || undefined}
                         />
-                        <FieldError message={errors.endDate} />
+                        <FieldError message={errors.end_date} />
                       </div>
                     </div>
                   </div>
@@ -654,7 +696,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Representatives */}
+      {/* Representatives - Update với snake_case fields */}
       <AnimatePresence>
         {formData.type && (
           <motion.div
@@ -682,21 +724,21 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                       <h4 className="text-sm font-semibold">Brand Representative (Party A)</h4>
                     </div>
                     <Badge variant="secondary" className="text-xs">
-                      {formData.brandId ? "From Brand Data" : "Auto-filled"}
+                      {formData.brand_id ? "From Brand Data" : "Auto-filled"}
                     </Badge>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {brandRepresentativeFields.map((f) => (
                       <div
                         key={f.field}
-                        className={f.field === "brandAddress" ? "md:col-span-2" : ""}
+                        className={f.field === "brand_address" ? "md:col-span-2" : ""}
                       >
                         <div className="space-y-1">
                           <Label className="text-sm">
                             {f.label}
                             {f.required ? " *" : ""}
                           </Label>
-                          {f.field === "brandRepresentativePhone" ? (
+                          {f.field === "brand_representative_phone" ? (
                             <PhoneNumberInput
                               value={formData[f.field] || ""}
                               onChange={(val) => handleFieldChange(f.field, val)}
@@ -738,7 +780,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                         data={filteredBanks}
                         selectedId={
                           banks
-                            .find((bank: any) => bank.name === formData.brandBankName)
+                            .find((bank: any) => bank.name === formData.brand_bank_name)
                             ?.id?.toString() || ""
                         }
                         onSelect={handleBankSelect}
@@ -750,7 +792,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                         searchValue={bankSearch}
                         loading={bankLoading}
                       />
-                      <FieldError message={errors.brandBankName} />
+                      <FieldError message={errors.brand_bank_name} />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {[
@@ -769,17 +811,19 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                           <Label className="text-sm">{field.label}</Label>
                           {field.field === "brandBankAccountHolder" ? (
                             <Input
-                              value={formData.brandBankAccountHolder || ""}
+                              value={formData.brand_bank_account_holder || ""}
                               onChange={handleAccountHolderChange}
                               placeholder={field.placeholder}
-                              className={`h-11 ${errors.brandBankAccountHolder ? "border-red-500" : ""}`}
+                              className={`h-11 ${errors.brand_bank_account_holder ? "border-red-500" : ""}`}
                             />
                           ) : (
                             <BankAccountInput
-                              value={formData.brandBankAccountNumber || ""}
-                              onChange={(val) => handleFieldChange("brandBankAccountNumber", val)}
+                              value={formData.brand_bank_account_number || ""}
+                              onChange={(val) =>
+                                handleFieldChange("brand_bank_account_number", val)
+                              }
                               placeholder={field.placeholder}
-                              error={errors.brandBankAccountNumber}
+                              error={errors.brand_bank_account_number}
                             />
                           )}
                           <FieldError message={errors[field.field]} />
@@ -807,7 +851,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                           {f.label}
                           {f.required ? " *" : ""}
                         </Label>
-                        {f.field === "representativePhone" ? (
+                        {f.field === "representative_phone" ? (
                           <PhoneNumberInput
                             value={formData[f.field] || ""}
                             onChange={(val) => handleFieldChange(f.field, val)}
@@ -840,14 +884,14 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                         <Label className="text-sm font-medium">Bank Name</Label>
                         <Input
                           disabled
-                          value={formData.representativeBankName || ""}
+                          value={formData.representative_bank_name || ""}
                           onChange={(e) =>
-                            handleFieldChange("representativeBankName", e.target.value)
+                            handleFieldChange("representative_bank_name", e.target.value)
                           }
                           placeholder="Bank name"
                           className="h-11 bg-slate-50"
                         />
-                        <FieldError message={errors.representativeBankName} />
+                        <FieldError message={errors.representative_bank_name} />
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {webBankingFields.slice(1).map((field) => (

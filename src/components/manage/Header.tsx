@@ -16,7 +16,10 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "@/libs/hooks/useAuth";
+import { logout } from "@/libs/stores/authentManager/thunk";
 import { defaultAvatarByName } from "@/libs/helper/default-avatar";
+import { useAppDispatch } from "@/libs/stores";
+
 interface HeaderProps {
   collapsed?: boolean;
   onToggleCollapse?: () => void;
@@ -30,11 +33,17 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const { user } = useAuth();
+  const dispatch = useAppDispatch();
 
   const notifications = [
     { id: 1, text: "You have a meeting at 10 AM today" },
     { id: 2, text: "System will be under maintenance at 11 PM" },
   ];
+
+  const handleLogout = async () => {
+    await dispatch(logout());
+    window.location.href = "/login";
+  };
 
   return (
     <header className="bg-white border-b border-gray-200 shadow-sm flex items-center justify-between px-4 md:px-6 py-3 sticky top-0 z-40">
@@ -124,7 +133,10 @@ const Header: React.FC<HeaderProps> = ({
             </DropdownMenuItem>
             <div className="border-t mx-4 my-2" />
             <DropdownMenuItem asChild>
-              <button className="flex items-center gap-2 w-full px-4 py-2 text-red-500 hover:bg-red-50">
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 w-full px-4 py-2 text-red-500 hover:bg-red-50"
+              >
                 <FaPowerOff size={18} />
                 <span>Logout</span>
               </button>

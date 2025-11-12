@@ -19,7 +19,6 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
   onConfirmCreate,
 }) => {
   if (!contractData) return null;
-  console.log("Contract Data for Preview:", contractData);
 
   const formatContractDataForPreview = (formData: any) => {
     const formatDateForPreview = (dateString: string): string => {
@@ -30,93 +29,101 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
       return date.toISOString();
     };
 
+    // Check if this is existing contract data (from API) or form data (from create form)
+    const isExistingContract = formData.brand && typeof formData.brand === "object";
+
     return {
-      contract_number: formData.contractNumber,
+      contract_number: formData.contract_number, // snake_case
       title: formData.title,
       type: formData.type,
-      status: "DRAFT",
-      signed_date: formatDateForPreview(formData.signedDate),
-      signed_location: formData.signedLocation,
-      start_date: formatDateForPreview(formData.startDate),
-      end_date: formatDateForPreview(formData.endDate),
-      currency: "VND",
+      status: formData.status || "DRAFT",
+      signed_date: formatDateForPreview(formData.signed_date), // snake_case
+      signed_location: formData.signed_location, // snake_case
+      start_date: formatDateForPreview(formData.start_date), // snake_case
+      end_date: formatDateForPreview(formData.end_date), // snake_case
+      currency: formData.currency || "VND",
 
-      brand: {
-        name: formData.brandName || "Brand Name",
-        representative_name: formData.brandRepresentativeName,
-        representative_role: formData.brandRepresentativeRole,
-        contact_name: formData.brandRepresentativeName,
-        address: formData.brandAddress || "Brand Address",
-        tax_number: formData.brandTaxNumber,
-        bank_name: formData.brandBankName,
-        bank_account_number: formData.brandBankAccountNumber,
-        bank_account_holder: formData.brandBankAccountHolder,
-      },
+      brand: isExistingContract
+        ? {
+            // For existing contract data from API
+            name: formData.brand?.name || "Brand Name",
+            representative_name: formData.brand?.representative_name,
+            representative_role: formData.brand?.representative_role,
+            contact_name: formData.brand?.representative_name || formData.brand?.contact_name,
+            contact_email: formData.brand?.contact_email,
+            contact_phone: formData.brand?.contact_phone,
+            address: formData.brand?.address || "Brand Address",
+            tax_number: formData.brand?.tax_number,
+            bank_name: formData.brand?.bank_name,
+            bank_account_number: formData.brand?.bank_account_number,
+            bank_account_holder: formData.brand?.bank_account_holder,
+          }
+        : {
+            // For form data from create contract
+            name: formData.brand_name || "Brand Name", // snake_case
+            representative_name: formData.brand_representative_name, // snake_case
+            representative_role: formData.brand_representative_role, // snake_case
+            contact_name: formData.brand_representative_name, // snake_case
+            address: formData.brand_address || "Brand Address", // snake_case
+            tax_number: formData.brand_tax_number, // snake_case
+            bank_name: formData.brand_bank_name, // snake_case
+            bank_account_number: formData.brand_bank_account_number, // snake_case
+            bank_account_holder: formData.brand_bank_account_holder, // snake_case
+          },
 
-      representative_name: formData.representativeName,
-      representative_role: formData.representativeRole,
-      representative_phone: formData.representativePhone,
-      representative_email: formData.representativeEmail,
-      representative_tax_number: formData.representativeTaxNumber,
-      representative_bank_name: formData.representativeBankName,
-      representative_bank_account_number: formData.representativeBankAccountNumber,
-      representative_bank_account_holder: formData.representativeBankAccountHolder,
+      representative_name: formData.representative_name, // snake_case
+      representative_role: formData.representative_role, // snake_case
+      representative_phone: formData.representative_phone, // snake_case
+      representative_email: formData.representative_email, // snake_case
+      representative_tax_number: formData.representative_tax_number, // snake_case
+      representative_bank_name: formData.representative_bank_name, // snake_case
+      representative_bank_account_number: formData.representative_bank_account_number, // snake_case
+      representative_bank_account_holder: formData.representative_bank_account_holder, // snake_case
 
       deposit_percent: formData.deposit_percent ?? undefined,
       deposit_amount:
-        formData.deposit_percent && formData.deposit_percent > 0
-          ? (formData.financialTerms?.total_cost || 0) * (formData.deposit_percent / 100)
-          : (formData.deposit_amount ?? undefined),
+        formData.deposit_amount ??
+        (formData.deposit_percent && formData.deposit_percent > 0
+          ? (formData.financial_terms?.total_cost || 0) * (formData.deposit_percent / 100) // snake_case
+          : undefined),
+      is_deposit_paid: formData.is_deposit_paid,
 
-      scope_of_work: {
-        general_requirements: formData.scopeOfWork?.general_requirements || [],
-        deliverables: formData.scopeOfWork?.deliverables || {},
-      },
+      scope_of_work: formData.scope_of_work
+        ? {
+            // snake_case
+            general_requirements: formData.scope_of_work?.general_requirements || [], // snake_case
+            deliverables: formData.scope_of_work?.deliverables || {},
+          }
+        : {
+            general_requirements: [],
+            deliverables: {},
+          },
 
-      financial_terms: {
-        model:
-          formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR"
-            ? "FIXED"
-            : formData.type === "AFFILIATE"
-              ? "LEVELS"
-              : formData.type === "CO_PRODUCING"
-                ? "SHARE"
-                : "FIXED",
-        payment_method: formData.financialTerms?.payment_method || "BANK_TRANSFER",
+      financial_terms: formData.financial_terms
+        ? {
+            // Copy existing financial_terms structure
+            ...formData.financial_terms,
+            // Ensure payment_method has a default
+            payment_method: formData.financial_terms?.payment_method || "BANK_TRANSFER", // snake_case
+          }
+        : {
+            // snake_case
+            model:
+              formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR"
+                ? "FIXED"
+                : formData.type === "AFFILIATE"
+                  ? "LEVELS"
+                  : formData.type === "CO_PRODUCING"
+                    ? "SHARE"
+                    : "FIXED",
+            payment_method: "BANK_TRANSFER", // snake_case
+          },
 
-        ...(formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR"
-          ? {
-              total_cost: formData.financialTerms?.total_cost || 0,
-              cost_breakdown: formData.financialTerms?.cost_breakdown || {},
-              schedule: formData.financialTerms?.schedule || [],
-            }
-          : {}),
-
-        ...(formData.type === "AFFILIATE"
-          ? {
-              base_per_click: formData.financialTerms?.base_per_click || 0,
-              levels: formData.financialTerms?.levels || [],
-              payment_cycle: formData.financialTerms?.payment_cycle,
-              payment_date: formData.financialTerms?.payment_date,
-              tax_withholding: formData.financialTerms?.tax_withholding || {},
-            }
-          : {}),
-
-        ...(formData.type === "CO_PRODUCING"
-          ? {
-              profit_split_company_percent:
-                formData.financialTerms?.profit_split_company_percent || 0,
-              profit_split_kol_percent: formData.financialTerms?.profit_split_kol_percent || 0,
-              profit_distribution_cycle: formData.financialTerms?.profit_distribution_cycle,
-              profit_distribution_date: formData.financialTerms?.profit_distribution_date,
-              capital_contribution: formData.financialTerms?.capital_contribution || {},
-            }
-          : {}),
-      },
-
-      legal_terms: {
+      legal_terms: formData.legal_terms || {
+        // snake_case
         breach_of_contract: {
-          label: formData.legalTerms?.breach_of_contract?.label || "Breach of Contract",
+          // snake_case
+          label: "Breach of Contract", // snake_case
           items: [
             {
               title: "Party A (Brand) breaks the rules",
@@ -127,9 +134,9 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
               details: [
                 "Contract terminates immediately",
                 "Party B must refund the deposit",
-                `Party B pays additional ${formData.legalTerms?.compensationPercent || 10}% compensation`,
+                "Party B pays additional 10% compensation", // snake_case
               ],
-              compensation_percent: formData.legalTerms?.compensationPercent || 10,
+              compensation_percent: 10, // snake_case
             },
             {
               title: "Mutual agreement to terminate",
@@ -141,7 +148,8 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
           ],
         },
         standard_terms: {
-          label: formData.legalTerms?.standard_terms?.label || "Standard Terms",
+          // snake_case
+          label: "Standard Terms", // snake_case
           items: [
             {
               title: "Confidentiality",
@@ -250,7 +258,7 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
     const events = deliverables.events ?? [];
     const concepts = deliverables.concepts ?? [];
     const products = deliverables.products ?? [];
-    const advertised_items = deliverables.advertised_items ?? [];
+    const advertised_items = deliverables.advertised_items ?? []; // snake_case
     const platforms = deliverables.platform ?? [];
 
     switch (previewData.type) {
@@ -266,7 +274,7 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
             <p className="text-xs mb-1">
               <span className="font-semibold">Date & Duration:</span>{" "}
               {formatDateTime(event.date || event.date_time || event.date_time_iso)} (Expected
-              duration: {event.expected_duration || "N/A"})
+              duration: {event.expected_duration || "N/A"}) {/* snake_case */}
             </p>
 
             {(event.activities ?? []).length > 0 && (
@@ -280,16 +288,21 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
               </div>
             )}
 
-            {(event.representation_rules ?? []).length > 0 && (
+            {(event.representation_rules ?? []).length > 0 && ( // snake_case
               <div className="mt-2">
                 <p className="font-semibold text-xs text-gray-700 underline">
                   Representation Rules:
                 </p>
-                {(event.representation_rules ?? []).map((rule: string, j: number) => (
-                  <p key={j} className="ml-5 text-xs text-gray-600">
-                    • {rule}
-                  </p>
-                ))}
+                {(event.representation_rules ?? []).map(
+                  (
+                    rule: string,
+                    j: number, // snake_case
+                  ) => (
+                    <p key={j} className="ml-5 text-xs text-gray-600">
+                      • {rule}
+                    </p>
+                  ),
+                )}
               </div>
             )}
 
@@ -330,27 +343,33 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
                   <span className="font-semibold">Platform:</span> {concept.platform || "N/A"} |{" "}
                   <span className="font-semibold">Tagline:</span> {concept.tagline || "N/A"}
                 </p>
-                {(concept.hash_tag ?? []).length > 0 && (
+                {(concept.hash_tag ?? []).length > 0 && ( // snake_case
                   <p className="text-xs mb-1">
                     <span className="font-semibold">Hashtags:</span>{" "}
-                    {(concept.hash_tag ?? []).join(", ")}
+                    {(concept.hash_tag ?? []).join(", ")} {/* snake_case */}
                   </p>
                 )}
-                {concept.creative_notes && (
+                {concept.creative_notes && ( // snake_case
                   <p className="text-xs mb-1">
-                    <span className="font-semibold">Creative Notes:</span> {concept.creative_notes}
+                    <span className="font-semibold">Creative Notes:</span> {concept.creative_notes}{" "}
+                    {/* snake_case */}
                   </p>
                 )}
-                {(concept.content_requirements ?? []).length > 0 && (
+                {(concept.content_requirements ?? []).length > 0 && ( // snake_case
                   <div className="mt-2">
                     <p className="font-semibold text-xs text-gray-700 underline">
                       Content Requirements:
                     </p>
-                    {(concept.content_requirements ?? []).map((req: string, j: number) => (
-                      <p key={j} className="ml-5 text-xs text-gray-600">
-                        • {req}
-                      </p>
-                    ))}
+                    {(concept.content_requirements ?? []).map(
+                      (
+                        req: string,
+                        j: number, // snake_case
+                      ) => (
+                        <p key={j} className="ml-5 text-xs text-gray-600">
+                          • {req}
+                        </p>
+                      ),
+                    )}
                   </div>
                 )}
               </div>
@@ -394,9 +413,10 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
               {platforms?.length > 0 ? platforms.join(", ") : "N/A"}
             </p>
 
-            {deliverables?.tracking_link && (
+            {deliverables?.tracking_link && ( // snake_case
               <p className="text-xs mb-2">
-                <span className="font-semibold">Tracking Link:</span> {deliverables.tracking_link}
+                <span className="font-semibold">Tracking Link:</span> {deliverables.tracking_link}{" "}
+                {/* snake_case */}
               </p>
             )}
 
@@ -404,64 +424,75 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
               Advertised Items and Content
             </h4>
 
-            {advertised_items.length > 0 ? (
-              advertised_items.map((item: any, i: number) => (
-                <div key={i} className="mb-4">
-                  <h5 className="text-sm font-bold text-gray-900 uppercase mb-1">
-                    {i + 1}. {item.name || `[Unnamed Item ${i + 1}]`}
-                  </h5>
+            {advertised_items.length > 0 ? ( // snake_case
+              advertised_items.map(
+                (
+                  item: any,
+                  i: number, // snake_case
+                ) => (
+                  <div key={i} className="mb-4">
+                    <h5 className="text-sm font-bold text-gray-900 uppercase mb-1">
+                      {i + 1}. {item.name || `[Unnamed Item ${i + 1}]`}
+                    </h5>
 
-                  <p className="ml-5 text-xs text-gray-600 mb-1">
-                    • <span className="font-semibold">Description:</span>{" "}
-                    {item.description || "Not specified."}
-                  </p>
-                  <p className="ml-5 text-xs text-gray-600 mb-1">
-                    • <span className="font-semibold">Platform:</span>{" "}
-                    {item.platform || "Not specified."}
-                  </p>
-                  <p className="ml-5 text-xs text-gray-600 mb-1">
-                    • <span className="font-semibold">Tagline:</span>{" "}
-                    {item.tagline || "Not specified."}
-                  </p>
-
-                  {item.hash_tag?.length > 0 && (
                     <p className="ml-5 text-xs text-gray-600 mb-1">
-                      • <span className="font-semibold">Associated Hashtags:</span>{" "}
-                      {item.hash_tag.join(", ")}
+                      • <span className="font-semibold">Description:</span>{" "}
+                      {item.description || "Not specified."}
                     </p>
-                  )}
-
-                  {(item.content_requirements ?? []).length > 0 && (
-                    <div className="ml-5 text-xs text-gray-600 mb-1">
-                      • <span className="font-semibold">Content Requirements:</span>
-                      {item.content_requirements.map((req: string, j: number) => (
-                        <p key={j} className="ml-4 text-xs text-gray-600">
-                          ○ {req}
-                        </p>
-                      ))}
-                    </div>
-                  )}
-
-                  {item.creative_notes && (
                     <p className="ml-5 text-xs text-gray-600 mb-1">
-                      • <span className="font-semibold">Creative Notes:</span> {item.creative_notes}
+                      • <span className="font-semibold">Platform:</span>{" "}
+                      {item.platform || "Not specified."}
                     </p>
-                  )}
+                    <p className="ml-5 text-xs text-gray-600 mb-1">
+                      • <span className="font-semibold">Tagline:</span>{" "}
+                      {item.tagline || "Not specified."}
+                    </p>
 
-                  {(item.kpis ?? []).length > 0 && (
-                    <div className="ml-5 text-xs text-gray-600 mb-1">
-                      • <span className="font-semibold">Key Performance Indicators (KPIs):</span>
-                      {item.kpis.map((kpi: any, j: number) => (
-                        <p key={j} className="ml-4 text-xs text-gray-600">
-                          ○ <span className="font-semibold">{kpi.metric || "Metric"}:</span>{" "}
-                          {kpi.target ? `${kpi.target}` : "No target specified"}{" "}
-                          {kpi.description && <span className="italic">({kpi.description})</span>}
-                        </p>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))
+                    {item.hash_tag?.length > 0 && ( // snake_case
+                      <p className="ml-5 text-xs text-gray-600 mb-1">
+                        • <span className="font-semibold">Associated Hashtags:</span>{" "}
+                        {item.hash_tag.join(", ")} {/* snake_case */}
+                      </p>
+                    )}
+
+                    {(item.content_requirements ?? []).length > 0 && ( // snake_case
+                      <div className="ml-5 text-xs text-gray-600 mb-1">
+                        • <span className="font-semibold">Content Requirements:</span>
+                        {item.content_requirements.map(
+                          (
+                            req: string,
+                            j: number, // snake_case
+                          ) => (
+                            <p key={j} className="ml-4 text-xs text-gray-600">
+                              ○ {req}
+                            </p>
+                          ),
+                        )}
+                      </div>
+                    )}
+
+                    {item.creative_notes && ( // snake_case
+                      <p className="ml-5 text-xs text-gray-600 mb-1">
+                        • <span className="font-semibold">Creative Notes:</span>{" "}
+                        {item.creative_notes} {/* snake_case */}
+                      </p>
+                    )}
+
+                    {(item.kpis ?? []).length > 0 && (
+                      <div className="ml-5 text-xs text-gray-600 mb-1">
+                        • <span className="font-semibold">Key Performance Indicators (KPIs):</span>
+                        {item.kpis.map((kpi: any, j: number) => (
+                          <p key={j} className="ml-4 text-xs text-gray-600">
+                            ○ <span className="font-semibold">{kpi.metric || "Metric"}:</span>{" "}
+                            {kpi.target ? `${kpi.target}` : "No target specified"}{" "}
+                            {kpi.description && <span className="italic">({kpi.description})</span>}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ),
+              )
             ) : (
               <p className="text-xs italic text-gray-500">No advertised items listed.</p>
             )}
@@ -471,62 +502,75 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
       case "ADVERTISING":
       default:
         if (advertised_items.length > 0) {
-          return advertised_items.map((item: any, i: number) => (
-            <div key={i} className="mb-4">
-              <h5 className="text-sm font-bold text-gray-900 uppercase mb-1">
-                {i + 1}. {item.name || `[Unnamed Item ${i + 1}]`}
-              </h5>
+          // snake_case
+          return advertised_items.map(
+            (
+              item: any,
+              i: number, // snake_case
+            ) => (
+              <div key={i} className="mb-4">
+                <h5 className="text-sm font-bold text-gray-900 uppercase mb-1">
+                  {i + 1}. {item.name || `[Unnamed Item ${i + 1}]`}
+                </h5>
 
-              <p className="ml-5 text-xs text-gray-600 mb-1">
-                • <span className="font-semibold">Description:</span>{" "}
-                {item.description || "Not specified."}
-              </p>
-              <p className="ml-5 text-xs text-gray-600 mb-1">
-                • <span className="font-semibold">Platform:</span>{" "}
-                {item.platform || "Not specified."}
-              </p>
-              <p className="ml-5 text-xs text-gray-600 mb-1">
-                • <span className="font-semibold">Tagline:</span> {item.tagline || "Not specified."}
-              </p>
-
-              {item.hash_tag?.length > 0 && (
                 <p className="ml-5 text-xs text-gray-600 mb-1">
-                  • <span className="font-semibold">Associated Hashtags:</span>{" "}
-                  {item.hash_tag.join(", ")}
+                  • <span className="font-semibold">Description:</span>{" "}
+                  {item.description || "Not specified."}
                 </p>
-              )}
-
-              {(item.content_requirements ?? []).length > 0 && (
-                <div className="ml-5 text-xs text-gray-600 mb-1">
-                  • <span className="font-semibold">Content Requirements:</span>
-                  {item.content_requirements.map((req: string, j: number) => (
-                    <p key={j} className="ml-4 text-xs text-gray-600">
-                      ○ {req}
-                    </p>
-                  ))}
-                </div>
-              )}
-
-              {item.creative_notes && (
                 <p className="ml-5 text-xs text-gray-600 mb-1">
-                  • <span className="font-semibold">Creative Notes:</span> {item.creative_notes}
+                  • <span className="font-semibold">Platform:</span>{" "}
+                  {item.platform || "Not specified."}
                 </p>
-              )}
+                <p className="ml-5 text-xs text-gray-600 mb-1">
+                  • <span className="font-semibold">Tagline:</span>{" "}
+                  {item.tagline || "Not specified."}
+                </p>
 
-              {(item.kpis ?? []).length > 0 && (
-                <div className="ml-5 text-xs text-gray-600 mb-1">
-                  • <span className="font-semibold">Key Performance Indicators (KPIs):</span>
-                  {item.kpis.map((kpi: any, j: number) => (
-                    <p key={j} className="ml-4 text-xs text-gray-600">
-                      ○ <span className="font-semibold">{kpi.metric || "Metric"}:</span>{" "}
-                      {kpi.target ? `${kpi.target}` : "No target specified"}{" "}
-                      {kpi.description && <span className="italic">({kpi.description})</span>}
-                    </p>
-                  ))}
-                </div>
-              )}
-            </div>
-          ));
+                {item.hash_tag?.length > 0 && ( // snake_case
+                  <p className="ml-5 text-xs text-gray-600 mb-1">
+                    • <span className="font-semibold">Associated Hashtags:</span>{" "}
+                    {item.hash_tag.join(", ")} {/* snake_case */}
+                  </p>
+                )}
+
+                {(item.content_requirements ?? []).length > 0 && ( // snake_case
+                  <div className="ml-5 text-xs text-gray-600 mb-1">
+                    • <span className="font-semibold">Content Requirements:</span>
+                    {item.content_requirements.map(
+                      (
+                        req: string,
+                        j: number, // snake_case
+                      ) => (
+                        <p key={j} className="ml-4 text-xs text-gray-600">
+                          ○ {req}
+                        </p>
+                      ),
+                    )}
+                  </div>
+                )}
+
+                {item.creative_notes && ( // snake_case
+                  <p className="ml-5 text-xs text-gray-600 mb-1">
+                    • <span className="font-semibold">Creative Notes:</span> {item.creative_notes}{" "}
+                    {/* snake_case */}
+                  </p>
+                )}
+
+                {(item.kpis ?? []).length > 0 && (
+                  <div className="ml-5 text-xs text-gray-600 mb-1">
+                    • <span className="font-semibold">Key Performance Indicators (KPIs):</span>
+                    {item.kpis.map((kpi: any, j: number) => (
+                      <p key={j} className="ml-4 text-xs text-gray-600">
+                        ○ <span className="font-semibold">{kpi.metric || "Metric"}:</span>{" "}
+                        {kpi.target ? `${kpi.target}` : "No target specified"}{" "}
+                        {kpi.description && <span className="italic">({kpi.description})</span>}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ),
+          );
         }
         return null;
     }
@@ -546,11 +590,11 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
             </p>
             <p className="text-xs mb-1">
               <span className="font-semibold">Distribution Cycle:</span>{" "}
-              {financial.profit_distribution_cycle || "N/A"} (
+              {financial.profit_distribution_cycle || "N/A"} ( {/* snake_case */}
               <span className="font-semibold">
                 {formatPaymentDate(
-                  financial.profit_distribution_cycle,
-                  financial.profit_distribution_date,
+                  financial.profit_distribution_cycle, // snake_case
+                  financial.profit_distribution_date, // snake_case
                 )}
               </span>
               )
@@ -560,12 +604,13 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
               <p className="text-xs mb-1">
                 <span className="font-semibold">Party A (Brand) Share:</span>{" "}
                 <span className="font-semibold">
-                  {financial.profit_split_company_percent ?? 0}%
+                  {financial.profit_split_company_percent ?? 0}% {/* snake_case */}
                 </span>
               </p>
               <p className="text-xs">
                 <span className="font-semibold">Party B (KOL) Share:</span>{" "}
-                <span className="font-semibold">{financial.profit_split_kol_percent ?? 0}%</span>
+                <span className="font-semibold">{financial.profit_split_kol_percent ?? 0}%</span>{" "}
+                {/* snake_case */}
               </p>
             </div>
           </div>
@@ -580,15 +625,17 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
             </p>
             <p className="text-xs mb-1">
               <span className="font-semibold">Payment Cycle:</span>{" "}
-              {financial.payment_cycle || "N/A"} (on{" "}
+              {financial.payment_cycle || "N/A"} (on {/* snake_case */}
               <span className="font-semibold">
-                {formatPaymentDate(financial.payment_cycle, financial.payment_date)}
+                {formatPaymentDate(financial.payment_cycle, financial.payment_date)}{" "}
+                {/* snake_case */}
               </span>
               )
             </p>
             <p className="text-xs mb-1">
               <span className="font-semibold">Base Per Click Rate:</span>{" "}
-              <span className="font-semibold">{formatMoney(financial.base_per_click)}</span>
+              <span className="font-semibold">{formatMoney(financial.base_per_click)}</span>{" "}
+              {/* snake_case */}
             </p>
             {(financial.levels ?? []).length > 0 && (
               <div className="mt-2">
@@ -598,13 +645,13 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
                 {(financial.levels ?? []).map((level: any, i: number) => (
                   <p key={i} className="ml-5 text-xs text-gray-600">
                     • <span className="font-semibold">Level {level.level}</span>: Up to{" "}
-                    {level.max_clicks} clicks, Multiplier:{" "}
+                    {level.max_clicks} clicks, Multiplier: {/* snake_case */}
                     <span className="font-semibold">{level.multiplier}x</span>
                   </p>
                 ))}
               </div>
             )}
-            {financial.tax_withholding && (
+            {financial.tax_withholding && ( // snake_case
               <div className="mt-2">
                 <p className="font-semibold text-xs text-gray-700 underline mb-1">
                   Tax Withholding:
@@ -612,9 +659,10 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
                 <p className="text-xs">
                   A tax rate of{" "}
                   <span className="font-semibold">{financial.tax_withholding.rate_percent}%</span>{" "}
+                  {/* snake_case */}
                   will be withheld for earnings exceeding{" "}
                   <span className="font-semibold">
-                    {formatMoney(financial.tax_withholding.threshold)}
+                    {formatMoney(financial.tax_withholding.threshold)} {/* snake_case */}
                   </span>
                   .
                 </p>
@@ -634,18 +682,20 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
             </p>
             <p className="text-xs mb-1">
               <span className="font-semibold">Payment Method:</span>{" "}
-              {(financial.payment_method || "").toString().replace(/_/g, " ")}
+              {(financial.payment_method || "").toString().replace(/_/g, " ")} {/* snake_case */}
             </p>
             <p className="text-xs mb-1">
               <span className="font-semibold">Total Contract Value:</span>{" "}
-              <span className="text-lg font-bold">{formatMoney(financial.total_cost)}</span>
+              <span className="text-lg font-bold">{formatMoney(financial.total_cost)}</span>{" "}
+              {/* snake_case */}
             </p>
-            {financial.cost_breakdown && (
+            {financial.cost_breakdown && ( // snake_case
               <div className="mt-2">
                 <p className="font-semibold text-xs text-gray-700 underline mb-1">
                   Cost Breakdown:
                 </p>
                 {Object.entries(financial.cost_breakdown || {}).map(
+                  // snake_case
                   ([key, value]: [string, any], i: number) => (
                     <p key={i} className="ml-5 text-xs text-gray-600">
                       • <span className="font-semibold">{key.replace(/_/g, " ")}</span>:{" "}
@@ -665,7 +715,8 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
                     {i + 1}. <span className="font-semibold">{item.milestone}</span>:{" "}
                     <span className="font-semibold">{formatMoney(item.amount)}</span> (
                     {item.percent}%) due by{" "}
-                    <span className="font-semibold">{formatDate(item.due_date)}</span>
+                    <span className="font-semibold">{formatDate(item.due_date)}</span>{" "}
+                    {/* snake_case */}
                   </p>
                 ))}
               </div>
@@ -710,7 +761,8 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
                   {(previewData.type || "").toString().replace(/_/g, " ")}
                 </span>{" "}
                 Service Contract | Contract No.{" "}
-                <span className="font-semibold">{previewData.contract_number}</span>
+                <span className="font-semibold">{previewData.contract_number}</span>{" "}
+                {/* snake_case */}
               </p>
               <p className="text-lg font-bold mt-3 text-gray-800 italic">{previewData.title}</p>
             </header>
@@ -723,10 +775,15 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
               <p className="text-xs mb-3">
                 This Agreement is hereby executed on{" "}
                 <span className="font-semibold">{formatDate(previewData.signed_date)}</span> at{" "}
-                <span className="font-semibold">{previewData.signed_location || "N/A"}</span>,
+                {/* snake_case */}
+                <span className="font-semibold">{previewData.signed_location || "N/A"}</span>,{" "}
+                {/* snake_case */}
                 effective from the{" "}
-                <span className="font-semibold">{formatDate(previewData.start_date)}</span> until{" "}
-                <span className="font-semibold">{formatDate(previewData.end_date)}</span>, by and
+                <span className="font-semibold">
+                  {formatDate(previewData.start_date)}
+                </span> until {/* snake_case */}
+                <span className="font-semibold">{formatDate(previewData.end_date)}</span>, by and{" "}
+                {/* snake_case */}
                 between:
               </p>
 
@@ -740,7 +797,8 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
               <p className="text-xs mb-1">
                 <span className="font-semibold">Representative:</span>{" "}
                 {previewData.brand?.representative_name || previewData.brand?.contact_name || "N/A"}
-                , {previewData.brand?.representative_role || "N/A"}
+                , {/* snake_case */}
+                {previewData.brand?.representative_role || "N/A"} {/* snake_case */}
               </p>
               <p className="text-xs mb-1">
                 <span className="font-semibold">Address:</span>{" "}
@@ -748,13 +806,13 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
               </p>
               <p className="text-xs mb-1">
                 <span className="font-semibold">Tax ID:</span>{" "}
-                {previewData.brand?.tax_number || "N/A"}
+                {previewData.brand?.tax_number || "N/A"} {/* snake_case */}
               </p>
               <p className="text-xs mb-3">
                 <span className="font-semibold">Bank Account:</span>{" "}
-                {previewData.brand?.bank_account_number || "N/A"} (
-                {previewData.brand?.bank_account_holder || "N/A"} -{" "}
-                {previewData.brand?.bank_name || "N/A"})
+                {previewData.brand?.bank_account_number || "N/A"} ( {/* snake_case */}
+                {previewData.brand?.bank_account_holder || "N/A"} - {/* snake_case */}
+                {previewData.brand?.bank_name || "N/A"}) {/* snake_case */}
               </p>
 
               <h3 className="text-sm font-bold underline text-gray-800 mb-2">
@@ -762,21 +820,21 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
               </h3>
               <p className="text-xs mb-1">
                 <span className="font-semibold">Name:</span>{" "}
-                {previewData.representative_name || "N/A"}
+                {previewData.representative_name || "N/A"} {/* snake_case */}
               </p>
               <p className="text-xs mb-1">
                 <span className="font-semibold">Role/Title:</span>{" "}
-                {previewData.representative_role || "N/A"}
+                {previewData.representative_role || "N/A"} {/* snake_case */}
               </p>
               <p className="text-xs mb-1">
                 <span className="font-semibold">Tax ID:</span>{" "}
-                {previewData.representative_tax_number || "N/A"}
+                {previewData.representative_tax_number || "N/A"} {/* snake_case */}
               </p>
               <p className="text-xs mb-1">
                 <span className="font-semibold">Bank Account:</span>{" "}
-                {previewData.representative_bank_account_number || "N/A"} (
-                {previewData.representative_bank_account_holder || "N/A"} -{" "}
-                {previewData.representative_bank_name || "N/A"})
+                {previewData.representative_bank_account_number || "N/A"} ( {/* snake_case */}
+                {previewData.representative_bank_account_holder || "N/A"} - {/* snake_case */}
+                {previewData.representative_bank_name || "N/A"}) {/* snake_case */}
               </p>
             </section>
 
@@ -786,12 +844,13 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
                 ARTICLE 2: SCOPE OF WORK AND DELIVERABLES
               </h2>
               {renderScopeOfWork()}
-              {(previewData.scope_of_work?.general_requirements ?? []).length > 0 && (
+              {(previewData.scope_of_work?.general_requirements ?? []).length > 0 && ( // snake_case
                 <div className="mt-3">
                   <p className="font-semibold text-xs text-gray-700 underline mb-1">
                     General Obligations of Party B:
                   </p>
                   {(previewData.scope_of_work?.general_requirements ?? []).map(
+                    // snake_case
                     (r: string, i: number) => (
                       <p key={i} className="ml-5 text-xs text-gray-600">
                         • {r}
@@ -807,15 +866,20 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
               <h2 className="text-base font-bold uppercase mb-3 text-gray-900">
                 ARTICLE 3: FINANCIAL TERMS AND PAYMENT
               </h2>
-              {"deposit_amount" in previewData && previewData.deposit_amount && (
-                <p className="text-xs mb-2">
-                  <span className="font-semibold">Security Deposit:</span> A deposit of{" "}
-                  <span className="font-semibold">{formatMoney(previewData.deposit_amount)}</span>{" "}
-                  (representing{" "}
-                  <span className="font-semibold">{previewData.deposit_percent ?? "N/A"}%</span> of
-                  the total) shall be paid by Party A upon execution of this contract.
-                </p>
-              )}
+              {"deposit_amount" in previewData &&
+                previewData.deposit_amount && ( // snake_case
+                  <p className="text-xs mb-2">
+                    <span className="font-semibold">Security Deposit:</span> A deposit of{" "}
+                    <span className="font-semibold">{formatMoney(previewData.deposit_amount)}</span>{" "}
+                    {/* snake_case */}
+                    (representing{" "}
+                    <span className="font-semibold">
+                      {previewData.deposit_percent ?? "N/A"}%
+                    </span>{" "}
+                    of {/* snake_case */}
+                    the total) shall be paid by Party A upon execution of this contract.
+                  </p>
+                )}
               {renderFinancialTerms()}
             </section>
 
@@ -828,6 +892,7 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
                 Penalties for Breach of Contract:
               </h3>
               {(previewData.legal_terms?.breach_of_contract?.items ?? []).map(
+                // snake_case
                 (item: any, i: number) => (
                   <div key={i} className="p-2 mb-2">
                     <p className="text-xs font-bold text-red-700 mb-1">{item.title}</p>
@@ -847,6 +912,7 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
                 ARTICLE 5: STANDARD LEGAL TERMS
               </h2>
               {(previewData.legal_terms?.standard_terms?.items ?? []).map(
+                // snake_case
                 (term: any, i: number) => (
                   <div key={i} className="mb-3">
                     <p className="text-xs font-bold underline text-gray-800">
@@ -867,10 +933,10 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
                 <div className="w-2/5 text-center">
                   <p className="text-xs font-bold mb-2">For and on behalf of Party A (The Brand)</p>
                   <p className="text-sm font-bold mt-8 uppercase">
-                    {previewData.brand?.representative_name || "N/A"}
+                    {previewData.brand?.representative_name || "N/A"} {/* snake_case */}
                   </p>
                   <p className="text-xs text-gray-600 mt-1">
-                    {previewData.brand?.representative_role || "N/A"}
+                    {previewData.brand?.representative_role || "N/A"} {/* snake_case */}
                   </p>
                 </div>
                 <div className="w-2/5 text-center">
@@ -878,10 +944,10 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
                     For and on behalf of Party B (The Service Provider)
                   </p>
                   <p className="text-sm font-bold mt-8 uppercase">
-                    {previewData.representative_name || "N/A"}
+                    {previewData.representative_name || "N/A"} {/* snake_case */}
                   </p>
                   <p className="text-xs text-gray-600 mt-1">
-                    {previewData.representative_role || "N/A"}
+                    {previewData.representative_role || "N/A"} {/* snake_case */}
                   </p>
                 </div>
               </div>

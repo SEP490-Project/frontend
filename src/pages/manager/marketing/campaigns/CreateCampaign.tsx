@@ -1,13 +1,16 @@
-import React, { useState, useMemo } from "react";
-import { Card } from "@/components/ui/card";
+import React, { useState, useMemo, useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Campaign, Task, Review } from "./component";
+import { Campaign, Task, Review } from "./component/create";
 import { parse } from "date-fns";
 import type { CampaignRequest } from "@/libs/types/campaign";
 import { useAppDispatch } from "@/libs/stores";
-import { createCampaign } from "@/libs/stores/campaignManager/thunk";
+import { createCampaign, createInternalCampaign } from "@/libs/stores/campaignManager/thunk";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { FaCalendarDays, FaFileLines, FaListCheck, FaArrowLeft } from "react-icons/fa6";
 
 const campaignTypes = [
   { value: "ADVERTISING", label: "Advertising" },
@@ -67,6 +70,7 @@ interface ContractBase {
 const AddCampaignPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"campaign" | "milestone" | "review">("campaign");
   const [selectedContract, setSelectedContract] = useState<ContractBase | null>(null);
+  const [campaignMode, setCampaignMode] = useState<"contract" | "internal">("contract");
   const [campaignData, setCampaignData] = useState<CampaignData>({
     name: "",
     type: "",
@@ -80,14 +84,21 @@ const AddCampaignPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
+  // Reset milestones when campaign mode changes
+  useEffect(() => {
+    setMilestones([]);
+    setSelectedContract(null);
+  }, [campaignMode]);
+
   const isCampaignValid = useMemo(() => {
-    return (
-      !!campaignData.name &&
-      !!campaignData.contract_id &&
-      !!campaignData.start_date &&
-      !!campaignData.end_date
-    );
-  }, [campaignData]);
+    const baseValid = !!campaignData.name && !!campaignData.start_date && !!campaignData.end_date;
+
+    if (campaignMode === "contract") {
+      return baseValid && !!campaignData.contract_id;
+    } else {
+      return baseValid && !!campaignData.type;
+    }
+  }, [campaignData, campaignMode]);
 
   const toPayload = (): CampaignRequest => ({
     contract_id: campaignData.contract_id,
@@ -123,17 +134,19 @@ const AddCampaignPage: React.FC = () => {
     const payload = toPayload();
 
     try {
-      const resultAction = await dispatch(createCampaign(payload));
-
-      if (createCampaign.fulfilled.match(resultAction)) {
-        toast.success("✅ Campaign created successfully!");
-        navigate("/manage/marketing/campaigns");
+      if (campaignMode === "contract") {
+        await dispatch(createCampaign(payload));
+        toast.success("Contract-based campaign created successfully!");
       } else {
-        toast.error("❌ Failed to create campaign: " + (resultAction.payload || "Unknown error"));
+        await dispatch(createInternalCampaign(payload));
+        toast.success("Internal campaign created successfully!");
       }
-    } catch (error) {
-      console.error(error);
-      toast.error("❌ Something went wrong while creating campaign.");
+
+      setTimeout(() => {
+        navigate("/manage/marketing/campaigns");
+      }, 1000);
+    } catch {
+      return;
     }
   };
 
@@ -148,24 +161,138 @@ const AddCampaignPage: React.FC = () => {
     });
     setMilestones([]);
     setSelectedContract(null);
+    setCampaignMode("contract");
     setActiveTab("campaign");
   };
 
-  return (
-    <div className="min-h-fit p-4 sm:p-6">
-      <div className="max-w-7xl mx-auto pb-10">
-        <div className="max-w-6xl mx-auto">
-          {/* Heading */}
-          <div className="mb-6 text-left">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Create New Campaign</h1>
-            <p className="text-gray-600 mt-2 text-base sm:text-lg">
-              Plan and organize your marketing campaigns efficiently. Add milestones, tasks, and
-              review before submission.
-            </p>
-          </div>
+  // Animation variants
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 },
+  };
 
-          <div className="relative">
-            <Card className="p-6 mb-6">
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 },
+    },
+  };
+
+  return (
+    <div className="min-h-fit p-4 sm:p-6 max-w-7xl mx-auto">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="space-y-6"
+      >
+        {/* Header */}
+        <motion.div variants={itemVariants} className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/manage/marketing/campaigns")}
+              className="flex items-center"
+            >
+              <FaArrowLeft className="w-4 h-4 mr-2" />
+              Return
+            </Button>
+
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                Create New Campaign
+              </h1>
+              <p className="text-gray-600">
+                Plan and organize your marketing campaigns efficiently
+              </p>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Progress Overview Cards */}
+        <motion.div
+          variants={itemVariants}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+        >
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <div className="h-5 w-5 text-blue-600 flex items-center justify-center font-semibold text-sm">
+                    {activeTab === "campaign" ? "1" : activeTab === "milestone" ? "2" : "3"}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">
+                    {campaignMode === "contract" ? "Contract Campaign" : "Internal Campaign"}
+                  </p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {activeTab === "campaign"
+                      ? "Campaign Details"
+                      : activeTab === "milestone"
+                        ? "Milestones & Tasks"
+                        : "Review & Submit"}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <FaFileLines className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Campaign Name</p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {campaignData.name || "Not set"}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <FaListCheck className="h-5 w-5 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Campaign Type</p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {campaignData.type
+                      ? campaignTypes.find((t) => t.value === campaignData.type)?.label ||
+                        campaignData.type
+                      : "Not selected"}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-orange-100 rounded-lg">
+                  <FaCalendarDays className="h-5 w-5 text-orange-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Milestones</p>
+                  <p className="text-sm font-semibold text-gray-900">{milestones.length} created</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Main Content */}
+        <motion.div variants={itemVariants}>
+          <Card>
+            <CardContent className="p-6">
               <Tabs
                 value={activeTab}
                 onValueChange={(value) =>
@@ -173,7 +300,7 @@ const AddCampaignPage: React.FC = () => {
                 }
                 className="w-full"
               >
-                <TabsList className="grid w-full grid-cols-3 bg-white/70 backdrop-blur-sm">
+                <TabsList className="grid w-full grid-cols-3 bg-white/70 backdrop-blur-sm mb-6">
                   <TabsTrigger value="campaign" className="text-sm">
                     Campaign Details
                   </TabsTrigger>
@@ -189,46 +316,47 @@ const AddCampaignPage: React.FC = () => {
                   </TabsTrigger>
                 </TabsList>
 
-                <div className="mt-6">
-                  <TabsContent value="campaign">
-                    <Campaign
-                      campaignData={campaignData}
-                      setCampaignData={setCampaignData}
-                      campaignTypes={campaignTypes}
-                      isCampaignValid={isCampaignValid}
-                      onNext={() => setActiveTab("milestone")}
-                      onReset={handleReset}
-                      onContractSelect={setSelectedContract}
-                    />
-                  </TabsContent>
+                <TabsContent value="campaign">
+                  <Campaign
+                    campaignData={campaignData}
+                    setCampaignData={setCampaignData}
+                    campaignTypes={campaignTypes}
+                    campaignMode={campaignMode}
+                    setCampaignMode={setCampaignMode}
+                    isCampaignValid={isCampaignValid}
+                    onNext={() => setActiveTab("milestone")}
+                    onReset={handleReset}
+                    onContractSelect={setSelectedContract}
+                  />
+                </TabsContent>
 
-                  <TabsContent value="milestone">
-                    <Task
-                      milestones={milestones}
-                      setMilestones={setMilestones}
-                      selectedContract={selectedContract}
-                      campaignType={campaignData.type}
-                      onBack={() => setActiveTab("campaign")}
-                      onNext={() => setActiveTab("review")}
-                    />
-                  </TabsContent>
+                <TabsContent value="milestone">
+                  <Task
+                    milestones={milestones}
+                    setMilestones={setMilestones}
+                    selectedContract={selectedContract}
+                    campaignType={campaignData.type}
+                    campaignMode={campaignMode}
+                    onBack={() => setActiveTab("campaign")}
+                    onNext={() => setActiveTab("review")}
+                  />
+                </TabsContent>
 
-                  <TabsContent value="review">
-                    <Review
-                      campaignData={campaignData}
-                      milestones={milestones}
-                      selectedContract={selectedContract}
-                      toPayload={toPayload}
-                      onBack={() => setActiveTab("milestone")}
-                      onSubmit={handleSubmit}
-                    />
-                  </TabsContent>
-                </div>
+                <TabsContent value="review">
+                  <Review
+                    campaignData={campaignData}
+                    milestones={milestones}
+                    selectedContract={selectedContract}
+                    toPayload={toPayload}
+                    onBack={() => setActiveTab("milestone")}
+                    onSubmit={handleSubmit}
+                  />
+                </TabsContent>
               </Tabs>
-            </Card>
-          </div>
-        </div>
-      </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </motion.div>
     </div>
   );
 };

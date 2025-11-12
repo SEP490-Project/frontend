@@ -196,7 +196,7 @@ export const ContractPDF = ({ data }: { data: any }) => {
     const events = deliverables.events ?? [];
     const concepts = deliverables.concepts ?? [];
     const products = deliverables.products ?? [];
-    const advertised_items = deliverables.advertised_items ?? [];
+    const advertised_items = deliverables.advertised_items ?? []; // snake_case
     const platforms = deliverables.platform ?? [];
 
     switch (data.type) {
@@ -486,7 +486,7 @@ export const ContractPDF = ({ data }: { data: any }) => {
 
   // Render financial terms based on contract type
   const renderFinancialTerms = () => {
-    const financial = data.financial_terms ?? {};
+    const financial = data.financial_terms ?? {}; // Changed from financial_terms
 
     switch (data.type) {
       case "CO_PRODUCING":
@@ -772,6 +772,29 @@ export const ContractPreview = ({ contractData }: { contractData: any }) => {
   const data = contractData.data ?? contractData;
   if (!data) return null;
 
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return "N/A";
+    const d = new Date(dateStr);
+    if (Number.isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const formatMoney = (amount?: number | null) => {
+    const currency = data.currency || "VND";
+    if (amount === undefined || amount === null) return `0 ${currency}`;
+    try {
+      return `${Number(amount).toLocaleString("vi-VN", {
+        minimumFractionDigits: 0,
+      })} ${currency}`;
+    } catch {
+      return `${amount} ${currency}`;
+    }
+  };
+
   return (
     <div className="bg-gray-100 py-10 px-4 min-h-screen">
       {/* Download Button */}
@@ -785,7 +808,7 @@ export const ContractPreview = ({ contractData }: { contractData: any }) => {
         </PDFDownloadLink>
       </div>
 
-      {/* Preview Section - keeping the existing HTML for browser preview */}
+      {/* Preview Section */}
       <div className="bg-white text-gray-900 max-w-4xl mx-auto p-12 shadow-2xl leading-relaxed min-h-[1100px]">
         {/* Contract Header & Title */}
         <header className="text-center mb-10 border-b border-gray-400 pb-4">
@@ -803,10 +826,149 @@ export const ContractPreview = ({ contractData }: { contractData: any }) => {
           <p className="text-xl font-bold mt-4 text-gray-800 italic">{data.title}</p>
         </header>
 
+        {/* Article 1: Contract Details */}
+        <section className="mb-8">
+          <h2 className="text-2xl font-bold mb-6 text-gray-900 uppercase tracking-wide border-b-2 border-gray-300 pb-2">
+            ARTICLE 1: CONTRACT DETAILS
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h3 className="font-bold text-blue-900 mb-2">Contract Information</h3>
+              <p>
+                <strong>Contract Number:</strong> {data.contract_number}
+              </p>
+              <p>
+                <strong>Type:</strong> {(data.type || "").replace(/_/g, " ")}
+              </p>
+              <p>
+                <strong>Status:</strong> {data.status || "Draft"}
+              </p>
+            </div>
+
+            <div className="bg-green-50 p-4 rounded-lg">
+              <h3 className="font-bold text-green-900 mb-2">Timeline</h3>
+              <p>
+                <strong>Signed Date:</strong> {formatDate(data.signed_date)}
+              </p>
+              <p>
+                <strong>Start Date:</strong> {formatDate(data.start_date)}
+              </p>
+              <p>
+                <strong>End Date:</strong> {formatDate(data.end_date)}
+              </p>
+              <p>
+                <strong>Location:</strong> {data.signed_location || "N/A"}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Article 2: Parties */}
+        <section className="mb-8">
+          <h2 className="text-2xl font-bold mb-6 text-gray-900 uppercase tracking-wide border-b-2 border-gray-300 pb-2">
+            ARTICLE 2: PARTIES INVOLVED
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Party A - Brand */}
+            <div className="bg-orange-50 p-6 rounded-lg border border-orange-200">
+              <h3 className="font-bold text-orange-900 mb-4 text-lg">Party A (The Brand)</h3>
+              <div className="space-y-2 text-sm">
+                <p>
+                  <strong>Company:</strong> {data.brand?.name || "N/A"}
+                </p>
+                <p>
+                  <strong>Representative:</strong> {data.brand?.representative_name || "N/A"}
+                </p>
+                <p>
+                  <strong>Role:</strong> {data.brand?.representative_role || "N/A"}
+                </p>
+                <p>
+                  <strong>Email:</strong> {data.brand?.contact_email || "N/A"}
+                </p>
+                <p>
+                  <strong>Phone:</strong> {data.brand?.contact_phone || "N/A"}
+                </p>
+                <p>
+                  <strong>Address:</strong> {data.brand?.address || "N/A"}
+                </p>
+                <p>
+                  <strong>Tax ID:</strong> {data.brand?.tax_number || "N/A"}
+                </p>
+              </div>
+            </div>
+
+            {/* Party B - Representative */}
+            <div className="bg-purple-50 p-6 rounded-lg border border-purple-200">
+              <h3 className="font-bold text-purple-900 mb-4 text-lg">Party B (Service Provider)</h3>
+              <div className="space-y-2 text-sm">
+                <p>
+                  <strong>Name:</strong> {data.representative_name || "N/A"}
+                </p>
+                <p>
+                  <strong>Role:</strong> {data.representative_role || "N/A"}
+                </p>
+                <p>
+                  <strong>Email:</strong> {data.representative_email || "N/A"}
+                </p>
+                <p>
+                  <strong>Phone:</strong> {data.representative_phone || "N/A"}
+                </p>
+                <p>
+                  <strong>Tax ID:</strong> {data.representative_tax_number || "N/A"}
+                </p>
+                <p>
+                  <strong>Bank:</strong> {data.representative_bank_name || "N/A"}
+                </p>
+                <p>
+                  <strong>Account:</strong> {data.representative_bank_account_number || "N/A"}
+                </p>
+                <p>
+                  <strong>Account Holder:</strong>{" "}
+                  {data.representative_bank_account_holder || "N/A"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Article 3: Financial Overview */}
+        <section className="mb-8">
+          <h2 className="text-2xl font-bold mb-6 text-gray-900 uppercase tracking-wide border-b-2 border-gray-300 pb-2">
+            ARTICLE 3: FINANCIAL OVERVIEW
+          </h2>
+
+          <div className="bg-green-50 p-6 rounded-lg border border-green-200 mb-6">
+            <h3 className="font-bold text-green-900 mb-4 text-lg">Contract Value</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-green-700">
+                  {formatMoney(data.financial_terms?.total_cost)}
+                </p>
+                <p className="text-sm text-gray-600">Total Value</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-orange-700">{data.deposit_percent || 0}%</p>
+                <p className="text-sm text-gray-600">Deposit Rate</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-blue-700">
+                  {formatMoney(
+                    ((data.financial_terms?.total_cost || 0) * (data.deposit_percent || 0)) / 100,
+                  )}
+                </p>
+                <p className="text-sm text-gray-600">Deposit Amount</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <div className="text-center text-gray-600 mt-8">
           <p className="text-lg font-semibold">📄 Contract Preview</p>
           <p className="text-sm">
-            Click "Download Contract PDF" above to generate the full PDF document
+            Click "Download Contract PDF" above to generate the complete contract document with all
+            details, scope of work, and legal terms.
           </p>
         </div>
       </div>

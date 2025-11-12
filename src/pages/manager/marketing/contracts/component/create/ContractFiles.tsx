@@ -81,7 +81,7 @@ const ContractFiles: React.FC<ContractFilesProps> = ({
               onFilesRemove={handleContractFilesRemove}
               title="Contract File"
               className="w-full"
-              initialFiles={formData?.contractFiles || []}
+              initialFiles={formData?.contract_files || []}
               context="contract"
             />
             <p className="text-xs text-slate-500">
@@ -108,7 +108,7 @@ const ContractFiles: React.FC<ContractFilesProps> = ({
               onFilesRemove={handleProposalFilesRemove}
               title="Proposal File"
               className="w-full"
-              initialFiles={formData?.proposalFiles || []}
+              initialFiles={formData?.proposal_files || []}
               context="proposal"
             />
             <p className="text-xs text-slate-500">

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Campaign, Task, Review } from "./component";
+import { Campaign, Task, Review } from "./component/create";
 import { parse } from "date-fns";
 import type { CampaignRequest } from "@/libs/types/campaign";
 import { useAppDispatch } from "@/libs/stores";

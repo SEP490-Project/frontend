@@ -6,12 +6,12 @@ import {
   approveCampaign,
   rejectCampaign,
 } from "@/libs/stores/campaignManager/thunk";
-import { getTaskList } from "@/libs/stores/taskManager/thunk";
+import { Schedule } from "./component/detail";
 import { useCampaign } from "@/libs/hooks/useCampaign";
-import { useTaskMarketing } from "@/libs/hooks/useTaskMarketing";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -31,10 +31,13 @@ import {
   FaCircleCheck,
   FaCircleXmark,
   FaListCheck,
+  FaFlag,
+  FaClipboardCheck,
+  FaArrowRight,
 } from "react-icons/fa6";
 import { motion } from "framer-motion";
 import { formatDate } from "@/libs/helper/helper";
-import TaskCalendar from "@/components/manage/marketing/task/Calendar";
+
 import RejectCampaignModal from "@/components/modal/RejectCampaignModal";
 
 // Status and type mappings
@@ -68,6 +71,20 @@ const CAMPAIGN_TYPE_COLORS: Record<string, string> = {
   CO_PRODUCING: "bg-violet-100 text-violet-800 border-violet-200",
 };
 
+const MILESTONE_STATUS_LABELS: Record<string, string> = {
+  PENDING: "Pending",
+  IN_PROGRESS: "In Progress",
+  COMPLETED: "Completed",
+  OVERDUE: "Overdue",
+};
+
+const MILESTONE_STATUS_COLORS: Record<string, string> = {
+  PENDING: "bg-gray-100 text-gray-800 border-gray-200",
+  IN_PROGRESS: "bg-blue-100 text-blue-800 border-blue-200",
+  COMPLETED: "bg-green-100 text-green-800 border-green-200",
+  OVERDUE: "bg-red-100 text-red-800 border-red-200",
+};
+
 interface CampaignDetailPageProps {
   userRole?: "marketing" | "brand";
 }
@@ -78,39 +95,22 @@ const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({ userRole = "mar
   const navigate = useNavigate();
 
   const { campaignDetail, detailLoading } = useCampaign();
-  const { taskListMarketing, loading: tasksLoading } = useTaskMarketing();
-
-  // Calendar states
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [activeFilter, setActiveFilter] = useState<string>("ALL");
 
   // Campaign action states
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Fetch campaign details and tasks
+  // Fetch campaign details
   useEffect(() => {
     if (id) {
       dispatch(getCampaignById(id));
-      dispatch(
-        getTaskList({
-          page: 1,
-          limit: 10,
-          campaign_id: id,
-        }),
-      );
     }
   }, [dispatch, id]);
 
   const handleGoBack = () => {
     const basePath = userRole === "brand" ? "/manage/brand" : "/manage/marketing";
     navigate(`${basePath}/campaigns`);
-  };
-
-  const handleDateClick = (date: Date) => {
-    setSelectedDate(date);
   };
 
   // Campaign action handlers
@@ -169,14 +169,12 @@ const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({ userRole = "mar
     },
   };
 
-  if (detailLoading || tasksLoading) {
+  if (detailLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-2">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-gray-600">
-            {detailLoading ? "Loading campaign details..." : "Loading tasks..."}
-          </p>
+          <p className="text-gray-600">Loading campaign details...</p>
         </div>
       </div>
     );
@@ -195,7 +193,7 @@ const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({ userRole = "mar
   }
 
   return (
-    <div className="min-h-fit p-4 sm:p-6 max-w-7xl mx-auto">
+    <div className="min-h-fit p-4 sm:p-6">
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -358,12 +356,26 @@ const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({ userRole = "mar
 
           {/* Contract Information */}
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <FaFileContract className="h-5 w-5 text-green-600" />
                 Contract Information
               </CardTitle>
+
+              {/* Nút nằm chung dòng với tiêu đề */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-1"
+                onClick={() =>
+                  navigate(`/manage/marketing/contracts/${campaignDetail.contract_id}`)
+                }
+              >
+                View Detail
+                <FaArrowRight className="h-4 w-4" />
+              </Button>
             </CardHeader>
+
             <CardContent className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-gray-600">Contract Number</label>
@@ -380,7 +392,9 @@ const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({ userRole = "mar
                 <div className="flex items-center gap-2 mt-1">
                   <FaBuilding className="h-4 w-4 text-gray-500" />
                   <Badge
-                    className={`border ${CAMPAIGN_TYPE_COLORS[campaignDetail.type] || ""} text-xs font-medium px-2 py-1`}
+                    className={`border ${
+                      CAMPAIGN_TYPE_COLORS[campaignDetail.type] || ""
+                    } text-xs font-medium px-2 py-1`}
                   >
                     {CAMPAIGN_TYPE_LABELS[campaignDetail.type] || campaignDetail.type}
                   </Badge>
@@ -390,72 +404,135 @@ const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({ userRole = "mar
           </Card>
         </motion.div>
 
-        {/* Tasks Calendar */}
-        <motion.div variants={itemVariants}>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FaCalendarDays className="h-5 w-5 text-purple-600" />
-                Campaign Timeline & Tasks
-              </CardTitle>
-              <p className="text-sm text-gray-600">
-                View and manage milestone tasks throughout the campaign
-              </p>
-            </CardHeader>
-            <CardContent>
-              <TaskCalendar
-                currentDate={currentDate}
-                setCurrentDate={setCurrentDate}
-                tasks={taskListMarketing || []}
-                onDateClick={handleDateClick}
-                activeFilter={activeFilter}
-                onFilterChange={setActiveFilter}
-                taskCounts={{}}
-              />
-
-              {selectedDate &&
-                (() => {
-                  const selectedDateStr = selectedDate.toISOString().split("T")[0];
-                  const tasksForDate =
-                    taskListMarketing?.filter(
-                      (task) => task.deadline && task.deadline.split("T")[0] === selectedDateStr,
-                    ) || [];
-
-                  return (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="mt-4 p-4 bg-gray-50 rounded-lg"
-                    >
-                      <h4 className="font-medium text-gray-900 mb-2">
-                        Tasks for {selectedDate.toLocaleDateString()}
-                      </h4>
-                      {tasksForDate.length > 0 ? (
-                        <div className="space-y-2">
-                          {tasksForDate.map((task) => (
-                            <div
-                              key={task.id}
-                              className="flex items-center gap-2 p-2 bg-white rounded border"
-                            >
-                              <Badge className="text-xs">{task.type}</Badge>
-                              <span className="text-sm font-medium">{task.name}</span>
-                              <Badge
-                                variant={task.status === "COMPLETED" ? "default" : "secondary"}
-                                className="text-xs"
-                              >
-                                {task.status}
-                              </Badge>
-                            </div>
-                          ))}
+        {/* Milestones Section */}
+        {campaignDetail?.milestones && campaignDetail.milestones.length > 0 && (
+          <motion.div variants={itemVariants}>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FaFlag className="h-5 w-5 text-purple-600" />
+                  Campaign Milestones
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {campaignDetail.milestones.map((milestone, index) => (
+                  <div
+                    key={milestone.id}
+                    className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h4 className="font-medium text-gray-900">Milestone {index + 1}</h4>
+                          <Badge
+                            className={`border text-xs font-medium px-2 py-1 ${
+                              MILESTONE_STATUS_COLORS[milestone.status] ||
+                              "bg-gray-100 text-gray-800 border-gray-200"
+                            }`}
+                          >
+                            {MILESTONE_STATUS_LABELS[milestone.status] || milestone.status}
+                          </Badge>
+                          {milestone.behind_schedule && (
+                            <Badge className="bg-red-100 text-red-800 border-red-200 text-xs font-medium px-2 py-1">
+                              Behind Schedule
+                            </Badge>
+                          )}
                         </div>
-                      ) : (
-                        <p className="text-sm text-gray-600">No tasks scheduled for this date</p>
-                      )}
-                    </motion.div>
-                  );
-                })()}
-            </CardContent>
-          </Card>
+                        <p className="text-gray-700 mb-2">{milestone.description}</p>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                          <div>
+                            <span className="text-gray-600">Due Date:</span>
+                            <p className="font-medium">{formatDate(milestone.due_date)}</p>
+                          </div>
+                          {milestone.completed_at && (
+                            <div>
+                              <span className="text-gray-600">Completed:</span>
+                              <p className="font-medium text-green-600">
+                                {formatDate(milestone.completed_at)}
+                              </p>
+                            </div>
+                          )}
+                          <div>
+                            <span className="text-gray-600">Tasks:</span>
+                            <p className="font-medium">{milestone.number_of_tasks}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-700">
+                          Progress: {milestone.completion_percentage}%
+                        </span>
+                        <FaClipboardCheck className="h-4 w-4 text-gray-400" />
+                      </div>
+                      <Progress value={milestone.completion_percentage} className="h-2" />
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* Campaign Overview Stats */}
+        {(campaignDetail?.number_of_tasks ||
+          campaignDetail?.percentage_completed !== undefined) && (
+          <motion.div variants={itemVariants}>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FaChartLine className="h-5 w-5 text-indigo-600" />
+                  Campaign Progress Overview
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {campaignDetail.number_of_tasks && (
+                    <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+                      <div className="p-2 bg-blue-100 rounded-lg">
+                        <FaClipboardCheck className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Total Tasks</p>
+                        <p className="text-xl font-bold text-gray-900">
+                          {campaignDetail.number_of_tasks}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {campaignDetail.percentage_completed !== undefined && (
+                    <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                      <div className="p-2 bg-green-100 rounded-lg">
+                        <FaChartLine className="h-5 w-5 text-green-600" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-600 mb-1">Overall Completion</p>
+                        <div className="flex items-center gap-2">
+                          <Progress
+                            value={campaignDetail.percentage_completed}
+                            className="flex-1 h-2"
+                          />
+                          <span className="text-sm font-bold text-gray-900">
+                            {campaignDetail.percentage_completed}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* Schedule Component */}
+        <motion.div variants={itemVariants}>
+          <Schedule campaignId={id} />
         </motion.div>
       </motion.div>
 

@@ -35,25 +35,9 @@ import ContentPreview from "@/components/manage/marketing/content-approval/Conte
 
 const PAGE_SIZE = 10;
 
-const CONTENT_STATUS_LABELS: Record<string, string> = {
-  PUBLISHED: "Published",
-  AWAIT_STAFF: "Awaiting Review",
-  APPROVED: "Approved",
-  REJECTED: "Rejected",
-  DRAFT: "Draft",
-};
-
 const CONTENT_TYPE_LABELS: Record<string, string> = {
   POST: "Post",
   VIDEO: "Video",
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  PUBLISHED: "bg-green-100 text-green-800 border-green-200",
-  AWAIT_STAFF: "bg-amber-100 text-amber-800 border-amber-200",
-  APPROVED: "bg-blue-100 text-blue-800 border-blue-200",
-  REJECTED: "bg-red-100 text-red-800 border-red-200",
-  DRAFT: "bg-gray-100 text-gray-800 border-gray-200",
 };
 
 const CONTENT_TYPE_COLORS: Record<string, string> = {
@@ -64,7 +48,6 @@ const CONTENT_TYPE_COLORS: Record<string, string> = {
 const ContentApprovalPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
-  const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [channelFilter, setChannelFilter] = useState<string>("ALL");
   const [searchTerm, setSearchTerm] = useState("");
   const [startDate, setStartDate] = useState<string>("");
@@ -90,7 +73,7 @@ const ContentApprovalPage: React.FC = () => {
       page,
       limit: PAGE_SIZE,
       ...(debouncedSearchTerm && { search: debouncedSearchTerm }),
-      ...(statusFilter !== "ALL" && { status: statusFilter }),
+      status: "AWAIT_STAFF", // Always fetch content with status AWAIT_STAFF
       ...(typeFilter !== "ALL" && { type: typeFilter }),
       ...(channelFilter !== "ALL" && { channel_id: channelFilter }),
       ...(startDate && { from_date: toISOStringDate(startDate) }),
@@ -104,7 +87,6 @@ const ContentApprovalPage: React.FC = () => {
     dispatch,
     page,
     typeFilter,
-    statusFilter,
     channelFilter,
     debouncedSearchTerm,
     startDate,
@@ -115,12 +97,11 @@ const ContentApprovalPage: React.FC = () => {
 
   useEffect(() => {
     setPage(1);
-  }, [typeFilter, statusFilter, channelFilter, debouncedSearchTerm, startDate, endDate]);
+  }, [typeFilter, channelFilter, debouncedSearchTerm, startDate, endDate]);
 
   const handleResetFilters = () => {
     setSearchTerm("");
     setTypeFilter("ALL");
-    setStatusFilter("ALL");
     setChannelFilter("ALL");
     setStartDate("");
     setEndDate("");
@@ -211,17 +192,17 @@ const ContentApprovalPage: React.FC = () => {
             </Select>
           </motion.div>
           <motion.div className="flex gap-1" variants={itemVariants}>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select value={channelFilter} onValueChange={setChannelFilter}>
               <SelectTrigger>
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder="Channel" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">All Status</SelectItem>
-                <SelectItem value="AWAIT_STAFF">Awaiting Review</SelectItem>
-                <SelectItem value="APPROVED">Approved</SelectItem>
-                <SelectItem value="REJECTED">Rejected</SelectItem>
-                <SelectItem value="PUBLISHED">Published</SelectItem>
-                <SelectItem value="DRAFT">Draft</SelectItem>
+                <SelectItem value="ALL">All Channels</SelectItem>
+                {channel.map((ch) => (
+                  <SelectItem key={ch.id} value={ch.id}>
+                    {ch.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Button
@@ -239,21 +220,6 @@ const ContentApprovalPage: React.FC = () => {
           items-end
         "
         >
-          <motion.div variants={itemVariants}>
-            <Select value={channelFilter} onValueChange={setChannelFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Channel" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All Channels</SelectItem>
-                {channel.map((ch) => (
-                  <SelectItem key={ch.id} value={ch.id}>
-                    {ch.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </motion.div>
           <motion.div variants={itemVariants}>
             <DatePicker
               value={startDate}
@@ -306,7 +272,6 @@ const ContentApprovalPage: React.FC = () => {
                   <TableRow className="border-b bg-gray-50">
                     <TableHead className="font-semibold">Content</TableHead>
                     <TableHead className="font-semibold">Type</TableHead>
-                    <TableHead className="font-semibold">Status</TableHead>
                     <TableHead className="font-semibold">Channel</TableHead>
                     <TableHead className="font-semibold">Author</TableHead>
                     <TableHead className="font-semibold">Created</TableHead>
@@ -338,13 +303,6 @@ const ContentApprovalPage: React.FC = () => {
                           className={`border text-xs font-medium px-2 py-1 ${CONTENT_TYPE_COLORS[content.type] || ""}`}
                         >
                           {CONTENT_TYPE_LABELS[content.type] || content.type}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <Badge
-                          className={`border ${STATUS_COLORS[content.status] || ""} text-xs font-medium px-2 py-1`}
-                        >
-                          {CONTENT_STATUS_LABELS[content.status] || content.status}
                         </Badge>
                       </TableCell>
                       <TableCell className="py-4">
@@ -407,11 +365,6 @@ const ContentApprovalPage: React.FC = () => {
                           >
                             {CONTENT_TYPE_LABELS[content.type] || content.type}
                           </Badge>
-                          <Badge
-                            className={`border ${STATUS_COLORS[content.status] || ""} text-xs font-medium px-2 py-1`}
-                          >
-                            {CONTENT_STATUS_LABELS[content.status] || content.status}
-                          </Badge>
                         </div>
                       </div>
                       <div className="text-right">
@@ -468,7 +421,7 @@ const ContentApprovalPage: React.FC = () => {
                 <FaListCheck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No content found</h3>
                 <p className="text-gray-500 mb-4">
-                  {searchTerm || typeFilter !== "ALL" || statusFilter !== "ALL"
+                  {searchTerm || typeFilter !== "ALL" || channelFilter !== "ALL"
                     ? "No content matches your current filters."
                     : "No content submissions found."}
                 </p>

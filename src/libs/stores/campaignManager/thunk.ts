@@ -21,7 +21,7 @@ export const getCampaignById = createAsyncThunk(
   async (campaignId: string, { rejectWithValue }) => {
     try {
       const response = await manageCampaign.getCampaignById(campaignId);
-      return response.data.data; // Return the actual campaign data, not the wrapper
+      return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
       return rejectWithValue(err.response?.data?.message || "Failed to fetch campaign detail");

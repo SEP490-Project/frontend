@@ -1,5 +1,5 @@
 import { Input } from "@/components/ui/input";
-import type { UseFormReturn } from "react-hook-form";
+import { Controller, type UseFormReturn } from "react-hook-form";
 import type { CreateLimitedProductPayload } from "@/libs/types/product";
 import { useEffect } from "react";
 
@@ -8,17 +8,16 @@ interface AdditionalInfoFormProps {
 }
 
 export const AdditionalInfoForm = ({ form }: AdditionalInfoFormProps) => {
-  const { register, watch, setError, clearErrors } = form;
+  const { control, watch, setError, clearErrors } = form;
   const premiereDate = watch("limited_attribute.premiere_date");
   const startSaleDate = watch("limited_attribute.availability_start_date");
   const endSaleDate = watch("limited_attribute.availability_end_date");
 
   const today = new Date(Date.now() + 86400000).toISOString().split("T")[0];
 
-  const premiereDateStr = premiereDate ? String(premiereDate) : "";
-  const startSaleDateStr = startSaleDate ? String(startSaleDate) : "";
-
+  // Run validation whenever dates change
   useEffect(() => {
+    // Validate premiere vs start sale date
     if (premiereDate && startSaleDate) {
       const premDate = new Date(premiereDate);
       const startDate = new Date(startSaleDate);
@@ -33,6 +32,7 @@ export const AdditionalInfoForm = ({ form }: AdditionalInfoFormProps) => {
       }
     }
 
+    // Validate start vs end sale date
     if (startSaleDate && endSaleDate) {
       const startDate = new Date(startSaleDate);
       const endDate = new Date(endSaleDate);
@@ -49,7 +49,7 @@ export const AdditionalInfoForm = ({ form }: AdditionalInfoFormProps) => {
   }, [premiereDate, startSaleDate, endSaleDate, setError, clearErrors]);
 
   return (
-    <div className="bg-white p-6 rounded-lg mt-6 shadow-md">
+    <div className="bg-white p-6 rounded-lg mt-6 shadow-md mb-12">
       <h2 className="text-lg font-semibold mb-4">Additional Information</h2>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">
@@ -60,13 +60,21 @@ export const AdditionalInfoForm = ({ form }: AdditionalInfoFormProps) => {
           <span className="text-red-600">*</span>
           Premiere Date
         </label>
-        <Input
-          id="premiereDate"
-          type="date"
-          min={today}
-          className="col-span-3"
-          autoComplete="off"
-          {...register("limited_attribute.premiere_date")}
+        <Controller
+          name="limited_attribute.premiere_date"
+          control={control}
+          render={({ field }) => (
+            <Input
+              id="premiereDate"
+              type="date"
+              min={today}
+              className="col-span-3"
+              autoComplete="off"
+              value={field.value || ""}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+            />
+          )}
         />
       </div>
 
@@ -78,14 +86,22 @@ export const AdditionalInfoForm = ({ form }: AdditionalInfoFormProps) => {
           <span className="text-red-600">*</span>
           Start Sale Date
         </label>
-        <Input
-          id="startSaleDate"
-          type="date"
-          min={premiereDateStr || today}
-          className="col-span-3"
-          autoComplete="off"
-          {...register("limited_attribute.availability_start_date")}
-          disabled={!premiereDate}
+        <Controller
+          name="limited_attribute.availability_start_date"
+          control={control}
+          render={({ field }) => (
+            <Input
+              id="startSaleDate"
+              type="date"
+              min={premiereDate || today}
+              className="col-span-3"
+              autoComplete="off"
+              disabled={!premiereDate}
+              value={field.value || ""}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+            />
+          )}
         />
       </div>
 
@@ -97,14 +113,22 @@ export const AdditionalInfoForm = ({ form }: AdditionalInfoFormProps) => {
           <span className="text-red-600">*</span>
           End Sale Date
         </label>
-        <Input
-          id="endSaleDate"
-          type="date"
-          min={startSaleDateStr || today}
-          className="col-span-3"
-          autoComplete="off"
-          {...register("limited_attribute.availability_end_date")}
-          disabled={!startSaleDate}
+        <Controller
+          name="limited_attribute.availability_end_date"
+          control={control}
+          render={({ field }) => (
+            <Input
+              id="endSaleDate"
+              type="date"
+              min={startSaleDate || today}
+              className="col-span-3"
+              autoComplete="off"
+              disabled={!startSaleDate}
+              value={field.value || ""}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+            />
+          )}
         />
       </div>
 
@@ -116,22 +140,25 @@ export const AdditionalInfoForm = ({ form }: AdditionalInfoFormProps) => {
           <span className="text-red-600">*</span>
           Purchase Limit
         </label>
-        <Input
-          id="purchaseLimit"
-          type="number"
-          min={1}
-          placeholder="Minimum 1"
-          className="col-span-3"
-          autoComplete="off"
-          {...register("limited_attribute.bought_limit", {
-            valueAsNumber: true,
-            onChange: (e) => {
-              const number = Number(e.target.value);
-              if (number < 1) {
-                e.target.value = "1";
-              }
-            },
-          })}
+        <Controller
+          name="limited_attribute.bought_limit"
+          control={control}
+          render={({ field }) => (
+            <Input
+              id="purchaseLimit"
+              type="number"
+              min={1}
+              placeholder="Minimum 1"
+              className="col-span-3"
+              autoComplete="off"
+              value={field.value || ""}
+              onChange={(e) => {
+                const number = Number(e.target.value);
+                field.onChange(number < 1 ? 1 : number);
+              }}
+              onBlur={field.onBlur}
+            />
+          )}
         />
       </div>
 
@@ -143,22 +170,25 @@ export const AdditionalInfoForm = ({ form }: AdditionalInfoFormProps) => {
           <span className="text-red-600">*</span>
           Max Stock
         </label>
-        <Input
-          id="maxStock"
-          type="number"
-          min={1}
-          placeholder="Minimum 1"
-          className="col-span-3"
-          autoComplete="off"
-          {...register("limited_attribute.max_stock", {
-            valueAsNumber: true,
-            onChange: (e) => {
-              const number = Number(e.target.value);
-              if (number < 1) {
-                e.target.value = "1";
-              }
-            },
-          })}
+        <Controller
+          name="limited_attribute.max_stock"
+          control={control}
+          render={({ field }) => (
+            <Input
+              id="maxStock"
+              type="number"
+              min={1}
+              placeholder="Minimum 1"
+              className="col-span-3"
+              autoComplete="off"
+              value={field.value || ""}
+              onChange={(e) => {
+                const number = Number(e.target.value);
+                field.onChange(number < 1 ? 1 : number);
+              }}
+              onBlur={field.onBlur}
+            />
+          )}
         />
       </div>
     </div>

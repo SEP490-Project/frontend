@@ -48,7 +48,7 @@ const BasicInfoStep = () => {
       category_id: "",
       description: null,
       name: "",
-      task_id: "",
+      task_id: state.task?.id || "",
       limited_attribute: {
         premiere_date: "",
         availability_start_date: "",
@@ -107,7 +107,7 @@ const BasicInfoStep = () => {
             htmlFor="taskId"
             className="text-lg font-medium text-gray-700 text-nowrap flex items-center justify-start md:justify-end mr-4"
           >
-            Task ID
+            Task
           </label>
           <Input
             id="taskId"
@@ -116,7 +116,7 @@ const BasicInfoStep = () => {
             className="col-span-3"
             autoComplete="off"
             {...(form.register as any)("task_id")}
-            // disabled
+            disabled
           />
         </div>
       )}

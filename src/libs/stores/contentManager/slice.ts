@@ -11,18 +11,13 @@ import {
   approveContent,
   rejectContent,
 } from "./thunk";
-import type { ContentResponse } from "@/libs/types/content";
-import {
-  convertApiContentArrayToLegacy,
-  convertApiContentToLegacy,
-  type LegacyContent,
-} from "@/libs/utils/contentConverter";
+import type { ContentResponse, Content } from "@/libs/types/content";
 import { toast } from "sonner";
 
 interface stateType {
   loading: boolean;
-  contents: LegacyContent[]; // Use legacy format for backward compatibility
-  content: LegacyContent | null;
+  contents: Content[];
+  content: Content | null;
   pagination: {
     page: number;
     limit: number;
@@ -62,9 +57,9 @@ export const manageContentSlice = createSlice({
       })
       .addCase(contents.fulfilled, (state, action) => {
         state.loading = false;
-        // Convert new API format to legacy format for backward compatibility
+        // Use API response directly
         const apiResponse = action.payload as ContentResponse;
-        state.contents = convertApiContentArrayToLegacy(apiResponse.data);
+        state.contents = apiResponse.data;
         state.pagination = apiResponse.pagination;
       })
       .addCase(contents.rejected, (state, action) => {
@@ -79,8 +74,7 @@ export const manageContentSlice = createSlice({
       })
       .addCase(createContent.fulfilled, (state, action) => {
         state.loading = false;
-        const legacyContent = convertApiContentToLegacy(action.payload.data);
-        state.contents.unshift(legacyContent);
+        state.contents.unshift(action.payload.data);
         toast.success("Content created successfully!", {
           description: "Your content has been saved and is ready for review.",
           duration: 4000,
@@ -106,7 +100,7 @@ export const manageContentSlice = createSlice({
         const apiResponse = action.payload as ContentResponse;
         const contentItem = apiResponse.data[0];
         if (contentItem) {
-          state.content = convertApiContentToLegacy(contentItem);
+          state.content = contentItem;
         }
       })
       .addCase(contentDetail.rejected, (state, action) => {
@@ -121,13 +115,13 @@ export const manageContentSlice = createSlice({
       })
       .addCase(updateContent.fulfilled, (state, action) => {
         state.loading = false;
-        const legacyContent = convertApiContentToLegacy(action.payload.data);
-        const index = state.contents.findIndex((c) => c.id === legacyContent.id);
+        const updatedContent = action.payload.data;
+        const index = state.contents.findIndex((c) => c.id === updatedContent.id);
         if (index !== -1) {
-          state.contents[index] = legacyContent;
+          state.contents[index] = updatedContent;
         }
-        if (state.content && state.content.id === legacyContent.id) {
-          state.content = legacyContent;
+        if (state.content && state.content.id === updatedContent.id) {
+          state.content = updatedContent;
         }
         toast.success("Content updated successfully!", {
           description: "Your content has been updated and is ready for review.",

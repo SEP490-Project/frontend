@@ -541,7 +541,7 @@ export default function ContractDetail({ contractId, onBack }: ContractDetailPro
         </div>
 
         {/* Enhanced Contract Details */}
-        <div className="space-y-6">
+        <div className="space-y-6 mt-6">
           {/* Financial Information */}
           <div className="bg-green-50 rounded-lg border border-green-200 p-6">
             <div className="flex items-center gap-3 mb-4">

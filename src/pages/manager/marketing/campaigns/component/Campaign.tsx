@@ -83,8 +83,9 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
         page,
         limit: 10,
         sort_by: "created_at",
-        // status: "ACTIVE",
+        status: "ACTIVE",
         sort_order: "desc",
+        no_campaign: true,
         ...(debouncedSearch ? { keyword: debouncedSearch } : {}),
       }),
     );

@@ -11,9 +11,11 @@ export const manageContractPayment = {
   },
 
   createPaymentLink: (req: CreatePaymentParams) => {
-    return api.post(`/contract_payments/${req.contract_payment_id}/payment-link`, {
-      return_url: req.return_url,
-      cancel_url: req.cancel_url,
+    return api.post(`/contract_payments/${req.contract_payment_id}/payment-link`, null, {
+      params: {
+        return_url: req.return_url,
+        cancel_url: req.cancel_url,
+      },
     });
   },
 

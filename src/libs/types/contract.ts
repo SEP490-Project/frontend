@@ -14,6 +14,7 @@ export interface Brand {
   representative_phone: string;
   representative_role: string;
   tax_number: string;
+  has_campaign: boolean;
 }
 
 export interface ParentContract {

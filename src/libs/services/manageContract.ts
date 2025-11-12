@@ -6,6 +6,7 @@ export const manageContract = {
     type?: string;
     status?: string;
     keyword?: string;
+    no_campaign?: boolean;
     start_date?: string;
     end_date?: string;
     page: number;

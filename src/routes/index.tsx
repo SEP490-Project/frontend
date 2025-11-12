@@ -52,8 +52,6 @@ const AppRoutes = () => (
     <Routes>
       <Route element={<CustomerLayout />}>
         <Route path="/" element={<Homepage />} />
-        <Route path="/cancel-payment" element={<CancelPayment />} />
-        <Route path="/payment-success" element={<SuccessPayment />} />
       </Route>
 
       <Route element={<PublicRoute />}>
@@ -149,6 +147,8 @@ const AppRoutes = () => (
       </Route>
 
       <Route path="*" element={<NotFound />} />
+      <Route path="/payment-cancel" element={<CancelPayment />} />
+      <Route path="/payment-success" element={<SuccessPayment />} />
     </Routes>
   </BrowserRouter>
 );

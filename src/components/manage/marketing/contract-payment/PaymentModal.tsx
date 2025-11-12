@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { FaExternalLinkAlt, FaCopy, FaCreditCard, FaCalendarAlt } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,28 @@ interface PaymentModalProps {
 }
 
 function PaymentModal({ isOpen, onClose, paymentData }: PaymentModalProps) {
+  // Store payment data in sessionStorage when modal opens for success/cancel pages
+  useEffect(() => {
+    if (isOpen && paymentData) {
+      try {
+        if (paymentData.orderCode && paymentData.amount) {
+          sessionStorage.setItem(
+            `payment_amount_${paymentData.orderCode}`,
+            String(paymentData.amount),
+          );
+        }
+        if (paymentData.orderCode && paymentData.description) {
+          sessionStorage.setItem(
+            `payment_contractNumber_${paymentData.orderCode}`,
+            String(paymentData.description),
+          );
+        }
+      } catch {
+        // ignore storage errors
+      }
+    }
+  }, [isOpen, paymentData]);
+
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
 

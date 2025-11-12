@@ -43,7 +43,6 @@ const CONTRACT_PAYMENT_STATUS_LABELS: Record<string, string> = {
   PENDING: "Pending",
   PAID: "Paid",
   OVERDUE: "Overdue",
-  //   CANCELLED: "Cancelled",
 };
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
@@ -54,7 +53,6 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
 
 const STATUS_COLORS: Record<string, string> = {
   PAID: "bg-green-100 text-green-800 border-green-200",
-  //   CANCELLED: "bg-red-100 text-red-800 border-red-200",
   PENDING: "bg-yellow-100 text-yellow-800 border-yellow-200",
   OVERDUE: "bg-orange-100 text-orange-800 border-orange-200",
 };
@@ -63,7 +61,6 @@ const PAYMENT_METHOD_COLORS: Record<string, string> = {
   BANK_TRANSFER: "bg-blue-100 text-blue-800 border-blue-200",
   CASH: "bg-green-100 text-green-800 border-green-200",
   CREDIT_CARD: "bg-purple-100 text-purple-800 border-purple-200",
-  //   E_WALLET: "bg-orange-100 text-orange-800 border-orange-200",
 };
 
 const ContractPaymentBrandPage: React.FC = () => {
@@ -80,13 +77,28 @@ const ContractPaymentBrandPage: React.FC = () => {
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
   const [loadingPaymentId, setLoadingPaymentId] = useState<string | null>(null);
   const [modalPaymentLoading, setModalPaymentLoading] = useState(false);
-
-  // Payment modal states
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
-  const handlePayNow = async (contract_payment_id: string) => {
+  const handlePayNow = async (
+    contract_payment_id: string,
+    amount?: number,
+    contractNumber?: string,
+  ) => {
     try {
       setLoadingPaymentId(contract_payment_id);
+      try {
+        if (amount !== undefined && amount !== null) {
+          sessionStorage.setItem(`payment_amount_${contract_payment_id}`, String(amount));
+        }
+        if (contractNumber) {
+          sessionStorage.setItem(
+            `payment_contractNumber_${contract_payment_id}`,
+            String(contractNumber),
+          );
+        }
+      } catch {
+        // intentionally left blank
+      }
       const baseUrl = import.meta.env.VITE_APP_BASE_URL || window.location.origin;
       const returnUrl = `${baseUrl}/payment-success`;
       const cancelUrl = `${baseUrl}/payment-cancel`;
@@ -110,10 +122,21 @@ const ContractPaymentBrandPage: React.FC = () => {
     }
   };
 
-  // Handle Pay Now from modal (separate loading state)
   const handlePayNowFromModal = async (contract_payment_id: string) => {
     try {
       setModalPaymentLoading(true);
+      try {
+        const found = contractPayments.find((p: any) => p.id === contract_payment_id);
+        if (found) {
+          sessionStorage.setItem(`payment_amount_${contract_payment_id}`, String(found.amount));
+          sessionStorage.setItem(
+            `payment_contractNumber_${contract_payment_id}`,
+            String(found.contract_number || ""),
+          );
+        }
+      } catch {
+        // intentionally left blank
+      }
       const baseUrl = import.meta.env.VITE_APP_BASE_URL || window.location.origin;
       const returnUrl = `${baseUrl}/payment-success`;
       const cancelUrl = `${baseUrl}/payment-cancel`;
@@ -138,7 +161,6 @@ const ContractPaymentBrandPage: React.FC = () => {
     }
   };
 
-  // Brand DataSelector states
   const [brandSearch, setBrandSearch] = useState("");
   const [brandPage, setBrandPage] = useState(1);
   const [allBrands, setAllBrands] = useState<any[]>([]);
@@ -153,7 +175,6 @@ const ContractPaymentBrandPage: React.FC = () => {
   } = useContractPayment();
   const { brands, loading: brandLoading, pagination: brandPagination } = useBrand();
 
-  // Fetch brands for DataSelector
   useEffect(() => {
     setAllBrands([]);
     setBrandPage(1);
@@ -178,7 +199,6 @@ const ContractPaymentBrandPage: React.FC = () => {
     }
   }, [brands, brandPage]);
 
-  // Fetch contract payments when filters change
   useEffect(() => {
     const params: Record<string, any> = {
       page,
@@ -218,7 +238,6 @@ const ContractPaymentBrandPage: React.FC = () => {
     dueDateTo,
   ]);
 
-  // Callback functions for DataSelector
   const loadMoreBrands = useCallback(() => {
     if (brandPagination?.has_next && !brandLoading) {
       setBrandPage((p) => p + 1);
@@ -227,7 +246,6 @@ const ContractPaymentBrandPage: React.FC = () => {
 
   const handleBrandSelect = (brandId: string | null) => {
     setSelectedBrandId(brandId);
-    // Reset contract selection when brand changes
     if (selectedContractId) {
       setSelectedContractId(null);
     }
@@ -268,7 +286,6 @@ const ContractPaymentBrandPage: React.FC = () => {
     setSelectedPaymentId(null);
   };
 
-  // Memoized Brand Card Component
   const BrandCard = useMemo(
     () =>
       React.memo(({ brand }: { brand: any }) => {
@@ -316,7 +333,6 @@ const ContractPaymentBrandPage: React.FC = () => {
 
   return (
     <div className="min-h-fit p-4 sm:p-6">
-      {/* Header */}
       <motion.div
         className="flex justify-between items-center mb-6"
         variants={headerVariants}
@@ -333,7 +349,6 @@ const ContractPaymentBrandPage: React.FC = () => {
         </div>
       </motion.div>
 
-      {/* Filters */}
       <motion.div
         className="bg-white rounded-lg shadow mb-4 p-4"
         variants={filterVariants}
@@ -544,7 +559,13 @@ const ContractPaymentBrandPage: React.FC = () => {
                                   variant="default"
                                   size="sm"
                                   className="h-8 px-3 text-xs font-semibold bg-primary text-white"
-                                  onClick={() => handlePayNow(payment.id)}
+                                  onClick={() =>
+                                    handlePayNow(
+                                      payment.id,
+                                      payment.amount,
+                                      payment.contract_number,
+                                    )
+                                  }
                                 >
                                   {loadingPaymentId === payment.id ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -646,7 +667,9 @@ const ContractPaymentBrandPage: React.FC = () => {
                               variant="default"
                               size="sm"
                               className="h-8 px-3 text-xs font-semibold bg-primary text-white"
-                              onClick={() => handlePayNow(payment.id)}
+                              onClick={() =>
+                                handlePayNow(payment.id, payment.amount, payment.contract_number)
+                              }
                             >
                               {loadingPaymentId === payment.id ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />

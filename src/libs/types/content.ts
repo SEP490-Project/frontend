@@ -48,7 +48,7 @@ export interface ContentListParams {
   sort_by?: string;
   sort_order?: string;
   status?: string;
-  type: string;
+  type?: string;
   channel_id?: string;
   search?: string;
   from_date?: string;

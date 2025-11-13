@@ -277,6 +277,11 @@ const Order: React.FC = () => {
                             setSelectedOrder(order);
                             setIsChangeStatusModalOpen(true);
                           }}
+                          disabled={
+                            order.status === "CANCELLED" ||
+                            order.status === "REFUNDED" ||
+                            order.status === "RECEIVED"
+                          }
                         >
                           <SquarePen className="text-yellow-600" />
                         </Button>
@@ -356,6 +361,11 @@ const Order: React.FC = () => {
                       setSelectedOrder(order);
                       setIsChangeStatusModalOpen(true);
                     }}
+                    disabled={
+                      order.status === "CANCELLED" ||
+                      order.status === "REFUNDED" ||
+                      order.status === "RECEIVED"
+                    }
                   >
                     <SquarePen className="text-yellow-600 mr-2" />
                     Change Status

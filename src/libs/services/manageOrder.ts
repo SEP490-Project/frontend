@@ -20,6 +20,16 @@ export const manageOrder = {
     action: "CONFIRM" | "CANCEL";
     reason: any;
   }) => api.post(`/orders/staff/${orderId}/censorship?action=${action}`, reason),
+  getSelfDeliveryOrders: (query: OrderRequestQuery) =>
+    api.get("/orders/staff/self-delivering", { params: query }),
+  markSelfDeliveryOrderAsDelivered: ({ orderId, files }: { orderId: string; files: FormData }) =>
+    api.patch(`/orders/staff/self-delivering/delivered/${orderId}`, files, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }),
+  markSelfDeliveryOrderAsInTransit: (orderId: string) =>
+    api.patch(`/orders/staff/self-delivering/in-transit/${orderId}`),
 };
 
 export default manageOrder;

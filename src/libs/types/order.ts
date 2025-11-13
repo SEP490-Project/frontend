@@ -21,9 +21,14 @@ export interface OrderData {
   shipping_fee: number;
   created_at: string;
   updated_at: string;
+  is_self_picked_up: boolean;
+  user_note: string;
+  order_type: string;
+  ghn_order_code?: string;
   order_items: OrderItem[];
   payment_id: string;
   payment_bin: string;
+  self_picked_up_image?: string;
 }
 
 export interface OrderItem {

@@ -18,13 +18,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FaFilter, FaEye } from "react-icons/fa6";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useAppDispatch, type RootState } from "@/libs/stores";
 import { getOrderForSaleStaffThunk } from "@/libs/stores/orderManager/thunk";
 import { useSelector } from "react-redux";
 import type { OrderData, OrderRequestQuery } from "@/libs/types/order";
 import { PaginationTable } from "@/components/global";
 import OrderDetail from "@/components/manage/sale/order/OrderDetail";
+import { ChangeStatusModal } from "@/components/manage/sale/order/ChangeStatusModal";
+import { SquarePen } from "lucide-react";
 
 const Order: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -42,6 +50,7 @@ const Order: React.FC = () => {
   });
   const [selectedOrder, setSelectedOrder] = useState<OrderData | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  const [isChangeStatusModalOpen, setIsChangeStatusModalOpen] = useState(false);
 
   useEffect(() => {
     const queryParams: OrderRequestQuery = {
@@ -79,8 +88,15 @@ const Order: React.FC = () => {
 
   const getStatusBadgeClass = (status: string) => {
     const statusMap: Record<string, string> = {
+      paid: "bg-green-100 text-green-800 border border-green-200 hover:bg-green-200",
       pending: "bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200",
       cancelled: "bg-red-100 text-red-800 border border-red-200 hover:bg-red-200",
+      refunded: "bg-purple-100 text-purple-800 border border-purple-200 hover:bg-purple-200",
+      received: "bg-teal-100 text-teal-800 border border-teal-200 hover:bg-teal-200",
+      shipped: "bg-yellow-100 text-yellow-800 border border-yellow-200 hover:bg-yellow-200",
+      delivered: "bg-green-200 text-green-900 border border-green-300 hover:bg-green-300",
+      confirmed: "bg-green-100 text-green-800 border border-green-200 hover:bg-green-200",
+      in_transit: "bg-orange-100 text-orange-800 border border-orange-200 hover:bg-orange-200",
     };
     return (
       statusMap[status.toLowerCase()] ||
@@ -160,6 +176,7 @@ const Order: React.FC = () => {
                 <TableHead className="font-semibold">Order ID</TableHead>
                 <TableHead className="font-semibold">Customer</TableHead>
                 <TableHead className="font-semibold">Total Amount</TableHead>
+                <TableHead className="font-semibold">Type</TableHead>
                 <TableHead className="font-semibold">Status</TableHead>
                 <TableHead className="font-semibold">Created At</TableHead>
                 <TableHead className="font-semibold">Actions</TableHead>
@@ -219,6 +236,18 @@ const Order: React.FC = () => {
                     </TableCell>
 
                     <TableCell className="py-4">
+                      <Badge
+                        className={
+                          order.order_type === "STANDARD"
+                            ? "bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200 "
+                            : "bg-orange-100 text-orange-800 border border-orange-200 hover:bg-orange-200 "
+                        }
+                      >
+                        {order.order_type}
+                      </Badge>
+                    </TableCell>
+
+                    <TableCell className="py-4">
                       <Badge className={getStatusBadgeClass(order.status)}>
                         {order.status.toUpperCase()}
                       </Badge>
@@ -238,6 +267,18 @@ const Order: React.FC = () => {
                           onClick={() => handleViewOrder(order)}
                         >
                           <FaEye className="text-blue-600" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="hover:bg-yellow-100"
+                          title="Change Status"
+                          onClick={() => {
+                            setSelectedOrder(order);
+                            setIsChangeStatusModalOpen(true);
+                          }}
+                        >
+                          <SquarePen className="text-yellow-600" />
                         </Button>
                       </div>
                     </TableCell>
@@ -306,6 +347,19 @@ const Order: React.FC = () => {
                     <FaEye className="text-blue-600 mr-2" />
                     View Details
                   </Button>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex-1 hover:bg-yellow-100"
+                    onClick={() => {
+                      setSelectedOrder(order);
+                      setIsChangeStatusModalOpen(true);
+                    }}
+                  >
+                    <SquarePen className="text-yellow-600 mr-2" />
+                    Change Status
+                  </Button>
                 </div>
               </div>
             ))
@@ -320,6 +374,25 @@ const Order: React.FC = () => {
             <DialogTitle>Order Details</DialogTitle>
           </DialogHeader>
           {selectedOrder && <OrderDetail order={selectedOrder} />}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isChangeStatusModalOpen} onOpenChange={setIsChangeStatusModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedOrder?.is_self_picked_up ? "Self Picked Up Order" : "Shipping Order"}
+            </DialogTitle>
+            <DialogDescription>
+              Change the status of the order and manage its progress.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedOrder && (
+            <ChangeStatusModal
+              order={selectedOrder}
+              onSuccess={() => setIsChangeStatusModalOpen(false)}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>

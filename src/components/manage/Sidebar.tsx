@@ -6,8 +6,6 @@ import {
   FaUserGear,
   FaRegUser,
   FaRegCircleQuestion,
-  FaRegFileLines,
-  FaFolderOpen,
   FaHashtag,
   FaCalendarDays,
   FaFilePen,
@@ -21,7 +19,8 @@ import {
   FaListCheck,
   FaXmark,
   FaPowerOff,
-  FaClipboardList,
+  FaFileSignature,
+  FaMoneyBillTransfer,
 } from "react-icons/fa6";
 import { useAuth } from "@/libs/hooks/useAuth";
 import { useAppDispatch } from "@/libs/stores";
@@ -171,9 +170,17 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const roleBasedTabs: Record<string, TabItem[]> = {
     BRAND_PARTNER: [
-      { href: "/manage/brand/contracts", label: "Contracts", icon: <FaRegFileLines size={18} /> },
-      { href: "/manage/brand/campaigns", label: "Campaigns", icon: <FaFolderOpen size={18} /> },
-      { href: "/manage/brand/payment", label: "Payment", icon: <FaMoneyCheckDollar size={18} /> },
+      { href: "/manage/brand/contracts", label: "Contracts", icon: <FaFileContract size={18} /> },
+      {
+        href: "/manage/brand/campaigns",
+        label: "Campaigns & Tasks",
+        icon: <FaListCheck size={18} />,
+      },
+      {
+        href: "/manage/brand/contract-payment",
+        label: "Contract Payment",
+        icon: <FaMoneyBillTransfer size={18} />,
+      },
     ],
     MARKETING_STAFF: [
       { href: "/manage/marketing/brands", label: "Brands", icon: <FaHandshake size={18} /> },
@@ -184,13 +191,23 @@ const Sidebar: React.FC<SidebarProps> = ({
       },
       {
         href: "/manage/marketing/campaigns",
-        label: "Campaigns",
+        label: "Campaigns & Tasks",
         icon: <FaListCheck size={18} />,
       },
       {
-        href: "/manage/marketing/content-approval",
-        label: "Contents",
-        icon: <FaClipboardList size={18} />,
+        href: "/manage/marketing/contract-payment",
+        label: "Contract Payment",
+        icon: <FaMoneyBillTransfer size={18} />,
+      },
+      {
+        href: "/manage/marketing/contents-approval",
+        label: "Review Contents",
+        icon: <FaFileSignature size={18} />,
+      },
+      {
+        href: "/manage/marketing/task-schedule",
+        label: "Task Schedule",
+        icon: <FaCalendarDays size={18} />,
       },
     ],
     SALES_STAFF: [

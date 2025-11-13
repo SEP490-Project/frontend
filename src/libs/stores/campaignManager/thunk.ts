@@ -21,7 +21,7 @@ export const getCampaignById = createAsyncThunk(
   async (campaignId: string, { rejectWithValue }) => {
     try {
       const response = await manageCampaign.getCampaignById(campaignId);
-      return response.data.data; // Return the actual campaign data, not the wrapper
+      return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
       return rejectWithValue(err.response?.data?.message || "Failed to fetch campaign detail");
@@ -32,7 +32,17 @@ export const getCampaignById = createAsyncThunk(
 export const campaign = createAsyncThunk(
   "/campaigns",
   async (
-    req: { page: number; limit: number; keywords?: string; status?: string; type?: string },
+    req: {
+      page: number;
+      limit: number;
+      keyword?: string;
+      status?: string;
+      type?: string;
+      start_date: string;
+      end_date: string;
+      sort_by: string;
+      sort_order: string;
+    },
     { rejectWithValue },
   ) => {
     try {
@@ -50,6 +60,45 @@ export const createCampaign = createAsyncThunk(
   async (req: CampaignRequest, { rejectWithValue }) => {
     try {
       const response = await manageCampaign.CreateCampaign(req);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Thất bại");
+    }
+  },
+);
+
+export const createInternalCampaign = createAsyncThunk(
+  "/campaigns/create/internal",
+  async (req: CampaignRequest, { rejectWithValue }) => {
+    try {
+      const response = await manageCampaign.createInternalCampaign(req);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Thất bại");
+    }
+  },
+);
+
+export const approveCampaign = createAsyncThunk(
+  "/campaigns/approve",
+  async (req: string, { rejectWithValue }) => {
+    try {
+      const response = await manageCampaign.approveCampaign(req);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Thất bại");
+    }
+  },
+);
+
+export const rejectCampaign = createAsyncThunk(
+  "/campaigns/reject",
+  async ({ id, reason }: { id: string; reason?: string }, { rejectWithValue }) => {
+    try {
+      const response = await manageCampaign.rejectCampaign(id, reason);
       return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;

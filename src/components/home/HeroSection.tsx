@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 
 export function HeroSection() {
-  const heroBackground = "../public/hero/hero-section.png";
+  const heroBackground = "/hero/hero-section.png";
   return (
     <section className="relative overflow-hidden min-h-[80vh]">
       <div

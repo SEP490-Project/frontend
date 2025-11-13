@@ -5,35 +5,35 @@ export default function BloomBeautyGallery() {
   const galleryItems = [
     {
       id: 1,
-      image: "./public/gallery/skincare-clay-mask-jar-with-pink-packaging.jpg",
+      image: "/gallery/skincare-clay-mask-jar-with-pink-packaging.jpg",
     },
     {
       id: 2,
-      image: "./public/gallery/beauty-store-interior-with-pink-and-white-products.jpg",
+      image: "/gallery/beauty-store-interior-with-pink-and-white-products.jpg",
     },
     {
       id: 3,
-      image: "./public/gallery/pink-cream-in-glass-jar-skincare-product.jpg",
+      image: "/gallery/pink-cream-in-glass-jar-skincare-product.jpg",
     },
     {
       id: 4,
-      image: "./public/gallery/hands-holding-white-beauty-device-skincare-tool.jpg",
+      image: "/gallery/hands-holding-white-beauty-device-skincare-tool.jpg",
     },
     {
       id: 5,
-      image: "./public/gallery/pink-skincare-tubes-with-scrunchie-beauty-products.jpg",
+      image: "/gallery/pink-skincare-tubes-with-scrunchie-beauty-products.jpg",
     },
     {
       id: 6,
-      image: "./public/gallery/asian-woman-applying-makeup-with-brush-beauty-rout.jpg",
+      image: "/gallery/asian-woman-applying-makeup-with-brush-beauty-rout.jpg",
     },
     {
       id: 7,
-      image: "./public/gallery/hands-holding-golden-serum-bottle-skincare-product.jpg",
+      image: "/gallery/hands-holding-golden-serum-bottle-skincare-product.jpg",
     },
     {
       id: 8,
-      image: "./public/gallery/blue-hyaluronic-acid-skincare-tubes-beauty-product.jpg",
+      image: "/gallery/blue-hyaluronic-acid-skincare-tubes-beauty-product.jpg",
     },
   ];
 

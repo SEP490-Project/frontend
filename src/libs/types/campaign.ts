@@ -34,6 +34,7 @@ export interface CampaignParams {
   limit: number;
   status?: string;
   type?: string;
+  keyword?: string;
 }
 
 export interface CampaignResponse {
@@ -53,7 +54,7 @@ export interface CampaignResponse {
 }
 
 export interface CampaignRequest {
-  contract_id: string;
+  contract_id?: string;
   name: string;
   description: string;
   start_date: string;

@@ -16,13 +16,13 @@ import AddressSelector from "@/components/global/AddressSelector";
 import { WarningDialog } from "@/components/global";
 
 const BrandAmbassadorScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork }) => {
-  const scope = formData?.scopeOfWork || {};
+  const scope = formData?.scope_of_work || {}; // Changed from scopeOfWork to scope_of_work
   const deliverables = scope.deliverables || {};
   const ensureArray = (arr: any) => (Array.isArray(arr) ? arr : []);
   const eventsList = ensureArray(deliverables.events);
 
-  const contractStartDate = formData?.startDate;
-  const contractEndDate = formData?.endDate;
+  const contractStartDate = formData?.start_date; // snake_case
+  const contractEndDate = formData?.end_date; // snake_case
 
   const [deleteDialog, setDeleteDialog] = useState<{
     isOpen: boolean;
@@ -47,9 +47,9 @@ const BrandAmbassadorScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateSc
     name: "",
     date: "",
     location: "",
-    expected_duration: "",
+    expected_duration: "", // snake_case
     activities: [""],
-    representation_rules: [""],
+    representation_rules: [""], // snake_case
     kpis: [{ metric: "", target: "", description: "" }],
   });
 
@@ -201,10 +201,10 @@ const BrandAmbassadorScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateSc
 
                     <DurationPicker
                       label="Expected Duration"
-                      value={event.expected_duration || ""}
+                      value={event.expected_duration || ""} // snake_case
                       onChange={(duration) => {
                         const updated = [...events];
-                        updated[i] = { ...updated[i], expected_duration: duration };
+                        updated[i] = { ...updated[i], expected_duration: duration }; // snake_case
                         updateDeliverables({ events: updated });
                       }}
                       placeholder="Select duration"
@@ -231,13 +231,14 @@ const BrandAmbassadorScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateSc
                   <DynamicListInput
                     label="Representation Rules & Requirements"
                     icon={<FaScroll className="w-4 h-4" />}
-                    items={event.representation_rules || []}
+                    items={event.representation_rules || []} // snake_case
                     placeholder="e.g., Must wear formal attire with long leggings, Wear light makeup"
                     helpText="Dress code, behavior guidelines, and specific requirements"
                     multiline
                     onChange={(representation_rules) => {
+                      // snake_case
                       const updated = [...events];
-                      updated[i] = { ...updated[i], representation_rules };
+                      updated[i] = { ...updated[i], representation_rules }; // snake_case
                       updateDeliverables({ events: updated });
                     }}
                     addLabel="Add Rule"
@@ -248,7 +249,7 @@ const BrandAmbassadorScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateSc
                       contractType="BRAND_AMBASSADOR"
                       kpis={(event.kpis || []).map((kpi: any) => ({
                         metric: kpi.type || kpi.metric || "",
-                        target: kpi.target_value || kpi.target || "",
+                        target: kpi.target_value || kpi.target || "", // snake_case
                         description: kpi.description || "",
                       }))}
                       onChange={(kpis) => {

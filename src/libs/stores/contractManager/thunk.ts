@@ -11,12 +11,13 @@ export const contract = createAsyncThunk(
       type?: string;
       status?: string;
       keyword?: string;
+      no_campaign?: boolean;
       start_date?: string;
       end_date?: string;
       page: number;
       limit: number;
       sort_by: string;
-      order: "asc" | "desc";
+      sort_order: string;
     },
     { rejectWithValue },
   ) => {
@@ -32,12 +33,44 @@ export const contract = createAsyncThunk(
 
 export const getContractsByBrand = createAsyncThunk(
   "contracts/getByBrand",
-  async (req: ContractParams, { rejectWithValue }) => {
+  async (
+    req: {
+      page: number;
+      limit: number;
+      sort_by: string;
+      sort_order: string;
+      type?: string;
+      status?: string;
+      keyword?: string;
+      start_date?: string;
+      end_date?: string;
+    },
+    { rejectWithValue },
+  ) => {
     try {
       const response = await manageContract.getContractsByBrand(req);
       return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Failed to fetch contracts");
+    }
+  },
+);
+
+export const getContractsByBrandId = createAsyncThunk(
+  "contracts/getByBrandId",
+  async (req: ContractParams, { rejectWithValue }) => {
+    try {
+      if (!req.brand_id) throw new Error("Missing brand_id");
+
+      const response = await manageContract.getContractsByBrandId(req.brand_id, {
+        page: req.page ?? 1,
+        limit: req.limit ?? 10,
+      });
+
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message?: string }>;
       return rejectWithValue(err.response?.data?.message || "Failed to fetch contracts");
     }
   },

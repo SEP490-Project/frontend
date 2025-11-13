@@ -121,7 +121,7 @@ const VariantsStep = () => {
     }
 
     const variant = variants.find((v) => v.id === variantId);
-    console.log("Found variant for image upload:", variant);
+
     if (!variant || !variant.id) {
       toast.error("Variant not found or missing ID.");
       return;
@@ -133,11 +133,6 @@ const VariantsStep = () => {
       formData.append("file", file, file.name);
       formData.append("is_primary", "true");
       formData.append("alt_text", variant.name ? `${variant.name} image` : "Product variant image");
-
-      console.log("FormData entries:");
-      for (const [key, value] of formData.entries()) {
-        console.log(key, value);
-      }
 
       await dispatch(
         createVariantImageThunk({
@@ -152,7 +147,6 @@ const VariantsStep = () => {
       toast.success("Variant image uploaded successfully!");
     } catch (error) {
       toast.error((error as string) || "Failed to upload variant image");
-      console.error("Error uploading image:", error);
     } finally {
       setIsLoading(false);
     }
@@ -179,7 +173,6 @@ const VariantsStep = () => {
       form.reset();
     } catch (error) {
       toast.error((error as string) || "Failed to add product variant");
-      console.error("Error adding variant:", error);
     } finally {
       setIsLoading(false);
     }

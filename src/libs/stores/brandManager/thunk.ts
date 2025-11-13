@@ -6,7 +6,14 @@ import type { AddBrand } from "@/libs/types/brand";
 export const brand = createAsyncThunk(
   "/brands",
   async (
-    req: { page: number; limit: number; keywords?: string; status?: string },
+    req: {
+      page: number;
+      limit: number;
+      keywords?: string;
+      status?: string;
+      sort_by?: string;
+      sort_order?: string;
+    },
     { rejectWithValue },
   ) => {
     try {
@@ -37,6 +44,19 @@ export const brandDetail = createAsyncThunk(
   async (id: string, { rejectWithValue }) => {
     try {
       const response = await manageBrand.brandDetail(id);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Thất bại");
+    }
+  },
+);
+
+export const updateBrand = createAsyncThunk(
+  "/brands/update",
+  async (req: { id: string; data: AddBrand }, { rejectWithValue }) => {
+    try {
+      const response = await manageBrand.updateBrand(req.id, req.data);
       return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;

@@ -14,9 +14,14 @@ import { categoryManagerReducer } from "./categoryManager/slice";
 import { attributeManagerReducer } from "./attributeManager/slice";
 import { conceptManagerReducer } from "./conceptManager/slice";
 import { manageTagReducer } from "./tagManager/slice";
+import { manageChannelReducer } from "./channelManager/slice";
+import { manageTaskReducer } from "./taskManager/slice";
+import { manageContractPaymentReducer } from "./contractPaymentManager/slice";
+import { manageContentMarketingReducer } from "./contentMarketingManager/slice";
 import { managePaymentReducer } from "./paymentManager/slice";
 import { stateManagerReducer } from "./stateManager/slice";
 import { orderManagerReducer } from "./orderManager/slice";
+import { transactionManagerReducer } from "./transactionManager/slice";
 
 export const rootReducer = combineReducers({
   manageAuthen: manageAuthenReducer,
@@ -35,7 +40,12 @@ export const rootReducer = combineReducers({
   manageAttribute: attributeManagerReducer,
   manageConcept: conceptManagerReducer,
   manageTag: manageTagReducer,
+  manageChannel: manageChannelReducer,
+  manageTask: manageTaskReducer,
+  manageContractPayment: manageContractPaymentReducer,
+  manageContentMarketing: manageContentMarketingReducer,
   managePayment: managePaymentReducer,
   manageState: stateManagerReducer,
   manageOrder: orderManagerReducer,
+  manageTransaction: transactionManagerReducer,
 });

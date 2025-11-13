@@ -12,9 +12,12 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { DatePicker } from "@/components/date-picker";
-import { FileUploader } from "@/components/global";
+import { ContractUploader } from "@/components/global";
 import { Plus, Trash2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
+import { useAppDispatch } from "@/libs/stores";
+import { getContractById } from "@/libs/stores/contractManager/thunk";
+import { useContract } from "@/libs/hooks/useContract";
 
 interface TaskDescription {
   description: string;
@@ -28,6 +31,7 @@ interface Task {
   description: TaskDescription;
   deadline: string;
   materialFiles?: File[];
+  material_urls?: string[];
 }
 
 interface Milestone {
@@ -42,6 +46,7 @@ interface CreateTaskProps {
   setMilestones: React.Dispatch<React.SetStateAction<Milestone[]>>;
   selectedContract: any;
   campaignType: string;
+  campaignMode: "contract" | "internal";
   onBack: () => void;
   onNext: () => void;
 }
@@ -84,12 +89,59 @@ const CreateTask: React.FC<CreateTaskProps> = ({
   setMilestones,
   selectedContract,
   campaignType,
+  campaignMode,
   onBack,
   onNext,
 }) => {
   const taskTypeOptions = getTaskTypeOptions(campaignType);
   const contractStart = formatDateForInput(selectedContract?.start_date);
   const contractEnd = formatDateForInput(selectedContract?.end_date);
+  const dispatch = useAppDispatch();
+  const { contractDetail, detailLoading } = useContract();
+  const [hasLoadedContract, setHasLoadedContract] = React.useState<string | null>(null);
+
+  // Reset flag when campaign mode changes
+  React.useEffect(() => {
+    if (campaignMode === "internal") {
+      setHasLoadedContract(null);
+    }
+  }, [campaignMode]);
+
+  // Auto-populate milestones from contract financial terms
+  React.useEffect(() => {
+    if (
+      campaignMode === "contract" &&
+      selectedContract?.id &&
+      hasLoadedContract !== selectedContract.id
+    ) {
+      // Fetch contract detail to get financial terms
+      dispatch(getContractById(selectedContract.id));
+      setHasLoadedContract(selectedContract.id);
+    }
+  }, [dispatch, selectedContract?.id, campaignMode, hasLoadedContract]);
+
+  // Populate milestones from contract financial terms schedule
+  React.useEffect(() => {
+    if (
+      campaignMode === "contract" &&
+      contractDetail?.id === selectedContract?.id &&
+      (contractDetail?.financial_terms as any)?.schedule &&
+      milestones.length === 0 // Only populate if milestones are empty
+    ) {
+      const schedule = (contractDetail!.financial_terms as any).schedule;
+      const contractMilestones = schedule.map((scheduleItem: any) => ({
+        id: crypto.randomUUID(),
+        description: scheduleItem.milestone || `Payment milestone ${scheduleItem.id}`,
+        due_date: formatDateForInput(scheduleItem.due_date),
+        tasks: [],
+      }));
+
+      setMilestones(contractMilestones);
+    }
+  }, [contractDetail, selectedContract?.id, campaignMode, milestones.length, setMilestones]);
+
+  console.log("contract selected", selectedContract);
+  console.log("contract detail", contractDetail);
 
   const addMilestone = () => {
     setMilestones((prev) => [
@@ -119,6 +171,7 @@ const CreateTask: React.FC<CreateTaskProps> = ({
                   description: { description: "", material_url: "" },
                   deadline: "",
                   materialFiles: [],
+                  material_urls: [],
                 },
               ],
             }
@@ -152,6 +205,7 @@ const CreateTask: React.FC<CreateTaskProps> = ({
     if (task) {
       updateTask(milestoneId, taskId, {
         description: { ...task.description, material_url },
+        material_urls: urls,
       });
     }
   };
@@ -159,11 +213,16 @@ const CreateTask: React.FC<CreateTaskProps> = ({
   const handleTaskMaterialFilesChange = (milestoneId: string, taskId: string, files: File[]) =>
     updateTask(milestoneId, taskId, { materialFiles: files });
 
-  const handleTaskMaterialRemove = (milestoneId: string, taskId: string) => {
+  const handleTaskMaterialRemove = (milestoneId: string, taskId: string, removedUrls: string[]) => {
     const task = milestones.find((m) => m.id === milestoneId)?.tasks.find((t) => t.id === taskId);
     if (task) {
+      // Remove URLs from material_urls array
+      const currentUrls = task.material_urls || [];
+      const updatedUrls = currentUrls.filter((url) => !removedUrls.includes(url));
+
       updateTask(milestoneId, taskId, {
-        description: { ...task.description, material_url: "" },
+        description: { ...task.description, material_url: updatedUrls[0] || "" },
+        material_urls: updatedUrls,
         materialFiles: [],
       });
     }
@@ -171,27 +230,50 @@ const CreateTask: React.FC<CreateTaskProps> = ({
 
   return (
     <div className="pt-6 space-y-6">
+      {/* Loading State */}
+      {campaignMode === "contract" && detailLoading && (
+        <div className="flex items-center justify-center p-8">
+          <div className="flex items-center gap-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent" />
+            <span className="text-sm text-gray-600">Loading contract milestones...</span>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h3 className="text-lg font-semibold">Milestones & Tasks</h3>
-          {selectedContract && (
+          {campaignMode === "contract" && selectedContract && (
             <p className="text-sm text-gray-600 mt-1">
               Contract: <span className="font-medium">{selectedContract.title}</span>{" "}
               <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs">
                 {campaignType.replace(/_/g, " ")}
               </span>
+              <span className="ml-2 text-xs text-green-600">
+                • Milestones auto-populated from contract
+              </span>
+            </p>
+          )}
+          {campaignMode === "internal" && (
+            <p className="text-sm text-gray-600 mt-1">
+              Internal campaign:{" "}
+              <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-800 rounded-full text-xs">
+                {campaignType.replace(/_/g, " ")}
+              </span>
             </p>
           )}
         </div>
-        <Button
-          onClick={addMilestone}
-          variant="outline"
-          size="sm"
-          className="flex items-center gap-1"
-        >
-          <Plus size={14} /> Add Milestone
-        </Button>
+        {campaignMode === "internal" && (
+          <Button
+            onClick={addMilestone}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-1"
+          >
+            <Plus size={14} /> Add Milestone
+          </Button>
+        )}
       </div>
 
       {/* Milestones */}
@@ -203,19 +285,28 @@ const CreateTask: React.FC<CreateTaskProps> = ({
           <Card key={m.id} className="border shadow-sm hover:shadow-md transition">
             <CardHeader className="flex justify-between items-start bg-gray-50/70 p-4">
               <div>
-                <CardTitle className="text-base font-semibold">Milestone {mi + 1}</CardTitle>
+                <CardTitle className="text-base font-semibold">
+                  Milestone {mi + 1}
+                  {campaignMode === "contract" && (
+                    <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-normal">
+                      From Contract
+                    </span>
+                  )}
+                </CardTitle>
                 <p className="text-xs text-gray-500 mt-1">
                   {m.tasks.length} task(s) • Due: {m.due_date || "Not set"}
                 </p>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => removeMilestone(m.id)}
-                className="hover:text-red-600"
-              >
-                <Trash2 size={16} />
-              </Button>
+              {campaignMode === "internal" && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeMilestone(m.id)}
+                  className="hover:text-red-600"
+                >
+                  <Trash2 size={16} />
+                </Button>
+              )}
             </CardHeader>
 
             <CardContent className="space-y-5 p-5">
@@ -227,15 +318,30 @@ const CreateTask: React.FC<CreateTaskProps> = ({
                     placeholder="Describe this milestone..."
                     value={m.description}
                     onChange={(e) => updateMilestone(m.id, { description: e.target.value })}
+                    readOnly={campaignMode === "contract"}
+                    className={campaignMode === "contract" ? "bg-gray-50 text-gray-600" : ""}
                   />
+                  {campaignMode === "contract" && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Milestone description is from contract and cannot be edited.
+                    </p>
+                  )}
                 </div>
-                <DatePicker
-                  label="Due Date"
-                  value={m.due_date}
-                  onChange={(date) => updateMilestone(m.id, { due_date: date })}
-                  minDate={milestoneMin}
-                  maxDate={milestoneMax}
-                />
+                <div>
+                  <DatePicker
+                    label="Due Date"
+                    value={m.due_date}
+                    onChange={(date) => updateMilestone(m.id, { due_date: date })}
+                    minDate={milestoneMin}
+                    maxDate={milestoneMax}
+                    disabled={campaignMode === "contract"}
+                  />
+                  {campaignMode === "contract" && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Due date is from contract payment schedule.
+                    </p>
+                  )}
+                </div>
               </div>
 
               {/* Tasks */}
@@ -326,17 +432,49 @@ const CreateTask: React.FC<CreateTaskProps> = ({
                         </div>
 
                         <div>
-                          <Label>Material Upload (Optional)</Label>
-                          <FileUploader
+                          <Label>Task Material (Optional)</Label>
+                          <ContractUploader
                             userId="demo"
+                            accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.webp,.mp4,.avi,.mov,.zip,.rar"
                             multiple={false}
+                            maxSize={10}
                             maxFiles={1}
-                            onFilesChange={(files) =>
+                            allowedTypes={[
+                              "pdf",
+                              "doc",
+                              "docx",
+                              "ppt",
+                              "pptx",
+                              "jpg",
+                              "jpeg",
+                              "png",
+                              "gif",
+                              "webp",
+                              "mp4",
+                              "avi",
+                              "mov",
+                              "zip",
+                              "rar",
+                            ]}
+                            onFilesChange={(files: File[]) =>
                               handleTaskMaterialFilesChange(m.id, t.id, files)
                             }
-                            onUploadComplete={(urls) => handleTaskMaterialUpload(m.id, t.id, urls)}
-                            onFilesRemove={() => handleTaskMaterialRemove(m.id, t.id)}
+                            onUploadComplete={(urls: string[]) =>
+                              handleTaskMaterialUpload(m.id, t.id, urls)
+                            }
+                            onFilesRemove={(removedUrls: string[]) =>
+                              handleTaskMaterialRemove(m.id, t.id, removedUrls)
+                            }
+                            title="Task Material"
+                            className="w-full"
+                            initialFiles={t.materialFiles || []}
+                            initialUrls={t.material_urls || []}
+                            context={`task-${t.id}`}
                           />
+                          <p className="text-xs text-slate-500 mt-1">
+                            Upload reference materials, briefs, or assets for this task (Documents,
+                            images, videos, archives - max 1 file, up to 10MB)
+                          </p>
                         </div>
                       </CardContent>
                     </Card>

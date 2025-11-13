@@ -14,6 +14,7 @@ export interface Brand {
   representative_phone: string;
   representative_role: string;
   tax_number: string;
+  has_campaign: boolean;
 }
 
 export interface ParentContract {
@@ -34,6 +35,7 @@ export interface ContractDetail {
   type: string;
   status: string;
   deposit_amount: number;
+  deposit_percent: number;
   is_deposit_paid: boolean;
   brand: Brand;
   representative_name: string;
@@ -107,7 +109,7 @@ export interface ContractDetail {
 }
 
 export interface ContractParams {
-  brand_id: string;
+  brand_id?: string;
   page?: number;
   limit?: number;
   status?: string;

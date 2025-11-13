@@ -5,9 +5,15 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Check, X, Loader2, Tag, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import type { Content } from "@/libs/types/content";
-import { manageContent } from "@/libs/services/manageContent";
 import { tiptapJsonToHtml, isTiptapJson } from "@/libs/helper/tiptapHelper";
 import RejectReasonModal from "./RejectFeedbackModal";
+import {
+  marketingContentDetail,
+  marketingApproveContent,
+  marketingRejectContent,
+} from "@/libs/stores/contentMarketingManager/thunk";
+import { useContentMarketing } from "@/libs/hooks/useContentMarketing";
+import { useAppDispatch } from "@/libs/stores";
 
 interface ContentPreviewProps {
   contentId: string | null;
@@ -22,35 +28,26 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
   onClose,
   onContentUpdated,
 }) => {
-  const [content, setContent] = useState<Content | null>(null);
-  const [loading, setLoading] = useState(false);
+  const { content, loading } = useContentMarketing();
+  const dispatch = useAppDispatch();
   const [approving, setApproving] = useState(false);
   const [rejecting, setRejecting] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
 
   // Fetch content details when modal opens
   useEffect(() => {
-    const fetchContent = async () => {
-      if (!contentId || !isOpen) return;
+    if (!contentId || !isOpen) return;
 
-      setLoading(true);
+    const fetchContentDetail = async () => {
       try {
-        const response = await manageContent.contentDetail(contentId);
-        if (response.data.success) {
-          setContent(response.data.data);
-        } else {
-          toast.error("Failed to load content details");
-        }
+        await dispatch(marketingContentDetail(contentId));
       } catch {
         toast.error("Failed to load content details");
-        setContent(null);
-      } finally {
-        setLoading(false);
       }
     };
 
-    fetchContent();
-  }, [contentId, isOpen]);
+    fetchContentDetail();
+  }, [contentId, isOpen, dispatch]);
 
   // Handle approve content
   const handleApproveContent = async () => {
@@ -58,18 +55,19 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
 
     setApproving(true);
     try {
-      await manageContent.approveContent(content.id);
-      toast.success(`Content "${content.title}" has been approved for publication.`);
+      const result = await dispatch(marketingApproveContent(content.id));
 
-      // Update content status locally
-      const updatedContent = { ...content, status: "APPROVED" };
-      setContent(updatedContent);
-      onContentUpdated?.(updatedContent);
+      if (marketingApproveContent.fulfilled.match(result)) {
+        toast.success(`Content "${content.title}" has been approved for publication.`);
+        onContentUpdated?.(content as any);
 
-      // Close modal after a short delay
-      setTimeout(() => {
-        onClose();
-      }, 1500);
+        // Close modal after a short delay
+        setTimeout(() => {
+          onClose();
+        }, 1500);
+      } else {
+        toast.error("Failed to approve content. Please try again.");
+      }
     } catch {
       toast.error("Failed to approve content. Please try again.");
     } finally {
@@ -88,21 +86,27 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
 
     setRejecting(true);
     try {
-      await manageContent.rejectContent(content.id, feedback);
-      toast.success(`Content "${content.title}" has been rejected.`);
+      const result = await dispatch(
+        marketingRejectContent({
+          id: content.id,
+          feedback,
+        }),
+      );
 
-      // Update content status locally and include rejection feedback
-      const updatedContent = { ...content, status: "REJECTED", rejection_feedback: feedback };
-      setContent(updatedContent);
-      onContentUpdated?.(updatedContent);
+      if (marketingRejectContent.fulfilled.match(result)) {
+        toast.success(`Content "${content.title}" has been rejected.`);
+        onContentUpdated?.(content as any);
 
-      // Close modals
-      setShowRejectModal(false);
+        // Close modals
+        setShowRejectModal(false);
 
-      // Close main modal after a short delay
-      setTimeout(() => {
-        onClose();
-      }, 1500);
+        // Close main modal after a short delay
+        setTimeout(() => {
+          onClose();
+        }, 1500);
+      } else {
+        toast.error("Failed to reject content. Please try again.");
+      }
     } catch {
       toast.error("Failed to reject content. Please try again.");
     } finally {
@@ -296,11 +300,11 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
                     <div className="flex items-center gap-2">
                       <span>
                         {formatDateTime(content.created_at)} by{" "}
-                        {content.blog?.author?.username || content.actor || "Unknown"}
+                        {content.blog?.author?.username || "Unknown"}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span>{getReadingTime(content)}</span>
+                      <span>{getReadingTime(content as any)}</span>
                     </div>
                     <div>{getStatusBadge(content.status)}</div>
                   </div>
@@ -332,21 +336,6 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
                             className="ProseMirror prose prose-sm sm:prose-base lg:prose-lg max-w-none prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-blockquote:my-2"
                           />
                         );
-                      }
-
-                      // Handle html_content field
-                      if (content.html_content && typeof content.html_content === "string") {
-                        if (isTiptapJson(content.html_content)) {
-                          const htmlContent = tiptapJsonToHtml(content.html_content);
-                          return (
-                            <div
-                              dangerouslySetInnerHTML={{ __html: htmlContent }}
-                              className="ProseMirror prose prose-sm sm:prose-base lg:prose-lg max-w-none prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-blockquote:my-2"
-                            />
-                          );
-                        } else {
-                          return <div dangerouslySetInnerHTML={{ __html: content.html_content }} />;
-                        }
                       }
 
                       // Handle body as string

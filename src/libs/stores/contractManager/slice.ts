@@ -1,14 +1,14 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { contract } from "./thunk";
 import {
+  contract,
   getContractsByBrand,
+  getContractsByBrandId,
   approveContract,
   rejectContract,
   getContractById,
   createContract,
 } from "./thunk";
-import type { ContractDetail } from "@/libs/types/contract";
-import type { ContractBase } from "@/libs/types/contract";
+import type { ContractDetail, ContractBase } from "@/libs/types/contract";
 
 interface stateType {
   loading: boolean;
@@ -70,6 +70,19 @@ export const manageContractSlice = createSlice({
         state.pagination = action.payload.pagination;
       })
       .addCase(getContractsByBrand.rejected, (state) => {
+        state.loading = false;
+        state.contracts = [];
+      })
+
+      .addCase(getContractsByBrandId.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(getContractsByBrandId.fulfilled, (state, action) => {
+        state.loading = false;
+        state.contracts = action.payload.data || [];
+        state.pagination = action.payload.pagination;
+      })
+      .addCase(getContractsByBrandId.rejected, (state) => {
         state.loading = false;
         state.contracts = [];
       })

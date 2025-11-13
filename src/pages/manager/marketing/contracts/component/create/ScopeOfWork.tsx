@@ -16,7 +16,7 @@ interface ScopeOfWorkProps {
 
 const ScopeOfWork: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork }) => {
   const CONTRACT_TYPE: CONTRACT_TYPE | undefined = formData?.type;
-  const [scope, setScope] = useState<ScopeOfWorkShape>(formData?.scopeOfWork || {});
+  const [scope, setScope] = useState<ScopeOfWorkShape>(formData?.scope_of_work || {}); // Changed from scopeOfWork to scope_of_work
 
   const updateScope = (partial: Partial<ScopeOfWorkShape>) => {
     setScope((prev) => {
@@ -65,7 +65,7 @@ const ScopeOfWork: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork
     <div className="space-y-6">
       {/* General Requirements */}
       <GeneralRequirements
-        requirements={scope.general_requirements || [""]}
+        requirements={scope.general_requirements || [""]} // Changed from general_requirements to general_requirements
         onChange={(newReqs) => updateScope({ general_requirements: newReqs })}
       />
 

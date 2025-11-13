@@ -7,7 +7,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { TaskDisplay } from "./TaskDisplay";
+import { TaskDisplay } from "./task/TaskDisplay";
 import { useNavigate } from "react-router";
 
 export const SelectAddProductType = () => {

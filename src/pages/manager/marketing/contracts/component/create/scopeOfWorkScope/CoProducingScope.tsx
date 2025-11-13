@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 
 const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork }) => {
-  const scope = formData?.scopeOfWork || {};
+  const scope = formData?.scope_of_work || {}; // Changed from scopeOfWork to scope_of_work
   const deliverables = scope.deliverables || {};
   const { user } = useAuth();
 
@@ -52,21 +52,21 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
     id: 0,
     name: "",
     description: "",
-    material_url: [],
+    material_url: [], // snake_case
     kpis: [{ metric: "", target: "", description: "" }],
     concepts: [],
   });
 
   const newConcept = (): Concept => ({
-    product_id: 0,
+    product_id: 0, // snake_case
     platform: "",
     name: "",
     description: "",
     tagline: "",
-    hash_tag: [""],
-    creative_notes: "",
-    content_requirements: [""],
-    material_url: [],
+    hash_tag: [""], // snake_case
+    creative_notes: "", // snake_case
+    content_requirements: [""], // snake_case
+    material_url: [], // snake_case
     kpis: [{ metric: "", target: "", description: "" }],
   });
 

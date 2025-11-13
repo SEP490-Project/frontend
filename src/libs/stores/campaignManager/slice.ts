@@ -1,6 +1,15 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { campaign, createCampaign, getCampaignsByBrand, getCampaignById } from "./thunk";
+import {
+  campaign,
+  createCampaign,
+  createInternalCampaign,
+  getCampaignsByBrand,
+  getCampaignById,
+  approveCampaign,
+  rejectCampaign,
+} from "./thunk";
 import type { CampaignData } from "@/libs/types/campaign";
+import { toast } from "sonner";
 
 interface stateType {
   loading: boolean;
@@ -58,13 +67,33 @@ export const manageCampaignSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(createCampaign.fulfilled, (state) => {
+      .addCase(createCampaign.fulfilled, (state, action) => {
         state.loading = false;
         state.error = null;
+        const message = action.payload.message || "Campaign created successfully";
+        toast.success(message);
       })
       .addCase(createCampaign.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+        const message = (action.payload as string) || "Failed to create campaign";
+        toast.error(message);
+      })
+      .addCase(createInternalCampaign.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(createInternalCampaign.fulfilled, (state, action) => {
+        state.loading = false;
+        state.error = null;
+        const message = action.payload.message || "Internal campaign created successfully";
+        toast.success(message);
+      })
+      .addCase(createInternalCampaign.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        const message = (action.payload as string) || "Failed to create internal campaign";
+        toast.error(message);
       })
       .addCase(getCampaignsByBrand.pending, (state) => {
         state.loading = true;
@@ -88,13 +117,47 @@ export const manageCampaignSlice = createSlice({
       })
       .addCase(getCampaignById.fulfilled, (state, action) => {
         state.detailLoading = false;
-        state.campaignDetail = action.payload;
+        state.campaignDetail = action.payload.data;
         state.error = null;
       })
       .addCase(getCampaignById.rejected, (state, action) => {
         state.detailLoading = false;
         state.campaignDetail = null;
         state.error = action.payload as string;
+      })
+
+      .addCase(approveCampaign.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(approveCampaign.fulfilled, (state, action) => {
+        state.loading = false;
+        state.error = null;
+        const message = action.payload.message || "Campaign approved successfully";
+        toast.success(message);
+      })
+      .addCase(approveCampaign.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        const message = (action.payload as string) || "Failed to approve campaign";
+        toast.error(message);
+      })
+
+      .addCase(rejectCampaign.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(rejectCampaign.fulfilled, (state, action) => {
+        state.loading = false;
+        state.error = null;
+        const message = action.payload.message || "Campaign rejected successfully";
+        toast.success(message);
+      })
+      .addCase(rejectCampaign.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        const message = (action.payload as string) || "Failed to reject campaign";
+        toast.error(message);
       });
   },
 });

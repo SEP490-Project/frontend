@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { FaCamera, FaUser, FaTrash, FaCheck, FaXmark } from "react-icons/fa6";
+import { FaCamera, FaUser, FaTrash } from "react-icons/fa6";
 import type { AppDispatch } from "@/libs/stores";
 import { uploadFilesThunk } from "@/libs/stores/fileManager/thunk";
 
@@ -225,27 +225,11 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
               <span className="truncate max-w-[120px]" title={avatar.fileName}>
                 {avatar.fileName}
               </span>
-              {avatar.status === "completed" && (
-                <FaCheck className="text-green-500 h-3 w-3" title="Upload successful" />
-              )}
-              {avatar.status === "error" && (
-                <FaXmark className="text-red-500 h-3 w-3" title="Upload failed" />
-              )}
             </div>
           )}
 
           {/* Progress bar */}
           {avatar.status === "uploading" && <Progress value={avatar.progress} className="h-1.5" />}
-
-          {/* Status message */}
-          <div className="text-center text-xs text-slate-500">
-            {avatar.status === "uploading" && "Uploading..."}
-            {avatar.status === "completed" && (
-              <span className="text-green-600">✓ Upload successful</span>
-            )}
-            {avatar.status === "error" && <span className="text-red-600">✗ Upload failed</span>}
-          </div>
-
           {/* Action buttons */}
           <div className="flex justify-center gap-2">
             {avatar.preview && (

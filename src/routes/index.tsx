@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Homepage from "@/pages/Homepage";
+import { Homepage, AboutApp, AboutUs, Blog, BlogDetail } from "@/pages/landing";
 import NotFound from "@/pages/NotFound";
 import CancelPayment from "@/pages/CancelPayment";
 import SuccessPayment from "@/pages/SuccessPayment";
@@ -52,6 +52,10 @@ const AppRoutes = () => (
     <Routes>
       <Route element={<CustomerLayout />}>
         <Route path="/" element={<Homepage />} />
+        <Route path="/about-app" element={<AboutApp />} />
+        <Route path="/about-us" element={<AboutUs />} />
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/blog-detail/:id" element={<BlogDetail />} />
       </Route>
 
       <Route element={<PublicRoute />}>

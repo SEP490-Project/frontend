@@ -136,6 +136,7 @@ export interface ListContent {
   body: object;
   type: string;
   status: string;
+  thumbnail_url?: string;
   publish_date?: string;
   created_at: string;
   updated_at: string;

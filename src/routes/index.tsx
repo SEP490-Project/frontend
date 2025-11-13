@@ -55,7 +55,7 @@ const AppRoutes = () => (
         <Route path="/about-app" element={<AboutApp />} />
         <Route path="/about-us" element={<AboutUs />} />
         <Route path="/blog" element={<Blog />} />
-        <Route path="/blog-detail/:id" element={<BlogDetail />} />
+        <Route path="/blog/:id" element={<BlogDetail />} />
       </Route>
 
       <Route element={<PublicRoute />}>

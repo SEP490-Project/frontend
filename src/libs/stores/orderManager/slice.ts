@@ -4,6 +4,9 @@ import {
   censorAnOrderThunk,
   markOrderIsReadyToPickedUpThunk,
   markOrderIsReceivedAfterPickedUpThunk,
+  getSelfDeliveryOrdersThunk,
+  markSelfDeliveryOrderAsDeliveredThunk,
+  markSelfDeliveryOrderAsInTransitThunk,
 } from "./thunk";
 import type { OrderResponse } from "@/libs/types/order";
 
@@ -59,6 +62,40 @@ const orderManagerSlice = createSlice({
         state.loading = false;
       })
       .addCase(censorAnOrderThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.errors = action.error;
+      })
+      .addCase(getSelfDeliveryOrdersThunk.pending, (state) => {
+        state.loading = true;
+        state.errors = null;
+      })
+      .addCase(getSelfDeliveryOrdersThunk.fulfilled, (state, action) => {
+        state.ordersForSaleStaff = action.payload;
+        state.loading = false;
+      })
+      .addCase(getSelfDeliveryOrdersThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.errors = action.error;
+      })
+      .addCase(markSelfDeliveryOrderAsDeliveredThunk.pending, (state) => {
+        state.loading = true;
+        state.errors = null;
+      })
+      .addCase(markSelfDeliveryOrderAsDeliveredThunk.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(markSelfDeliveryOrderAsDeliveredThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.errors = action.error;
+      })
+      .addCase(markSelfDeliveryOrderAsInTransitThunk.pending, (state) => {
+        state.loading = true;
+        state.errors = null;
+      })
+      .addCase(markSelfDeliveryOrderAsInTransitThunk.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(markSelfDeliveryOrderAsInTransitThunk.rejected, (state, action) => {
         state.loading = false;
         state.errors = action.error;
       });

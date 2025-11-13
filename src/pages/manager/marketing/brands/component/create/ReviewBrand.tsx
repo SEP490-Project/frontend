@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
+import { formatPhoneNumber } from "@/libs/helper/helper";
 
 interface BrandData {
   name: string;
@@ -127,7 +128,9 @@ const ReviewBrand: React.FC<ReviewBrandProps> = ({ brandData, representativeData
             <div className="space-y-1">
               <span className="font-medium text-gray-700">Contact Phone:</span>
               <p className="text-gray-900 bg-white px-3 py-1.5 rounded border">
-                {brandData.contact_phone || (
+                {brandData.contact_phone ? (
+                  formatPhoneNumber(brandData.contact_phone)
+                ) : (
                   <span className="text-gray-400 italic">Not provided</span>
                 )}
               </p>
@@ -201,7 +204,9 @@ const ReviewBrand: React.FC<ReviewBrandProps> = ({ brandData, representativeData
             <div className="space-y-1">
               <span className="font-medium text-gray-700">Phone:</span>
               <p className="text-gray-900 bg-white px-3 py-1.5 rounded border">
-                {representativeData.representative_phone || (
+                {representativeData.representative_phone ? (
+                  formatPhoneNumber(representativeData.representative_phone)
+                ) : (
                   <span className="text-gray-400 italic">Not provided</span>
                 )}
               </p>

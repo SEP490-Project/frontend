@@ -31,6 +31,7 @@ import { brand } from "@/libs/stores/brandManager/thunk";
 import type { Brands } from "@/libs/types/brand";
 import { useNavigate } from "react-router";
 import { motion } from "framer-motion";
+import { formatPhoneNumber } from "@/libs/helper/helper";
 
 interface Partner extends Brands {
   isActive: boolean;
@@ -291,7 +292,7 @@ const BrandPage: React.FC = () => {
 
                       <TableCell className="py-4 text-sm text-gray-600">
                         {!isEmpty(partner.contact_phone) ? (
-                          partner.contact_phone
+                          formatPhoneNumber(partner.contact_phone)
                         ) : (
                           <span className="text-gray-400 italic">No phone</span>
                         )}

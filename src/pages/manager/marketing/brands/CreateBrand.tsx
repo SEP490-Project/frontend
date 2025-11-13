@@ -395,25 +395,36 @@ const CreateBrandPage: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           className="mb-6"
         >
-          <div className="flex items-center gap-4 mb-2">
+          <motion.h1
+            className="text-xl sm:text-2xl font-semibold"
+            initial={{ opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.35, delay: 0.03 }}
+          >
+            Create Brand
+          </motion.h1>
+          <motion.p
+            className="text-gray-600 mt-1 mb-4"
+            initial={{ opacity: 0, x: -6 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.35, delay: 0.06 }}
+          >
+            Please fill in all required information to create a new brand. You can review before
+            submitting.
+          </motion.p>
+          <div className="flex flex-wrap items-center justify-between mb-8 gap-3">
             <Button
               variant="ghost"
-              size="sm"
-              className="flex items-center gap-2 px-2 py-1"
               onClick={() => navigate("/manage/marketing/brands")}
+              className="flex items-center"
             >
-              <FaArrowLeft className="h-4 w-4" />
+              <FaArrowLeft className="w-4 h-4 mr-2" />
               Return
             </Button>
             <Badge variant="outline" className="text-xs">
               Step {currentStepIndex + 1} of {STEPS.length}
             </Badge>
           </div>
-          <h1 className="text-2xl font-bold mb-1">Create Brand</h1>
-          <p className="text-gray-600 text-sm mb-4">
-            Please fill in all required information to create a new brand. You can review before
-            submitting.
-          </p>
           {/* Progress Bar */}
           <div className="space-y-2">
             <div className="flex justify-between text-sm text-gray-600">

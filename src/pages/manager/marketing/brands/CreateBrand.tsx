@@ -1,55 +1,47 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router";
-import { BrandInfo, RepresentativeInfo } from "./component/create";
+import BrandInfo from "./component/create/BrandInfo";
+import RepresentativeInfo from "./component/create/RepresentativeInfo";
+import ReviewBrand from "./component/create/ReviewBrand";
 import type { BrandBase } from "@/libs/types/brand";
 import * as yup from "yup";
 import { useAppDispatch } from "@/libs/stores";
 import { useBrand } from "@/libs/hooks/useBrand";
 import { addBrand } from "@/libs/stores/brandManager/thunk";
+import { FaArrowLeft, FaArrowRight, FaRegCircle, FaRegCircleCheck } from "react-icons/fa6";
 import { Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
-// Helper: format URL
 const formatUrl = (url: string): string => {
   if (!url) return "";
   return url.startsWith("http://") || url.startsWith("https://") ? url : `https://${url}`;
 };
 
-// Helper: format phone to E.164
 const formatPhoneToE164 = (phone: string): string => {
   if (!phone) return "";
-
-  // Remove all non-digit characters
   const digitsOnly = phone.replace(/\D/g, "");
-
-  // If starts with 0, replace with +84 (Vietnam)
   if (digitsOnly.startsWith("0")) {
     return `+84${digitsOnly.substring(1)}`;
   }
-
-  // If starts with 84, add +
   if (digitsOnly.startsWith("84")) {
     return `+${digitsOnly}`;
   }
-
-  // If already starts with +, return as is
   if (phone.startsWith("+")) {
     return phone;
   }
-
-  // Default to Vietnam code
   return `+84${digitsOnly}`;
 };
 
-// Helper: validate E.164 format
 const isValidE164 = (phone: string): boolean => {
   const e164Regex = /^\+[1-9]\d{1,14}$/;
   return e164Regex.test(phone);
 };
 
-// Validation schemas
 const brandSchema = yup.object().shape({
   name: yup
     .string()
@@ -144,12 +136,21 @@ interface FormData {
   representative: RepresentativeData;
 }
 
+const STEPS = [
+  { key: "brand", label: "Brand Information", description: "Basic brand details" },
+  { key: "representative", label: "Representative", description: "Representative information" },
+  { key: "review", label: "Review & Submit", description: "Review all information" },
+] as const;
+
+type StepKey = (typeof STEPS)[number]["key"];
+
 const CreateBrandPage: React.FC = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("brand");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const dispatch = useAppDispatch();
   const { loading } = useBrand();
+
+  const [activeTab, setActiveTab] = useState<StepKey>("brand");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState<FormData>({
     brand: {
@@ -179,7 +180,15 @@ const CreateBrandPage: React.FC = () => {
     representative: {},
   });
 
-  // Show loading overlay if needed
+  const [maxStepReached, setMaxStepReached] = useState(0);
+  const currentStepIndex = STEPS.findIndex((step) => step.key === activeTab);
+
+  useEffect(() => {
+    const effectiveIndex = Math.min(currentStepIndex, 2 - 1); // STEPS_COUNT = 2
+    setMaxStepReached((prev) => Math.max(prev, effectiveIndex));
+  }, [currentStepIndex]);
+
+  // Early return for loading state (AFTER all hooks)
   if (loading) {
     return (
       <div className="min-h-fit p-4 sm:p-6">
@@ -195,7 +204,6 @@ const CreateBrandPage: React.FC = () => {
     );
   }
 
-  // Handlers
   const handleBrandChange = (field: keyof BrandData, value: string) => {
     setFormData((prev) => ({ ...prev, brand: { ...prev.brand, [field]: value } }));
     if ((errors.brand as any)[field]) {
@@ -213,7 +221,6 @@ const CreateBrandPage: React.FC = () => {
     }
   };
 
-  // Chỉ cần handle URL từ AvatarUploader
   const handleLogoUpload = (uploadedUrl: string) => {
     console.log("Uploaded Logo URL:", uploadedUrl);
     setFormData((prev) => ({ ...prev, brand: { ...prev.brand, logo_url: uploadedUrl } }));
@@ -222,27 +229,104 @@ const CreateBrandPage: React.FC = () => {
     }
   };
 
-  // Form validation
-  const validateForm = async (): Promise<boolean> => {
+  const validateBrandInfo = async (): Promise<boolean> => {
     try {
       await brandSchema.validate(formData.brand, { abortEarly: false });
-      await representativeSchema.validate(formData.representative, { abortEarly: false });
-      setErrors({ brand: {}, representative: {} });
+      setErrors((prev) => ({ ...prev, brand: {} }));
       return true;
     } catch (err: any) {
       const brandErrors: Partial<BrandData> = {};
-      const repErrors: Partial<RepresentativeData> = {};
       err.inner?.forEach((e: any) => {
         if (e.path in formData.brand) brandErrors[e.path as keyof BrandData] = e.message;
-        if (e.path in formData.representative)
-          repErrors[e.path as keyof RepresentativeData] = e.message;
       });
-      setErrors({ brand: brandErrors, representative: repErrors });
+      setErrors((prev) => ({ ...prev, brand: brandErrors }));
       return false;
     }
   };
 
-  // Handle submit
+  const validateRepresentativeInfo = async (): Promise<boolean> => {
+    try {
+      await representativeSchema.validate(formData.representative, { abortEarly: false });
+      setErrors((prev) => ({ ...prev, representative: {} }));
+      return true;
+    } catch (err: any) {
+      const repErrors: Partial<RepresentativeData> = {};
+      err.inner?.forEach((e: any) => {
+        if (e.path in formData.representative)
+          repErrors[e.path as keyof RepresentativeData] = e.message;
+      });
+      setErrors((prev) => ({ ...prev, representative: repErrors }));
+      return false;
+    }
+  };
+
+  const validateForm = async (): Promise<boolean> => {
+    const brandValid = await validateBrandInfo();
+    const repValid = await validateRepresentativeInfo();
+    return brandValid && repValid;
+  };
+
+  const isStepCompleted = (step: StepKey): boolean => {
+    switch (step) {
+      case "brand":
+        return !!(
+          formData.brand.name.trim() &&
+          formData.brand.description.trim() &&
+          formData.brand.contact_email.trim() &&
+          formData.brand.contact_phone.trim() &&
+          formData.brand.address.trim() &&
+          formData.brand.tax_number.trim() &&
+          formData.brand.website.trim() &&
+          formData.brand.logo_url.trim()
+        );
+      case "representative":
+        return !!(
+          formData.representative.representative_name.trim() &&
+          formData.representative.representative_email.trim() &&
+          formData.representative.representative_phone.trim() &&
+          formData.representative.representative_role.trim() &&
+          formData.representative.representative_citizen_id.trim()
+        );
+      case "review":
+        return isStepCompleted("brand") && isStepCompleted("representative");
+      default:
+        return false;
+    }
+  };
+
+  const handleNextStep = async () => {
+    const currentIndex = STEPS.findIndex((step) => step.key === activeTab);
+
+    if (activeTab === "brand") {
+      const isValid = await validateBrandInfo();
+      if (!isValid) return;
+    } else if (activeTab === "representative") {
+      const isValid = await validateRepresentativeInfo();
+      if (!isValid) return;
+    }
+
+    if (currentIndex < STEPS.length - 1) {
+      setActiveTab(STEPS[currentIndex + 1].key);
+    }
+  };
+
+  const handlePreviousStep = () => {
+    const currentIndex = STEPS.findIndex((step) => step.key === activeTab);
+    if (currentIndex > 0) {
+      setActiveTab(STEPS[currentIndex - 1].key);
+    }
+  };
+
+  const handleTabChange = (tabKey: string) => {
+    const step = tabKey as StepKey;
+    const currentIndex = STEPS.findIndex((s) => s.key === activeTab);
+    const targetIndex = STEPS.findIndex((s) => s.key === step);
+
+    if (targetIndex <= currentIndex || isStepCompleted(STEPS[targetIndex - 1]?.key)) {
+      setActiveTab(step);
+    }
+  };
+
   const handleSubmit = async () => {
     const isValid = await validateForm();
     if (!isValid) {
@@ -274,32 +358,73 @@ const CreateBrandPage: React.FC = () => {
         navigate("/manage/marketing/brands");
       }, 1000);
     } catch {
-      return;
+      // Handle error if needed
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const canSubmit =
-    formData.brand.name.trim() &&
-    formData.brand.contact_email.trim() &&
-    formData.brand.contact_phone.trim() &&
-    formData.brand.address.trim() &&
-    formData.brand.tax_number.trim() &&
-    formData.brand.website.trim() &&
-    formData.brand.logo_url.trim() &&
-    formData.representative.representative_name.trim() &&
-    formData.representative.representative_email.trim() &&
-    formData.representative.representative_phone.trim() &&
-    formData.representative.representative_role.trim() &&
-    formData.representative.representative_citizen_id.trim();
+  const canSubmit = isStepCompleted("brand") && isStepCompleted("representative");
+  const STEPS_COUNT = 2;
+  const completedSteps =
+    Number(isStepCompleted("brand")) + Number(isStepCompleted("representative"));
+  const progress = ((maxStepReached + 1) / STEPS_COUNT) * 100;
+
+  const ReviewStep = () => (
+    <motion.div
+      key="review"
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 20 }}
+      transition={{ duration: 0.3 }}
+    >
+      <ReviewBrand
+        brandData={formData.brand}
+        representativeData={formData.representative}
+        canSubmit={canSubmit}
+      />
+    </motion.div>
+  );
 
   return (
     <div className="min-h-fit p-4 sm:p-6">
       <div className="max-w-7xl mx-auto pb-10">
-        <div className="flex items-center gap-4 mb-6">
-          <h1 className="text-2xl font-bold">Create Brand</h1>
-        </div>
+        {/* Back button and page description */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6"
+        >
+          <div className="flex items-center gap-4 mb-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex items-center gap-2 px-2 py-1"
+              onClick={() => navigate("/manage/marketing/brands")}
+            >
+              <FaArrowLeft className="h-4 w-4" />
+              Return
+            </Button>
+            <Badge variant="outline" className="text-xs">
+              Step {currentStepIndex + 1} of {STEPS.length}
+            </Badge>
+          </div>
+          <h1 className="text-2xl font-bold mb-1">Create Brand</h1>
+          <p className="text-gray-600 text-sm mb-4">
+            Please fill in all required information to create a new brand. You can review before
+            submitting.
+          </p>
+          {/* Progress Bar */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm text-gray-600">
+              <span>{STEPS[currentStepIndex].label}</span>
+              <span>
+                {completedSteps} of {STEPS_COUNT} steps completed ({Math.round(progress)}%)
+              </span>
+            </div>
+            <Progress value={progress} className="h-2" />
+          </div>
+        </motion.div>
 
         {/* Loading overlay for form submission */}
         <div className="relative">
@@ -312,52 +437,142 @@ const CreateBrandPage: React.FC = () => {
             </div>
           )}
 
-          <Card className="p-6 mb-6">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="brand" disabled={isSubmitting}>
-                  Brand Information
-                </TabsTrigger>
-                <TabsTrigger value="representative" disabled={isSubmitting}>
-                  Representative Information
-                </TabsTrigger>
-              </TabsList>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <Card className="p-6 mb-6">
+              <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger
+                    value="brand"
+                    disabled={isSubmitting}
+                    className="flex items-center gap-2"
+                  >
+                    {isStepCompleted("brand") ? (
+                      <FaRegCircleCheck className="h-4 w-4" />
+                    ) : (
+                      <FaRegCircle className="h-4 w-4" />
+                    )}
+                    Brand Info
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="representative"
+                    disabled={isSubmitting || !isStepCompleted("brand")}
+                    className="flex items-center gap-2"
+                  >
+                    {isStepCompleted("representative") ? (
+                      <FaRegCircleCheck className="h-4 w-4" />
+                    ) : (
+                      <FaRegCircle className="h-4 w-4" />
+                    )}
+                    Representative
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="review"
+                    disabled={isSubmitting || !isStepCompleted("representative")}
+                    className="flex items-center gap-2"
+                  >
+                    {canSubmit ? (
+                      <FaRegCircleCheck className="h-4 w-4" />
+                    ) : (
+                      <FaRegCircle className="h-4 w-4" />
+                    )}
+                    Review
+                  </TabsTrigger>
+                </TabsList>
 
-              <TabsContent value="brand" className="space-y-6 mt-6">
-                <BrandInfo
-                  brandData={formData.brand}
-                  errors={errors.brand}
-                  onBrandChange={handleBrandChange}
-                  onLogoUpload={handleLogoUpload}
-                />
-              </TabsContent>
+                <AnimatePresence mode="wait">
+                  <TabsContent value="brand" className="space-y-6 mt-6">
+                    <motion.div
+                      key="brand"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <BrandInfo
+                        brandData={formData.brand}
+                        errors={errors.brand}
+                        onBrandChange={handleBrandChange}
+                        onLogoUpload={handleLogoUpload}
+                      />
+                    </motion.div>
+                  </TabsContent>
 
-              <TabsContent value="representative" className="space-y-6 mt-6">
-                <RepresentativeInfo
-                  representativeData={formData.representative}
-                  errors={errors.representative}
-                  onRepresentativeChange={handleRepresentativeChange}
-                />
-              </TabsContent>
-            </Tabs>
-          </Card>
+                  <TabsContent value="representative" className="space-y-6 mt-6">
+                    <motion.div
+                      key="representative"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <RepresentativeInfo
+                        representativeData={formData.representative}
+                        errors={errors.representative}
+                        onRepresentativeChange={handleRepresentativeChange}
+                      />
+                    </motion.div>
+                  </TabsContent>
 
-          <div className="px-4 py-3">
+                  <TabsContent value="review" className="space-y-6 mt-6">
+                    <ReviewStep />
+                  </TabsContent>
+                </AnimatePresence>
+              </Tabs>
+            </Card>
+          </motion.div>
+
+          {/* Step Navigation */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="flex justify-between items-center px-4 py-3"
+          >
             <Button
-              onClick={handleSubmit}
-              disabled={isSubmitting || !canSubmit || loading}
-              className="w-full"
+              variant="outline"
+              onClick={handlePreviousStep}
+              disabled={isSubmitting || currentStepIndex === 0}
+              className="flex items-center gap-2 bg-white"
             >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Submitting...
-                </>
-              ) : (
-                "Submit Brand"
-              )}
+              <FaArrowLeft className="h-4 w-4" />
+              Previous
             </Button>
-          </div>
+
+            <div className="flex gap-2">
+              {activeTab === "review" ? (
+                <Button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting || !canSubmit}
+                  className="flex items-center gap-2 min-w-32"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <FaRegCircleCheck className="h-4 w-4" />
+                      Submit Brand
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleNextStep}
+                  disabled={isSubmitting || !isStepCompleted(activeTab)}
+                  className="flex items-center gap-2"
+                >
+                  Next
+                  <FaArrowRight className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </motion.div>
         </div>
       </div>
     </div>

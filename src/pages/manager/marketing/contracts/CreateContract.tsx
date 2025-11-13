@@ -49,7 +49,6 @@ const INITIAL_TABS = [
 const INITIAL_FORM_DATA = {
   brand_id: "",
   parent_contract_id: "",
-  contract_number: "",
   title: "",
   type: "",
   signed_date: "",
@@ -161,7 +160,6 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
       return !!(
         formData.type &&
         formData.brand_id &&
-        formData.contract_number &&
         formData.title &&
         formData.signed_date &&
         formData.start_date &&
@@ -626,7 +624,6 @@ const AddContractPage: React.FC = () => {
       ...INITIAL_FORM_DATA,
       brand_id: formData.brand_id,
       parent_contract_id: formData.parent_contract_id,
-      contract_number: formData.contract_number,
       title: formData.title,
       signed_date: formData.signed_date,
       signed_location: formData.signed_location,
@@ -801,7 +798,6 @@ const AddContractPage: React.FC = () => {
       const contractPayload = {
         // Contract Basic Information
         parent_contract_id: null,
-        contract_number: formData.contract_number, // Fixed field name
         title: formData.title,
         type: formData.type,
         status: "DRAFT",

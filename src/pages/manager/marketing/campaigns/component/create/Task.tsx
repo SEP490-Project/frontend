@@ -12,7 +12,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { DatePicker } from "@/components/date-picker";
-import { FileUploader } from "@/components/global";
+import { ContractUploader } from "@/components/global";
 import { Plus, Trash2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { useAppDispatch } from "@/libs/stores";
@@ -31,6 +31,7 @@ interface Task {
   description: TaskDescription;
   deadline: string;
   materialFiles?: File[];
+  material_urls?: string[];
 }
 
 interface Milestone {
@@ -170,6 +171,7 @@ const CreateTask: React.FC<CreateTaskProps> = ({
                   description: { description: "", material_url: "" },
                   deadline: "",
                   materialFiles: [],
+                  material_urls: [],
                 },
               ],
             }
@@ -203,6 +205,7 @@ const CreateTask: React.FC<CreateTaskProps> = ({
     if (task) {
       updateTask(milestoneId, taskId, {
         description: { ...task.description, material_url },
+        material_urls: urls,
       });
     }
   };
@@ -210,11 +213,16 @@ const CreateTask: React.FC<CreateTaskProps> = ({
   const handleTaskMaterialFilesChange = (milestoneId: string, taskId: string, files: File[]) =>
     updateTask(milestoneId, taskId, { materialFiles: files });
 
-  const handleTaskMaterialRemove = (milestoneId: string, taskId: string) => {
+  const handleTaskMaterialRemove = (milestoneId: string, taskId: string, removedUrls: string[]) => {
     const task = milestones.find((m) => m.id === milestoneId)?.tasks.find((t) => t.id === taskId);
     if (task) {
+      // Remove URLs from material_urls array
+      const currentUrls = task.material_urls || [];
+      const updatedUrls = currentUrls.filter((url) => !removedUrls.includes(url));
+
       updateTask(milestoneId, taskId, {
-        description: { ...task.description, material_url: "" },
+        description: { ...task.description, material_url: updatedUrls[0] || "" },
+        material_urls: updatedUrls,
         materialFiles: [],
       });
     }
@@ -424,17 +432,49 @@ const CreateTask: React.FC<CreateTaskProps> = ({
                         </div>
 
                         <div>
-                          <Label>Material Upload (Optional)</Label>
-                          <FileUploader
+                          <Label>Task Material (Optional)</Label>
+                          <ContractUploader
                             userId="demo"
+                            accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.webp,.mp4,.avi,.mov,.zip,.rar"
                             multiple={false}
+                            maxSize={10}
                             maxFiles={1}
-                            onFilesChange={(files) =>
+                            allowedTypes={[
+                              "pdf",
+                              "doc",
+                              "docx",
+                              "ppt",
+                              "pptx",
+                              "jpg",
+                              "jpeg",
+                              "png",
+                              "gif",
+                              "webp",
+                              "mp4",
+                              "avi",
+                              "mov",
+                              "zip",
+                              "rar",
+                            ]}
+                            onFilesChange={(files: File[]) =>
                               handleTaskMaterialFilesChange(m.id, t.id, files)
                             }
-                            onUploadComplete={(urls) => handleTaskMaterialUpload(m.id, t.id, urls)}
-                            onFilesRemove={() => handleTaskMaterialRemove(m.id, t.id)}
+                            onUploadComplete={(urls: string[]) =>
+                              handleTaskMaterialUpload(m.id, t.id, urls)
+                            }
+                            onFilesRemove={(removedUrls: string[]) =>
+                              handleTaskMaterialRemove(m.id, t.id, removedUrls)
+                            }
+                            title="Task Material"
+                            className="w-full"
+                            initialFiles={t.materialFiles || []}
+                            initialUrls={t.material_urls || []}
+                            context={`task-${t.id}`}
                           />
+                          <p className="text-xs text-slate-500 mt-1">
+                            Upload reference materials, briefs, or assets for this task (Documents,
+                            images, videos, archives - max 1 file, up to 10MB)
+                          </p>
                         </div>
                       </CardContent>
                     </Card>

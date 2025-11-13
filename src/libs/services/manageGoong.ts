@@ -9,7 +9,7 @@ export interface GoongAutocompleteParams {
 
 export const goongAutocompleteService = {
   getPredictions: (params: GoongAutocompleteParams) =>
-    goongApi.get<GoongAutocompleteResponse>("/v2/place/autocomplete", {
+    goongApi.get<GoongAutocompleteResponse>("/Place/AutoComplete", {
       params: {
         input: params.input,
         location: params.location ? `${params.location.lat},${params.location.lng}` : undefined,

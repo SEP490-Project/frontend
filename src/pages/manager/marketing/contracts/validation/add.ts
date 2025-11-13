@@ -3,7 +3,7 @@ import * as yup from "yup";
 const contractSchema = yup.object({
   // Basic fields - snake_case
   brand_id: yup.string().required("Please select a brand"),
-  contract_number: yup.string().required("Please enter a contract number"),
+  // contract_number: yup.string().required("Please enter a contract number"),
   type: yup.string().required("Please select a contract type"),
   signed_location: yup.string().required("Please enter the signing location"),
   title: yup

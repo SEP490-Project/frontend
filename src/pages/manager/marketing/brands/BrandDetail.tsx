@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { motion } from "framer-motion";
 import { useParams, useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import {
@@ -25,7 +26,7 @@ import { useContract } from "@/libs/hooks/useContract";
 import { useAppDispatch } from "@/libs/stores";
 import { brandDetail } from "@/libs/stores/brandManager/thunk";
 import { getContractsByBrandId } from "@/libs/stores/contractManager/thunk";
-import { formatDate } from "@/libs/helper/helper";
+import { formatDate, formatPhoneNumber } from "@/libs/helper/helper";
 
 const BrandDetailPage: React.FC = () => {
   const { id: brandId } = useParams<{ id: string }>();
@@ -42,29 +43,12 @@ const BrandDetailPage: React.FC = () => {
     }
   }, [dispatch, brandId]);
 
-  const formatPhoneNumber = (phone: string | null) => {
-    if (!phone) return "N/A";
-
-    if (phone.startsWith("+84")) {
-      return "0" + phone.slice(3);
-    }
-
-    if (phone.startsWith("84") && phone.length > 10) {
-      return "0" + phone.slice(2);
-    }
-
-    return phone;
-  };
-
   const isLoading = brandLoading || contractLoading;
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      ACTIVE: "bg-green-100 text-green-800 border-green-300",
-      DRAFT: "bg-yellow-100 text-yellow-800 border-yellow-300",
-      EXPIRED: "bg-red-100 text-red-800 border-red-300",
-      TERMINATED: "bg-orange-100 text-orange-800 border-orange-300",
-      INACTIVE: "bg-gray-100 text-gray-800 border-gray-300",
+      ACTIVE: "bg-green-100 text-green-800",
+      INACTIVE: "bg-gray-100 text-gray-800",
     };
     return colors[status] || "bg-gray-100 text-gray-800 border-gray-300";
   };
@@ -116,12 +100,30 @@ const BrandDetailPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-fit p-4 sm:p-6">
+    <motion.div
+      className="min-h-fit p-4 sm:p-6"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 12 }}
+      transition={{ duration: 0.35 }}
+    >
       <div className="mb-4">
-        <h1 className="text-xl sm:text-2xl font-semibold">Brand Information</h1>
-        <p className="text-gray-600 mt-1">
+        <motion.h1
+          className="text-xl sm:text-2xl font-semibold"
+          initial={{ opacity: 0, x: -8 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.35, delay: 0.05 }}
+        >
+          Brand Information
+        </motion.h1>
+        <motion.p
+          className="text-gray-600 mt-1"
+          initial={{ opacity: 0, x: -6 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.35, delay: 0.08 }}
+        >
           All details, including brand identity, contact information, and legal representative data
-        </p>
+        </motion.p>
       </div>
 
       <div className="flex flex-wrap items-center justify-between mb-8 gap-3">
@@ -148,27 +150,42 @@ const BrandDetailPage: React.FC = () => {
           <CardHeader className="bg-gradient-to-r from-blue-50 to-white">
             <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
               <div className="relative">
-                <img
-                  src={brand.logo_url || "/placeholder-logo.png"}
-                  alt={brand.name}
-                  className="w-32 h-32 object-cover rounded-xl border-4 border-white shadow-lg"
+                <motion.img
+                  src={brand.logo_url || "https://placehold.co/400"}
+                  alt={brand.name || "Brand logo"}
+                  className="w-40 h-40 object-cover rounded-full"
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.45 }}
                 />
-                <Badge
-                  className={`absolute -bottom-2 -right-2 ${getStatusColor(brand.status)} border shadow-sm`}
+                <motion.div
+                  className={"absolute -bottom-2 -right-2 bg-transparent"}
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.35, delay: 0.12 }}
                 >
-                  {brand.status}
-                </Badge>
+                  <Badge className={`${getStatusColor(brand.status)}`}>{brand.status}</Badge>
+                </motion.div>
               </div>
               <div className="flex-1 space-y-3 text-center md:text-left">
-                <div>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.12 }}
+                >
                   <CardTitle className="text-3xl font-bold text-gray-900 mb-2">
                     {brand.name}
                   </CardTitle>
                   <p className="text-gray-600 leading-relaxed">
                     {brand.description || "No description provided."}
                   </p>
-                </div>
-                <div className="flex flex-wrap gap-3 justify-center md:justify-start text-sm text-gray-500">
+                </motion.div>
+                <motion.div
+                  className="flex flex-wrap gap-3 justify-center md:justify-start text-sm text-gray-500"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.16 }}
+                >
                   <div className="flex items-center">
                     <span>
                       Created: {brand.created_at ? formatDate(brand.created_at) : "Unknown"}
@@ -179,7 +196,7 @@ const BrandDetailPage: React.FC = () => {
                       <span>Tax: {brand.tax_number}</span>
                     </div>
                   )}
-                </div>
+                </motion.div>
               </div>
             </div>
           </CardHeader>
@@ -380,7 +397,7 @@ const BrandDetailPage: React.FC = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

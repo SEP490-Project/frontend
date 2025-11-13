@@ -6,6 +6,7 @@ import { useAuth } from "@/libs/hooks/useAuth";
 import AvatarUploader from "@/components/global/AvatarUploader";
 import AddressSelector from "@/components/global/AddressSelector";
 import { PhoneNumberInput } from "@/components/phone-number-input";
+import { motion } from "framer-motion";
 
 interface BrandData {
   name: string;
@@ -33,12 +34,39 @@ const BrandInfoTab: React.FC<BrandInfoTabProps> = ({
 }) => {
   const { user } = useAuth();
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.2,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.3 },
+    },
+  };
+
   return (
-    <div className="space-y-6">
-      <h2 className="text-lg font-semibold">Brand Information</h2>
+    <motion.div
+      className="space-y-6"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      <motion.div variants={itemVariants}>
+        <h2 className="text-lg font-semibold">Brand Information</h2>
+      </motion.div>
 
       {/* Brand Name */}
-      <div className="space-y-2">
+      <motion.div className="space-y-2" variants={itemVariants}>
         <Label htmlFor="brand-name" className="text-sm font-medium">
           Brand Name *
         </Label>
@@ -50,10 +78,10 @@ const BrandInfoTab: React.FC<BrandInfoTabProps> = ({
           className={errors.name ? "border-red-500" : ""}
         />
         {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
-      </div>
+      </motion.div>
 
       {/* Description */}
-      <div className="space-y-2">
+      <motion.div className="space-y-2" variants={itemVariants}>
         <Label htmlFor="description" className="text-sm font-medium">
           Description
         </Label>
@@ -65,11 +93,10 @@ const BrandInfoTab: React.FC<BrandInfoTabProps> = ({
           rows={4}
           className="resize-none"
         />
-        <p className="text-xs text-gray-500">Optional. Brief description about the brand</p>
-      </div>
+      </motion.div>
 
       {/* Contact Email & Phone */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-6" variants={itemVariants}>
         <div className="space-y-2">
           <Label htmlFor="contact-email" className="text-sm font-medium">
             Contact Email *
@@ -99,20 +126,22 @@ const BrandInfoTab: React.FC<BrandInfoTabProps> = ({
           />
           {errors.contact_phone && <p className="text-sm text-red-500">{errors.contact_phone}</p>}
         </div>
-      </div>
+      </motion.div>
 
       {/* Address */}
-      <AddressSelector
-        value={brandData.address}
-        onChange={(address) => onBrandChange("address", address)}
-        label="Address *"
-        placeholder="Search for brand address..."
-        error={errors.address}
-      />
-      <p className="text-xs text-gray-500 -mt-1">Company address with auto-suggestions</p>
+      <motion.div variants={itemVariants}>
+        <AddressSelector
+          value={brandData.address}
+          onChange={(address) => onBrandChange("address", address)}
+          label="Address *"
+          placeholder="Search for brand address..."
+          error={errors.address}
+        />
+        <p className="text-xs text-gray-500 mt-1">Company address with auto-suggestions</p>
+      </motion.div>
 
       {/* Website */}
-      <div className="space-y-2">
+      <motion.div className="space-y-2" variants={itemVariants}>
         <Label htmlFor="website" className="text-sm font-medium">
           Website
         </Label>
@@ -126,12 +155,12 @@ const BrandInfoTab: React.FC<BrandInfoTabProps> = ({
         />
         {errors.website && <p className="text-sm text-red-500">{errors.website}</p>}
         <p className="text-xs text-gray-500">
-          Optional. Will be formatted as https:// if no protocol provided
+          Will be formatted as https:// if no protocol provided
         </p>
-      </div>
+      </motion.div>
 
       {/* Logo Upload */}
-      <div className="space-y-2">
+      <motion.div className="space-y-2" variants={itemVariants}>
         <Label className="text-sm font-medium">Logo</Label>
         <AvatarUploader
           userId={user?.id ?? ""}
@@ -140,11 +169,10 @@ const BrandInfoTab: React.FC<BrandInfoTabProps> = ({
           size="md"
         />
         {errors.logo_url && <p className="text-sm text-red-500">{errors.logo_url}</p>}
-        <p className="text-xs text-gray-500">Optional. Upload a logo image for the brand</p>
-      </div>
+      </motion.div>
 
       {/* Tax Number */}
-      <div className="space-y-2">
+      <motion.div className="space-y-2" variants={itemVariants}>
         <Label htmlFor="tax-number" className="text-sm font-medium">
           Tax Number *
         </Label>
@@ -156,8 +184,8 @@ const BrandInfoTab: React.FC<BrandInfoTabProps> = ({
           className={errors.tax_number ? "border-red-500" : ""}
         />
         {errors.tax_number && <p className="text-sm text-red-500">{errors.tax_number}</p>}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 

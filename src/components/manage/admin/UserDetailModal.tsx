@@ -13,13 +13,14 @@ import type { ShippingAddress, UserData } from "@/libs/types/user";
 import { useEffect, useState } from "react";
 import {
   FaUser,
-  FaMapMarkerAlt,
-  FaCalendarAlt,
-  FaEnvelope,
   FaPhone,
+  FaEnvelope,
+  FaCalendarDays,
   FaIdCard,
-} from "react-icons/fa";
+  FaLocationDot,
+} from "react-icons/fa6";
 import { Loader2 } from "lucide-react";
+import { formatPhoneNumber } from "@/libs/helper/helper";
 
 const formatDate = (iso?: string | null) => {
   if (!iso) return "-";
@@ -63,7 +64,7 @@ const renderAddress = (addr: ShippingAddress) => (
   >
     <div className="flex items-start justify-between mb-2">
       <div className="flex items-center gap-2">
-        <FaMapMarkerAlt className="text-gray-500 h-4 w-4" />
+        <FaLocationDot className="text-gray-500 h-4 w-4" />
         <div className="font-medium text-gray-900">{addr.full_name}</div>
       </div>
       {addr.is_default && <Badge className="bg-green-100 text-green-800 text-xs">Default</Badge>}
@@ -71,7 +72,7 @@ const renderAddress = (addr: ShippingAddress) => (
     {addr.company && <div className="text-sm text-gray-700 mb-1">{addr.company}</div>}
     <div className="text-sm text-gray-600 mb-1 flex items-center gap-2">
       <FaPhone className="h-3 w-3" />
-      {addr.phone_number}
+      {formatPhoneNumber(addr.phone_number)}
     </div>
     <div className="text-sm text-gray-600 leading-relaxed">
       {addr.street}
@@ -188,7 +189,7 @@ const UserDetailModal = ({ userId }: { userId: string | null }) => {
               </div>
               <div>
                 <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Phone</p>
-                <p className="text-sm text-gray-900">{userData.phone || "-"}</p>
+                <p className="text-sm text-gray-900">{formatPhoneNumber(userData.phone) || "-"}</p>
               </div>
               <div>
                 <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
@@ -214,7 +215,7 @@ const UserDetailModal = ({ userId }: { userId: string | null }) => {
           {/* Activity Information */}
           <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
             <div className="flex items-center gap-2 mb-3">
-              <FaCalendarAlt className="h-4 w-4 text-purple-600" />
+              <FaCalendarDays className="h-4 w-4 text-purple-600" />
               <h3 className="font-semibold text-purple-900">Activity Information</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -250,7 +251,7 @@ const UserDetailModal = ({ userId }: { userId: string | null }) => {
           {/* Shipping Addresses */}
           <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
             <div className="flex items-center gap-2 mb-3">
-              <FaMapMarkerAlt className="h-4 w-4 text-orange-600" />
+              <FaLocationDot className="h-4 w-4 text-orange-600" />
               <h3 className="font-semibold text-orange-900">Shipping Addresses</h3>
             </div>
             <div className="space-y-3">
@@ -258,7 +259,7 @@ const UserDetailModal = ({ userId }: { userId: string | null }) => {
                 userData.shipping_address.map((addr) => renderAddress(addr))
               ) : (
                 <div className="text-center py-6 text-gray-500">
-                  <FaMapMarkerAlt className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                  <FaLocationDot className="h-8 w-8 mx-auto mb-2 text-gray-300" />
                   <p className="text-sm">No shipping addresses found</p>
                 </div>
               )}

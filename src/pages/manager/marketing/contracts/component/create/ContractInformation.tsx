@@ -640,7 +640,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                     required
                     error={errors.signed_location}
                   />
-                  <div className="space-y-2">
+                  {/* <div className="space-y-2">
                     <Label className="text-sm font-medium">Contract Number *</Label>
                     <Input
                       value={formData.contract_number || ""}
@@ -649,7 +649,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                       className={`h-11 ${errors.contract_number ? "border-red-500" : ""}`}
                     />
                     <FieldError message={errors.contract_number} />
-                  </div>
+                  </div> */}
                   <DatePicker
                     label="Signed Date"
                     value={formData.signed_date || ""}

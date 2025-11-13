@@ -31,6 +31,7 @@ import { brand } from "@/libs/stores/brandManager/thunk";
 import type { Brands } from "@/libs/types/brand";
 import { useNavigate } from "react-router";
 import { motion } from "framer-motion";
+import { formatPhoneNumber } from "@/libs/helper/helper";
 
 interface Partner extends Brands {
   isActive: boolean;
@@ -266,13 +267,13 @@ const BrandPage: React.FC = () => {
                             src={
                               !isEmpty(partner.logo_url)
                                 ? partner.logo_url!
-                                : `https://via.placeholder.com/40x40/3B82F6/FFFFFF?text=${partner.name.charAt(0)}`
+                                : "https://placehold.co/400"
                             }
                             alt={partner.name}
                             className="w-12 h-12 rounded border-2 border-gray-200 object-cover mr-4"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
-                              target.src = `https://via.placeholder.com/40x40/3B82F6/FFFFFF?text=${partner.name.charAt(0)}`;
+                              target.src = "https://placehold.co/400";
                             }}
                           />
                           <span className="font-medium text-gray-900 block text-nowrap overflow-hidden text-ellipsis">
@@ -291,7 +292,7 @@ const BrandPage: React.FC = () => {
 
                       <TableCell className="py-4 text-sm text-gray-600">
                         {!isEmpty(partner.contact_phone) ? (
-                          partner.contact_phone
+                          formatPhoneNumber(partner.contact_phone)
                         ) : (
                           <span className="text-gray-400 italic">No phone</span>
                         )}
@@ -411,13 +412,13 @@ const BrandPage: React.FC = () => {
                         src={
                           !isEmpty(partner.logo_url)
                             ? partner.logo_url!
-                            : `https://via.placeholder.com/40x40/3B82F6/FFFFFF?text=${partner.name.charAt(0)}`
+                            : "https://placehold.co/400"
                         }
                         alt={partner.name}
                         className="w-12 h-12 rounded border-2 border-gray-200 object-cover"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
-                          target.src = `https://via.placeholder.com/40x40/3B82F6/FFFFFF?text=${partner.name.charAt(0)}`;
+                          target.src = "https://placehold.co/400";
                         }}
                       />
                       <div className="flex-1">

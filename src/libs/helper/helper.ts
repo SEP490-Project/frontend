@@ -90,3 +90,14 @@ export const getInitialAuthState = () => {
     error: null as string | null,
   };
 };
+
+export const formatPhoneNumber = (phone: string): string => {
+  if (!phone) return "";
+  if (phone.startsWith("+84")) {
+    return "0" + phone.slice(3);
+  }
+  if (phone.startsWith("84")) {
+    return "0" + phone.slice(2);
+  }
+  return phone;
+};

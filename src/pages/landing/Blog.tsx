@@ -235,46 +235,6 @@ const Blog = () => {
                     ))}
                   </div>
                 </motion.div>
-
-                {/* Newsletter Signup */}
-                <motion.div
-                  className="bg-gradient-to-br from-[#fec6d4] to-[#feb2c5] p-6 rounded-2xl text-white"
-                  variants={fadeInUp}
-                >
-                  <h3 className="text-2xl font-bold mb-4">Stay Updated</h3>
-                  <p className="mb-4">
-                    Get the latest beauty tips and trends delivered to your inbox.
-                  </p>
-                  <div className="space-y-3">
-                    <Input
-                      placeholder="Your email address"
-                      className="bg-white/20 border-white/30 text-white placeholder:text-white/70"
-                    />
-                    <Button className="bg-white text-[#383838] hover:bg-gray-100 w-full font-semibold">
-                      Subscribe Now
-                    </Button>
-                  </div>
-                </motion.div>
-
-                {/* Categories Widget */}
-                <motion.div className="bg-white p-6 rounded-2xl shadow-lg" variants={fadeInUp}>
-                  <h3 className="text-2xl font-bold text-[#383838] mb-6">Categories</h3>
-                  <div className="space-y-2">
-                    {categories.slice(1).map((category, index) => (
-                      <div
-                        key={index}
-                        className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0"
-                      >
-                        <span className="text-[#383838] hover:text-[#fec6d4] transition-colors cursor-pointer">
-                          {category}
-                        </span>
-                        <span className="text-sm text-gray-500">
-                          {Math.floor(Math.random() * 20) + 5}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
               </motion.div>
             </div>
           </div>

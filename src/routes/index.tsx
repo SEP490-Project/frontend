@@ -4,7 +4,14 @@ import NotFound from "@/pages/NotFound";
 import CancelPayment from "@/pages/CancelPayment";
 import SuccessPayment from "@/pages/SuccessPayment";
 import { Account, Notification, Dashboard } from "@/pages/manager/shared";
-import { Contract, Campaign as BrandCampaign, ContractPaymentBrand } from "@/pages/manager/brand";
+import {
+  Contract,
+  Campaign as BrandCampaign,
+  ContractPaymentBrand,
+  PaymentTransaction as BrandPaymentTransaction,
+  ProductApproval,
+  ContentApproval as BrandContentApproval,
+} from "@/pages/manager/brand";
 import BrandContractDetail from "@/pages/manager/brand/ContractDetail";
 import {
   Brand,
@@ -138,6 +145,9 @@ const AppRoutes = () => (
           <Route path="campaigns" element={<BrandCampaign />} />
           <Route path="campaigns/:id" element={<CampaignDetail userRole="brand" />} />
           <Route path="contract-payment" element={<ContractPaymentBrand />} />
+          <Route path="payment-transaction" element={<BrandPaymentTransaction />} />
+          <Route path="product-approval" element={<ProductApproval />} />
+          <Route path="content-approval" element={<BrandContentApproval />} />
         </Route>
       </Route>
 

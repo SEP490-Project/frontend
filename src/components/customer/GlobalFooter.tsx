@@ -63,7 +63,7 @@ const GlobalFooter = () => {
                     <TooltipTrigger asChild>
                       <button
                         type="button"
-                        onClick={() => navigate("/staff-login")}
+                        onClick={() => navigate("/login")}
                         className="hover:text-[#fec6d4] transition-colors"
                       >
                         Employees and Brands Login

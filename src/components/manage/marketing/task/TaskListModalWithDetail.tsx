@@ -63,6 +63,9 @@ function TaskListModalWithDetail({
   const [showTaskDetail, setShowTaskDetail] = useState(false);
 
   const handleTaskClick = (taskId: string) => {
+    // Nếu đã có task detail và đang loading, không cho phép click task khác
+    if (detailLoading && taskDetail) return;
+
     setShowTaskDetail(true);
     onTaskClick(taskId);
   };
@@ -132,7 +135,9 @@ function TaskListModalWithDetail({
                         transition={{ duration: 0.2, delay: index * 0.05 }}
                       >
                         <Card
-                          className="group cursor-pointer hover:shadow-md transition-all duration-200 border-l-4 overflow-hidden"
+                          className={`group cursor-pointer hover:shadow-md transition-all duration-200 border-l-4 overflow-hidden ${
+                            detailLoading && taskDetail?.id === task.id ? "opacity-60" : ""
+                          }`}
                           style={{ borderLeftColor: getTaskColor(task.type) }}
                           onClick={() => handleTaskClick(task.id)}
                         >
@@ -206,7 +211,6 @@ function TaskListModalWithDetail({
           <AnimatePresence>
             {showTaskDetail && (
               <TaskDetailSlider
-                key={taskDetail?.id} // Add key to force re-render when task changes
                 task={taskDetail}
                 onBack={handleCloseTaskDetail}
                 isVisible={showTaskDetail}

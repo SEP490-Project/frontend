@@ -34,11 +34,14 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order }) => {
 
   const getStatusBadgeClass = (status: string) => {
     const statusMap: Record<string, string> = {
-      pending: "bg-yellow-100 text-yellow-800 border border-yellow-200",
-      processing: "bg-blue-100 text-blue-800 border border-blue-200",
-      shipped: "bg-purple-100 text-purple-800 border border-purple-200",
-      delivered: "bg-green-100 text-green-800 border border-green-200",
-      cancelled: "bg-red-100 text-red-800 border border-red-200",
+      paid: "bg-green-100 text-green-800 border border-green-200 hover:bg-green-200",
+      pending: "bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200",
+      cancelled: "bg-red-100 text-red-800 border border-red-200 hover:bg-red-200",
+      refunded: "bg-purple-100 text-purple-800 border border-purple-200 hover:bg-purple-200",
+      received: "bg-teal-100 text-teal-800 border border-teal-200 hover:bg-teal-200",
+      shipped: "bg-yellow-100 text-yellow-800 border border-yellow-200 hover:bg-yellow-200",
+      delivered: "bg-green-200 text-green-900 border border-green-300 hover:bg-green-300",
+      confirmed: "bg-green-100 text-green-800 border border-green-200 hover:bg-green-200",
     };
     return statusMap[status.toLowerCase()] || "bg-gray-100 text-gray-800 border border-gray-200";
   };
@@ -53,6 +56,18 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order }) => {
             <div>
               <span className="text-sm text-gray-500">Order ID:</span>
               <span className="ml-2 font-mono text-sm font-medium">#{order.id}</span>
+            </div>
+            <div>
+              <span className="text-sm text-gray-500">Order Type:</span>
+              <Badge
+                className={
+                  order.order_type === "STANDARD"
+                    ? "bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200 ml-2"
+                    : "bg-orange-100 text-orange-800 border border-orange-200 hover:bg-orange-200 ml-2"
+                }
+              >
+                {order.order_type.toUpperCase()}
+              </Badge>
             </div>
             <div>
               <span className="text-sm text-gray-500">Status:</span>
@@ -90,24 +105,59 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order }) => {
 
       {/* Shipping Address Section */}
       <div>
-        <h3 className="text-sm font-medium text-gray-500 mb-2">Shipping Address</h3>
+        <h3 className="text-sm font-medium text-gray-500 mb-2">Shipping Information</h3>
         <div className="space-y-2">
           <div>
-            <span className="text-sm text-gray-500">Street:</span>
-            <span className="ml-2 text-sm">{order.street}</span>
+            <span className="text-sm text-gray-500">Delivery Method:</span>
+            <Badge
+              className={`ml-2 ${order.is_self_picked_up ? "bg-orange-100 text-orange-800 border border-orange-200" : "bg-blue-100 text-blue-800 border border-blue-200"}`}
+            >
+              {order.is_self_picked_up ? "AT PLACE" : "SHIPPING TO ADDRESS"}
+            </Badge>
           </div>
-          <div>
-            <span className="text-sm text-gray-500">Ward:</span>
-            <span className="ml-2 text-sm">{order.ward_name}</span>
-          </div>
-          <div>
-            <span className="text-sm text-gray-500">District:</span>
-            <span className="ml-2 text-sm">{order.district_name}</span>
-          </div>
-          <div>
-            <span className="text-sm text-gray-500">Province:</span>
-            <span className="ml-2 text-sm">{order.province_name}</span>
-          </div>
+          {!order.is_self_picked_up && (
+            <>
+              <div>
+                <span className="text-sm text-gray-500">Street:</span>
+                <span className="ml-2 text-sm">{order.street}</span>
+              </div>
+              <div>
+                <span className="text-sm text-gray-500">Ward:</span>
+                <span className="ml-2 text-sm">{order.ward_name}</span>
+              </div>
+              <div>
+                <span className="text-sm text-gray-500">District:</span>
+                <span className="ml-2 text-sm">{order.district_name}</span>
+              </div>
+              <div>
+                <span className="text-sm text-gray-500">Province:</span>
+                <span className="ml-2 text-sm">{order.province_name}</span>
+              </div>
+            </>
+          )}
+          {order.user_note && (
+            <div>
+              <span className="text-sm text-gray-500">Customer Note:</span>
+              <div className="mt-1 text-sm bg-yellow-50 border border-yellow-200 rounded-md p-2">
+                {order.user_note}
+              </div>
+            </div>
+          )}
+          {order.status === "RECEIVED" && order.self_picked_up_image && (
+            <div>
+              <span className="text-sm text-gray-500">Pickup Proof:</span>
+              <div className="mt-2 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-2">
+                <img
+                  src={order.self_picked_up_image}
+                  alt="Customer pickup proof"
+                  className="w-full max-w-md rounded-md"
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  Photo taken when customer picked up the order
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -132,15 +182,6 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order }) => {
                       <span className="font-semibold text-base text-gray-900">
                         Item #{index + 1}
                       </span>
-                      <Badge
-                        className={`${
-                          item.status === "active"
-                            ? "bg-green-100 text-green-800 border-green-200"
-                            : "bg-gray-100 text-gray-800 border-gray-200"
-                        }`}
-                      >
-                        {item.status.toUpperCase()}
-                      </Badge>
                       <span className="text-sm text-gray-600">Qty: {item.quantity}</span>
                     </div>
                     <div className="text-right">

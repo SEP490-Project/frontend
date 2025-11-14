@@ -11,6 +11,7 @@ import {
   PaymentTransaction as BrandPaymentTransaction,
   ProductApproval,
   ContentApproval as BrandContentApproval,
+  ProductDetail as BrandProductDetail,
 } from "@/pages/manager/brand";
 import BrandContractDetail from "@/pages/manager/brand/ContractDetail";
 import {
@@ -147,6 +148,7 @@ const AppRoutes = () => (
           <Route path="contract-payment" element={<ContractPaymentBrand />} />
           <Route path="payment-transaction" element={<BrandPaymentTransaction />} />
           <Route path="product-approval" element={<ProductApproval />} />
+          <Route path="product-approval/:id" element={<BrandProductDetail />} />
           <Route path="content-approval" element={<BrandContentApproval />} />
         </Route>
       </Route>

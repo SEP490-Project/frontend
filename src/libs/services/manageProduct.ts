@@ -21,6 +21,8 @@ const manageProduct = {
         "Content-Type": "multipart/form-data",
       },
     }),
+  updateProductState: (productId: string, status: string) =>
+    api.patch(`products/${productId}/state`, { state: status }),
 };
 
 export default manageProduct;

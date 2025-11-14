@@ -113,6 +113,19 @@ const createVariantImageThunk = createAsyncThunk(
   },
 );
 
+const updateProductStateThunk = createAsyncThunk(
+  "products/updateState",
+  async ({ productId, status }: { productId: string; status: string }, { rejectWithValue }) => {
+    try {
+      const response = await manageProduct.updateProductState(productId, status);
+      return response.data;
+    } catch (error: AxiosError | unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Failed to update product state");
+    }
+  },
+);
+
 export {
   getAllProductsThunk,
   getProductByTaskIdThunk,
@@ -121,4 +134,5 @@ export {
   getProductDetailThunk,
   createLimitedProductThunk,
   createVariantImageThunk,
+  updateProductStateThunk,
 };

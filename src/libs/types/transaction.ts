@@ -32,6 +32,7 @@ export interface Pagination {
 export interface TransactionParams {
   reference_type?: "ORDER" | "CONTRACT_PAYMENT";
   reference_id?: string;
+  payer_id?: string;
   status?: "PENDING" | "COMPLETED" | "CANCELLED" | "EXPRIRED";
   method?: "BANK_TRANSFER" | "CREDIT_CARD" | "E_WALLET" | "PAYOS";
   transaction_from_date?: string;

@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useEffect, useState, useCallback } from "react";
 import { useAppDispatch } from "@/libs/stores";
 import { useParams } from "react-router-dom";

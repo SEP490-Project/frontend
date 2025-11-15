@@ -42,6 +42,7 @@ export interface ProductData {
   brand_name: string;
   thumbnail_url: string[] | null;
   is_active: boolean;
+  status?: "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED" | "REVISION"; // added optional since not always needed
   category: {
     id: string;
     name: string;
@@ -140,6 +141,7 @@ export interface ProductParams {
   search?: string;
   type?: string;
   category_id?: string;
+  status?: string;
 }
 
 export interface ProductFormProps<T extends FieldValues> {

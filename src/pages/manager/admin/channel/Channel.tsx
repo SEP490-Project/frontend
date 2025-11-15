@@ -12,6 +12,8 @@ const Channel = () => {
   const dispatch = useAppDispatch();
   const channels = useSelector((state: RootState) => state?.manageChannel?.channel);
 
+  const currentDate = new Date();
+
   useEffect(() => {
     dispatch(channelList());
   }, [dispatch]);
@@ -75,7 +77,6 @@ const Channel = () => {
           <h1 className="text-xl sm:text-2xl font-semibold text-gray-800">Channels</h1>
           <p className="text-sm text-gray-500 mt-1">Manage your sales channels and connections</p>
         </div>
-        <div className="text-sm text-gray-600">{channels?.length || 0} Active Channels</div>
       </div>
 
       <div className="grid md:grid-cols-3 grid-cols-1 gap-4">
@@ -120,7 +121,10 @@ const Channel = () => {
                     </span>
                   </div>
 
-                  {(channel.name === "Facebook" || channel.name === "TikTok") && (
+                  {(channel.name === "Facebook" ||
+                    (channel.name === "TikTok" &&
+                      new Date(channelData?.token_info?.access_token_expires_at as string) <
+                        currentDate)) && (
                     <button
                       onClick={() => handleResetToken(channel.name)}
                       className={`text-xs font-medium px-4 py-2 rounded-lg ${channel.color} text-white ${channel.hoverColor} transition-colors duration-200`}
@@ -161,14 +165,6 @@ const Channel = () => {
           );
         })}
       </div>
-
-      {/* Empty state or loading */}
-      {(!channels || channels.length === 0) && (
-        <div className="mt-8 text-center py-12 bg-gray-50 rounded-lg">
-          <FaGlobe className="w-12 h-12 mx-auto text-gray-400 mb-3" />
-          <p className="text-gray-500">No channels configured yet</p>
-        </div>
-      )}
     </div>
   );
 };

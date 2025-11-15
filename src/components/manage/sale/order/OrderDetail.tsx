@@ -57,6 +57,12 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order }) => {
               <span className="text-sm text-gray-500">Order ID:</span>
               <span className="ml-2 font-mono text-sm font-medium">#{order.id}</span>
             </div>
+            {order.ghn_order_code && (
+              <div>
+                <span className="text-sm text-gray-500">Order Code:</span>
+                <span className="ml-2 text-sm">{order.ghn_order_code}</span>
+              </div>
+            )}
             <div>
               <span className="text-sm text-gray-500">Order Type:</span>
               <Badge
@@ -143,9 +149,9 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order }) => {
               </div>
             </div>
           )}
-          {order.status === "RECEIVED" && order.is_self_picked_up && order.self_picked_up_image && (
+          {order.status === "RECEIVED" && order.self_picked_up_image && (
             <div>
-              <span className="text-sm text-gray-500">Pickup Proof:</span>
+              <span className="text-sm text-gray-500">Proof:</span>
               <div className="mt-2 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-2">
                 <img
                   src={order.self_picked_up_image}

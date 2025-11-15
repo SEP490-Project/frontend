@@ -41,15 +41,11 @@ export const formatDate = (date: Date | string, type: "display" | "input" = "dis
   });
 };
 
-export const convertNumberToCurrency = (
-  amount: number,
-  locale = "vn-VN",
-  currency = "VND",
-): string => {
-  return new Intl.NumberFormat(locale, {
+export const convertNumberToCurrency = (amount: string) => {
+  return new Intl.NumberFormat("vi-VN", {
     style: "currency",
-    currency,
-  }).format(amount);
+    currency: "VND",
+  }).format(parseFloat(amount));
 };
 
 export const parseCurrencyToNumber = (currencyString: string): number => {

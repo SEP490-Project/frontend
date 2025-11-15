@@ -22,6 +22,7 @@ import { managePaymentReducer } from "./paymentManager/slice";
 import { stateManagerReducer } from "./stateManager/slice";
 import { orderManagerReducer } from "./orderManager/slice";
 import { transactionManagerReducer } from "./transactionManager/slice";
+import { managePostedContentReducer } from "./contentPostedManager/slice";
 
 export const rootReducer = combineReducers({
   manageAuthen: manageAuthenReducer,
@@ -48,4 +49,5 @@ export const rootReducer = combineReducers({
   manageState: stateManagerReducer,
   manageOrder: orderManagerReducer,
   manageTransaction: transactionManagerReducer,
+  managePostedContent: managePostedContentReducer,
 });

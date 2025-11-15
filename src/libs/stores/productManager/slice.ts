@@ -7,8 +7,11 @@ import {
   getAllProductsThunk,
   getProductByTaskIdThunk,
   getProductDetailThunk,
+  updateProductStateThunk,
+  updateProductVisibilityThunk,
 } from "./thunk";
 import { setItem } from "@/libs/local-storage";
+import { toast } from "sonner";
 
 const productManagerSlice = createSlice({
   name: "productManager",
@@ -102,6 +105,35 @@ const productManagerSlice = createSlice({
       .addCase(createVariantProductThunk.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message || "Failed to create product variant";
+      })
+
+      .addCase(updateProductStateThunk.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateProductStateThunk.fulfilled, (state) => {
+        state.isLoading = false;
+        state.error = null;
+        toast.success("Product state updated successfully");
+      })
+      .addCase(updateProductStateThunk.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || "Failed to update product state";
+        toast.error(state.error);
+      })
+      .addCase(updateProductVisibilityThunk.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateProductVisibilityThunk.fulfilled, (state) => {
+        state.isLoading = false;
+        state.error = null;
+        toast.success("Product visibility updated successfully");
+      })
+      .addCase(updateProductVisibilityThunk.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || "Failed to update product visibility";
+        toast.error(state.error);
       });
   },
 });

@@ -45,4 +45,12 @@ export const manageContent = {
   submitContent: (id: string) => {
     return api.patch(`/contents/${id}/submit`);
   },
+
+  postedContents: (params: ContentListParams) => {
+    return api.get("/contents/public", { params });
+  },
+
+  contentPostedDetail: (id: string) => {
+    return api.get(`/contents/public/${id}`);
+  },
 };

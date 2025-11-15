@@ -32,10 +32,6 @@ export const createLimitedProductSchema: yup.ObjectSchema<CreateLimitedProductPa
           .number()
           .min(1, "Purchase limit must be at least 1")
           .required("Purchase limit is required"),
-        max_stock: yup
-          .number()
-          .min(1, "Max stock must be at least 1")
-          .required("Max stock is required"),
         is_free_shipping: yup.boolean().required(),
         concept_id: yup.string().nullable().optional(),
       })
@@ -46,7 +42,7 @@ export const createLimitedProductSchema: yup.ObjectSchema<CreateLimitedProductPa
 export const productVariantSchema: yup.ObjectSchema<ProductVariant> = yup.object({
   id: yup.string().optional(),
   name: yup.string().required("Name is required"),
-  current_stock: yup.number().nullable().optional().min(0, "Current stock must be at least 0"),
+  current_stock: yup.number().min(0, "Current stock must be at least 0"),
   price: yup
     .number()
     .positive("Price must be a positive number")
@@ -84,13 +80,29 @@ export const productVariantSchema: yup.ObjectSchema<ProductVariant> = yup.object
       }),
     )
     .required("Attributes are required"),
-  instructions: yup.string().required("Instructions are required"),
+  instructions: yup.string().nullable().default(null),
   description: yup.string().nullable().optional(),
   story: yup.string().nullable().optional(),
   type: yup.string().required("Type is required"),
   uses: yup.string().nullable().default(null),
-  weight: yup.number().required("Weight is required"),
-  height: yup.number().required("Height is required"),
-  length: yup.number().required("Length is required"),
-  width: yup.number().required("Width is required"),
+  weight: yup
+    .number()
+    .min(1, "Weight must be at least 1")
+    .positive("Weight must be a positive number")
+    .required("Weight is required"),
+  height: yup
+    .number()
+    .min(1, "Height must be at least 1")
+    .positive("Height must be a positive number")
+    .required("Height is required"),
+  length: yup
+    .number()
+    .min(1, "Length must be at least 1")
+    .positive("Length must be a positive number")
+    .required("Length is required"),
+  width: yup
+    .number()
+    .min(1, "Width must be at least 1")
+    .positive("Width must be a positive number")
+    .required("Width is required"),
 });

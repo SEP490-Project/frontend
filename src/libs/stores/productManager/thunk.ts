@@ -113,6 +113,35 @@ const createVariantImageThunk = createAsyncThunk(
   },
 );
 
+const updateProductStateThunk = createAsyncThunk(
+  "products/updateState",
+  async ({ productId, status }: { productId: string; status: string }, { rejectWithValue }) => {
+    try {
+      const response = await manageProduct.updateProductState(productId, status);
+      return response.data;
+    } catch (error: AxiosError | unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Failed to update product state");
+    }
+  },
+);
+
+const updateProductVisibilityThunk = createAsyncThunk(
+  "products/updateVisibility",
+  async (
+    { productId, isActive }: { productId: string; isActive: boolean },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await manageProduct.updateProductVisibility(productId, isActive);
+      return response.data;
+    } catch (error: AxiosError | unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Failed to update product visibility");
+    }
+  },
+);
+
 export {
   getAllProductsThunk,
   getProductByTaskIdThunk,
@@ -121,4 +150,6 @@ export {
   getProductDetailThunk,
   createLimitedProductThunk,
   createVariantImageThunk,
+  updateProductStateThunk,
+  updateProductVisibilityThunk,
 };

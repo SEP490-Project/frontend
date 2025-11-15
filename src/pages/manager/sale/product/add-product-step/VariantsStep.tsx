@@ -68,10 +68,10 @@ const VariantsStep = () => {
       expiry_date: null,
       manufacture_date: null,
       instructions: "",
-      weight: 0,
-      height: 0,
-      length: 0,
-      width: 0,
+      weight: null,
+      height: null,
+      length: null,
+      width: null,
     },
   });
 
@@ -303,7 +303,7 @@ const VariantsStep = () => {
                           <CardTitle className="text-lg font-semibold text-gray-900">
                             {variant.capacity} {variant.capacity_unit} {variant.container_type} -{" "}
                             <span className="font-medium">
-                              {convertNumberToCurrency(variant.price || 0)}
+                              {convertNumberToCurrency(variant.price?.toString() || "0")}
                             </span>
                           </CardTitle>
                           {variant.is_default && (

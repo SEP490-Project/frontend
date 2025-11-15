@@ -97,6 +97,7 @@ const Order: React.FC = () => {
       delivered: "bg-green-200 text-green-900 border border-green-300 hover:bg-green-300",
       confirmed: "bg-green-100 text-green-800 border border-green-200 hover:bg-green-200",
       in_transit: "bg-orange-100 text-orange-800 border border-orange-200 hover:bg-orange-200",
+      awaiting_pickup: "bg-indigo-100 text-indigo-800 border border-indigo-200 hover:bg-indigo-200",
     };
     return (
       statusMap[status.toLowerCase()] ||

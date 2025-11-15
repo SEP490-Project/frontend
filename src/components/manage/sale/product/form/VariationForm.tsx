@@ -185,50 +185,20 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
               placeholder="Price must be at least 1000"
               className=" col-span-3"
               autoComplete="off"
-              {...register("price", {
-                valueAsNumber: true,
-                onChange: (e) => {
-                  const number = Number(e.target.value);
-                  if (number < 0) {
-                    e.target.value = "0";
-                  }
-                },
-              })}
-              onPaste={(e) => {
-                const pastedData = e.clipboardData.getData("text");
-                const number = Number(pastedData);
-                if (number < 0) {
-                  e.preventDefault();
-                }
-              }}
+              {...register("price")}
             />
           </div>
 
           {state.productType === "LIMITED" && (
             <div className="space-y-2">
               <Label htmlFor="current_stock" className="text-sm font-medium">
-                Current Stock
+                Stock
               </Label>
               <Input
                 id="current_stock"
                 type="number"
-                {...register("current_stock", {
-                  valueAsNumber: true,
-                  onChange: (e) => {
-                    const number = Number(e.target.value);
-                    if (number < 0) {
-                      e.target.value = "0";
-                    }
-                  },
-                })}
-                onPaste={(e) => {
-                  const pastedData = e.clipboardData.getData("text");
-                  const number = Number(pastedData);
-                  if (number < 0) {
-                    e.preventDefault();
-                  }
-                }}
-                placeholder="0"
+                {...register("current_stock")}
+                placeholder="1"
               />
             </div>
           )}
@@ -256,112 +226,28 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
             <Label htmlFor="weight" className="text-sm font-medium">
               Weight (g) <span className="text-red-500">*</span>
             </Label>
-            <Input
-              id="weight"
-              type="number"
-              step="0.01"
-              {...register("weight", {
-                valueAsNumber: true,
-                onChange: (e) => {
-                  const number = Number(e.target.value);
-                  if (number < 0) {
-                    e.target.value = "0";
-                  }
-                },
-              })}
-              onPaste={(e) => {
-                const pastedData = e.clipboardData.getData("text");
-                const number = Number(pastedData);
-                if (number < 0) {
-                  e.preventDefault();
-                }
-              }}
-              placeholder="0"
-            />
+            <Input id="weight" type="number" step="0.1" {...register("weight")} placeholder="1" />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="height" className="text-sm font-medium">
               Height (cm) <span className="text-red-500">*</span>
             </Label>
-            <Input
-              id="height"
-              type="number"
-              step="0.01"
-              {...register("height", {
-                valueAsNumber: true,
-                onChange: (e) => {
-                  const number = Number(e.target.value);
-                  if (number < 0) {
-                    e.target.value = "0";
-                  }
-                },
-              })}
-              onPaste={(e) => {
-                const pastedData = e.clipboardData.getData("text");
-                const number = Number(pastedData);
-                if (number < 0) {
-                  e.preventDefault();
-                }
-              }}
-              placeholder="0"
-            />
+            <Input id="height" type="number" step="0.1" {...register("height")} placeholder="1" />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="width" className="text-sm font-medium">
               Width (cm) <span className="text-red-500">*</span>
             </Label>
-            <Input
-              id="width"
-              type="number"
-              step="0.01"
-              {...register("width", {
-                valueAsNumber: true,
-                onChange: (e) => {
-                  const number = Number(e.target.value);
-                  if (number < 0) {
-                    e.target.value = "0";
-                  }
-                },
-              })}
-              onPaste={(e) => {
-                const pastedData = e.clipboardData.getData("text");
-                const number = Number(pastedData);
-                if (number < 0) {
-                  e.preventDefault();
-                }
-              }}
-              placeholder="0"
-            />
+            <Input id="width" type="number" step="0.1" {...register("width")} placeholder="1" />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="length" className="text-sm font-medium">
               Length (cm) <span className="text-red-500">*</span>
             </Label>
-            <Input
-              id="length"
-              type="number"
-              step="0.01"
-              {...register("length", {
-                valueAsNumber: true,
-                onChange: (e) => {
-                  const number = Number(e.target.value);
-                  if (number < 0) {
-                    e.target.value = "0";
-                  }
-                },
-              })}
-              onPaste={(e) => {
-                const pastedData = e.clipboardData.getData("text");
-                const number = Number(pastedData);
-                if (number < 0) {
-                  e.preventDefault();
-                }
-              }}
-              placeholder="0"
-            />
+            <Input id="length" type="number" step="0.1" {...register("length")} placeholder="1" />
           </div>
         </div>
       </div>
@@ -377,24 +263,9 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
             <Input
               id="capacity"
               type="number"
-              step="0.01"
-              {...register("capacity", {
-                valueAsNumber: true,
-                onChange: (e) => {
-                  const number = Number(e.target.value);
-                  if (number < 0) {
-                    e.target.value = "0";
-                  }
-                },
-              })}
-              onPaste={(e) => {
-                const pastedData = e.clipboardData.getData("text");
-                const number = Number(pastedData);
-                if (number < 0) {
-                  e.preventDefault();
-                }
-              }}
-              placeholder="0"
+              step="0.1"
+              {...register("capacity")}
+              placeholder="1"
             />
           </div>
 
@@ -623,7 +494,7 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="instructions" className="text-sm font-medium">
-              Instructions <span className="text-red-500">*</span>
+              Instructions
             </Label>
             <Textarea
               id="instructions"

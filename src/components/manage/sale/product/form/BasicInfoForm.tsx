@@ -59,7 +59,6 @@ export const BasicInfoForm = ({
   const availability_start_date = watch("limited_attribute.availability_start_date" as any);
   const availability_end_date = watch("limited_attribute.availability_end_date" as any);
   const bought_limit = watch("limited_attribute.bought_limit" as any);
-  const max_stock = watch("limited_attribute.max_stock" as any);
 
   const onSubmit = useCallback(
     async (payload: CreateProductPayload | CreateLimitedProductPayload) => {
@@ -107,11 +106,7 @@ export const BasicInfoForm = ({
       // Additional validation for LIMITED products
       if (isLimitedProduct) {
         const isLimitedFormValid = Boolean(
-          premiere_date &&
-            availability_start_date &&
-            availability_end_date &&
-            bought_limit >= 1 &&
-            max_stock >= 1,
+          premiere_date && availability_start_date && availability_end_date && bought_limit >= 1,
         );
 
         setIsDisabled(!(isBasicFormValid && isLimitedFormValid));
@@ -130,7 +125,6 @@ export const BasicInfoForm = ({
     availability_start_date,
     availability_end_date,
     bought_limit,
-    max_stock,
   ]);
 
   // Load existing product data once on mount

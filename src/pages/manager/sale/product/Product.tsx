@@ -32,7 +32,10 @@ import { StatusModal } from "@/components/modal/StatusModal";
 import { useNavigate } from "react-router";
 import { ProductFormMode } from "@/enums/product";
 import { useAppDispatch } from "@/libs/stores";
-import { getAllProductsThunk } from "@/libs/stores/productManager/thunk";
+import {
+  getAllProductsThunk,
+  updateProductVisibilityThunk,
+} from "@/libs/stores/productManager/thunk";
 import { useSelector } from "react-redux";
 import type { ProductData, ProductParams } from "@/libs/types/product";
 import { PaginationTable } from "@/components/global";
@@ -51,6 +54,13 @@ const Product: React.FC = () => {
   });
 
   const navigate = useNavigate();
+
+  const handleToggleVisibility = async (productId: string, isActive: boolean) => {
+    const result = await dispatch(updateProductVisibilityThunk({ productId, isActive }));
+    if (result.meta.requestStatus === "fulfilled") {
+      dispatch(getAllProductsThunk(params));
+    }
+  };
 
   useEffect(() => {
     dispatch(getAllProductsThunk(params));
@@ -222,9 +232,7 @@ const Product: React.FC = () => {
                         <StatusModal
                           name={product.name}
                           status={product.is_active ? "Inactive" : "Active"}
-                          onConfirm={() => {
-                            console.log("Hello world");
-                          }}
+                          onConfirm={() => handleToggleVisibility(product.id, !product.is_active)}
                         />
                       </Dialog>
                     </TableCell>

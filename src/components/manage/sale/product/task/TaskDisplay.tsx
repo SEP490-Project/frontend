@@ -2,7 +2,7 @@ import { TaskProvider, useTaskManager } from "@/libs/contexts/TaskContext";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Eye, File, Tag } from "lucide-react";
+import { Clock, Eye, Tag } from "lucide-react";
 import { format } from "date-fns";
 import type { Task } from "@/libs/types/task";
 import { Button } from "@/components/ui/button";
@@ -61,7 +61,7 @@ const TaskCard = ({
 
   return (
     <Card
-      className={`hover:shadow-md cursor-pointer transition-shadow duration-200 w-full flex flex-col ${isSelected ? "ring-2 ring-primary" : ""}`}
+      className={`hover:shadow-md cursor-pointer transition-shadow duration-200 w-full flex flex-col mb-4 ${isSelected ? "ring-2 ring-primary" : ""}`}
       onClick={onClick}
     >
       <CardHeader className="pb-1">
@@ -71,14 +71,6 @@ const TaskCard = ({
             <Badge className={`${getStatusColor(task.status)} shrink-0`}>{task.status}</Badge>
           </div>
           <div className="flex gap-2">
-            <Tooltip>
-              <TooltipTrigger>
-                <Button size={"icon"} variant={"outline"}>
-                  <File className="h-5 w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Download Proposal</TooltipContent>
-            </Tooltip>
             <Tooltip>
               <TooltipTrigger>
                 <Button

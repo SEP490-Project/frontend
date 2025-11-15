@@ -206,12 +206,6 @@ const BrandProductDetail: React.FC = () => {
                 Additional Information
               </h2>
               <div className="grid md:grid-cols-2 grid-cols-1 gap-2">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-500 mb-2">Max Stock</p>
-                  <p className="font-semibold text-gray-900">
-                    {isLimited ? product.limited_product?.max_stock || "N/A" : "N/A"} items
-                  </p>
-                </div>
                 <div className="bg-gray-50 p-4 rounded-lg mt-4 md:mt-0">
                   <p className="text-sm text-gray-500 mb-2">Bought Limit</p>
                   <p className="font-semibold text-gray-900">

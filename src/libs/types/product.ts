@@ -78,7 +78,7 @@ export interface ProductVariant {
   expiry_date: Date | null;
   instructions: string | null;
   is_default: boolean;
-  manufacture_date: Date | null;
+  manufacturing_date?: Date | null;
   name: string;
   price: number | null;
   story?: string | null;

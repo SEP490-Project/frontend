@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -21,64 +21,74 @@ import {
 } from "@/components/ui/dialog";
 
 import type { Content } from "@/libs/types/content";
-import { ArrowLeft, Upload, X, User, Calendar, Target, FileText } from "lucide-react";
-import {
-  getTaskStatusDisplay,
-  getTaskCampaignDisplay,
-  getStatusBadgeVariant,
-  getStatusBadgeClassName,
-} from "@/libs/helper/taskUtils";
+import { ArrowLeft, Upload, X } from "lucide-react";
 import { useNavigationBlocker } from "@/libs/hooks/useNavigationBlocker";
+import { useChunkUpload } from "@/libs/hooks/useChunkUpload";
+import { useChannel } from "@/libs/hooks/useChannel";
+import { channelList } from "@/libs/stores/channelManager/thunk";
+import { toast } from "sonner";
 
 type ContentType = "blog" | "video";
 
 interface VideoEditorProps {
   editingContent?: Content | null;
-  selectedTask?: any;
   onSave: (content: { html: string; json: object }, contentType: ContentType) => void;
   onBack: () => void;
 }
 
-interface VideoContent {
-  platform: string;
-  description: string;
-  videoFile: File | null;
-  videoUrl: string;
-}
-
-const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEditorProps) => {
+const VideoEditor = ({ editingContent, onSave, onBack }: VideoEditorProps) => {
   const contentType = "video";
+  const { loading: isLoadingChannels, channel: channels } = useChannel();
+
   const [showPreview, setShowPreview] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [showNavigationDialog, setShowNavigationDialog] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
-  const [videoContent, setVideoContent] = useState<VideoContent>({
-    platform: editingContent ? editingContent.content_channels?.[0]?.channel_name || "" : "",
-    description: editingContent ? editingContent.body || "" : "",
-    videoFile: null,
-    videoUrl: "", // Videos are not pre-loaded from editing content
+  const { uploadFileInChunks, progress, isUploading, error } = useChunkUpload();
+
+  const [videoContent, setVideoContent] = useState({
+    channel: editingContent ? editingContent.content_channels?.[0]?.channel_name || "" : "",
+    title: editingContent ? editingContent.title || "" : "",
+    description: editingContent ? editingContent.description || "" : "",
+    body: editingContent ? editingContent.body || "" : "",
   });
 
   // Keep track of initial values to detect unsaved changes
   const initialContent = React.useMemo(
     () => ({
-      platform: editingContent ? editingContent.content_channels?.[0]?.channel_name || "" : "",
-      description: editingContent ? editingContent.body || "" : "",
-      videoUrl: "", // Videos are not pre-loaded from editing content
+      channel: editingContent ? editingContent.content_channels?.[0]?.channel_name || "" : "",
+      title: editingContent ? editingContent.title || "" : "",
+      description: editingContent ? editingContent.description || "" : "",
+      body: editingContent ? editingContent.body || "" : "",
     }),
     [editingContent],
   );
 
+  // Fetch channels on component mount
+  useEffect(() => {
+    channelList();
+  }, []);
+
+  // Filter channels for video content (only Facebook and TikTok allowed)
+  const allowedVideoChannels = React.useMemo(() => {
+    return channels.filter(
+      (channel) =>
+        channel.name.toLowerCase() === "facebook" || channel.name.toLowerCase() === "tiktok",
+    );
+  }, [channels]);
+
   // Check if there are unsaved changes
   const hasUnsavedChanges = React.useMemo(() => {
     return (
-      videoContent.platform !== initialContent.platform ||
+      videoContent.channel !== initialContent.channel ||
+      videoContent.title !== initialContent.title ||
       videoContent.description !== initialContent.description ||
-      videoContent.videoUrl !== initialContent.videoUrl ||
-      videoContent.videoFile !== null
+      videoContent.body !== initialContent.body ||
+      uploadedFile !== null
     );
-  }, [videoContent, initialContent]);
+  }, [videoContent, initialContent, uploadedFile]);
 
   // Block browser navigation when there are unsaved changes
   useNavigationBlocker({
@@ -90,53 +100,64 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
   });
 
   const handleSave = () => {
+    if (isUploading) {
+      toast.warning("Please wait for the video upload to complete.");
+      return;
+    }
+
     if (
-      videoContent.platform &&
+      videoContent.channel &&
+      videoContent.title &&
       videoContent.description &&
-      (videoContent.videoFile || videoContent.videoUrl)
+      videoContent.body
     ) {
       const content = {
-        html: `<p>${videoContent.description}</p><video src="${videoContent.videoUrl}" controls></video>`,
+        html: `<h3>${videoContent.title}</h3><p>${videoContent.description}</p><video src="${videoContent.body}" controls></video>`,
         json: {
-          platform: videoContent.platform,
+          channel: videoContent.channel,
+          title: videoContent.title,
           description: videoContent.description,
-          videoUrl: videoContent.videoUrl,
+          body: videoContent.body,
           type: "video",
         },
       };
       onSave(content, contentType);
-    } else {
-      alert("Please fill in all required fields (platform, description, and video)");
     }
   };
 
-  const handleVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setVideoContent((prev) => ({
-        ...prev,
-        videoFile: file,
-        videoUrl: URL.createObjectURL(file),
-      }));
-    }
-  };
-
-  const handleRemoveVideo = () => {
-    if (videoContent.videoUrl && videoContent.videoUrl.startsWith("blob:")) {
-      URL.revokeObjectURL(videoContent.videoUrl);
-    }
-    setVideoContent((prev) => ({
-      ...prev,
-      videoFile: null,
-      videoUrl: "",
-    }));
-  };
-
-  const handleInputChange = (field: keyof VideoContent, value: string) => {
+  const handleInputChange = (field: keyof typeof videoContent, value: string) => {
     setVideoContent((prev) => ({
       ...prev,
       [field]: value,
     }));
+  };
+
+  const handleVideoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setUploadedFile(file);
+
+      try {
+        const response = await uploadFileInChunks(file);
+        if (response && response?.data.HostURL) {
+          setVideoContent((prev) => ({
+            ...prev,
+            body: response.data.HostURL,
+          }));
+        }
+      } catch (error) {
+        console.error("Video upload failed:", error);
+        toast.error("Video upload failed. Please try again.");
+      }
+    }
+  };
+
+  const handleRemoveVideo = () => {
+    setVideoContent((prev) => ({
+      ...prev,
+      body: "",
+    }));
+    setUploadedFile(null);
   };
 
   // Handle back navigation with unsaved changes check
@@ -193,96 +214,18 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
             </h2>
           </div>
         </div>
-        <Button onClick={handleSave} className="bg-[#FF9DB0] hover:bg-pink-600">
-          {editingContent ? "Update Content" : "Save Content"}
+        <Button
+          onClick={handleSave}
+          disabled={isUploading}
+          className="bg-[#FF9DB0] hover:bg-pink-600 disabled:opacity-50"
+        >
+          {isUploading
+            ? `Uploading... ${progress}%`
+            : editingContent
+              ? "Update Content"
+              : "Save Content"}
         </Button>
       </div>
-
-      {/* Task Details Panel */}
-      {selectedTask && (
-        <Card className="border-l-4 border-l-blue-500">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2 text-lg">
-              <FileText className="w-5 h-5 text-blue-600" />
-              <span>Task: {selectedTask.title || "Untitled Task"}</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Campaign */}
-              <div className="flex items-center space-x-2">
-                <Target className="w-4 h-4 text-purple-600" />
-                <span className="text-sm font-medium text-gray-700">Campaign:</span>
-                <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                  {getTaskCampaignDisplay(selectedTask)}
-                </Badge>
-              </div>
-
-              {/* Status */}
-              <div className="flex items-center space-x-2">
-                <div
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: selectedTask.color || "#gray" }}
-                />
-                <span className="text-sm font-medium text-gray-700">Status:</span>
-                <Badge
-                  variant={getStatusBadgeVariant(getTaskStatusDisplay(selectedTask))}
-                  className={getStatusBadgeClassName(getTaskStatusDisplay(selectedTask))}
-                >
-                  {getTaskStatusDisplay(selectedTask)}
-                </Badge>
-              </div>
-
-              {/* Assignee */}
-              {selectedTask.details?.assignee && (
-                <div className="flex items-center space-x-2">
-                  <User className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm font-medium text-gray-700">Assignee:</span>
-                  <span className="text-sm text-gray-600">{selectedTask.details.assignee}</span>
-                </div>
-              )}
-
-              {/* Due Time */}
-              {selectedTask.details?.dueTime && (
-                <div className="flex items-center space-x-2">
-                  <Calendar className="w-4 h-4 text-green-600" />
-                  <span className="text-sm font-medium text-gray-700">Due:</span>
-                  <span className="text-sm text-gray-600">{selectedTask.details.dueTime}</span>
-                </div>
-              )}
-
-              {/* Priority */}
-              {selectedTask.details?.priority && (
-                <div className="flex items-center space-x-2 md:col-span-2">
-                  <span className="text-sm font-medium text-gray-700">Priority:</span>
-                  <Badge
-                    variant="outline"
-                    className={
-                      selectedTask.details.priority === "High"
-                        ? "bg-red-50 text-red-700 border-red-200"
-                        : selectedTask.details.priority === "Medium"
-                          ? "bg-orange-50 text-orange-700 border-orange-200"
-                          : "bg-blue-50 text-blue-700 border-blue-200"
-                    }
-                  >
-                    {selectedTask.details.priority}
-                  </Badge>
-                </div>
-              )}
-            </div>
-
-            {/* Description */}
-            {selectedTask.details?.description && (
-              <div className="border-t pt-4">
-                <span className="text-sm font-medium text-gray-700 block mb-2">Description:</span>
-                <p className="text-sm text-gray-600 leading-relaxed bg-gray-50 p-3 rounded-md">
-                  {selectedTask.details.description}
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
 
       {/* Editor */}
       <Card>
@@ -292,21 +235,40 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
           </h3>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Platform Selector */}
+          {/* Channel Selector */}
           <div className="space-y-2">
-            <Label htmlFor="platform">Platform *</Label>
+            <Label htmlFor="channel">Channel *</Label>
             <Select
-              value={videoContent.platform}
-              onValueChange={(value) => handleInputChange("platform", value)}
+              value={videoContent.channel}
+              onValueChange={(value) => handleInputChange("channel", value)}
+              disabled={isLoadingChannels}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a platform" />
+                <SelectValue
+                  placeholder={isLoadingChannels ? "Loading channels..." : "Select a channel"}
+                />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="facebook">Facebook</SelectItem>
-                <SelectItem value="tiktok">TikTok</SelectItem>
+                {allowedVideoChannels.map((channel) => (
+                  <SelectItem key={channel.id} value={channel.name}>
+                    {channel.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Title Input */}
+          <div className="space-y-2">
+            <Label htmlFor="title">Title *</Label>
+            <input
+              type="text"
+              id="title"
+              placeholder="Enter video title..."
+              value={videoContent.title}
+              onChange={(e) => handleInputChange("title", e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
 
           {/* Description Input */}
@@ -324,32 +286,41 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
           {/* Video Upload */}
           <div className="space-y-2">
             <Label htmlFor="video">Video *</Label>
-            {!videoContent.videoUrl ? (
+            {error && <div className="text-red-500 text-sm mb-2">{error}</div>}
+            {!videoContent.body ? (
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
                 <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                <p className="text-gray-600 mb-4">Upload your video file</p>
+                <p className="text-gray-600 mb-4">
+                  {isUploading ? `Uploading... ${progress}%` : "Upload your video file"}
+                </p>
+                {isUploading && (
+                  <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${progress}%` }}
+                    ></div>
+                  </div>
+                )}
                 <input
                   type="file"
                   id="video-upload"
                   accept="video/*"
                   onChange={handleVideoUpload}
+                  disabled={isUploading}
                   className="hidden"
                 />
                 <Button
                   type="button"
                   variant="outline"
+                  disabled={isUploading}
                   onClick={() => document.getElementById("video-upload")?.click()}
                 >
-                  Choose Video File
+                  {isUploading ? `Uploading ${progress}%` : "Choose Video File"}
                 </Button>
               </div>
             ) : (
               <div className="relative">
-                <video
-                  src={videoContent.videoUrl}
-                  controls
-                  className="w-full max-h-[300px] rounded-lg"
-                >
+                <video src={videoContent.body} controls className="w-full max-h-[300px] rounded-lg">
                   Your browser does not support the video tag.
                 </video>
                 <Button
@@ -360,6 +331,9 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
                 >
                   <X className="w-4 h-4" />
                 </Button>
+                {uploadedFile && (
+                  <div className="mt-2 text-sm text-gray-600">Uploaded: {uploadedFile.name}</div>
+                )}
               </div>
             )}
           </div>
@@ -372,7 +346,13 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
           variant="default"
           onClick={() => setShowPreview(!showPreview)}
           className="w-[200px]"
-          disabled={!videoContent.platform || !videoContent.description || !videoContent.videoUrl}
+          disabled={
+            isUploading ||
+            !videoContent.channel ||
+            !videoContent.title ||
+            !videoContent.description ||
+            !videoContent.body
+          }
         >
           {showPreview ? "Hide Preview" : "Show Preview"}
         </Button>
@@ -380,21 +360,27 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
 
       {/* Preview Section */}
       {showPreview &&
-        videoContent.platform &&
+        videoContent.channel &&
+        videoContent.title &&
         videoContent.description &&
-        videoContent.videoUrl && (
+        videoContent.body && (
           <Card>
             <CardHeader>
               <h3 className="text-lg font-semibold">Video Preview</h3>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {/* Platform Preview */}
+                {/* Channel Preview */}
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium text-gray-700">Platform:</span>
+                  <span className="text-sm font-medium text-gray-700">Channel:</span>
                   <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                    {videoContent.platform.charAt(0).toUpperCase() + videoContent.platform.slice(1)}
+                    {videoContent.channel}
                   </Badge>
+                </div>
+
+                {/* Title Preview */}
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-900">{videoContent.title}</h4>
                 </div>
 
                 {/* Description Preview */}
@@ -404,11 +390,7 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
 
                 {/* Video Preview */}
                 <div className="mt-6">
-                  <video
-                    src={videoContent.videoUrl}
-                    controls
-                    className="w-full rounded-lg shadow-lg"
-                  >
+                  <video src={videoContent.body} controls className="w-full rounded-lg shadow-lg">
                     Your browser does not support the video tag.
                   </video>
                 </div>

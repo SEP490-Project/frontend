@@ -25,6 +25,8 @@ import { ArrowLeft, Upload, X } from "lucide-react";
 import { useNavigationBlocker } from "@/libs/hooks/useNavigationBlocker";
 import { useChunkUpload } from "@/libs/hooks/useChunkUpload";
 import { useChannel } from "@/libs/hooks/useChannel";
+import { useDispatch } from "react-redux";
+import type { AppDispatch } from "@/libs/stores";
 import { channelList } from "@/libs/stores/channelManager/thunk";
 import { toast } from "sonner";
 
@@ -38,6 +40,7 @@ interface VideoEditorProps {
 
 const VideoEditor = ({ editingContent, onSave, onBack }: VideoEditorProps) => {
   const contentType = "video";
+  const dispatch = useDispatch<AppDispatch>();
   const { loading: isLoadingChannels, channel: channels } = useChannel();
 
   const [showPreview, setShowPreview] = useState(false);
@@ -68,10 +71,8 @@ const VideoEditor = ({ editingContent, onSave, onBack }: VideoEditorProps) => {
 
   // Fetch channels on component mount
   useEffect(() => {
-    channelList();
-  }, []);
-
-  // Filter channels for video content (only Facebook and TikTok allowed)
+    dispatch(channelList());
+  }, [dispatch]); // Filter channels for video content (only Facebook and TikTok allowed)
   const allowedVideoChannels = React.useMemo(() => {
     return channels.filter(
       (channel) =>

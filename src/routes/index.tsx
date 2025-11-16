@@ -52,7 +52,7 @@ import {
 import ContentPreviewPage from "@/pages/manager/marketing/content-approval/ContentPreviewPage";
 import AddProductStep from "@/components/manage/sale/product/AddProductStep";
 import ProductDetail from "@/pages/manager/sale/product/ProductDetail";
-import { User, VariantAttribute } from "@/pages/manager/admin";
+import { Channel, User, VariantAttribute } from "@/pages/manager/admin";
 import { CreateConceptStep } from "@/pages/manager/sale/product/add-product-step/CreateConceptStep";
 
 const AppRoutes = () => (
@@ -99,6 +99,7 @@ const AppRoutes = () => (
         <Route path="/manage/admin" element={<ManageLayout />}>
           <Route path="users" element={<User />} />
           <Route path="variant-attribute" element={<VariantAttribute />} />
+          <Route path="channel" element={<Channel />} />
         </Route>
       </Route>
 

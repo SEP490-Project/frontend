@@ -135,15 +135,6 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     setContentToDelete(null);
   };
 
-  const handleToggleStatus = async (content: Content) => {
-    if (content.status === "DRAFT") {
-      await publishExistingContent(content.id);
-      fetchContents(filters);
-    }
-    // For other statuses, we might need different actions like approve/reject
-    // This will be handled by specific buttons in the dropdown menu
-  };
-
   const handleViewContent = async (content: Content) => {
     setIsLoadingDetail(true);
 
@@ -559,9 +550,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                     </div>
 
                     <div className="col-span-1 flex items-center">
-                      <div className="cursor-pointer" onClick={() => handleToggleStatus(content)}>
-                        {getStatusBadge(content.status)}
-                      </div>
+                      <div>{getStatusBadge(content.status)}</div>
                     </div>
                   </div>
                 ))

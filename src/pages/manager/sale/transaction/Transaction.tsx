@@ -28,6 +28,7 @@ import type { TransactionData, TransactionParams } from "@/libs/types/transactio
 import { PaginationTable } from "@/components/global";
 import TransactionDetails from "./TransactionDetails";
 import { format } from "date-fns";
+import { convertNumberToCurrency } from "@/libs/helper/helper";
 
 const Transaction: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -84,13 +85,6 @@ const Transaction: React.FC = () => {
         {method?.replace(/_/g, " ")}
       </Badge>
     );
-  };
-
-  const formatCurrency = (amount: string) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(parseFloat(amount));
   };
 
   const formatDate = (dateString: string) => {
@@ -181,7 +175,6 @@ const Transaction: React.FC = () => {
             <TableHeader className="px-4">
               <TableRow className="border-b bg-gray-50">
                 <TableHead className="font-semibold">Transaction ID</TableHead>
-                <TableHead className="font-semibold">Reference ID</TableHead>
                 <TableHead className="font-semibold">Amount</TableHead>
                 <TableHead className="font-semibold">Method</TableHead>
                 <TableHead className="font-semibold">Status</TableHead>
@@ -220,15 +213,13 @@ const Transaction: React.FC = () => {
                     }`}
                   >
                     <TableCell className="py-4 font-mono text-sm">
-                      {transaction.id.slice(0, 8)}...
-                    </TableCell>
-
-                    <TableCell className="py-4 font-mono text-sm">
-                      {transaction.reference_id}
+                      #{transaction.id.slice(0, 8)}
                     </TableCell>
 
                     <TableCell className="py-4">
-                      <span className="font-semibold">{formatCurrency(transaction.amount)}</span>
+                      <span className="font-semibold">
+                        {convertNumberToCurrency(transaction.amount.toString())}
+                      </span>
                     </TableCell>
 
                     <TableCell className="py-4">{getMethodBadge(transaction.method)}</TableCell>
@@ -296,18 +287,13 @@ const Transaction: React.FC = () => {
                   <div>
                     <p className="text-xs text-gray-500">Amount</p>
                     <p className="font-semibold text-primary">
-                      {formatCurrency(transaction.amount)}
+                      {convertNumberToCurrency(transaction.amount.toString())}
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-gray-500">Method</p>
                     {getMethodBadge(transaction.method)}
                   </div>
-                </div>
-
-                <div>
-                  <p className="text-xs text-gray-500">Reference ID</p>
-                  <p className="font-mono text-sm">{transaction.reference_id}</p>
                 </div>
 
                 <div className="flex justify-between items-center pt-2 border-t">

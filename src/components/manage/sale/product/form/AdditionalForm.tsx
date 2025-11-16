@@ -131,66 +131,6 @@ export const AdditionalInfoForm = ({ form }: AdditionalInfoFormProps) => {
           )}
         />
       </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">
-        <label
-          htmlFor="purchaseLimit"
-          className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end"
-        >
-          <span className="text-red-600">*</span>
-          Purchase Limit
-        </label>
-        <Controller
-          name="limited_attribute.bought_limit"
-          control={control}
-          render={({ field }) => (
-            <Input
-              id="purchaseLimit"
-              type="number"
-              min={1}
-              placeholder="Minimum 1"
-              className="col-span-3"
-              autoComplete="off"
-              value={field.value || ""}
-              onChange={(e) => {
-                const number = Number(e.target.value);
-                field.onChange(number < 1 ? 1 : number);
-              }}
-              onBlur={field.onBlur}
-            />
-          )}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">
-        <label
-          htmlFor="maxStock"
-          className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end"
-        >
-          <span className="text-red-600">*</span>
-          Max Stock
-        </label>
-        <Controller
-          name="limited_attribute.max_stock"
-          control={control}
-          render={({ field }) => (
-            <Input
-              id="maxStock"
-              type="number"
-              min={1}
-              placeholder="Minimum 1"
-              className="col-span-3"
-              autoComplete="off"
-              value={field.value || ""}
-              onChange={(e) => {
-                const number = Number(e.target.value);
-                field.onChange(number < 1 ? 1 : number);
-              }}
-              onBlur={field.onBlur}
-            />
-          )}
-        />
-      </div>
     </div>
   );
 };

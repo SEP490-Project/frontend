@@ -98,27 +98,6 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({
 
           <Separator />
 
-          {/* Reference Information */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3">Reference Information</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-gray-500">Reference Type</label>
-                <p className="text-base mt-1">
-                  <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200">
-                    {transaction.reference_type}
-                  </Badge>
-                </p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-500">Reference ID</label>
-                <p className="text-base font-mono mt-1">{transaction.reference_id}</p>
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
           {/* Payment Information */}
           <div>
             <h3 className="text-lg font-semibold mb-3">Payment Information</h3>
@@ -141,11 +120,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({
           {/* Gateway Information */}
           <div>
             <h3 className="text-lg font-semibold mb-3">Gateway Information</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-gray-500">Gateway ID</label>
-                <p className="text-base font-mono mt-1">{transaction.gateway_id || "N/A"}</p>
-              </div>
+            <div>
               <div>
                 <label className="text-sm font-medium text-gray-500">Gateway Reference</label>
                 <p className="text-base font-mono mt-1 break-all">

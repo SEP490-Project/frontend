@@ -1,6 +1,7 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { AxiosError } from "axios";
 import { manageTask } from "@/libs/services/manageTask";
+import type { SingleTaskResponse } from "@/libs/task";
 
 export const getTaskList = createAsyncThunk(
   "/tasks",
@@ -53,6 +54,19 @@ export const assignTask = createAsyncThunk(
     try {
       const response = await manageTask.assignTask(req);
       return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Thất bại");
+    }
+  },
+);
+
+export const getTaskDetailById = createAsyncThunk(
+  "/tasks/get-by-id",
+  async (taskId: string, { rejectWithValue }) => {
+    try {
+      const response = await manageTask.getTaskById(taskId);
+      return response.data as SingleTaskResponse;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
       return rejectWithValue(err.response?.data?.message || "Thất bại");

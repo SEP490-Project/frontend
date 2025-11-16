@@ -23,6 +23,8 @@ const manageProduct = {
     }),
   updateProductState: (productId: string, status: string) =>
     api.patch(`products/${productId}/state`, { state: status }),
+  updateProductVisibility: (productId: string, isActive: boolean) =>
+    api.patch(`products/publish/${productId}/${isActive}`),
 };
 
 export default manageProduct;

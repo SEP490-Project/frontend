@@ -26,9 +26,21 @@ export interface OrderData {
   order_type: string;
   ghn_order_code?: string;
   order_items: OrderItem[];
-  payment_id: string;
-  payment_bin: string;
-  self_picked_up_image?: string;
+  confirmation_image?: string;
+  payment_transaction: PaymentTransaction;
+}
+
+interface PaymentTransaction {
+  id: string;
+  reference_id: string;
+  reference_type: string;
+  amount: string;
+  method: string;
+  status: string;
+  transaction_date: string;
+  gateway_ref: string;
+  gateway_id: string;
+  updated_at: string;
 }
 
 export interface OrderItem {

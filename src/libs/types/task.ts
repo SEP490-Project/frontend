@@ -16,12 +16,34 @@ export interface Task {
   campaign_id: string;
   contract_id: string;
   milestone_id: string;
+  milestone_details: MilestoneDetails;
+  campaign_details: CampaignDetails;
   created_by_id?: string;
   created_by_name?: string;
   updated_by_id?: string;
   updated_by_name?: string;
   content_ids?: string[];
   product_ids?: string[];
+}
+
+interface MilestoneDetails {
+  id: string;
+  description: string;
+  due_date: string;
+  completed_at: string;
+  completion_percentage: number;
+  status: string;
+  behind_schedule: boolean;
+}
+
+interface CampaignDetails {
+  id: string;
+  name: string;
+  description: string;
+  start_date: string;
+  end_date: string;
+  status: string;
+  type: string;
 }
 
 export interface TaskResponse {

@@ -21,6 +21,8 @@ import {
   FaPowerOff,
   FaFileSignature,
   FaMoneyBillTransfer,
+  FaRightLeft,
+  FaBox,
 } from "react-icons/fa6";
 import { useAuth } from "@/libs/hooks/useAuth";
 import { useAppDispatch } from "@/libs/stores";
@@ -180,6 +182,21 @@ const Sidebar: React.FC<SidebarProps> = ({
         href: "/manage/brand/contract-payment",
         label: "Contract Payment",
         icon: <FaMoneyBillTransfer size={18} />,
+      },
+      {
+        href: "/manage/brand/payment-transaction",
+        label: "Payment Transaction",
+        icon: <FaRightLeft size={18} />,
+      },
+      {
+        href: "/manage/brand/product-approval",
+        label: "Product Approval",
+        icon: <FaBox size={18} />,
+      },
+      {
+        href: "/manage/brand/content-approval",
+        label: "Content Approval",
+        icon: <FaFileSignature size={18} />,
       },
     ],
     MARKETING_STAFF: [

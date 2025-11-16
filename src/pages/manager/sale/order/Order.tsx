@@ -97,6 +97,7 @@ const Order: React.FC = () => {
       delivered: "bg-green-200 text-green-900 border border-green-300 hover:bg-green-300",
       confirmed: "bg-green-100 text-green-800 border border-green-200 hover:bg-green-200",
       in_transit: "bg-orange-100 text-orange-800 border border-orange-200 hover:bg-orange-200",
+      awaiting_pickup: "bg-indigo-100 text-indigo-800 border border-indigo-200 hover:bg-indigo-200",
     };
     return (
       statusMap[status.toLowerCase()] ||
@@ -185,7 +186,7 @@ const Order: React.FC = () => {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
+                  <TableCell colSpan={7} className="text-center py-8">
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
                       <span className="ml-2">Loading orders...</span>
@@ -194,13 +195,13 @@ const Order: React.FC = () => {
                 </TableRow>
               ) : error ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-red-600">
+                  <TableCell colSpan={7} className="text-center py-8 text-red-600">
                     Error: {error?.message || "Failed to load orders"}
                   </TableCell>
                 </TableRow>
               ) : !orders || orders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                  <TableCell colSpan={7} className="text-center py-8 text-gray-500">
                     No orders found
                   </TableCell>
                 </TableRow>

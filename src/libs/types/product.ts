@@ -42,6 +42,7 @@ export interface ProductData {
   brand_name: string;
   thumbnail_url: string[] | null;
   is_active: boolean;
+  status?: "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED" | "REVISION"; // added optional since not always needed
   category: {
     id: string;
     name: string;
@@ -56,9 +57,7 @@ export interface ProductData {
 
 export interface LimitedProductData extends ProductData {
   limited_product?: {
-    max_stock: number;
     is_free_shipping: boolean;
-    bought_limit: number;
     premiere_date: string;
     availability_start_date: string;
     availability_end_date: string;
@@ -69,14 +68,15 @@ export interface LimitedProductData extends ProductData {
 export interface ProductVariant {
   id?: string;
   attributes: ProductAttribute[];
+  current_stock?: number | null;
   capacity: number | null;
   capacity_unit: CapacityUnit;
   container_type: ContainerType;
-  current_stock?: number | null;
+  input_stock: number | null;
   description?: string | null;
   dispenser_type: DispenserType;
   expiry_date: Date | null;
-  instructions: string;
+  instructions: string | null;
   is_default: boolean;
   manufacture_date: Date | null;
   name: string;
@@ -84,10 +84,11 @@ export interface ProductVariant {
   story?: string | null;
   type: string;
   uses: string | null;
-  weight: number;
-  height: number;
-  length: number;
-  width: number;
+  weight: number | null;
+  height: number | null;
+  length: number | null;
+  width: number | null;
+  pre_order_limit?: number | null;
 }
 
 export interface VariantWithImage extends ProductVariant {
@@ -113,10 +114,8 @@ export interface ProductAttribute {
 export interface LimitedAttribute {
   availability_end_date: string;
   availability_start_date: string;
-  bought_limit: number | null;
   concept_id?: string | null;
   is_free_shipping: boolean;
-  max_stock: number | null;
   premiere_date: string;
 }
 
@@ -140,6 +139,7 @@ export interface ProductParams {
   search?: string;
   type?: string;
   category_id?: string;
+  status?: string;
 }
 
 export interface ProductFormProps<T extends FieldValues> {

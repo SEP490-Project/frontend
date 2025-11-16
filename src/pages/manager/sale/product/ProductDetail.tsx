@@ -29,6 +29,7 @@ import type {
   LimitedProductData,
 } from "@/libs/types/product";
 import { MdHeight, MdWidthNormal } from "react-icons/md";
+import { convertNumberToCurrency, formatDate } from "@/libs/helper/helper";
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -101,6 +102,16 @@ const ProductDetail: React.FC = () => {
       .replace(/\b\w/g, (l) => l.toUpperCase());
   };
 
+  const calculateTotalStock = () => {
+    if (!isLimited) return "N/A";
+    let totalStock = 0;
+    (product as LimitedProductData).variants?.forEach((variant) => {
+      if (!variant.current_stock) return;
+      totalStock += variant.current_stock;
+    });
+    return totalStock;
+  };
+
   return (
     <div className="min-h-fit p-4 sm:p-6">
       <div className="flex justify-between items-center mb-6">
@@ -109,6 +120,122 @@ const ProductDetail: React.FC = () => {
 
       <div className="lg:col-span-2">
         <div className="bg-white rounded-lg shadow mb-3">
+          {isLimited && (product as LimitedProductData).concept && (
+            <div className="p-6">
+              <h2 className="flex items-center gap-2 text-lg font-semibold mb-4">
+                <Star className="h-5 w-5" />
+                Concept Information
+              </h2>
+              <div className="space-y-4">
+                <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg border border-purple-200">
+                  <p className="text-sm text-purple-700 mb-1">Concept Name</p>
+                  <p className="text-xl font-bold text-purple-900">
+                    {(product as LimitedProductData).concept?.name || "N/A"}
+                  </p>
+                </div>
+
+                {(product as LimitedProductData).concept?.description && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-500 mb-2">Description</p>
+                    <p className="text-gray-900">
+                      {(product as LimitedProductData).concept?.description}
+                    </p>
+                  </div>
+                )}
+
+                <div className="grid md:grid-cols-2 grid-cols-1 gap-4">
+                  {(product as LimitedProductData).concept?.status && (
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-500 mb-2">Status</p>
+                      <Badge
+                        className={
+                          (product as LimitedProductData).concept?.status === "ACTIVE"
+                            ? "bg-green-100 text-green-800 border border-green-200"
+                            : "bg-gray-100 text-gray-800 border border-gray-200"
+                        }
+                      >
+                        {(product as LimitedProductData).concept?.status}
+                      </Badge>
+                    </div>
+                  )}
+
+                  {(product as LimitedProductData).concept?.start_date && (
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-500 mb-2">Concept Start Date</p>
+                      <p className="font-semibold text-gray-900">
+                        {new Date(
+                          (product as LimitedProductData).concept?.start_date || "",
+                        ).toLocaleDateString()}
+                      </p>
+                    </div>
+                  )}
+
+                  {(product as LimitedProductData).concept?.end_date && (
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-500 mb-2">Concept End Date</p>
+                      <p className="font-semibold text-gray-900">
+                        {new Date(
+                          (product as LimitedProductData).concept?.end_date || "",
+                        ).toLocaleDateString()}
+                      </p>
+                    </div>
+                  )}
+
+                  {(product as LimitedProductData).concept?.created_at && (
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-500 mb-2">Created At</p>
+                      <p className="font-semibold text-gray-900">
+                        {formatDate((product as LimitedProductData).concept?.created_at || "")}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {(product as LimitedProductData).concept?.video_thumbnail && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-500 mb-2">Concept Video</p>
+                    <video
+                      controls
+                      className="w-full rounded-lg border border-gray-200"
+                      style={{ maxHeight: "400px" }}
+                    >
+                      <source
+                        src={(product as LimitedProductData).concept?.video_thumbnail}
+                        type="video/mp4"
+                      />
+                      Your browser does not support the video tag.
+                    </video>
+                  </div>
+                )}
+
+                {(product as LimitedProductData).concept?.banner_url && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-500 mb-2">Concept Banners</p>
+                    <div className="grid md:grid-cols-3 grid-cols-1 gap-4">
+                      {(product as LimitedProductData).concept?.banner_url
+                        .split(",")
+                        .map((url: string, index: number) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={url.trim()}
+                              alt={`Concept Banner ${index + 1}`}
+                              className="w-full h-48 object-cover rounded-lg border border-gray-200 hover:opacity-90 transition-opacity cursor-pointer"
+                              onClick={() => window.open(url.trim(), "_blank")}
+                            />
+                            <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-10 transition-all rounded-lg flex items-center justify-center">
+                              <p className="text-white opacity-0 group-hover:opacity-100 text-sm font-medium">
+                                Click to view full size
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="p-6">
             <h2 className="flex items-center gap-2 text-lg font-semibold mb-4">
               <Info className="h-5 w-5" />
@@ -176,181 +303,51 @@ const ProductDetail: React.FC = () => {
                     Created At
                   </p>
                   <p className="font-semibold text-gray-900 text-sm">
-                    {product.created_at ? new Date(product.created_at).toLocaleString() : "N/A"}
+                    {formatDate(product.created_at.toString())}
                   </p>
                 </div>
               </div>
             </div>
           </div>
+
           {isLimited && (
-            <div className="px-6 pb-6">
+            <div className="p-6">
               <h2 className="flex items-center gap-2 text-lg font-semibold mb-4">
                 <Info className="h-5 w-5" />
                 Additional Information
               </h2>
-              <div className="grid md:grid-cols-2 grid-cols-1 gap-2">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-500 mb-2">Max Stock</p>
-                  <p className="font-semibold text-gray-900">
-                    {isLimited
-                      ? (product as LimitedProductData).limited_product?.max_stock || "N/A"
-                      : "N/A"}{" "}
-                    items
-                  </p>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg mt-4 md:mt-0">
-                  <p className="text-sm text-gray-500 mb-2">Bought Limit</p>
-                  <p className="font-semibold text-gray-900">
-                    {isLimited
-                      ? (product as LimitedProductData).limited_product?.bought_limit || "N/A"
-                      : "N/A"}
-                  </p>
-                </div>
+
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-500 mb-2">Stock</p>
+                <p className="font-semibold text-gray-900">{calculateTotalStock()} items</p>
               </div>
               <div className="grid md:grid-cols-3 grid-cols-1 gap-2">
                 <div className="bg-gray-50 p-4 rounded-lg mt-4">
                   <p className="text-sm text-gray-500 mb-2">Premiere Date</p>
                   <p className="font-semibold text-gray-900">
-                    {isLimited
-                      ? (product as LimitedProductData).limited_product?.premiere_date || "N/A"
-                      : "N/A"}
+                    {formatDate(
+                      (product as LimitedProductData).limited_product?.premiere_date as string,
+                    )}
                   </p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg mt-4">
                   <p className="text-sm text-gray-500 mb-2">Start Date</p>
                   <p className="font-semibold text-gray-900">
-                    {isLimited
-                      ? (product as LimitedProductData).limited_product?.availability_start_date ||
-                        "N/A"
-                      : "N/A"}
+                    {formatDate(
+                      (product as LimitedProductData).limited_product
+                        ?.availability_start_date as string,
+                    )}
                   </p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg mt-4">
                   <p className="text-sm text-gray-500 mb-2">End Date</p>
                   <p className="font-semibold text-gray-900">
-                    {isLimited
-                      ? (product as LimitedProductData).limited_product?.availability_end_date ||
-                        "N/A"
-                      : "N/A"}
+                    {formatDate(
+                      (product as LimitedProductData).limited_product
+                        ?.availability_end_date as string,
+                    )}
                   </p>
                 </div>
-              </div>
-            </div>
-          )}
-          {isLimited && (product as LimitedProductData).concept && (
-            <div className="px-6 pb-6">
-              <h2 className="flex items-center gap-2 text-lg font-semibold mb-4">
-                <Star className="h-5 w-5" />
-                Concept Information
-              </h2>
-              <div className="space-y-4">
-                <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg border border-purple-200">
-                  <p className="text-sm text-purple-700 mb-1">Concept Name</p>
-                  <p className="text-xl font-bold text-purple-900">
-                    {(product as LimitedProductData).concept?.name || "N/A"}
-                  </p>
-                </div>
-
-                {(product as LimitedProductData).concept?.description && (
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-500 mb-2">Description</p>
-                    <p className="text-gray-900">
-                      {(product as LimitedProductData).concept?.description}
-                    </p>
-                  </div>
-                )}
-
-                <div className="grid md:grid-cols-2 grid-cols-1 gap-4">
-                  {(product as LimitedProductData).concept?.status && (
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <p className="text-sm text-gray-500 mb-2">Status</p>
-                      <Badge
-                        className={
-                          (product as LimitedProductData).concept?.status === "ACTIVE"
-                            ? "bg-green-100 text-green-800 border border-green-200"
-                            : "bg-gray-100 text-gray-800 border border-gray-200"
-                        }
-                      >
-                        {(product as LimitedProductData).concept?.status}
-                      </Badge>
-                    </div>
-                  )}
-
-                  {(product as LimitedProductData).concept?.start_date && (
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <p className="text-sm text-gray-500 mb-2">Concept Start Date</p>
-                      <p className="font-semibold text-gray-900">
-                        {new Date(
-                          (product as LimitedProductData).concept?.start_date || "",
-                        ).toLocaleDateString()}
-                      </p>
-                    </div>
-                  )}
-
-                  {(product as LimitedProductData).concept?.end_date && (
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <p className="text-sm text-gray-500 mb-2">Concept End Date</p>
-                      <p className="font-semibold text-gray-900">
-                        {new Date(
-                          (product as LimitedProductData).concept?.end_date || "",
-                        ).toLocaleDateString()}
-                      </p>
-                    </div>
-                  )}
-
-                  {(product as LimitedProductData).concept?.created_at && (
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <p className="text-sm text-gray-500 mb-2">Created At</p>
-                      <p className="font-semibold text-gray-900">
-                        {new Date(
-                          (product as LimitedProductData).concept?.created_at || "",
-                        ).toLocaleString()}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {(product as LimitedProductData).concept?.video_thumbnail && (
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-500 mb-2">Concept Video</p>
-                    <video
-                      controls
-                      className="w-full rounded-lg border border-gray-200"
-                      style={{ maxHeight: "400px" }}
-                    >
-                      <source
-                        src={(product as LimitedProductData).concept?.video_thumbnail}
-                        type="video/mp4"
-                      />
-                      Your browser does not support the video tag.
-                    </video>
-                  </div>
-                )}
-
-                {(product as LimitedProductData).concept?.banner_url && (
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-500 mb-2">Concept Banners</p>
-                    <div className="grid md:grid-cols-3 grid-cols-1 gap-4">
-                      {(product as LimitedProductData).concept?.banner_url
-                        .split(",")
-                        .map((url: string, index: number) => (
-                          <div key={index} className="relative group">
-                            <img
-                              src={url.trim()}
-                              alt={`Concept Banner ${index + 1}`}
-                              className="w-full h-48 object-cover rounded-lg border border-gray-200 hover:opacity-90 transition-opacity cursor-pointer"
-                              onClick={() => window.open(url.trim(), "_blank")}
-                            />
-                            <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-10 transition-all rounded-lg flex items-center justify-center">
-                              <p className="text-white opacity-0 group-hover:opacity-100 text-sm font-medium">
-                                Click to view full size
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           )}
@@ -439,7 +436,7 @@ const ProductDetail: React.FC = () => {
                               Price
                             </p>
                             <p className="font-semibold">
-                              {variant.price?.toLocaleString() || "N/A"}đ
+                              {convertNumberToCurrency(variant.price?.toString() || "0")}
                             </p>
                           </div>
 
@@ -512,7 +509,7 @@ const ProductDetail: React.FC = () => {
                                 Manufacture Date
                               </p>
                               <p className="font-semibold text-gray-900">
-                                {new Date(variant?.manufacture_date).toLocaleDateString() || "N/A"}
+                                {formatDate(variant.manufacture_date) || "N/A"}
                               </p>
                             </div>
                           )}
@@ -524,12 +521,12 @@ const ProductDetail: React.FC = () => {
                                 Expiry Date
                               </p>
                               <p className=" font-semibold text-gray-900">
-                                {new Date(variant.expiry_date).toLocaleDateString()}
+                                {formatDate(variant.expiry_date)}
                               </p>
                             </div>
                           )}
 
-                          {selectedVariant?.current_stock && isLimited && (
+                          {isLimited && (
                             <div className="p-4 rounded-lg border border-orange-200 bg-yellow-50">
                               <p className="text-sm text-orange-700 font-medium mb-1 flex items-center gap-1">
                                 <ShoppingCart className="h-4 w-4" />
@@ -542,7 +539,7 @@ const ProductDetail: React.FC = () => {
                           )}
                         </div>
 
-                        {selectedVariant?.current_stock && isLimited && (
+                        {isLimited && (
                           <div className="p-4 rounded-lg border border-orange-200 bg-yellow-50">
                             <p className="text-sm text-orange-700 font-medium mb-2 flex items-center gap-1">
                               <span>

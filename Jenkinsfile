@@ -5,6 +5,10 @@ pipeline {
 
     tools {
         nodejs 'NodeJS_22.21.0'
+    } 
+
+    triggers {
+        githubPush()
     }
 
     parameters {
@@ -18,6 +22,7 @@ pipeline {
         FRONTEND_REPO = 'git@github.com:SEP490-Project/frontend.git'
         DEVOPS_REPO   = 'git@github.com:SEP490-Project/private-server-application-devops.git'
         GIT_CREDENTIALS_ID = 'ssh-github-key'
+        EFFECTIVE_ENVIRONMENT = ''
     }
 
     stages {
@@ -26,9 +31,16 @@ pipeline {
                 script {
                     utils = load 'script.groovy'
                     def commitSHA = sh(returnStdout: true, script: 'git rev-parse HEAD').trim().take(7)
-                    def branchName = params.BRANCH_NAME == '-- Select --' ?
-                        env.GIT_BRANCH.replaceFirst(/^origin\//, '') : params.Branch_NAME
+
+                    def branchName = env.GIT_BRANCH.replaceFirst(/^origin\//, '')
                     env.BRANCH_NAME = branchName
+                    if (branchName == 'main') {
+                        env.EFFECTIVE_ENVIRONMENT = 'PRODUCTION'
+                    } else if (branchName == 'staging') {
+                        env.EFFECTIVE_ENVIRONMENT = 'STAGING'
+                    } else {
+                        env.EFFECTIVE_ENVIRONMENT = 'STAGING'
+                    }
 
                     currentBuild.displayName = "${branchName}-${commitSHA}"
                     echo "🔧 Build Display Name set to: ${currentBuild.displayName}"
@@ -60,7 +72,7 @@ pipeline {
         stage('Inject .env File') {
             steps {
                 script {
-                    def environment = (params.Environment == 'PRODUCTION') ? 'main' : 'staging'
+                    def environment = (env.EFFECTIVE_ENVIRONMENT == 'PRODUCTION') ? 'main' : 'staging'
                     utils.injectEnvFile(params.ENVIRONMENT)
                 }
             }

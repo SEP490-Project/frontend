@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useOutletContext, type NavigateFunction } from "react-router";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -45,6 +45,7 @@ export const CreateConceptStep = () => {
     watch,
     setValue,
     reset,
+    control,
   } = useForm<CreateConceptPayload>({
     resolver: yupResolver(createConceptSchema),
     defaultValues: {
@@ -70,7 +71,13 @@ export const CreateConceptStep = () => {
         const urls = Array.isArray(savedConcept.banner_url)
           ? savedConcept.banner_url
           : [savedConcept.banner_url];
-        setBannerPreviews(urls);
+
+        if (String(savedConcept.banner_url).includes(",")) {
+          const splitUrls = String(savedConcept.banner_url).split(",");
+          setBannerPreviews(splitUrls);
+        } else {
+          setBannerPreviews(urls);
+        }
       }
       if (savedConcept.video_thumbnail) {
         setVideoPreview(savedConcept.video_thumbnail);
@@ -196,8 +203,8 @@ export const CreateConceptStep = () => {
   const onSubmit = useCallback(
     async (payload: CreateConceptPayload) => {
       try {
-        const existingConceptId = getItem("currentConceptId");
-        if (existingConceptId) {
+        const existingConcept = getItem("currentConcept");
+        if (existingConcept) {
           toast.info("Concept already created, moving to next step");
           navigate(steps[currentStep]?.path, { state });
           return;
@@ -206,7 +213,6 @@ export const CreateConceptStep = () => {
         const result = await dispatch(createConceptThunk(payload)).unwrap();
         if (result) {
           setItem("currentConcept", payload);
-          setItem("currentConceptId", result.id);
 
           const existingProduct = getItem<{ data: { id: string } }>("currentProduct");
           if (existingProduct?.data?.id) {
@@ -224,7 +230,7 @@ export const CreateConceptStep = () => {
           navigate(steps[currentStep]?.path, { state });
         }
       } catch (error: any) {
-        toast.error(error || "Failed to create concept");
+        toast.error(error || "Failed to create  concept");
       }
     },
     [dispatch, navigate, steps, currentStep, state],
@@ -237,7 +243,7 @@ export const CreateConceptStep = () => {
 
   useEffect(() => {
     if (setOnSubmitStep) {
-      const existingConcept = getItem("currentConceptId");
+      const existingConcept = getItem("currentConcept");
       if (existingConcept) {
         setOnSubmitStep(() => async () => {
           navigate(steps[currentStep]?.path, { state });
@@ -252,16 +258,6 @@ export const CreateConceptStep = () => {
     }
   }, [setOnSubmitStep, handleSubmit, onSubmit, onError, navigate, steps, currentStep, state]);
 
-  useEffect(() => {
-    const formData = {
-      name,
-      description,
-      banner_url,
-      video_thumbnail,
-    };
-    setItem("currentConcept", formData);
-  }, [name, description, banner_url, video_thumbnail]);
-
   return (
     <div className="space-y-6 mb-12 mt-6">
       <Card>
@@ -270,123 +266,125 @@ export const CreateConceptStep = () => {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-            <Label
-              htmlFor="conceptName"
-              className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end"
-            >
-              <span className="text-red-600 mr-1">*</span>
-              Concept Name
-            </Label>
-            <Input
-              id="conceptName"
-              placeholder="Enter concept name"
-              className="col-span-3"
-              {...register("name")}
-            />
-          </div>
-          {errors.name && (
-            <p className="text-sm text-red-600 col-start-2 col-span-3">{errors.name.message}</p>
-          )}
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-            <Label
-              htmlFor="description"
-              className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end"
-            >
-              <span className="text-red-600 mr-1">*</span>
-              Description
-            </Label>
-            <Textarea
-              id="description"
-              placeholder="Enter concept description"
-              className="col-span-3 min-h-[100px]"
-              {...register("description")}
-            />
-          </div>
-          {errors.description && (
-            <p className="text-sm text-red-600 col-start-2 col-span-3">
-              {errors.description.message}
-            </p>
-          )}
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-            <Label
-              htmlFor="banner"
-              className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end"
-            >
-              <span className="text-red-600 mr-1">*</span>
-              Banner Images
-            </Label>
-            <div className="col-span-3 space-y-4">
-              {/* <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                <p className="text-gray-600 mb-2">Upload banner images (Max 5MB each)</p>
-                <p className="text-sm text-gray-500 mb-4">
-                  You can select multiple images at once
-                </p> */}
-              <input
-                type="file"
-                id="banner-upload"
-                accept="image/*"
-                multiple
-                onChange={handleBannerUpload}
-                className="hidden"
-                disabled={isUploadingBanner}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => document.getElementById("banner-upload")?.click()}
-                disabled={isUploadingBanner}
-              >
-                {isUploadingBanner ? "Uploading..." : "Choose Images"}
-              </Button>
-
-              {/* Preview Grid */}
-              {bannerPreviews.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {bannerPreviews.map((url, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={url}
-                        alt={`Banner ${index + 1}`}
-                        className="w-full h-40 object-cover rounded-lg border-2 border-gray-200"
+            {videoPreview && (
+              <div className="col-span-2 space-y-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+                  <Label
+                    htmlFor="conceptName"
+                    className="text-sm font-medium text-gray-700 text-right items-start flex justify-start md:justify-end"
+                  >
+                    <span className="text-red-600 mr-1">*</span>
+                    Concept Name
+                  </Label>
+                  <Controller
+                    name="name"
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        id="conceptName"
+                        placeholder="Enter concept name"
+                        className="col-span-3"
+                        {...field}
                       />
-                      <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-40 transition-all rounded-lg flex items-center justify-center">
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleRemoveBanner(index)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="w-4 h-4 mr-1" />
-                          Remove
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                    )}
+                  />
                 </div>
-              )}
+                {errors.name && (
+                  <p className="text-sm text-red-600 col-start-2 col-span-3">
+                    {errors.name.message}
+                  </p>
+                )}
 
-              {bannerPreviews.length > 0 && (
-                <p className="text-sm text-gray-600">{bannerPreviews.length} image(s) uploaded</p>
-              )}
-            </div>
-          </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+                  <Label
+                    htmlFor="description"
+                    className="text-sm font-medium text-gray-700 text-right items-start flex justify-start md:justify-end"
+                  >
+                    <span className="text-red-600 mr-1">*</span>
+                    Description
+                  </Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Enter concept description"
+                    className="col-span-3 min-h-[100px]"
+                    {...register("description")}
+                  />
+                </div>
+                {errors.description && (
+                  <p className="text-sm text-red-600 col-start-2 col-span-3">
+                    {errors.description.message}
+                  </p>
+                )}
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-            <Label
-              htmlFor="video"
-              className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end"
-            >
-              <span className="text-red-600 mr-1">*</span>
-              Video
-            </Label>
-            <div className="col-span-3 space-y-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+                  <Label
+                    htmlFor="banner"
+                    className="text-sm font-medium text-gray-700 text-right items-start flex justify-start md:justify-end"
+                  >
+                    <span className="text-red-600 mr-1">*</span>
+                    Banner Images
+                  </Label>
+                  <div className="col-span-3 space-y-4">
+                    <input
+                      type="file"
+                      id="banner-upload"
+                      accept="image/*"
+                      multiple
+                      onChange={handleBannerUpload}
+                      className="hidden"
+                      disabled={isUploadingBanner}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => document.getElementById("banner-upload")?.click()}
+                      disabled={isUploadingBanner}
+                    >
+                      {isUploadingBanner ? "Uploading..." : "Choose Images"}
+                    </Button>
+
+                    {bannerPreviews.length > 0 && (
+                      <div className="lg:inline text-sm text-gray-600 ml-2">
+                        {bannerPreviews.length} image(s) uploaded
+                      </div>
+                    )}
+
+                    {/* Preview Grid */}
+                    {bannerPreviews.length > 0 && (
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {bannerPreviews.map((url, index) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={url}
+                              alt={`Banner ${index + 1}`}
+                              className="w-full h-full object-cover rounded-lg border-2 border-gray-200"
+                            />
+                            <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-40 transition-all rounded-lg flex items-center justify-center">
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleRemoveBanner(index)}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X className="w-4 h-4 mr-1" />
+                                Remove
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className={`space-y-4 ${videoPreview ? "col-span-2" : "col-span-4"}`}>
               {!videoPreview ? (
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-colors">
                   <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                  <p className="text-gray-600 mb-4">Upload video file (Max 100MB)</p>
+                  <p className="text-gray-600 mb-4">Upload concept video file (Max 100MB)</p>
                   <input
                     type="file"
                     id="video-upload"

@@ -31,16 +31,20 @@ import {
 import { StatusModal } from "@/components/modal/StatusModal";
 import { useNavigate } from "react-router";
 import { ProductFormMode } from "@/enums/product";
-import { useAppDispatch } from "@/libs/stores";
-import { getAllProductsThunk } from "@/libs/stores/productManager/thunk";
+import { useAppDispatch, type RootState } from "@/libs/stores";
+import {
+  getAllProductsThunk,
+  updateProductVisibilityThunk,
+} from "@/libs/stores/productManager/thunk";
 import { useSelector } from "react-redux";
 import type { ProductData, ProductParams } from "@/libs/types/product";
 import { PaginationTable } from "@/components/global";
 import { SelectAddProductType } from "@/components/manage/sale/product/SelectAddProductType";
+import { toast } from "sonner";
 
 const Product: React.FC = () => {
   const dispatch = useAppDispatch();
-  const productResponse = useSelector((state: any) => state?.manageProduct?.products);
+  const productResponse = useSelector((state: RootState) => state?.manageProduct?.products);
   const pagination = useSelector((state: any) => state?.manageProduct?.products?.pagination);
   const products: ProductData[] = productResponse?.data || [];
   const isLoading = useSelector((state: any) => state?.manageProduct?.isLoading);
@@ -51,6 +55,19 @@ const Product: React.FC = () => {
   });
 
   const navigate = useNavigate();
+
+  const handleToggleVisibility = async (product: ProductData, isActive: boolean) => {
+    if (product.variants?.length === 0 || !product.variants) {
+      toast.error("Cannot change visibility of a product with no variants.");
+      return;
+    }
+    const result = await dispatch(
+      updateProductVisibilityThunk({ productId: product.id, isActive }),
+    );
+    if (result.meta.requestStatus === "fulfilled") {
+      dispatch(getAllProductsThunk(params));
+    }
+  };
 
   useEffect(() => {
     dispatch(getAllProductsThunk(params));
@@ -215,16 +232,17 @@ const Product: React.FC = () => {
                     <TableCell className="py-4">
                       <Dialog>
                         <DialogTrigger asChild>
-                          <div>
-                            <Switch checked={product.is_active} />
-                          </div>
+                          <span>
+                            <Switch
+                              checked={product.is_active}
+                              disabled={product.type === "LIMITED"}
+                            />
+                          </span>
                         </DialogTrigger>
                         <StatusModal
                           name={product.name}
                           status={product.is_active ? "Inactive" : "Active"}
-                          onConfirm={() => {
-                            console.log("Hello world");
-                          }}
+                          onConfirm={() => handleToggleVisibility(product, !product.is_active)}
                         />
                       </Dialog>
                     </TableCell>

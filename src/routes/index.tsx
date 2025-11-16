@@ -1,10 +1,18 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Homepage from "@/pages/Homepage";
+import { Homepage, AboutApp, AboutUs, Blog, BlogDetail } from "@/pages/landing";
 import NotFound from "@/pages/NotFound";
 import CancelPayment from "@/pages/CancelPayment";
 import SuccessPayment from "@/pages/SuccessPayment";
 import { Account, Notification, Dashboard } from "@/pages/manager/shared";
-import { Contract, Campaign as BrandCampaign, ContractPaymentBrand } from "@/pages/manager/brand";
+import {
+  Contract,
+  Campaign as BrandCampaign,
+  ContractPaymentBrand,
+  PaymentTransaction as BrandPaymentTransaction,
+  ProductApproval,
+  ContentApproval as BrandContentApproval,
+  ProductDetail as BrandProductDetail,
+} from "@/pages/manager/brand";
 import BrandContractDetail from "@/pages/manager/brand/ContractDetail";
 import {
   Brand,
@@ -52,6 +60,10 @@ const AppRoutes = () => (
     <Routes>
       <Route element={<CustomerLayout />}>
         <Route path="/" element={<Homepage />} />
+        <Route path="/about-app" element={<AboutApp />} />
+        <Route path="/about-us" element={<AboutUs />} />
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/blog/:id" element={<BlogDetail />} />
       </Route>
 
       <Route element={<PublicRoute />}>
@@ -135,6 +147,10 @@ const AppRoutes = () => (
           <Route path="campaigns" element={<BrandCampaign />} />
           <Route path="campaigns/:id" element={<CampaignDetail userRole="brand" />} />
           <Route path="contract-payment" element={<ContractPaymentBrand />} />
+          <Route path="payment-transaction" element={<BrandPaymentTransaction />} />
+          <Route path="product-approval" element={<ProductApproval />} />
+          <Route path="product-approval/:id" element={<BrandProductDetail />} />
+          <Route path="content-approval" element={<BrandContentApproval />} />
         </Route>
       </Route>
 

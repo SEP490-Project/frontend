@@ -54,16 +54,16 @@ const Channel = () => {
     if (channelName === "Facebook") {
       dispatch(
         connectFacebookChannel({
-          redirectUrl,
-          cancelUrl,
+          redirect_url: redirectUrl,
+          cancel_url: cancelUrl,
           is_internal: true,
         }),
       );
     } else if (channelName === "TikTok") {
       dispatch(
         connectTikTokChannel({
-          redirectUrl,
-          cancelUrl,
+          redirect_url: redirectUrl,
+          cancel_url: cancelUrl,
           is_internal: true,
         }),
       );

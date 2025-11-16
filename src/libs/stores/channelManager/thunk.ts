@@ -15,7 +15,7 @@ export const channelList = createAsyncThunk("channelList", async (_, { rejectWit
 export const connectFacebookChannel = createAsyncThunk(
   "channel/connectFacebook",
   async (
-    params: { redirectUrl: string; cancelUrl: string; is_internal?: boolean },
+    params: { redirect_url: string; cancel_url: string; is_internal?: boolean },
     { rejectWithValue },
   ) => {
     try {
@@ -35,7 +35,7 @@ export const connectFacebookChannel = createAsyncThunk(
 export const connectTikTokChannel = createAsyncThunk(
   "channel/connectTikTok",
   async (
-    params: { redirectUrl: string; cancelUrl: string; is_internal?: boolean },
+    params: { redirect_url: string; cancel_url: string; is_internal?: boolean },
     { rejectWithValue },
   ) => {
     try {

@@ -28,10 +28,6 @@ export const createLimitedProductSchema: yup.ObjectSchema<CreateLimitedProductPa
         premiere_date: yup.string().required("Premiere date is required"),
         availability_start_date: yup.string().required("Start sale date is required"),
         availability_end_date: yup.string().required("End sale date is required"),
-        bought_limit: yup
-          .number()
-          .min(1, "Purchase limit must be at least 1")
-          .required("Purchase limit is required"),
         is_free_shipping: yup.boolean().required(),
         concept_id: yup.string().nullable().optional(),
       })
@@ -42,7 +38,11 @@ export const createLimitedProductSchema: yup.ObjectSchema<CreateLimitedProductPa
 export const productVariantSchema: yup.ObjectSchema<ProductVariant> = yup.object({
   id: yup.string().optional(),
   name: yup.string().required("Name is required"),
-  current_stock: yup.number().min(0, "Current stock must be at least 0"),
+  input_stock: yup
+    .number()
+    .min(1, "Max stock must be at least 1")
+    .required("Max stock is required"),
+  pre_order_limit: yup.number().min(1, "Preorder limit must be at least 1").nullable().optional(),
   price: yup
     .number()
     .positive("Price must be a positive number")
@@ -88,21 +88,26 @@ export const productVariantSchema: yup.ObjectSchema<ProductVariant> = yup.object
   weight: yup
     .number()
     .min(1, "Weight must be at least 1")
+    .max(50000, "Weight must be at most 50000")
     .positive("Weight must be a positive number")
     .required("Weight is required"),
   height: yup
     .number()
     .min(1, "Height must be at least 1")
+    .max(200, "Height must be at most 200")
     .positive("Height must be a positive number")
     .required("Height is required"),
   length: yup
     .number()
     .min(1, "Length must be at least 1")
+    .max(200, "Length must be at most 200")
     .positive("Length must be a positive number")
     .required("Length is required"),
   width: yup
     .number()
     .min(1, "Width must be at least 1")
+    .max(200, "Width must be at most 200")
     .positive("Width must be a positive number")
     .required("Width is required"),
+  current_stock: yup.number().nullable().optional(),
 });

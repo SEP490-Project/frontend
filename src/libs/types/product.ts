@@ -58,7 +58,6 @@ export interface ProductData {
 export interface LimitedProductData extends ProductData {
   limited_product?: {
     is_free_shipping: boolean;
-    bought_limit: number;
     premiere_date: string;
     availability_start_date: string;
     availability_end_date: string;
@@ -69,10 +68,11 @@ export interface LimitedProductData extends ProductData {
 export interface ProductVariant {
   id?: string;
   attributes: ProductAttribute[];
+  current_stock?: number | null;
   capacity: number | null;
   capacity_unit: CapacityUnit;
   container_type: ContainerType;
-  current_stock?: number | null;
+  input_stock: number | null;
   description?: string | null;
   dispenser_type: DispenserType;
   expiry_date: Date | null;
@@ -88,6 +88,7 @@ export interface ProductVariant {
   height: number | null;
   length: number | null;
   width: number | null;
+  pre_order_limit?: number | null;
 }
 
 export interface VariantWithImage extends ProductVariant {
@@ -113,7 +114,6 @@ export interface ProductAttribute {
 export interface LimitedAttribute {
   availability_end_date: string;
   availability_start_date: string;
-  bought_limit: number | null;
   concept_id?: string | null;
   is_free_shipping: boolean;
   premiere_date: string;

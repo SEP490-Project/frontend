@@ -47,6 +47,32 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order }) => {
     return statusMap[status.toLowerCase()] || "bg-gray-100 text-gray-800 border border-gray-200";
   };
 
+  const getStatusBadge = (status: string) => {
+    const statusColors: Record<string, string> = {
+      COMPLETED: "bg-green-100 text-green-800 border-green-200 hover:bg-green-200",
+      PENDING: "bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200",
+      CANCELLED: "bg-red-100 text-red-800 border-red-200 hover:bg-red-200",
+      EXPIRED: "bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200",
+    };
+
+    return <Badge className={statusColors[status] || "bg-gray-100 text-gray-800"}>{status}</Badge>;
+  };
+
+  const getMethodBadge = (method: string) => {
+    const methodColors: Record<string, string> = {
+      BANK_TRANSFER: "bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200",
+      CREDIT_CARD: "bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-200",
+      E_WALLET: "bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-200",
+      PAYOS: "bg-pink-100 text-pink-800 border-pink-200 hover:bg-pink-200",
+    };
+
+    return (
+      <Badge className={methodColors[method] || "bg-gray-100 text-gray-800"}>
+        {method?.replace(/_/g, " ")}
+      </Badge>
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Order Info Section */}
@@ -150,12 +176,12 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order }) => {
               </div>
             </div>
           )}
-          {order.status === "RECEIVED" && order.self_picked_up_image && (
+          {order.status === "RECEIVED" && order.confirmation_image && (
             <div>
               <span className="text-sm text-gray-500">Proof:</span>
               <div className="mt-2 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-2">
                 <img
-                  src={order.self_picked_up_image}
+                  src={order.confirmation_image}
                   alt="Customer pickup proof"
                   className="w-full max-w-md rounded-md"
                 />
@@ -351,23 +377,44 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order }) => {
       <Separator />
 
       {/* Payment Section */}
-      <div>
-        <h3 className="text-sm font-medium text-gray-500 mb-2">Payment Information</h3>
-        <div className="space-y-2">
-          {order.payment_id && (
+      {order.payment_transaction?.id && (
+        <div>
+          <h3 className="text-sm font-medium text-gray-500 mb-2">Payment Information </h3>
+
+          <div className="space-y-2">
             <div>
               <span className="text-sm text-gray-500">Payment ID:</span>
-              <span className="ml-2 text-sm font-mono">{order.payment_id}</span>
+              <span className="mx-2 text-sm font-mono">{order.payment_transaction.id}</span>
             </div>
-          )}
-          {order.payment_bin && (
+
             <div>
-              <span className="text-sm text-gray-500">Payment BIN:</span>
-              <span className="ml-2 text-sm font-mono">{order.payment_bin}</span>
+              <span className="text-sm text-gray-500">Payment Status:</span>
+              <span className="ml-2 text-sm font-mono">
+                {getStatusBadge(order.payment_transaction.status)}
+              </span>
             </div>
-          )}
+
+            <div>
+              <span className="text-sm text-gray-500">Payment Method:</span>
+              <span className="ml-2 text-sm font-mono">
+                {getMethodBadge(order.payment_transaction.method)}
+              </span>
+            </div>
+
+            <div>
+              <span className="text-sm text-gray-500">Transaction Date:</span>
+              <span className="ml-2 text-sm font-mono">
+                {order.payment_transaction.transaction_date}
+              </span>
+            </div>
+
+            <div>
+              <span className="text-sm text-gray-500">Updated Date:</span>
+              <span className="ml-2 text-sm font-mono">{order.payment_transaction.updated_at}</span>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       <Separator />
 

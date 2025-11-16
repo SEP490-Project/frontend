@@ -316,50 +316,36 @@ const ProductDetail: React.FC = () => {
                 <Info className="h-5 w-5" />
                 Additional Information
               </h2>
-              <div className="grid md:grid-cols-2 grid-cols-1 gap-2">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-500 mb-2">Stock</p>
-                  <p className="font-semibold text-gray-900">
-                    {isLimited && calculateTotalStock()} items
-                  </p>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg mt-4 md:mt-0">
-                  <p className="text-sm text-gray-500 mb-2">Bought Limit</p>
-                  <p className="font-semibold text-gray-900">
-                    {isLimited
-                      ? (product as LimitedProductData).limited_product?.bought_limit || "N/A"
-                      : "N/A"}
-                  </p>
-                </div>
+
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-500 mb-2">Stock</p>
+                <p className="font-semibold text-gray-900">{calculateTotalStock()} items</p>
               </div>
               <div className="grid md:grid-cols-3 grid-cols-1 gap-2">
                 <div className="bg-gray-50 p-4 rounded-lg mt-4">
                   <p className="text-sm text-gray-500 mb-2">Premiere Date</p>
                   <p className="font-semibold text-gray-900">
-                    {isLimited &&
-                      formatDate(
-                        (product as LimitedProductData).limited_product?.premiere_date as string,
-                      )}
+                    {formatDate(
+                      (product as LimitedProductData).limited_product?.premiere_date as string,
+                    )}
                   </p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg mt-4">
                   <p className="text-sm text-gray-500 mb-2">Start Date</p>
                   <p className="font-semibold text-gray-900">
-                    {isLimited &&
-                      formatDate(
-                        (product as LimitedProductData).limited_product
-                          ?.availability_start_date as string,
-                      )}
+                    {formatDate(
+                      (product as LimitedProductData).limited_product
+                        ?.availability_start_date as string,
+                    )}
                   </p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg mt-4">
                   <p className="text-sm text-gray-500 mb-2">End Date</p>
                   <p className="font-semibold text-gray-900">
-                    {isLimited &&
-                      formatDate(
-                        (product as LimitedProductData).limited_product
-                          ?.availability_end_date as string,
-                      )}
+                    {formatDate(
+                      (product as LimitedProductData).limited_product
+                        ?.availability_end_date as string,
+                    )}
                   </p>
                 </div>
               </div>

@@ -53,7 +53,6 @@ const BasicInfoStep = () => {
         premiere_date: "",
         availability_start_date: "",
         availability_end_date: "",
-        bought_limit: null,
         is_free_shipping: true,
         concept_id: undefined,
       },
@@ -80,7 +79,6 @@ const BasicInfoStep = () => {
               (productData as any).limited_attribute?.availability_start_date || "",
             availability_end_date:
               (productData as any).limited_attribute?.availability_end_date || "",
-            bought_limit: (productData as any).limited_attribute?.bought_limit || null,
             is_free_shipping: (productData as any).limited_attribute?.is_free_shipping ?? true,
             concept_id: (productData as any).limited_attribute?.concept_id || undefined,
           },

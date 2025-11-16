@@ -54,7 +54,8 @@ const VariantsStep = () => {
     defaultValues: {
       name: "",
       price: null,
-      current_stock: 0,
+      input_stock: 1,
+      pre_order_limit: null,
       capacity: null,
       capacity_unit: "ML",
       container_type: "BOTTLE",
@@ -331,10 +332,10 @@ const VariantsStep = () => {
                           <p className="text-gray-500 font-medium mb-1">Dispenser Type</p>
                           <p className="text-gray-900">{variant.dispenser_type}</p>
                         </div>
-                        {variant.current_stock !== undefined && state.productType === "LIMITED" && (
+                        {variant.input_stock !== undefined && state.productType === "LIMITED" && (
                           <div>
                             <p className="text-gray-500 font-medium mb-1">Current Stock</p>
-                            <p className="text-gray-900">{variant.current_stock} units</p>
+                            <p className="text-gray-900">{variant.input_stock} units</p>
                           </div>
                         )}
                       </div>

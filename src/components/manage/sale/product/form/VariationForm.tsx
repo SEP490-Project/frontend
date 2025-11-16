@@ -188,20 +188,6 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
               {...register("price")}
             />
           </div>
-
-          {state.productType === "LIMITED" && (
-            <div className="space-y-2">
-              <Label htmlFor="current_stock" className="text-sm font-medium">
-                Stock
-              </Label>
-              <Input
-                id="current_stock"
-                type="number"
-                {...register("current_stock")}
-                placeholder="1"
-              />
-            </div>
-          )}
         </div>
 
         <div className="flex items-center space-x-2">
@@ -218,9 +204,45 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
         </div>
       </div>
 
+      {state?.productType === "LIMITED" && (
+        <div className=" space-y-4">
+          <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Limited Information</h3>
+          <div className="grid md:grid-cols-2 grid-cols-1 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="input_stock" className="text-sm font-medium">
+                Stock
+              </Label>
+              <Input id="input_stock" type="number" {...register("input_stock")} placeholder="1" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="pre_order_limit" className="text-sm font-medium">
+                Preorder Limit
+              </Label>
+              <Input
+                id="pre_order_limit"
+                type="number"
+                {...register("pre_order_limit")}
+                placeholder="e.g., 10"
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="story" className="text-sm font-medium">
+              Story
+            </Label>
+            <Textarea
+              id="story"
+              {...register("story")}
+              placeholder="Tell the story behind this product..."
+              rows={3}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Size & Dimensions</h3>
-
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="space-y-2">
             <Label htmlFor="weight" className="text-sm font-medium">
@@ -526,20 +548,6 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
               rows={3}
             />
           </div>
-
-          {state.productType === "LIMITED" && (
-            <div className="space-y-2">
-              <Label htmlFor="story" className="text-sm font-medium">
-                Story
-              </Label>
-              <Textarea
-                id="story"
-                {...register("story")}
-                placeholder="Tell the story behind this product..."
-                rows={3}
-              />
-            </div>
-          )}
         </div>
       </div>
 

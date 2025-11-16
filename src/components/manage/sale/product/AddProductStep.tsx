@@ -66,7 +66,7 @@ const AddProductStep = () => {
       removeItem("currentProduct");
       removeItem("currentProductVariants");
       removeItem("currentConcept");
-      removeItem("currentConceptId");
+
       navigate("/manage/sale/product", { state });
     }
   };

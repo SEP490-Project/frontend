@@ -7,6 +7,8 @@ import {
 import { useEffect } from "react";
 import { useSelector } from "react-redux";
 import { FaFacebook, FaGlobe, FaTiktok } from "react-icons/fa6";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 const Channel = () => {
   const dispatch = useAppDispatch();
@@ -87,12 +89,12 @@ const Channel = () => {
           );
 
           return (
-            <div
+            <Card
               key={channel.name}
-              className="group relative bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer"
+              className="group relative hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer h-full"
             >
               {/* Gradient background header */}
-              <div className={`h-24 bg-gradient-to-r ${channel.gradient} relative`}>
+              <CardHeader className={`h-24 bg-gradient-to-r ${channel.gradient} relative p-0`}>
                 <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
                 <div className="absolute bottom-4 left-4 flex items-center gap-3">
                   <div className="bg-white p-2 rounded-lg shadow-md">
@@ -102,16 +104,16 @@ const Channel = () => {
                     {channelData?.name || channel.name}
                   </h2>
                 </div>
-              </div>
+              </CardHeader>
 
               {/* Content */}
-              <div className="p-5">
-                <p className="text-sm text-gray-600 mb-4 min-h-[40px]">
+              <CardContent className="p-5">
+                <CardDescription className="text-sm text-gray-600 mb-4 min-h-[40px]">
                   {channelData?.description || channel.description}
-                </p>
+                </CardDescription>
 
                 {/* Stats or Status */}
-                <div className="flex justify-between items-center pt-3 border-t border-gray-100">
+                <div className="flex justify-between pt-4 items-center border-t border-gray-100">
                   <div className="flex items-center gap-2">
                     <div
                       className={`w-2 h-2 rounded-full ${channelData?.is_active ? "bg-green-500" : "bg-gray-300"} animate-pulse`}
@@ -121,47 +123,49 @@ const Channel = () => {
                     </span>
                   </div>
 
-                  {(channel.name === "Facebook" ||
-                    (channel.name === "TikTok" &&
-                      new Date(channelData?.token_info?.access_token_expires_at as string) <
-                        currentDate)) && (
-                    <button
+                  {(channelData?.name.toLowerCase() === "tiktok" ||
+                    (channelData?.name.toLowerCase() === "facebook" &&
+                      currentDate >
+                        new Date(channelData?.token_info?.access_token_expires_at as string))) && (
+                    <Button
                       onClick={() => handleResetToken(channel.name)}
-                      className={`text-xs font-medium px-4 py-2 rounded-lg ${channel.color} text-white ${channel.hoverColor} transition-colors duration-200`}
+                      className={`text-xs font-medium ${channel.color} text-white ${channel.hoverColor} transition-colors duration-200`}
                     >
                       Reset Token
-                    </button>
+                    </Button>
                   )}
-                  {channel.name === "Website" && (
-                    <button
-                      className={`text-xs font-medium px-4 py-2 rounded-lg ${channel.color} text-white ${channel.hoverColor} transition-colors duration-200`}
+                  {(channel.name === "Website" ||
+                    currentDate <
+                      new Date(channelData?.token_info?.access_token_expires_at as string)) && (
+                    <Button
+                      className={`text-xs font-medium  ${channel.color} text-white ${channel.hoverColor} transition-colors duration-200`}
                     >
                       Manage
-                    </button>
+                    </Button>
                   )}
                 </div>
+              </CardContent>
 
-                {/* Additional info if available */}
-                {channelData?.home_page_url && (
-                  <div className="mt-3 pt-3 border-t border-gray-100">
-                    <div className="flex items-center justify-between text-xs text-gray-500">
-                      <span className="flex items-center gap-1">
-                        <FaGlobe className="w-3 h-3" />
-                        URL
-                      </span>
-                      <a
-                        href={channelData.home_page_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-semibold text-blue-600 hover:underline truncate max-w-[150px]"
-                      >
-                        {channelData.home_page_url}
-                      </a>
-                    </div>
+              {/* Additional info if available */}
+              {channelData?.home_page_url && (
+                <CardFooter className="pt-3 border-t border-gray-100">
+                  <div className="flex items-center justify-between text-xs text-gray-500 w-full">
+                    <span className="flex items-center gap-1">
+                      <FaGlobe className="w-3 h-3" />
+                      URL
+                    </span>
+                    <a
+                      href={channelData.home_page_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-blue-600 hover:underline truncate max-w-[150px]"
+                    >
+                      {channelData.home_page_url}
+                    </a>
                   </div>
-                )}
-              </div>
-            </div>
+                </CardFooter>
+              )}
+            </Card>
           );
         })}
       </div>

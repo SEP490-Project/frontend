@@ -54,7 +54,7 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
 
   const { register, handleSubmit, control, watch, setError, clearErrors } = form;
 
-  const manufactureDate = watch("manufacture_date");
+  const manufactureDate = watch("manufacturing_date");
   const expiryDate = watch("expiry_date");
 
   const today = new Date(Date.now() + 86400000).toISOString().split("T")[0];
@@ -79,19 +79,19 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
       } else if (mfgDate >= expDate) {
         setError("expiry_date", {
           type: "manual",
-          message: "Expiry date must be after manufacture date",
+          message: "Expiry date must be after manufactured date",
         });
-        setError("manufacture_date", {
+        setError("manufacturing_date", {
           type: "manual",
           message: "Manufacture date must be before expiry date",
         });
       } else {
         clearErrors("expiry_date");
-        clearErrors("manufacture_date");
+        clearErrors("manufacturing_date");
       }
     } else {
       clearErrors("expiry_date");
-      clearErrors("manufacture_date");
+      clearErrors("manufacturing_date");
     }
   }, [manufactureDate, expiryDate, today, setError, clearErrors]);
 
@@ -372,14 +372,14 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="manufacture_date" className="text-sm font-medium">
-              Manufacture Date
+            <Label htmlFor="manufacturing_date" className="text-sm font-medium">
+              Manufactured Date
             </Label>
             <Input
-              id="manufacture_date"
+              id="manufacturing_date"
               type="date"
               max={expiryDateStr || undefined}
-              {...register("manufacture_date")}
+              {...register("manufacturing_date")}
             />
           </div>
 

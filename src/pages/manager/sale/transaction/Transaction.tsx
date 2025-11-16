@@ -213,7 +213,7 @@ const Transaction: React.FC = () => {
                     }`}
                   >
                     <TableCell className="py-4 font-mono text-sm">
-                      {transaction.id.slice(0, 8)}...
+                      #{transaction.id.slice(0, 8)}
                     </TableCell>
 
                     <TableCell className="py-4">

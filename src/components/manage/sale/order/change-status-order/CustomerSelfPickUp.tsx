@@ -169,11 +169,11 @@ export const SelfPickUpChangeStatusModal = ({
                         <p className="text-sm">Customer has received their order</p>
                       </div>
                     </div>
-                    {order.self_picked_up_image && (
+                    {order.confirmation_image && (
                       <div className="mt-4">
                         <Label className="text-sm font-medium text-gray-700">Pickup Photo:</Label>
                         <img
-                          src={order.self_picked_up_image}
+                          src={order.confirmation_image}
                           alt="Customer pickup"
                           className="mt-2 ml-2 rounded-lg border max-w-md w-full"
                         />

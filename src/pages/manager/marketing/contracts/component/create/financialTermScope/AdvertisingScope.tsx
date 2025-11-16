@@ -75,6 +75,7 @@ const AdvertisingScope: React.FC<AdvertisingScopeProps> = ({ formData, onUpdate 
           onUpdate={(schedule) => onUpdate({ schedule })}
           startDate={start_date}
           endDate={end_date}
+          depositPercent={formData.deposit_percent || 0}
         />
       </CardContent>
     </Card>

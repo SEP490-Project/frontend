@@ -47,7 +47,7 @@ const BrandProductDetail: React.FC = () => {
     }
   }, [product]);
 
-  const handleUpdateStatus = async (status: "APPROVED" | "REVISION") => {
+  const handleUpdateStatus = async (status: "ACTIVED" | "REVISION") => {
     if (!product?.id) return;
     await dispatch(updateProductStateThunk({ productId: product.id, status }));
     await dispatch(getProductDetailThunk(product.id));
@@ -105,7 +105,7 @@ const BrandProductDetail: React.FC = () => {
           <Button size="sm" variant="destructive" onClick={() => handleUpdateStatus("REVISION")}>
             Reject (Revision)
           </Button>
-          <Button size="sm" onClick={() => handleUpdateStatus("APPROVED")}>
+          <Button size="sm" onClick={() => handleUpdateStatus("ACTIVED")}>
             Approve
           </Button>
         </div>

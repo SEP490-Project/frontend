@@ -76,17 +76,11 @@ const INITIAL_FORM_DATA = {
   representative_bank_account_holder: "",
   deposit_amount: 0,
   deposit_percent: 0,
-  // Add missing scope_of_work property
   scope_of_work: {},
-  // Add missing financial_terms property if needed by other code
   financial_terms: {},
-  // Add missing legal_terms property if needed by other code
   legal_terms: {},
-  // Add missing contract_file_url and proposal_file_url if needed by other code
-  contract_file_url:
-    "https://bshowsell-public.s3.ap-southeast-1.amazonaws.com/b758136a-f78c-4a36-985a-974c39d5cd0d/Contract File.docx",
-  proposal_file_url:
-    "https://bshowsell-public.s3.ap-southeast-1.amazonaws.com/b758136a-f78c-4a36-985a-974c39d5cd0d/Proposal File.pptx",
+  contract_file_url: "",
+  proposal_file_url: "",
 };
 
 // Helper functions
@@ -97,6 +91,7 @@ const getContractTypeColor = (type: string) =>
     border: "border-gray-200",
   };
 
+//TODO: Check Financial term for each contract type
 const getDefaultFinancialTerms = (type: string) => {
   const baseTerms = {
     payment_method: "BANK_TRANSFER",
@@ -129,6 +124,7 @@ const getDefaultFinancialTerms = (type: string) => {
         levels: [],
         payment_cycle: "",
         payment_date: "",
+        payment_date_selector: null,
         tax_withholding: { threshold: 0, rate_percent: 0 },
       };
 
@@ -192,14 +188,14 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
               item.hash_tag.length > 0 &&
               item.hash_tag.every((t: any) => t.trim() && t.trim() !== "#");
 
-            // const hasMaterial = Array.isArray(item.material_url) && item.material_url.length > 0;
+            const hasMaterial = Array.isArray(item.material_url) && item.material_url.length > 0;
 
             const hasKPIs =
               Array.isArray(item.kpis) &&
               item.kpis.length > 0 &&
               item.kpis.every((k: any) => k.metric?.trim() && k.target?.trim());
 
-            return hasBasicInfo && hasHashtags && hasKPIs;
+            return hasBasicInfo && hasHashtags && hasKPIs && hasMaterial;
           });
 
         const general_reqs = scope_of_work.general_requirements || [];
@@ -243,18 +239,36 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
               item.kpis.length > 0 &&
               item.kpis.some((k: any) => k.metric?.trim() && k.target?.trim());
 
-            // const hasMaterial = Array.isArray(item.material_url) && item.material_url.length > 0;
+            const hasMaterial = Array.isArray(item.material_url) && item.material_url.length > 0;
 
             return (
-              hasBasicInfo && hasHashtags && hasValidContentReqs && hasCreativeNotes && hasKPIs
+              hasBasicInfo &&
+              hasHashtags &&
+              hasValidContentReqs &&
+              hasCreativeNotes &&
+              hasKPIs &&
+              hasMaterial
             );
           });
+
+        // Validate that all selected platforms are covered by content
+        const allPlatformsCovered = targetPlatforms.every((platform: string) =>
+          affiliateItems.some(
+            (item: any) => item.platform?.toUpperCase() === platform.toUpperCase(),
+          ),
+        );
 
         const general_reqs = scope_of_work.general_requirements || [];
         const hasValidGeneralReqs =
           general_reqs.length > 0 && general_reqs.every((req: any) => req.trim());
 
-        return hasTrackingLink && hasTargetPlatforms && hasValidItems && hasValidGeneralReqs;
+        return (
+          hasTrackingLink &&
+          hasTargetPlatforms &&
+          hasValidItems &&
+          hasValidGeneralReqs &&
+          allPlatformsCovered
+        );
       }
 
       if (formData.type === "BRAND_AMBASSADOR") {
@@ -300,8 +314,8 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
               Array.isArray(product.kpis) &&
               product.kpis.length > 0 &&
               product.kpis.some((k: any) => k.metric?.trim() && k.target?.trim());
-            // const hasProductMaterial =
-            //   Array.isArray(product.material_url) && product.material_url.length > 0;
+            const hasProductMaterial =
+              Array.isArray(product.material_url) && product.material_url.length > 0;
             const concepts = product.concepts || [];
             const hasValidConcepts =
               concepts.length > 0 &&
@@ -324,17 +338,18 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
                   Array.isArray(concept.kpis) &&
                   concept.kpis.length > 0 &&
                   concept.kpis.some((k: any) => k.metric?.trim() && k.target?.trim());
-                // const hasConceptMaterial =
-                //   Array.isArray(concept.material_url) && concept.material_url.length > 0;
+                const hasConceptMaterial =
+                  Array.isArray(concept.material_url) && concept.material_url.length > 0;
                 return (
                   hasConceptBasicInfo &&
                   hasCreativeNotes &&
                   hasHashtags &&
                   hasValidContentReqs &&
-                  hasConceptKPIs
+                  hasConceptKPIs &&
+                  hasConceptMaterial
                 );
               });
-            return hasProductBasicInfo && hasProductKPIs && hasValidConcepts;
+            return hasProductBasicInfo && hasProductKPIs && hasProductMaterial && hasValidConcepts;
           });
         const general_reqs = scope_of_work.general_requirements || [];
         const hasValidGeneralReqs =
@@ -363,8 +378,14 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
           (sum: number, item: any) => sum + (item.amount || 0),
           0,
         );
-        const isScheduleBalanced =
-          Math.abs((financial_terms.total_cost || 0) - scheduleTotal) < 0.01;
+
+        // Calculate expected amount considering deposit
+        const depositPercent = formData.deposit_percent || 0;
+        const expectedScheduleAmount = financial_terms.total_cost
+          ? Math.round((financial_terms.total_cost * (100 - depositPercent)) / 100)
+          : 0;
+
+        const isScheduleBalanced = Math.abs(expectedScheduleAmount - scheduleTotal) < 0.01;
 
         const breakdown_array = financial_terms.cost_breakdown_array || [];
         const breakdownTotal = breakdown_array.reduce(
@@ -378,44 +399,41 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
       }
 
       if (formData.type === "AFFILIATE") {
-        // Kiểm tra các field bắt buộc cho AFFILIATE - KHÔNG cần schedule
         const hasBasicInfo = !!(
           hasPaymentMethod &&
           financial_terms.base_per_click > 0 &&
           financial_terms.payment_cycle
         );
 
-        // Kiểm tra levels - SỬA LẠI LOGIC VALIDATION
         const hasValidLevels =
           financial_terms.levels?.length > 0 &&
-          financial_terms.levels.every((level: any) => {
-            // Kiểm tra các field thực tế có trong data
+          financial_terms.levels.every((level: any, index: number) => {
             const hasLevel = level.level > 0;
             const hasMaxClicks = level.max_clicks > 0;
             const hasMultiplier = level.multiplier > 0;
 
-            return hasLevel && hasMaxClicks && hasMultiplier;
+            const isMaxClicksValid =
+              index === 0 || level.max_clicks > financial_terms.levels[index - 1].max_clicks;
+
+            return hasLevel && hasMaxClicks && hasMultiplier && isMaxClicksValid;
           });
 
-        // Kiểm tra payment_date - có thể là string, number, hoặc array
-        const hasPaymentDate = !!(
-          financial_terms.payment_date !== undefined &&
-          financial_terms.payment_date !== null &&
-          financial_terms.payment_date !== ""
-        );
+        const hasPaymentDate = !!(financial_terms.payment_cycle === "QUARTERLY"
+          ? Array.isArray(financial_terms.payment_date) && financial_terms.payment_date.length > 0
+          : financial_terms.payment_date !== undefined &&
+            financial_terms.payment_date !== null &&
+            financial_terms.payment_date !== "");
 
         return hasBasicInfo && hasValidLevels && hasPaymentDate;
       }
 
       if (formData.type === "CO_PRODUCING") {
-        // Kiểm tra các field bắt buộc cho CO_PRODUCING - KHÔNG cần schedule
-        // const hasBasicInfo = !!(
-        //   hasPaymentMethod &&
-        //   financialTerms.profit_distribution_cycle &&
-        //   financialTerms.profit_distribution_date?.length > 0
-        // );
+        const hasBasicInfo = !!(
+          hasPaymentMethod &&
+          financial_terms.profit_distribution_cycle &&
+          financial_terms.profit_distribution_date?.length > 0
+        );
 
-        // Kiểm tra profit split (phải tổng = 100%)
         const validProfitSplit = !!(
           financial_terms.profit_split_company_percent > 0 &&
           financial_terms.profit_split_kol_percent > 0 &&
@@ -426,7 +444,7 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
           ) < 0.01
         );
 
-        return validProfitSplit;
+        return validProfitSplit && hasBasicInfo;
       }
 
       return false;
@@ -445,10 +463,8 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
       return isValid;
     }
     case "contract-actions": {
-      // Kiểm tra cả files và URLs
       const hasContractFile = formData.contract_files?.length > 0 || formData.contract_file_url;
       const hasProposalFile = formData.proposal_files?.length > 0 || formData.proposal_file_url;
-
       return hasContractFile && hasProposalFile;
     }
     default:
@@ -466,13 +482,11 @@ const AddContractPage: React.FC = () => {
   const [tabs, setTabs] = useState(INITIAL_TABS.map((tab) => ({ ...tab, isCompleted: false })));
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // ADD PREVIEW MODAL STATE
   const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   const dispatch = useAppDispatch();
   const { loading } = useContract();
 
-  // Modal states
   const [showTypeChangeModal, setShowTypeChangeModal] = useState(false);
   const [pendingNewType, setPendingNewType] = useState("");
   const [showResetModal, setShowResetModal] = useState(false);
@@ -481,22 +495,18 @@ const AddContractPage: React.FC = () => {
   const preselectedBrandId = location.state?.preselectedBrandId;
   const preselectedBrandData = location.state?.brandData;
 
-  // Khởi tạo formData với brand ID nếu có
   const [formData, setFormData] = useState<any>(() => ({
     ...INITIAL_FORM_DATA,
     ...(preselectedBrandId ? { brand_id: preselectedBrandId } : {}),
   }));
 
-  // Effect để xử lý preselected brand
   useEffect(() => {
     if (preselectedBrandId && !formData.brand_id) {
-      // Set brand_id vào formData
       setFormData((prev: typeof INITIAL_FORM_DATA) => ({
         ...prev,
         brand_id: preselectedBrandId,
       }));
 
-      // Nếu có brand data sẵn, fill luôn thông tin brand
       if (preselectedBrandData) {
         const brandRepData = {
           brand_representative_name: preselectedBrandData.representative_name || "",
@@ -514,12 +524,10 @@ const AddContractPage: React.FC = () => {
         }));
       }
 
-      // Clear state để tránh conflict khi navigate lại trang này
       window.history.replaceState({}, document.title);
     }
   }, [preselectedBrandId, preselectedBrandData, formData.brand_id]);
 
-  // Check completion status for each tab
   useEffect(() => {
     setTabs((currentTabs) =>
       currentTabs.map((tab) => ({
@@ -529,13 +537,11 @@ const AddContractPage: React.FC = () => {
     );
   }, [formData]);
 
-  // Calculate progress
   const requiredTabs = tabs.filter((tab) => tab.isRequired);
   const completedRequiredTabs = requiredTabs.filter((tab) => tab.isCompleted);
   const progressPercentage = (completedRequiredTabs.length / requiredTabs.length) * 100;
   const canSubmit = progressPercentage === 100;
 
-  // Check if contract type should be locked (after step 1 and when there's data in subsequent steps)
   const hasDataBeyondStep1 = () => {
     return (
       Object.keys(formData.scope_of_work || {}).length > 0 ||
@@ -548,7 +554,6 @@ const AddContractPage: React.FC = () => {
 
   const isTypeLockedMode = formData.type && hasDataBeyondStep1();
 
-  // Navigation functions
   const getCurrentTab = () => tabs.find((tab) => tab.step === currentStep);
   const canGoNext = () => {
     const currentTab = getCurrentTab();
@@ -582,7 +587,6 @@ const AddContractPage: React.FC = () => {
     const selectedTab = tabs.find((tab) => tab.id === tabId);
     if (!selectedTab) return;
 
-    // Allow access to all completed steps + next step
     const completedSteps = tabs.filter((tab) => tab.isCompleted).length;
     const maxAllowedStep = Math.min(completedSteps + 1, INITIAL_TABS.length);
 
@@ -608,7 +612,6 @@ const AddContractPage: React.FC = () => {
     setShowResetModal(false);
   };
 
-  // Contract type change handlers
   const handleTypeChangeRequest = (newType: string) => {
     if (isTypeLockedMode) {
       setPendingNewType(newType);
@@ -619,7 +622,6 @@ const AddContractPage: React.FC = () => {
   };
 
   const confirmTypeChange = () => {
-    // Clear all data from step 2 onwards
     const clearedFormData = {
       ...INITIAL_FORM_DATA,
       brand_id: formData.brand_id,
@@ -656,7 +658,6 @@ const AddContractPage: React.FC = () => {
     setFormData(clearedFormData);
     setErrors({});
 
-    // Close modal
     setShowTypeChangeModal(false);
     setPendingNewType("");
   };
@@ -666,7 +667,6 @@ const AddContractPage: React.FC = () => {
     setPendingNewType("");
   };
 
-  // Handlers
   const handleFieldValidation = (fieldPath: string, error: string | null) => {
     setErrors((prev: any) => {
       const newErrors = { ...prev };
@@ -694,12 +694,9 @@ const AddContractPage: React.FC = () => {
     setFormData((prev: any) => ({ ...prev, [field]: value }));
   };
 
-  // Modify updateFinancialTerms để xử lý cả formData updates
   const update_financial_terms = async (updates: any) => {
-    // Tách formData updates và financial_terms updates
     const { _form_data_updates, ...financial_updates } = updates;
 
-    // Cập nhật formData nếu có _form_data_updates
     if (_form_data_updates) {
       setFormData((prev: any) => ({
         ...prev,
@@ -707,14 +704,16 @@ const AddContractPage: React.FC = () => {
       }));
     }
 
-    // Cập nhật financial_terms
     const new_financial_terms = { ...formData.financial_terms, ...financial_updates };
-    setFormData((prev: typeof INITIAL_FORM_DATA) => ({
-      ...prev,
-      financial_terms: new_financial_terms,
-    }));
 
-    // Validation
+    setFormData((prev: typeof INITIAL_FORM_DATA) => {
+      const updated = {
+        ...prev,
+        financial_terms: new_financial_terms,
+      };
+      return updated;
+    });
+
     for (const [key, value] of Object.entries(financial_updates)) {
       const validation = await validateField(`financial_terms.${key}`, value, {
         ...formData,
@@ -745,7 +744,6 @@ const AddContractPage: React.FC = () => {
     }));
   };
 
-  // Handlers cho file URLs
   const handleContractUrlsChange = (urls: string[]) => {
     // Chỉ lấy URL đầu tiên vì chỉ cho phép 1 file
     const url = urls.length > 0 ? urls[0] : "";
@@ -758,7 +756,6 @@ const AddContractPage: React.FC = () => {
     handleInputChange("proposal_file_url", url);
   };
 
-  // File handlers (simplified)
   const handle_contract_files_change = (files: File[]) => {
     handleInputChange("contract_files", files);
   };
@@ -767,7 +764,6 @@ const AddContractPage: React.FC = () => {
     handleInputChange("proposal_files", files);
   };
 
-  // MODIFY: Chỉ cần 1 handler để mở modal
   const handleCreateContract = () => {
     if (!canSubmit) {
       toast.error("Please complete all required sections before creating the contract.");
@@ -776,7 +772,6 @@ const AddContractPage: React.FC = () => {
     setShowPreviewModal(true);
   };
 
-  // KEEP handleSubmit nhưng chỉ được gọi từ modal
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -785,7 +780,6 @@ const AddContractPage: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      // Helper function để convert date string sang ISO format với timezone
       const formatDateForBackend = (dateString: string): string => {
         if (!dateString) return "";
         if (dateString.includes("T")) return dateString;
@@ -794,42 +788,41 @@ const AddContractPage: React.FC = () => {
         return date.toISOString();
       };
 
-      // Tạo JSON payload hoàn chỉnh để gửi backend
       const contractPayload = {
-        // Contract Basic Information
         parent_contract_id: null,
         title: formData.title,
         type: formData.type,
         status: "DRAFT",
 
         // Brand Information
-        brand_id: formData.brand_id, // Fixed field name
-        brand_bank_name: formData.brand_bank_name, // Fixed field name
-        brand_bank_account_number: formData.brand_bank_account_number, // Fixed field name
-        brand_bank_account_holder: formData.brand_bank_account_holder, // Fixed field name
+        brand_id: formData.brand_id,
+        brand_bank_name: formData.brand_bank_name,
+        brand_bank_account_number: formData.brand_bank_account_number,
+        brand_bank_account_holder: formData.brand_bank_account_holder,
 
         // Web Representative - field names chính xác
-        representative_name: formData.representative_name, // Fixed field name
-        representative_role: formData.representative_role, // Fixed field name
-        representative_phone: formData.representative_phone, // Fixed field name
-        representative_email: formData.representative_email, // Fixed field name
-        representative_tax_number: formData.representative_tax_number, // Fixed field name
-        representative_bank_name: formData.representative_bank_name, // Fixed field name
-        representative_bank_account_number: formData.representative_bank_account_number, // Fixed field name
-        representative_bank_account_holder: formData.representative_bank_account_holder, // Fixed field name
+        representative_name: formData.representative_name,
+        representative_role: formData.representative_role,
+        representative_phone: formData.representative_phone,
+        representative_email: formData.representative_email,
+        representative_tax_number: formData.representative_tax_number,
+        representative_bank_name: formData.representative_bank_name,
+        representative_bank_account_number: formData.representative_bank_account_number,
+        representative_bank_account_holder: formData.representative_bank_account_holder,
 
         // Contract dates and location - FORMAT DATES PROPERLY
-        signed_date: formatDateForBackend(formData.signed_date), // Fixed field name
-        signed_location: formData.signed_location, // Fixed field name
-        start_date: formatDateForBackend(formData.start_date), // Fixed field name
-        end_date: formatDateForBackend(formData.end_date), // Fixed field name
+        signed_date: formatDateForBackend(formData.signed_date),
+        signed_location: formData.signed_location,
+        start_date: formatDateForBackend(formData.start_date),
+        end_date: formatDateForBackend(formData.end_date),
         currency: "VND",
 
         ...(formData.deposit_percent && formData.deposit_percent > 0
-          ? { deposit_percent: formData.deposit_percent }
-          : formData.deposit_amount && formData.deposit_amount > 0
-            ? { deposit_amount: formData.deposit_amount }
-            : {}),
+          ? {
+              deposit_percent: formData.deposit_percent,
+              deposit_amount: formData.deposit_amount || 0,
+            }
+          : {}),
         is_deposit_paid: formData.is_deposit_paid,
 
         // Scope of Work
@@ -850,12 +843,12 @@ const AddContractPage: React.FC = () => {
                   : "FIXED",
           payment_method: formData.financial_terms?.payment_method || "BANK_TRANSFER",
           total_cost: formData.financial_terms?.total_cost || 0,
+          cost_breakdown: (() => {
+            return formData.financial_terms?.cost_breakdown || {};
+          })(),
 
-          // Contract type specific terms
           ...(formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR"
             ? {
-                // cost_breakdown is already in correct format from handleUpdate conversion
-                cost_breakdown: formData.financial_terms?.cost_breakdown || {},
                 schedule: formData.financial_terms?.schedule || {},
               }
             : {}),
@@ -946,7 +939,7 @@ const AddContractPage: React.FC = () => {
         setErrors({});
         setCurrentStep(1);
         setActiveTab(INITIAL_TABS[0].id);
-        setShowPreviewModal(false); // Đóng modal sau khi thành công
+        setShowPreviewModal(false);
         navigate("/manage/marketing/contracts");
       } else {
         throw new Error((result.payload as string) || "Failed to create contract");
@@ -959,7 +952,6 @@ const AddContractPage: React.FC = () => {
     }
   };
 
-  // Render tab content dynamically
   const renderTabContent = (tabId: string) => {
     const componentProps = {
       formData,

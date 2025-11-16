@@ -277,17 +277,6 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
     }
   }, [formData.brand_id, brand?.id, dispatch]);
 
-  // Thêm useEffect để debug
-  useEffect(() => {
-    console.log("Brand details state:", {
-      brandDetailsOpen,
-      hasBrandId: !!formData.brand_id,
-      brandData: !!brand,
-      brandId: formData.brand_id,
-      currentBrandId: brand?.id,
-    });
-  }, [brandDetailsOpen, formData.brand_id, brand]);
-
   useEffect(() => {
     if (brand && formData.brand_id) {
       const brandRepData = {

@@ -16,18 +16,23 @@ import { useAppDispatch } from "@/libs/stores";
 import { getAllProductsThunk } from "@/libs/stores/productManager/thunk";
 import { useProduct } from "@/libs/hooks/useProduct";
 import { PaginationTable } from "@/components/global";
+import { getItem } from "@/libs/local-storage";
 
 const ProductApprovalPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const { isLoading, products } = useProduct();
   const navigate = useNavigate();
+  const user = getItem<{
+    id: string;
+  }>("user");
 
   const [params, setParams] = useState({
     page: 1,
     limit: 10,
-    // type: "LIMITED",
+    type: "LIMITED",
     status: "SUBMITTED",
     search: "",
+    user_id: user?.id,
   });
 
   // Get products data and pagination from useProduct hook

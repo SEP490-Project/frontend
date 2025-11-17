@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useContentManager } from "@/libs/hooks/useContent";
+import { useAppDispatch } from "@/libs/stores";
+import { updateTaskState } from "@/libs/stores/taskManager/thunk";
 import { manageContent } from "@/libs/services/manageContent";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -61,6 +63,8 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     publishExistingContent,
     submitExistingContent,
   } = useContentManager();
+
+  const dispatch = useAppDispatch();
 
   const [filters, setFilters] = useState({
     page: 1,
@@ -217,6 +221,21 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
 
       // Check if publishing was successful
       if (publishResponse.meta.requestStatus === "fulfilled") {
+        // Update task state to DONE if content has a task_id
+        if (content.task_id) {
+          try {
+            await dispatch(
+              updateTaskState({
+                taskId: content.task_id,
+                state: "DONE",
+              }),
+            ).unwrap();
+          } catch (taskError) {
+            console.warn("Failed to update task state:", taskError);
+            // Don't fail the entire operation if task update fails
+          }
+        }
+
         fetchContents(filters);
         toast.success(`Content "${content.title}" has been published successfully.`);
       }

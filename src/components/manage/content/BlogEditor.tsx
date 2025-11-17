@@ -24,11 +24,13 @@ import {
 import { X, Tag as TagIcon } from "lucide-react";
 
 import type { Content, CreateContentRequest } from "@/libs/types/content";
+import type { Channel } from "@/libs/types/channel";
 import { ArrowLeft, Calendar } from "lucide-react";
 import { useAuth } from "@/libs/hooks/useAuth";
 import { getBrandIdFromToken } from "@/libs/helper/helper";
 import { useNavigationBlocker } from "@/libs/hooks/useNavigationBlocker";
 import { useTag } from "@/libs/hooks/useTag";
+import { manageChannel } from "@/libs/services/manageChannel";
 
 import type { Tag } from "@/libs/types/tag";
 
@@ -54,6 +56,38 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
 
   // Get available tags from API
   const { tags: availableTags, loading: tagsLoading, error: tagsError } = useTag();
+
+  // Channel state
+  const [websiteChannel, setWebsiteChannel] = React.useState<Channel | null>(null);
+  const [channelLoading, setChannelLoading] = React.useState(true);
+
+  // Fetch channels on component mount
+  React.useEffect(() => {
+    const fetchChannels = async () => {
+      try {
+        setChannelLoading(true);
+        const response = await manageChannel.channelList();
+        const channels = response.data.data || [];
+
+        // Find the Website channel
+        const website = channels.find(
+          (channel: Channel) => channel.name.toLowerCase() === "website",
+        );
+
+        if (website) {
+          setWebsiteChannel(website);
+        } else {
+          console.warn("Website channel not found in available channels");
+        }
+      } catch (error) {
+        console.error("Error fetching channels:", error);
+      } finally {
+        setChannelLoading(false);
+      }
+    };
+
+    fetchChannels();
+  }, []);
 
   // Initialize selected tags from editing content
   const [selectedTags, setSelectedTags] = useState<Tag[]>(() => {
@@ -103,17 +137,22 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
 
   // Memoized save button disabled state
   const isSaveDisabled = React.useMemo(() => {
-    return !content || !localTitle.trim() || localTitle.length < 3 || localTitle.length > 200;
-  }, [content, localTitle]);
+    return (
+      !content ||
+      !localTitle.trim() ||
+      localTitle.length < 3 ||
+      localTitle.length > 200 ||
+      channelLoading ||
+      !websiteChannel
+    );
+  }, [content, localTitle, channelLoading, websiteChannel]);
 
   // Handle form submission
   const handleFormSubmit = () => {
-    if (content && localTitle.trim()) {
+    if (content && localTitle.trim() && websiteChannel) {
       // Create excerpt from content (first 150 characters of plain text)
       const plainText = content.html.replace(/<[^>]*>/g, "");
       const excerpt = plainText.substring(0, 150) + (plainText.length > 150 ? "..." : "");
-
-      // Debug: Log user info to understand the issue
 
       const apiData: CreateContentRequest = {
         title: localTitle.trim(),
@@ -125,7 +164,7 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
           read_time: calculateReadTime(content.html),
           tags: selectedTags.map((tag) => tag.name), // Convert selected tags to array of names
         },
-        channels: ["0a2a3dcb-71c2-474f-8d15-7400dd424b2b"],
+        channels: [websiteChannel.id],
         task_id: selectedTask?.id?.toString() || null,
         affiliate_link: null,
         ai_generated_text: null,

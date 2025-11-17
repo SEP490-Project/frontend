@@ -86,8 +86,16 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
       (!deliverables.advertised_items || deliverables.advertised_items.length === 0) && // snake_case
       ensureArray(deliverables.platform).length > 0
     ) {
+      // Create initial content for each selected platform
+      const platforms = ensureArray(deliverables.platform);
+      const initialItems = platforms.map((platform: string, index: number) => ({
+        ...newAdvertisingItem(),
+        id: index + 1,
+        platform: platform.toUpperCase(),
+      }));
+
       updateDeliverables({
-        advertised_items: [{ ...newAdvertisingItem(), id: 1 }], // snake_case
+        advertised_items: initialItems, // snake_case
       });
     }
   }, [formData, deliverables.platform, deliverables.advertised_items, updateDeliverables]);
@@ -140,17 +148,78 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
     const currentAdvertisedItems = ensureArray(deliverables.advertised_items); // snake_case
     const updatedAdvertisedItems = removePlatformFromItems(platform, currentAdvertisedItems);
 
+    // After removing platform, redistribute items to remaining platforms
+    if (updatedPlatforms.length > 0 && updatedAdvertisedItems.length > 0) {
+      // Find items that lost their platform and reassign them
+      const itemsWithoutPlatform = updatedAdvertisedItems.filter((item) => !item.platform);
+      itemsWithoutPlatform.forEach((item, idx) => {
+        const assignedPlatform = updatedPlatforms[idx % updatedPlatforms.length];
+        item.platform = assignedPlatform;
+      });
+    }
+
     updateDeliverables({ platform: updatedPlatforms, advertised_items: updatedAdvertisedItems }); // snake_case
   };
 
   const handleConfirmDelete = () => {
     if (deleteDialog.itemIdx !== null) {
       const items = advertisedItems;
+      const updatedItems = items.filter((_, idx) => idx !== deleteDialog.itemIdx);
+
+      // After deletion, ensure all selected platforms are still covered
+      ensureAllPlatformsCovered(updatedItems);
+
       updateDeliverables({
-        advertised_items: items.filter((_, idx) => idx !== deleteDialog.itemIdx), // snake_case
+        advertised_items: updatedItems, // snake_case
       });
     }
     setDeleteDialog({ isOpen: false, itemIdx: null, itemName: "" });
+  };
+
+  // Helper function to ensure all selected platforms have at least one content
+  const ensureAllPlatformsCovered = (items: AdvertisingItem[]) => {
+    const selectedPlatformsUpper = selectedPlatforms.map((p) => p.toUpperCase());
+    const usedPlatforms = items.map((item) => item.platform?.toUpperCase()).filter(Boolean);
+
+    // Find platforms that don't have any content
+    const uncoveredPlatforms = selectedPlatformsUpper.filter(
+      (platform) => !usedPlatforms.includes(platform),
+    );
+
+    // If there are uncovered platforms and we have items, assign them
+    if (uncoveredPlatforms.length > 0 && items.length > 0) {
+      uncoveredPlatforms.forEach((platform, idx) => {
+        // Assign to items that don't have a platform yet, or cycle through existing items
+        const targetItemIdx = idx % items.length;
+        if (!items[targetItemIdx].platform) {
+          items[targetItemIdx].platform = platform;
+        }
+      });
+    }
+  };
+
+  // Function to get the next platform that should be assigned to new content
+  const getNextPlatformToAssign = () => {
+    if (selectedPlatforms.length === 0) return "";
+
+    const selectedPlatformsUpper = selectedPlatforms.map((p) => p.toUpperCase());
+    const currentPlatformCounts = selectedPlatformsUpper.reduce(
+      (counts, platform) => {
+        counts[platform] = advertisedItems.filter(
+          (item) => item.platform?.toUpperCase() === platform,
+        ).length;
+        return counts;
+      },
+      {} as Record<string, number>,
+    );
+
+    // Find the platform with the least content assigned
+    const minCount = Math.min(...Object.values(currentPlatformCounts));
+    const leastUsedPlatform = selectedPlatformsUpper.find(
+      (platform) => currentPlatformCounts[platform] === minCount,
+    );
+
+    return leastUsedPlatform || selectedPlatformsUpper[0];
   };
 
   return (
@@ -227,11 +296,26 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
               </div>
 
               {selectedPlatforms.length > 0 ? (
-                <div className="bg-pink-50 p-3 rounded-lg border border-pink-200">
+                <div className="bg-pink-50 p-3 rounded-lg border border-pink-200 space-y-2">
                   <p className="text-xs font-medium text-pink-800">
                     Selected: {selectedPlatforms.join(", ")} ({selectedPlatforms.length} platform
                     {selectedPlatforms.length !== 1 ? "s" : ""})
                   </p>
+                  {advertisedItems.length > 0 && (
+                    <div className="text-xs text-pink-700">
+                      <p className="font-medium mb-1">Platform Distribution:</p>
+                      {selectedPlatforms.map((platform) => {
+                        const count = advertisedItems.filter(
+                          (item) => item.platform?.toUpperCase() === platform.toUpperCase(),
+                        ).length;
+                        return (
+                          <span key={platform} className="inline-block mr-3">
+                            {platform}: {count} content{count !== 1 ? "s" : ""}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <p className="text-sm text-red-500 italic">
@@ -244,6 +328,28 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
           {selectedPlatforms.length > 0 && (
             <div className="space-y-4">
               <p className="text-lg font-bold text-pink-900">Affiliate Content</p>
+
+              {/* Platform Coverage Warning */}
+              {(() => {
+                const uncoveredPlatforms = selectedPlatforms.filter(
+                  (platform) =>
+                    !advertisedItems.some(
+                      (item) => item.platform?.toUpperCase() === platform.toUpperCase(),
+                    ),
+                );
+                return (
+                  uncoveredPlatforms.length > 0 && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                      <p className="text-sm font-medium text-yellow-800">
+                        ⚠️ Missing content for platforms: {uncoveredPlatforms.join(", ")}
+                      </p>
+                      <p className="text-xs text-yellow-700 mt-1">
+                        Each selected platform must have at least one content item.
+                      </p>
+                    </div>
+                  )
+                );
+              })()}
 
               {advertisedItems.map((item: AdvertisingItem, i: number) => {
                 const items = [...advertisedItems];
@@ -523,19 +629,19 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
 
               <Button
                 variant="outline"
-                onClick={() =>
+                onClick={() => {
+                  const newItems = [
+                    ...advertisedItems,
+                    {
+                      ...newAdvertisingItem(),
+                      id: advertisedItems.length + 1,
+                      platform: getNextPlatformToAssign(),
+                    },
+                  ];
                   updateDeliverables({
-                    advertised_items: [
-                      // snake_case
-                      ...advertisedItems,
-                      {
-                        ...newAdvertisingItem(),
-                        id: advertisedItems.length + 1,
-                        platform: selectedPlatforms[0] ? selectedPlatforms[0].toUpperCase() : "",
-                      },
-                    ],
-                  })
-                }
+                    advertised_items: newItems, // snake_case
+                  });
+                }}
                 className="w-full py-6 border-2 border-dashed hover:bg-pink-50"
                 style={{ borderColor: "#ff9fb2" }}
               >

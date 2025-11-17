@@ -13,6 +13,7 @@ import {
 import { DatePicker } from "@/components/date-picker";
 import { Plus, Trash2 } from "lucide-react";
 import { FaCalendarDay, FaChartLine } from "react-icons/fa6";
+import { format } from "date-fns";
 
 // Helper functions
 const formatCurrency = (value: number | string) => {
@@ -100,7 +101,8 @@ export const PaymentSchedule: React.FC<{
   onUpdate: (schedules: any[]) => void;
   startDate?: string;
   endDate?: string;
-}> = ({ schedules, totalCost, onUpdate, startDate, endDate }) => {
+  depositPercent?: number;
+}> = ({ schedules, totalCost, onUpdate, startDate, endDate, depositPercent = 0 }) => {
   const addSchedule = () => {
     const newId = schedules.length > 0 ? Math.max(...schedules.map((s) => s.id || 0)) + 1 : 1;
     const newSchedule = {
@@ -126,8 +128,11 @@ export const PaymentSchedule: React.FC<{
         0,
       );
 
-      if (otherTotal + newPercent > 100) {
-        newPercent = Math.max(0, 100 - otherTotal);
+      // Calculate max allowed percentage (100% - deposit percentage)
+      const maxAllowedPercent = 100 - depositPercent;
+
+      if (otherTotal + newPercent > maxAllowedPercent) {
+        newPercent = Math.max(0, maxAllowedPercent - otherTotal);
       }
 
       updated[index].percent = newPercent;
@@ -147,8 +152,12 @@ export const PaymentSchedule: React.FC<{
   const minDate = startDate || undefined;
   const maxDate = endDate || undefined;
 
-  const percentValid = totalPercent === 100;
-  const amountValid = totalAmount === totalCost;
+  // Calculate expected totals considering deposit
+  const expectedPercent = 100 - depositPercent;
+  const expectedAmount = totalCost ? Math.round((totalCost * expectedPercent) / 100) : 0;
+
+  const percentValid = totalPercent === expectedPercent;
+  const amountValid = totalAmount === expectedAmount;
 
   return (
     <div className="space-y-4">
@@ -162,6 +171,15 @@ export const PaymentSchedule: React.FC<{
           Add Milestone
         </Button>
       </div>
+
+      {depositPercent > 0 && (
+        <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-800">
+          <strong>Deposit Info:</strong> {depositPercent}% (
+          {formatCurrency((totalCost * depositPercent) / 100)} VND) is reserved for deposit. Payment
+          schedule can only cover the remaining {100 - depositPercent}% (
+          {formatCurrency((totalCost * (100 - depositPercent)) / 100)} VND).
+        </div>
+      )}
 
       {startDate && endDate && (
         <div className="p-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-800">
@@ -257,21 +275,21 @@ export const PaymentSchedule: React.FC<{
                 percentValid ? "text-green-600" : "text-orange-600"
               }`}
             >
-              {totalPercent}%
+              {totalPercent}% / {expectedPercent}%
             </div>
-            <div className="text-sm text-gray-600">Total Percent</div>
+            <div className="text-sm text-gray-600">Schedule Percent</div>
           </div>
           <div>
             <div className="text-2xl font-bold text-purple-600">
               {formatCurrency(totalAmount || 0)}
             </div>
-            <div className="text-sm text-purple-800">Total Amount</div>
+            <div className="text-sm text-purple-800">Schedule Amount</div>
           </div>
           <div>
             <div
               className={`text-2xl font-bold ${amountValid ? "text-green-600" : "text-red-600"}`}
             >
-              {formatCurrency(totalCost - totalAmount)}
+              {formatCurrency(expectedAmount - totalAmount)}
             </div>
             <div className="text-sm text-gray-600">Remaining</div>
           </div>
@@ -280,8 +298,9 @@ export const PaymentSchedule: React.FC<{
         {/* Validation message */}
         {(!percentValid || !amountValid) && (
           <div className="mt-3 text-center text-xs text-red-600">
-            Total milestone percentage must equal 100%, and total amount must match the contract
-            cost.
+            {depositPercent > 0
+              ? `Payment schedule must equal ${expectedPercent}% (${depositPercent}% is reserved for deposit). Total amount should be ${formatCurrency(expectedAmount)} VND.`
+              : "Total milestone percentage must equal 100%, and total amount must match the contract cost."}
           </div>
         )}
       </Card>
@@ -361,12 +380,33 @@ export const CommissionLevels: React.FC<{
                 type="number"
                 step="0.1"
                 placeholder="1.0"
-                value={level.multiplier || ""}
-                onChange={(e) =>
-                  updateLevel(index, "multiplier", parseFloat(e.target.value) || 1.0)
+                value={
+                  level.multiplier !== undefined && level.multiplier !== null
+                    ? level.multiplier
+                    : ""
                 }
+                onChange={(e) => {
+                  const inputValue = e.target.value;
+                  if (inputValue === "") {
+                    updateLevel(index, "multiplier", null);
+                  } else {
+                    const parsedValue = parseFloat(inputValue);
+                    updateLevel(index, "multiplier", isNaN(parsedValue) ? null : parsedValue);
+                  }
+                }}
+                onBlur={(e) => {
+                  // Set default value of 1.0 if empty on blur
+                  if (
+                    e.target.value === "" ||
+                    level.multiplier === null ||
+                    level.multiplier === undefined
+                  ) {
+                    updateLevel(index, "multiplier", 1.0);
+                  }
+                }}
                 className="bg-white"
                 min="0"
+                max="10"
               />
             </div>
 
@@ -387,16 +427,22 @@ export const CommissionLevels: React.FC<{
   );
 };
 
-// UPDATED PaymentDateSelector - NO PERCENTAGES, JUST DATES
 export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
   cycle,
   value,
   onChange,
+  onScheduleGenerated,
   startDate,
   endDate,
 }) => {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+  // Hàm trợ giúp để chuẩn hóa ngày về 00:00:00.000
+  const normalizeDate = (date: Date): Date => {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  };
+
+  const start = normalizeDate(new Date(startDate));
+  const end = normalizeDate(new Date(endDate));
+
   const [warning, setWarning] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -404,6 +450,7 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
     const monthDiff =
       (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
     const durationMonths = monthDiff + 1;
+
     if (cycle === "ANNUALLY" && durationMonths < 12)
       msg = "Contract too short for Annual payment (≥ 12 months)";
     if (cycle === "QUARTERLY" && durationMonths < 3)
@@ -414,60 +461,346 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
   const formatDate = (d: Date) =>
     `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
 
-  // Preview
   interface PreviewItem {
     milestone: string;
     display: string;
   }
-  const previewSchedule = React.useMemo<PreviewItem[]>(() => {
-    if (!value) return [];
+  // Generate schedule data separately without calling onScheduleGenerated
+  const generateScheduleData = React.useMemo((): {
+    dates: Date[];
+    schedule: { id: number; day: number; month: number; year: number }[];
+  } => {
+    if (!value) return { dates: [], schedule: [] };
 
-    if (cycle === "MONTHLY" && typeof value === "number") {
+    if (cycle === "MONTHLY" && typeof value === "string") {
       const dates: Date[] = [];
-      const day = value;
-      const current = new Date(start);
-      while (current <= end) {
-        const maxDay = new Date(current.getFullYear(), current.getMonth() + 1, 0).getDate();
-        const actualDay = Math.min(day, maxDay);
-        dates.push(new Date(current.getFullYear(), current.getMonth(), actualDay));
-        current.setMonth(current.getMonth() + 1);
+      const day = parseInt(value, 10);
+
+      let current = normalizeDate(new Date(start.getFullYear(), start.getMonth(), 1));
+      const firstPaymentDay = Math.min(
+        day,
+        new Date(current.getFullYear(), current.getMonth() + 1, 0).getDate(),
+      );
+      let firstPaymentDate = normalizeDate(
+        new Date(current.getFullYear(), current.getMonth(), firstPaymentDay),
+      );
+
+      if (firstPaymentDate < start) {
+        firstPaymentDate.setMonth(firstPaymentDate.getMonth() + 1);
+        firstPaymentDate = normalizeDate(firstPaymentDate);
       }
-      return dates.map((d, idx) => ({ milestone: `Payment ${idx + 1}`, display: formatDate(d) }));
+
+      current = firstPaymentDate;
+
+      if (current > end) return { dates: [], schedule: [] };
+
+      while (current <= end) {
+        dates.push(new Date(current));
+
+        let nextMonth = current.getMonth() + 1;
+        let nextYear = current.getFullYear();
+        if (nextMonth > 11) {
+          nextMonth = 0;
+          nextYear++;
+        }
+
+        const maxDayInNextMonth = new Date(nextYear, nextMonth + 1, 0).getDate();
+        const actualDayForNextMonth = Math.min(day, maxDayInNextMonth);
+
+        current = normalizeDate(new Date(nextYear, nextMonth, actualDayForNextMonth));
+      }
+
+      const schedule = dates.map((d, idx) => ({
+        id: idx + 1,
+        day: d.getDate(),
+        month: d.getMonth() + 1, // Convert to 1-based month
+        year: d.getFullYear(),
+      }));
+
+      return { dates, schedule };
     }
 
-    if (cycle === "QUARTERLY" && value && typeof value === "object") {
-      const { day, month } = value;
-      const current = new Date(start.getFullYear(), month - 1, day);
-      const dates: Date[] = [];
-      const temp = new Date(current);
-      while (temp <= end) {
-        dates.push(new Date(temp));
-        temp.setMonth(temp.getMonth() + 3);
+    if (cycle === "QUARTERLY" && value && typeof value === "string") {
+      try {
+        const { day: selectedDay, month: selectedMonth1Indexed } = JSON.parse(value); // month là 1-indexed
+        const dates: Date[] = [];
+
+        let currentYear = start.getFullYear();
+        let currentMonth0Indexed = selectedMonth1Indexed - 1; // 0-indexed month
+
+        // Tính toán ngày thanh toán đầu tiên
+        let firstPaymentDateCandidate: Date;
+        do {
+          // Tạo ngày mới bằng cách đặt năm và tháng trước, sau đó điều chỉnh ngày
+          const tempDate = new Date(currentYear, currentMonth0Indexed, 1); // Đặt về ngày 1 trước để tránh tràn tháng
+          const maxDayInCurrentMonth = new Date(
+            tempDate.getFullYear(),
+            tempDate.getMonth() + 1,
+            0,
+          ).getDate();
+          const actualDay = Math.min(selectedDay, maxDayInCurrentMonth);
+          firstPaymentDateCandidate = normalizeDate(
+            new Date(currentYear, currentMonth0Indexed, actualDay),
+          );
+
+          if (firstPaymentDateCandidate < start) {
+            // Nếu ngày này trước ngày bắt đầu hợp đồng, chuyển sang quý tiếp theo
+            currentMonth0Indexed += 3;
+            if (currentMonth0Indexed > 11) {
+              currentMonth0Indexed -= 12;
+              currentYear++;
+            }
+          }
+        } while (firstPaymentDateCandidate < start);
+
+        if (firstPaymentDateCandidate > end) return { dates: [], schedule: [] };
+
+        dates.push(firstPaymentDateCandidate);
+        let currentQuarterDate = new Date(firstPaymentDateCandidate); // Bắt đầu từ ngày đã tính
+
+        while (true) {
+          // Luôn tạo một Date object mới hoặc reset ngày về 1 trước khi setMonth
+          // để tránh hiệu ứng tràn ngày của Date.setMonth()
+          let nextPaymentMonth = currentQuarterDate.getMonth() + 3;
+          let nextPaymentYear = currentQuarterDate.getFullYear();
+
+          if (nextPaymentMonth > 11) {
+            // Nếu vượt quá tháng 11, tăng năm
+            nextPaymentMonth -= 12;
+            nextPaymentYear++;
+          }
+
+          // Tạo một Date object tạm thời cho tháng mới (đặt ngày là 1)
+          const tempNextDate = new Date(nextPaymentYear, nextPaymentMonth, 1);
+          // Sau đó, tìm số ngày tối đa của tháng đó
+          const maxDayInNextQuarterMonth = new Date(
+            tempNextDate.getFullYear(),
+            tempNextDate.getMonth() + 1,
+            0,
+          ).getDate();
+          // Và điều chỉnh ngày về giá trị đã chọn ban đầu, nhưng không vượt quá maxDay
+          const actualDayForNextQuarter = Math.min(selectedDay, maxDayInNextQuarterMonth);
+
+          currentQuarterDate = normalizeDate(
+            new Date(nextPaymentYear, nextPaymentMonth, actualDayForNextQuarter),
+          );
+
+          if (currentQuarterDate > end) break;
+          dates.push(new Date(currentQuarterDate));
+        }
+
+        // Thêm ngày kết thúc hợp đồng nếu chưa có
+        if (end >= start && !dates.some((d) => d.getTime() === end.getTime())) {
+          dates.push(new Date(end));
+        }
+
+        dates.sort((a, b) => a.getTime() - b.getTime());
+
+        const schedule = dates.map((d, idx) => ({
+          id: idx + 1,
+          day: d.getDate(),
+          month: d.getMonth() + 1, // Convert to 1-based month
+          year: d.getFullYear(),
+        }));
+
+        return { dates, schedule };
+      } catch (e) {
+        console.error("Error parsing quarterly value:", e);
+        return { dates: [], schedule: [] };
       }
-      return dates.map((d, idx) => ({ milestone: `Quarter ${idx + 1}`, display: formatDate(d) }));
     }
 
     if (cycle === "ANNUALLY" && typeof value === "string") {
-      return [{ milestone: "Annual Payment", display: formatDate(new Date(value)) }];
+      const dates: Date[] = [];
+      const selectedDateFromValue = normalizeDate(new Date(value));
+      const selectedMonth = selectedDateFromValue.getMonth();
+      const selectedDay = selectedDateFromValue.getDate();
+
+      const startYear = start.getFullYear();
+      const oneYearAfterStart = new Date(start);
+      oneYearAfterStart.setFullYear(oneYearAfterStart.getFullYear() + 1);
+
+      // Giới hạn ngày đầu trả
+      const maxFirstPayment = end < oneYearAfterStart ? end : oneYearAfterStart;
+
+      // Nếu selectedDate < start hoặc > maxFirstPayment → điều chỉnh về start
+      let currentYear = selectedDateFromValue.getFullYear();
+      let firstPossiblePaymentDate = normalizeDate(
+        new Date(currentYear, selectedMonth, selectedDay),
+      );
+      if (firstPossiblePaymentDate < start || firstPossiblePaymentDate > maxFirstPayment) {
+        firstPossiblePaymentDate = normalizeDate(new Date(startYear, selectedMonth, selectedDay));
+        if (firstPossiblePaymentDate < start) {
+          firstPossiblePaymentDate = start;
+        }
+      }
+
+      // Generate các annual payment từ firstPossiblePaymentDate
+      currentYear = firstPossiblePaymentDate.getFullYear();
+      while (true) {
+        const maxDayInMonth = new Date(currentYear, selectedMonth + 1, 0).getDate();
+        const actualDay = Math.min(selectedDay, maxDayInMonth);
+        const annualDate = normalizeDate(new Date(currentYear, selectedMonth, actualDay));
+
+        if (annualDate > end) break;
+        if (annualDate >= start && !dates.some((d) => d.getTime() === annualDate.getTime())) {
+          dates.push(new Date(annualDate));
+        }
+        currentYear++;
+      }
+
+      // Thêm ngày kết thúc hợp đồng nếu chưa có
+      if (end >= start && !dates.some((d) => d.getTime() === end.getTime())) {
+        dates.push(new Date(end));
+      }
+
+      dates.sort((a, b) => a.getTime() - b.getTime());
+
+      const schedule = dates.map((d, idx) => ({
+        id: idx + 1,
+        day: d.getDate(),
+        month: d.getMonth() + 1, // Convert to 1-based month
+        year: d.getFullYear(),
+      }));
+
+      return { dates, schedule };
+    }
+
+    return { dates: [], schedule: [] };
+  }, [value, cycle, start, end]);
+
+  // Use useEffect to call onScheduleGenerated to avoid infinite loops - only for QUARTERLY
+  const scheduleStringRef = React.useRef<string>("");
+  React.useEffect(() => {
+    if (onScheduleGenerated && cycle === "QUARTERLY" && generateScheduleData.schedule.length > 0) {
+      const currentScheduleString = JSON.stringify(generateScheduleData.schedule);
+      if (scheduleStringRef.current !== currentScheduleString) {
+        scheduleStringRef.current = currentScheduleString;
+        onScheduleGenerated(generateScheduleData.schedule);
+      }
+    }
+  }, [onScheduleGenerated, cycle, generateScheduleData.schedule]);
+
+  // Generate preview items for display
+  const previewSchedule: PreviewItem[] = React.useMemo(() => {
+    const { dates } = generateScheduleData;
+
+    if (cycle === "MONTHLY") {
+      return dates.map((d: Date, idx: number) => ({
+        milestone: `Payment ${idx + 1}`,
+        display: formatDate(d),
+      }));
+    }
+
+    if (cycle === "QUARTERLY") {
+      return dates.map((d: Date, idx: number) => ({
+        milestone:
+          d.getTime() === end.getTime() && idx === dates.length - 1
+            ? "Final Payment"
+            : `Quarter ${idx + 1}`,
+        display: formatDate(d),
+      }));
+    }
+
+    if (cycle === "ANNUALLY") {
+      return dates.map((d: Date, idx: number) => ({
+        milestone:
+          d.getTime() === end.getTime() && idx === dates.length - 1
+            ? "Final Payment"
+            : `Annual Payment ${idx + 1}`,
+        display: formatDate(d),
+      }));
     }
 
     return [];
-  }, [value, cycle, start, end]);
+  }, [generateScheduleData, cycle, end, formatDate]);
 
-  const handleMonthlyChange = (val: number) => onChange(val);
-  const handleQuarterlyChange = (day: number, month: number) => onChange({ day, month });
+  let maxFirstPayment = new Date(start);
+  maxFirstPayment.setFullYear(maxFirstPayment.getFullYear() + 1);
+  if (maxFirstPayment > end) maxFirstPayment = end;
+
+  const handleMonthlyChange = (val: number) => onChange(val.toString());
+  const handleQuarterlyChange = (day: number, month: number) =>
+    onChange(JSON.stringify({ day, month }));
+  const handleAnnualChange = (date: Date | string | undefined) => {
+    if (date instanceof Date) {
+      // DatePicker của bạn đã định dạng thành "yyyy-MM-dd",
+      // nên chúng ta có thể truyền thẳng chuỗi này.
+      // Chỉ cần đảm bảo date là hợp lệ trước khi format.
+      onChange(format(date, "yyyy-MM-dd"));
+    } else if (typeof date === "string") {
+      onChange(date);
+    } else {
+      onChange(undefined);
+    }
+  };
+
+  // Hàm trợ giúp để lấy số ngày tối đa trong một tháng cụ thể của một năm cụ thể
+  const getDaysInMonth = (year: number, month: number): number => {
+    // month là 0-indexed (0-11) cho Date constructor
+    // month + 1, 0 sẽ trả về ngày cuối cùng của tháng trước
+    return new Date(year, month + 1, 0).getDate();
+  };
+
+  // State cục bộ để lưu trữ ngày và tháng cho Quarterly để tính toán số ngày tối đa
+  // Khởi tạo từ `value` prop
+  const [quarterlySelectedDay, setQuarterlySelectedDay] = React.useState<number>(() => {
+    try {
+      return value && cycle === "QUARTERLY" ? JSON.parse(value).day || 1 : 1;
+    } catch {
+      return 1;
+    }
+  });
+  const [quarterlySelectedMonth, setQuarterlySelectedMonth] = React.useState<number>(() => {
+    try {
+      return value && cycle === "QUARTERLY" ? JSON.parse(value).month || 1 : 1;
+    } catch {
+      return 1;
+    }
+  });
+
+  // Cập nhật state cục bộ khi `value` hoặc `cycle` từ props thay đổi
+  React.useEffect(() => {
+    if (cycle === "QUARTERLY" && value) {
+      try {
+        const parsed = JSON.parse(value);
+        const newDay = parsed.day || 1;
+        const newMonth = parsed.month || 1;
+
+        // Chỉ cập nhật nếu giá trị từ prop khác với giá trị hiện tại trong state
+        if (newDay !== quarterlySelectedDay) setQuarterlySelectedDay(newDay);
+        if (newMonth !== quarterlySelectedMonth) setQuarterlySelectedMonth(newMonth);
+      } catch {
+        if (quarterlySelectedDay !== 1) setQuarterlySelectedDay(1);
+        if (quarterlySelectedMonth !== 1) setQuarterlySelectedMonth(1);
+      }
+    } else if (cycle !== "QUARTERLY") {
+      // Reset nếu chuyển sang cycle khác
+      if (quarterlySelectedDay !== 1) setQuarterlySelectedDay(1);
+      if (quarterlySelectedMonth !== 1) setQuarterlySelectedMonth(1);
+    }
+  }, [cycle, value]);
+
+  // Tính toán số ngày tối đa cho tháng được chọn hiện tại trong QUARTERLY
+  const maxDaysForQuarterlyMonth = React.useMemo(() => {
+    // Để lấy số ngày tối đa, chúng ta cần một năm.
+    // Sử dụng năm hiện tại hoặc năm bắt đầu hợp đồng là an toàn.
+    const yearForCalc = new Date().getFullYear();
+    // month là 1-indexed từ dropdown, cần chuyển về 0-indexed cho getDaysInMonth
+    return getDaysInMonth(yearForCalc, quarterlySelectedMonth - 1);
+  }, [quarterlySelectedMonth]);
 
   return (
     <div className="space-y-3">
       {/* Select Fields */}
       {cycle === "MONTHLY" && (
         <div className="flex items-center gap-2">
-          <Label>Day</Label>
+          <Label htmlFor="monthly-day-select">Monthly Day</Label>
           <Select
             value={value?.toString() || "1"}
             onValueChange={(v) => handleMonthlyChange(parseInt(v, 10))}
           >
-            <SelectTrigger className="w-24">
+            <SelectTrigger id="monthly-day-select" className="w-24">
               <SelectValue placeholder="Select day" />
             </SelectTrigger>
             <SelectContent className="max-h-60 overflow-y-auto">
@@ -483,16 +816,21 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
 
       {cycle === "QUARTERLY" && (
         <div className="flex items-center gap-2">
-          <Label>Day</Label>
+          <Label htmlFor="quarterly-day-select">Quarterly Day</Label>
           <Select
-            value={(value?.day || 1).toString()}
-            onValueChange={(v) => handleQuarterlyChange(parseInt(v, 10), value?.month || 1)}
+            value={quarterlySelectedDay.toString()} // Sử dụng state cục bộ
+            onValueChange={(v) => {
+              const newDay = parseInt(v, 10);
+              setQuarterlySelectedDay(newDay); // Cập nhật state cục bộ
+              handleQuarterlyChange(newDay, quarterlySelectedMonth); // Gọi onChange của prop
+            }}
           >
-            <SelectTrigger className="w-24">
+            <SelectTrigger id="quarterly-day-select" className="w-24">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="max-h-60 overflow-y-auto">
-              {Array.from({ length: 31 }, (_, i) => (
+              {/* Render số ngày dựa trên tháng đã chọn */}
+              {Array.from({ length: maxDaysForQuarterlyMonth }, (_, i) => (
                 <SelectItem key={i + 1} value={(i + 1).toString()}>
                   {i + 1}
                 </SelectItem>
@@ -500,12 +838,27 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
             </SelectContent>
           </Select>
 
-          <Label>Month</Label>
+          <Label htmlFor="quarterly-month-select">Quarterly Month</Label>
           <Select
-            value={(value?.month || 1).toString()}
-            onValueChange={(v) => handleQuarterlyChange(value?.day || 1, parseInt(v, 10))}
+            value={quarterlySelectedMonth.toString()} // Sử dụng state cục bộ
+            onValueChange={(v) => {
+              const newMonth = parseInt(v, 10);
+              setQuarterlySelectedMonth(newMonth); // Cập nhật state cục bộ
+
+              // Tính lại maxDays cho tháng mới
+              const currentYear = new Date().getFullYear();
+              const newMaxDays = getDaysInMonth(currentYear, newMonth - 1);
+
+              let adjustedDay = quarterlySelectedDay;
+              // Nếu ngày hiện tại lớn hơn số ngày tối đa của tháng mới, điều chỉnh
+              if (quarterlySelectedDay > newMaxDays) {
+                adjustedDay = newMaxDays;
+                setQuarterlySelectedDay(newMaxDays); // Cập nhật state cục bộ
+              }
+              handleQuarterlyChange(adjustedDay, newMonth); // Gọi onChange của prop với ngày đã điều chỉnh
+            }}
           >
-            <SelectTrigger className="w-24">
+            <SelectTrigger id="quarterly-month-select" className="w-24">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="max-h-60 overflow-y-auto">
@@ -520,7 +873,15 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
       )}
 
       {cycle === "ANNUALLY" && (
-        <DatePicker value={value} onChange={onChange} minDate={startDate} maxDate={endDate} />
+        <div className="flex items-center gap-2">
+          <Label htmlFor="annual-date-picker">Annual Payment Date</Label>
+          <DatePicker
+            value={value}
+            onChange={handleAnnualChange}
+            minDate={format(start, "yyyy-MM-dd")}
+            maxDate={format(maxFirstPayment, "yyyy-MM-dd")}
+          />
+        </div>
       )}
 
       {warning && <p className="text-xs text-yellow-700">{warning}</p>}

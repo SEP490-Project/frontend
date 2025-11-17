@@ -56,35 +56,30 @@ function TaskDetailSlider({ task, onBack, isVisible, loading }: TaskDetailSlider
           >
             <div className="w-3 h-3 bg-white rounded-full"></div>
           </div>
-          <div>
-            <h1 className="text-lg font-semibold text-gray-900">{task?.name || "Loading..."}</h1>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-semibold text-gray-900">{task?.name || "Loading..."}</h1>
+              {loading && (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+              )}
+            </div>
             <p className="text-sm text-gray-500">{task?.campaign_details?.name || ""}</p>
           </div>
         </div>
       </div>
 
       {/* 🔹 Nội dung có overlay riêng */}
-      <div className="flex-1 relative">
-        {/* ✅ Overlay loading không làm remount content */}
-        {loading && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="absolute inset-0 bg-white/70 backdrop-blur-sm z-20 flex items-center justify-center"
-          >
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto mb-3"></div>
-              <p className="text-muted-foreground">Loading task details...</p>
-            </div>
-          </motion.div>
-        )}
-
+      <div className="flex-1 relative overflow-hidden">
         {/* ✅ Nội dung luôn render, không reset khi loading đổi */}
-        <div className="h-full overflow-y-auto p-6 space-y-6 transition-opacity duration-200">
+        <div className="h-full overflow-y-auto p-6 space-y-6">
           {task ? (
-            <>
+            <motion.div
+              key={task.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: loading ? 0.6 : 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-6"
+            >
               {/* Task Overview */}
               <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-5 border border-gray-200">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -141,7 +136,14 @@ function TaskDetailSlider({ task, onBack, isVisible, loading }: TaskDetailSlider
                   <InfoCard label="Milestone" value={task.milestone_details?.description} />
                 </div>
               </div>
-            </>
+            </motion.div>
+          ) : loading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto mb-3"></div>
+                <p className="text-muted-foreground">Loading task details...</p>
+              </div>
+            </div>
           ) : (
             <p className="text-center text-gray-500 mt-10">No task selected.</p>
           )}

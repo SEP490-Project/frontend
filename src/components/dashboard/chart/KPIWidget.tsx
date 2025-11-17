@@ -17,7 +17,7 @@ interface Props {
   id?: string; // thêm id để dùng với driver.js
 }
 
-export default function KPIWidget({
+function KPIWidget({
   title,
   data,
   icon,
@@ -69,3 +69,5 @@ export default function KPIWidget({
     </Card>
   );
 }
+
+export default KPIWidget;

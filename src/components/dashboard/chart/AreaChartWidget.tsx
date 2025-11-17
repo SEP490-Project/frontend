@@ -16,7 +16,7 @@ const sampleData = [
   { month: "May", value: 800 },
 ];
 
-export default function AreaChartWidget({ title }: { title: string }) {
+function AreaChartWidget({ title }: { title: string }) {
   return (
     <div className="p-4 bg-white rounded-2xl shadow-md w-full h-[300px]">
       <h2 className="text-lg font-semibold mb-2">{title}</h2>
@@ -32,3 +32,5 @@ export default function AreaChartWidget({ title }: { title: string }) {
     </div>
   );
 }
+
+export default AreaChartWidget;

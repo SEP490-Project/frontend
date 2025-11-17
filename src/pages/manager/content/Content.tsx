@@ -55,7 +55,7 @@ const ManageContent = () => {
           title: (oldContent.json as any)?.title || "Untitled Video",
           body: oldContent.html,
           type: "POST",
-          channels: [(oldContent.json as any)?.platform || "facebook"], // Video content defaults to selected platform
+          channels: [(oldContent.json as any)?.channel || "facebook"], // Video content uses channel instead of platform
           task_id: selectedTask?.id?.toString() || null,
           affiliate_link: null,
           ai_generated_text: null,
@@ -147,7 +147,6 @@ const ManageContent = () => {
           ) : (
             <VideoEditor
               editingContent={editingContent}
-              selectedTask={selectedTask}
               onSave={handleSave}
               onBack={handleBackToList}
             />

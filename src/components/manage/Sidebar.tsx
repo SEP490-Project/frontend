@@ -259,6 +259,11 @@ const Sidebar: React.FC<SidebarProps> = ({
         label: "Attribute",
         icon: <FaHashtag size={18} />,
       },
+      {
+        href: "/manage/admin/channel",
+        label: "Channel",
+        icon: <FaFolderTree size={18} />,
+      },
       { href: "/manage/admin/configurations", label: "Configurations", icon: <Bolt size={18} /> },
     ],
   };

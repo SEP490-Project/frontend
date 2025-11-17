@@ -403,14 +403,15 @@ const BrandProductDetail: React.FC = () => {
                             </p>
                             <p className="font-semibold text-gray-900">{variant.length} cm</p>
                           </div>
-                          {variant.manufacture_date && (
+                          {variant.manufacturing_date && (
                             <div className="p-4 rounded-lg border border-gray-200">
                               <p className="text-sm text-gray-600 mb-1 flex items-center gap-1">
                                 <Calendar className="h-4 w-4" />
-                                Manufacture Date
+                                Manufactured Date
                               </p>
                               <p className="font-semibold text-gray-900">
-                                {new Date(variant?.manufacture_date).toLocaleDateString() || "N/A"}
+                                {new Date(variant?.manufacturing_date).toLocaleDateString() ||
+                                  "N/A"}
                               </p>
                             </div>
                           )}

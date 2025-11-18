@@ -20,7 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import type { Content } from "@/libs/types/content";
+import type { Content, CreateContentRequest } from "@/libs/types/content";
 import { ArrowLeft, Upload, X } from "lucide-react";
 import { useNavigationBlocker } from "@/libs/hooks/useNavigationBlocker";
 import { useChunkUpload } from "@/libs/hooks/useChunkUpload";
@@ -34,11 +34,12 @@ type ContentType = "blog" | "video";
 
 interface VideoEditorProps {
   editingContent?: Content | null;
-  onSave: (content: { html: string; json: object }, contentType: ContentType) => void;
+  selectedTask?: any;
+  onSave: (content: CreateContentRequest, contentType: ContentType) => void;
   onBack: () => void;
 }
 
-const VideoEditor = ({ editingContent, onSave, onBack }: VideoEditorProps) => {
+const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEditorProps) => {
   const contentType = "video";
   const dispatch = useDispatch<AppDispatch>();
   const { loading: isLoadingChannels, channel: channels } = useChannel();
@@ -51,20 +52,33 @@ const VideoEditor = ({ editingContent, onSave, onBack }: VideoEditorProps) => {
 
   const { uploadFileInChunks, progress, isUploading, error } = useChunkUpload();
 
-  const [videoContent, setVideoContent] = useState({
-    channel: editingContent ? editingContent.content_channels?.[0]?.channel_name || "" : "",
+  const [videoContent, setVideoContent] = useState<{
+    channel: string;
+    title: string;
+    description: string;
+    body: string;
+  }>({
+    channel: editingContent ? editingContent.content_channels?.[0]?.channel_id || "" : "",
     title: editingContent ? editingContent.title || "" : "",
     description: editingContent ? editingContent.description || "" : "",
-    body: editingContent ? editingContent.body || "" : "",
+    body: editingContent
+      ? typeof editingContent.body === "string"
+        ? editingContent.body
+        : (editingContent.body as any)?.video_url || ""
+      : "",
   });
 
   // Keep track of initial values to detect unsaved changes
   const initialContent = React.useMemo(
     () => ({
-      channel: editingContent ? editingContent.content_channels?.[0]?.channel_name || "" : "",
+      channel: editingContent ? editingContent.content_channels?.[0]?.channel_id || "" : "",
       title: editingContent ? editingContent.title || "" : "",
       description: editingContent ? editingContent.description || "" : "",
-      body: editingContent ? editingContent.body || "" : "",
+      body: editingContent
+        ? typeof editingContent.body === "string"
+          ? editingContent.body
+          : (editingContent.body as any)?.video_url || ""
+        : "",
     }),
     [editingContent],
   );
@@ -112,17 +126,21 @@ const VideoEditor = ({ editingContent, onSave, onBack }: VideoEditorProps) => {
       videoContent.description &&
       videoContent.body
     ) {
-      const content = {
-        html: `<h3>${videoContent.title}</h3><p>${videoContent.description}</p><video src="${videoContent.body}" controls></video>`,
-        json: {
-          channel: videoContent.channel,
+      const apiData: CreateContentRequest = {
+        title: videoContent.title,
+        body: {
           title: videoContent.title,
+          video_url: videoContent.body,
           description: videoContent.description,
-          body: videoContent.body,
-          type: "video",
         },
+        type: "VIDEO",
+        channels: [videoContent.channel],
+        task_id: selectedTask?.id?.toString() || null,
+        affiliate_link: null,
+        ai_generated_text: null,
       };
-      onSave(content, contentType);
+
+      onSave(apiData, contentType);
     }
   };
 
@@ -251,7 +269,7 @@ const VideoEditor = ({ editingContent, onSave, onBack }: VideoEditorProps) => {
               </SelectTrigger>
               <SelectContent>
                 {allowedVideoChannels.map((channel) => (
-                  <SelectItem key={channel.id} value={channel.name}>
+                  <SelectItem key={channel.id} value={channel.id}>
                     {channel.name}
                   </SelectItem>
                 ))}
@@ -321,7 +339,11 @@ const VideoEditor = ({ editingContent, onSave, onBack }: VideoEditorProps) => {
               </div>
             ) : (
               <div className="relative">
-                <video src={videoContent.body} controls className="w-full max-h-[300px] rounded-lg">
+                <video
+                  src={videoContent.body || undefined}
+                  controls
+                  className="w-full max-h-[300px] rounded-lg"
+                >
                   Your browser does not support the video tag.
                 </video>
                 <Button
@@ -375,7 +397,8 @@ const VideoEditor = ({ editingContent, onSave, onBack }: VideoEditorProps) => {
                 <div className="flex items-center space-x-2">
                   <span className="text-sm font-medium text-gray-700">Channel:</span>
                   <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                    {videoContent.channel}
+                    {allowedVideoChannels.find((ch) => ch.id === videoContent.channel)?.name ||
+                      videoContent.channel}
                   </Badge>
                 </div>
 
@@ -391,7 +414,11 @@ const VideoEditor = ({ editingContent, onSave, onBack }: VideoEditorProps) => {
 
                 {/* Video Preview */}
                 <div className="mt-6">
-                  <video src={videoContent.body} controls className="w-full rounded-lg shadow-lg">
+                  <video
+                    src={videoContent.body || undefined}
+                    controls
+                    className="w-full rounded-lg shadow-lg"
+                  >
                     Your browser does not support the video tag.
                   </video>
                 </div>

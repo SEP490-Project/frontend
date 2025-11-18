@@ -147,6 +147,7 @@ const ManageContent = () => {
           ) : (
             <VideoEditor
               editingContent={editingContent}
+              selectedTask={selectedTask}
               onSave={handleSave}
               onBack={handleBackToList}
             />

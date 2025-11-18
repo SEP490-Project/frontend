@@ -73,3 +73,16 @@ export const getTaskDetailById = createAsyncThunk(
     }
   },
 );
+
+export const updateTaskState = createAsyncThunk(
+  "/tasks/update-state",
+  async (req: { taskId: string; state: string }, { rejectWithValue }) => {
+    try {
+      const response = await manageTask.updateTaskState(req.taskId, req.state);
+      return { taskId: req.taskId, state: req.state, response: response.data };
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Thất bại");
+    }
+  },
+);

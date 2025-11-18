@@ -35,4 +35,8 @@ export const manageTask = {
   getTaskDetailMarketing: (taskId: string) => {
     return api.get(`/tasks/${taskId}`);
   },
+
+  updateTaskState: (taskId: string, state: string) => {
+    return api.patch(`/tasks/${taskId}/state`, { state });
+  },
 };

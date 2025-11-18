@@ -9,10 +9,15 @@ import type { Task } from "@/libs/types/task";
 interface TaskListProps {
   currentDate: Date;
   onViewTask?: (taskId: string) => void;
+  statusFilter?: string;
 }
 
-export function TaskList({ currentDate, onViewTask }: TaskListProps) {
+export function TaskList({ currentDate, onViewTask, statusFilter = "ALL" }: TaskListProps) {
   const { tasks } = useTaskManager();
+
+  // Filter tasks by status
+  const filteredTasks =
+    statusFilter === "ALL" ? tasks : tasks.filter((task) => task.status === statusFilter);
 
   // Utility functions
   const getTaskIcon = (type: string) => {
@@ -65,7 +70,7 @@ export function TaskList({ currentDate, onViewTask }: TaskListProps) {
     const targetDate = new Date(date);
     targetDate.setHours(0, 0, 0, 0);
 
-    return tasks.filter((task) => {
+    return filteredTasks.filter((task) => {
       const taskDate = new Date(task.deadline);
       taskDate.setHours(0, 0, 0, 0);
       return taskDate.getTime() === targetDate.getTime();

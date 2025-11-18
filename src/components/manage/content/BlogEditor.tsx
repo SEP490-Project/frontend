@@ -104,8 +104,11 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
   const [content, setContent] = React.useState<{ html: string; json: any } | null>(
     editingContent
       ? {
-          html: editingContent.body || "",
-          json: editingContent.body || null,
+          html: typeof editingContent.body === "string" ? editingContent.body : "",
+          json:
+            typeof editingContent.body === "object"
+              ? editingContent.body
+              : editingContent.body || null,
         }
       : null,
   );
@@ -177,8 +180,16 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
   // Keep track of initial content to detect unsaved changes
   const initialContent = React.useMemo(
     () => ({
-      html: editingContent ? editingContent.body : "",
-      json: editingContent ? editingContent.body : null,
+      html: editingContent
+        ? typeof editingContent.body === "string"
+          ? editingContent.body
+          : ""
+        : "",
+      json: editingContent
+        ? typeof editingContent.body === "object"
+          ? editingContent.body
+          : editingContent.body || null
+        : null,
     }),
     [editingContent],
   );
@@ -414,7 +425,13 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
           <div className="space-y-2">
             <Label htmlFor="content">Content *</Label>
             <TiptapEditor
-              initialContent={editingContent ? editingContent.body : defaultContent}
+              initialContent={
+                editingContent
+                  ? typeof editingContent.body === "string"
+                    ? editingContent.body
+                    : defaultContent
+                  : defaultContent
+              }
               onChange={handleContentChange}
             />
           </div>

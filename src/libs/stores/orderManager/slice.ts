@@ -7,13 +7,17 @@ import {
   getSelfDeliveryOrdersThunk,
   markSelfDeliveryOrderAsDeliveredThunk,
   markSelfDeliveryOrderAsInTransitThunk,
+  censorAnPreOrderThunk,
+  getPreOrdersForSaleStaffThunk,
 } from "./thunk";
 import type { OrderResponse } from "@/libs/types/order";
+import type { PreOrderResponse } from "@/libs/types/pre-order";
 
 const orderManagerSlice = createSlice({
   name: "orderManager",
   initialState: {
     ordersForSaleStaff: null as OrderResponse | null,
+    preOrderForSaleStaff: null as PreOrderResponse | null,
     loading: false,
     errors: null as any,
   },
@@ -96,6 +100,29 @@ const orderManagerSlice = createSlice({
         state.loading = false;
       })
       .addCase(markSelfDeliveryOrderAsInTransitThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.errors = action.error;
+      })
+      .addCase(getPreOrdersForSaleStaffThunk.pending, (state) => {
+        state.loading = true;
+        state.errors = null;
+      })
+      .addCase(getPreOrdersForSaleStaffThunk.fulfilled, (state, action) => {
+        state.preOrderForSaleStaff = action.payload;
+        state.loading = false;
+      })
+      .addCase(getPreOrdersForSaleStaffThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.errors = action.error;
+      })
+      .addCase(censorAnPreOrderThunk.pending, (state) => {
+        state.loading = true;
+        state.errors = null;
+      })
+      .addCase(censorAnPreOrderThunk.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(censorAnPreOrderThunk.rejected, (state, action) => {
         state.loading = false;
         state.errors = action.error;
       });

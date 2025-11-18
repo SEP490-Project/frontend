@@ -1,5 +1,6 @@
 import manageOrder from "@/libs/services/manageOrder";
 import type { OrderRequestQuery, OrderResponse } from "@/libs/types/order";
+import type { PreOrderResponse } from "@/libs/types/pre-order";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 
 const getOrderForSaleStaffThunk = createAsyncThunk(
@@ -97,6 +98,41 @@ const markSelfDeliveryOrderAsInTransitThunk = createAsyncThunk(
   },
 );
 
+const getPreOrdersForSaleStaffThunk = createAsyncThunk(
+  "orderManager/getPreOrdersForSaleStaff",
+  async (query: OrderRequestQuery, { rejectWithValue }) => {
+    try {
+      const response = await manageOrder.getPreOrdersForSaleStaff(query);
+      return response.data as PreOrderResponse;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
+const censorAnPreOrderThunk = createAsyncThunk(
+  "orderManager/censorAnPreOrder",
+  async (
+    {
+      id,
+      action,
+      reason,
+    }: {
+      id: string;
+      action: "CONFIRM" | "CANCEL";
+      reason: any;
+    },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await manageOrder.censorAPreOrder(id, action, reason);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
 export {
   getOrderForSaleStaffThunk,
   markOrderIsReadyToPickedUpThunk,
@@ -105,4 +141,6 @@ export {
   getSelfDeliveryOrdersThunk,
   markSelfDeliveryOrderAsDeliveredThunk,
   markSelfDeliveryOrderAsInTransitThunk,
+  getPreOrdersForSaleStaffThunk,
+  censorAnPreOrderThunk,
 };

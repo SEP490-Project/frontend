@@ -112,8 +112,9 @@ const NavSection: React.FC<NavSectionProps> = ({
                     const subUrl = new URL(sub.href, window.location.origin);
                     const subRole = subUrl.searchParams.get("role")?.toUpperCase();
                     const isSubActive =
-                      pathname.startsWith("/manage/admin/users") &&
-                      roleParam?.toUpperCase() === subRole;
+                      (pathname.startsWith("/manage/admin/users") &&
+                        roleParam?.toUpperCase() === subRole) ||
+                      pathname === sub.href;
 
                     return (
                       <NavLink
@@ -231,7 +232,19 @@ const Sidebar: React.FC<SidebarProps> = ({
       { href: "/manage/sale/task", label: "Tasks & Schedule", icon: <FaCalendarDays size={18} /> },
       { href: "/manage/sale/product", label: "Product", icon: <FaBoxOpen size={18} /> },
       { href: "/manage/sale/category", label: "Category", icon: <FaFolderTree size={18} /> },
-      { href: "/manage/sale/order", label: "Order", icon: <FaCartShopping size={18} /> },
+      {
+        href: "/manage/sale/order",
+        label: "Order",
+        icon: <FaCartShopping size={18} />,
+        subTabs: [
+          { href: "/manage/sale/order", label: "Order", icon: <FaCartShopping size={14} /> },
+          {
+            href: "/manage/sale/order/pre-order",
+            label: "Pre-Order",
+            icon: <FaCartShopping size={14} />,
+          },
+        ],
+      },
       { href: "/manage/sale/review", label: "Review", icon: <FaStar size={18} /> },
       {
         href: "/manage/sale/transaction",

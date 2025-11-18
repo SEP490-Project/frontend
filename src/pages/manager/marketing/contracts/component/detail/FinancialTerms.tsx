@@ -169,7 +169,7 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({ type, data, deposit }) 
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-6">
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="rounded-xl border p-4 bg-indigo-50 text-center">
                   <p className="text-sm text-gray-600">Company Share</p>
@@ -185,16 +185,50 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({ type, data, deposit }) 
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="border rounded-lg p-4">
-                  <p className="text-sm text-gray-500 mb-1">Distribution Cycle</p>
-                  <p className="font-semibold">{data.profit_distribution_cycle}</p>
-                </div>
-                <div className="border rounded-lg p-4">
-                  <p className="text-sm text-gray-500 mb-1">Payment Date</p>
-                  <p className="font-semibold">Day {data.profit_distribution_date} of month</p>
-                </div>
+              <div className="border rounded-lg p-4">
+                <p className="text-sm text-gray-500 mb-1">Distribution Cycle</p>
+                <p className="font-semibold">{data.profit_distribution_cycle}</p>
               </div>
+
+              {/* Distribution Schedule */}
+              {data.profit_distribution_cycle && data.profit_distribution_date && (
+                <div className="border rounded-lg p-4">
+                  <p className="text-sm text-gray-500 mb-3">Distribution Schedule</p>
+                  {data.profit_distribution_cycle === "QUARTERLY" &&
+                  Array.isArray(data.profit_distribution_date) ? (
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {data.profit_distribution_date.map((item: any, index: number) => (
+                        <div
+                          key={item.id || index}
+                          className="flex justify-between items-center p-3 bg-indigo-50 rounded-lg"
+                        >
+                          <span className="font-medium">
+                            {index === data.profit_distribution_date.length - 1
+                              ? "Final Payment"
+                              : `Quarter ${index + 1}`}
+                          </span>
+                          <span className="text-sm text-gray-600">
+                            {new Date(item.year, item.month - 1, item.day).toLocaleDateString(
+                              "vi-VN",
+                            )}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : data.profit_distribution_cycle === "MONTHLY" ? (
+                    <p className="font-semibold">
+                      Day {data.profit_distribution_date} of each month
+                    </p>
+                  ) : data.profit_distribution_cycle === "ANNUALLY" ? (
+                    <p className="font-semibold">
+                      Day {new Date(data.profit_distribution_date).getDate()} of Month{" "}
+                      {new Date(data.profit_distribution_date).getMonth() + 1} annually
+                    </p>
+                  ) : (
+                    <p className="text-gray-500 italic">No schedule available</p>
+                  )}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -259,11 +293,49 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({ type, data, deposit }) 
             {/* Payment Cycle */}
             {data.payment_cycle && (
               <div className="border rounded-lg p-4">
-                <h4 className="font-semibold mb-2">Payment Schedule</h4>
-                <p className="text-gray-700">
-                  <span className="font-medium">{data.payment_cycle}</span> — Day{" "}
-                  {data.payment_date}
-                </p>
+                <h4 className="font-semibold mb-3">Payment Schedule</h4>
+                <div className="space-y-2">
+                  <p className="text-gray-700">
+                    <span className="font-medium">{data.payment_cycle}</span>
+                  </p>
+
+                  {data.payment_date && (
+                    <div className="mt-3">
+                      {data.payment_cycle === "QUARTERLY" && Array.isArray(data.payment_date) ? (
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                          {data.payment_date.map((item: any, index: number) => (
+                            <div
+                              key={item.id || index}
+                              className="flex justify-between items-center p-2 bg-pink-50 rounded"
+                            >
+                              <span className="text-sm font-medium">
+                                {index === data.payment_date.length - 1
+                                  ? "Final Payment"
+                                  : `Quarter ${index + 1}`}
+                              </span>
+                              <span className="text-xs text-gray-600">
+                                {new Date(item.year, item.month - 1, item.day).toLocaleDateString(
+                                  "vi-VN",
+                                )}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : data.payment_cycle === "MONTHLY" ? (
+                        <p className="text-sm text-gray-600">
+                          Day {data.payment_date} of each month
+                        </p>
+                      ) : data.payment_cycle === "ANNUALLY" ? (
+                        <p className="text-sm text-gray-600">
+                          Day {new Date(data.payment_date).getDate()} of Month{" "}
+                          {new Date(data.payment_date).getMonth() + 1} annually
+                        </p>
+                      ) : (
+                        <p className="text-sm text-gray-500 italic">No schedule available</p>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </CardContent>

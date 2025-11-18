@@ -140,6 +140,7 @@ export interface ProductParams {
   type?: string;
   category_id?: string;
   status?: string;
+  user_id?: string;
 }
 
 export interface ProductFormProps<T extends FieldValues> {

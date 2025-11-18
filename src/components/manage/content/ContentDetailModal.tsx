@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, CheckCircle, Tag, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle, Tag, XCircle, Play, Loader2 } from "lucide-react";
 import type { Content } from "@/libs/types/content";
 import { tiptapJsonToHtml, isTiptapJson } from "@/libs/helper/tiptapHelper";
 
@@ -65,6 +65,120 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
 
     return false;
   })();
+
+  // Progressive Video Loading Component
+  const ProgressiveVideo: React.FC<{ videoUrl: string; poster?: string }> = ({
+    videoUrl,
+    poster,
+  }) => {
+    const [isLoading, setIsLoading] = useState(true);
+    const [hasError, setHasError] = useState(false);
+    const [showVideo, setShowVideo] = useState(false);
+    const videoRef = useRef<HTMLVideoElement>(null);
+
+    const handleLoadStart = () => {
+      setIsLoading(true);
+      setHasError(false);
+    };
+
+    const handleCanPlay = () => {
+      setIsLoading(false);
+    };
+
+    const handleError = () => {
+      setIsLoading(false);
+      setHasError(true);
+    };
+
+    const handlePlayClick = () => {
+      setShowVideo(true);
+      // Small delay to ensure video element is rendered
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.load();
+        }
+      }, 100);
+    };
+
+    if (!showVideo) {
+      return (
+        <div
+          className="relative bg-gray-900 rounded-lg overflow-hidden aspect-video max-h-[500px] flex items-center justify-center group cursor-pointer"
+          onClick={handlePlayClick}
+        >
+          {/* Poster/Thumbnail */}
+          {poster ? (
+            <img
+              src={poster}
+              alt="Video thumbnail"
+              className="absolute inset-0 w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-gray-700 to-gray-900"></div>
+          )}
+
+          {/* Play Button Overlay */}
+          <div className="relative z-10 bg-white/20 backdrop-blur-sm rounded-full p-4 group-hover:bg-white/30 transition-all duration-300 group-hover:scale-110">
+            <Play className="h-12 w-12 text-white fill-white" />
+          </div>
+
+          {/* Video Info Overlay */}
+          <div className="absolute bottom-4 left-4 text-white">
+            <div className="text-sm bg-black/50 px-2 py-1 rounded backdrop-blur-sm">
+              Click to load video
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="relative bg-black rounded-lg overflow-hidden">
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-900 z-10">
+            <div className="text-center text-white">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+              <p className="text-sm">Loading video...</p>
+            </div>
+          </div>
+        )}
+
+        {hasError && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-900 z-10">
+            <div className="text-center text-white">
+              <XCircle className="h-8 w-8 mx-auto mb-2 text-red-400" />
+              <p className="text-sm">Failed to load video</p>
+              <button
+                onClick={handlePlayClick}
+                className="mt-2 px-3 py-1 bg-white/20 rounded text-xs hover:bg-white/30"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        )}
+
+        <video
+          ref={videoRef}
+          className="w-full h-auto max-h-[500px]"
+          controls
+          preload="none" // Don't preload any data
+          onLoadStart={handleLoadStart}
+          onCanPlay={handleCanPlay}
+          onError={handleError}
+          playsInline // Better mobile experience
+          controlsList="nodownload" // Prevent download if needed
+        >
+          <source src={videoUrl} type="video/mp4" />
+          <source src={videoUrl} type="video/webm" />
+          Your browser does not support the video tag.
+        </video>
+      </div>
+    );
+  };
 
   // Extract video URL from content
   const getVideoUrl = (): string | null => {
@@ -336,16 +450,7 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                   return (
                     <div className="space-y-6">
                       {videoUrl && (
-                        <div className="bg-black rounded-lg overflow-hidden">
-                          <video
-                            src={videoUrl}
-                            controls
-                            className="w-full h-auto max-h-[500px]"
-                            preload="metadata"
-                          >
-                            Your browser does not support the video tag.
-                          </video>
-                        </div>
+                        <ProgressiveVideo videoUrl={videoUrl} poster={content.thumbnail_url} />
                       )}
 
                       {videoDescription !== "No description available" && (

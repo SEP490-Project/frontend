@@ -30,6 +30,10 @@ export const manageOrder = {
     }),
   markSelfDeliveryOrderAsInTransit: (orderId: string) =>
     api.patch(`/orders/staff/self-delivering/in-transit/${orderId}`),
+  getPreOrdersForSaleStaff: (query: OrderRequestQuery) =>
+    api.get("/preorders/staff", { params: query }),
+  censorAPreOrder: (id: string, action: "CONFIRM" | "CANCEL", reason: any) =>
+    api.post(`/preorders/staff/${id}/censorship?action=${action}`, reason),
 };
 
 export default manageOrder;

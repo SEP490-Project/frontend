@@ -9,6 +9,10 @@ const manageState = {
     product_id: string,
     newState: "DRAFT" | "SUBMITTED" | "REVISION" | "APPROVED" | "ACTIVED" | "INACTIVED",
   ) => api.patch(`/products/${product_id}/state`, { state: newState }),
+  updatePreOrderState: (id: string, files: FormData) =>
+    api.patch(`/preorders/${id}/state`, files, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
 };
 
 export default manageState;

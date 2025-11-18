@@ -510,6 +510,13 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
         current = normalizeDate(new Date(nextYear, nextMonth, actualDayForNextMonth));
       }
 
+      // Thêm ngày kết thúc hợp đồng nếu chưa có
+      if (end >= start && !dates.some((d) => d.getTime() === end.getTime())) {
+        dates.push(new Date(end));
+      }
+
+      dates.sort((a, b) => a.getTime() - b.getTime());
+
       const schedule = dates.map((d, idx) => ({
         id: idx + 1,
         day: d.getDate(),
@@ -687,7 +694,10 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
 
     if (cycle === "MONTHLY") {
       return dates.map((d: Date, idx: number) => ({
-        milestone: `Payment ${idx + 1}`,
+        milestone:
+          d.getTime() === end.getTime() && idx === dates.length - 1
+            ? "Final Payment"
+            : `Payment ${idx + 1}`,
         display: formatDate(d),
       }));
     }

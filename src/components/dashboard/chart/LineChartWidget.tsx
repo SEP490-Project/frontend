@@ -14,7 +14,7 @@ interface Props {
   data: { month?: string; name?: string; reach?: number; engagement?: number; value?: number }[];
 }
 
-export default function LineChartWidget({ title, data }: Props) {
+function LineChartWidget({ title, data }: Props) {
   if (
     !Array.isArray(data) ||
     !data.length ||
@@ -48,3 +48,5 @@ export default function LineChartWidget({ title, data }: Props) {
     </div>
   );
 }
+
+export default LineChartWidget;

@@ -1,8 +1,11 @@
 import { motion } from "framer-motion";
-import { X, User, Clock, AlertTriangle, FileText, Briefcase } from "lucide-react";
+import { X, User, Clock, AlertTriangle, FileText, Briefcase, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTaskManager } from "@/libs/hooks/useTask";
+import { useAppDispatch } from "@/libs/stores";
+import { updateTaskState } from "@/libs/stores/taskManager/thunk";
 import { useEffect } from "react";
+import { toast } from "sonner";
 
 interface TaskDetailProps {
   taskId: string | null;
@@ -11,13 +14,36 @@ interface TaskDetailProps {
 }
 
 export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
-  const { selectedTask, fetchTaskById, loading } = useTaskManager();
+  const { selectedTask, fetchTaskById, loading, fetchTasksByProfile } = useTaskManager();
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     if (taskId && isVisible) {
       fetchTaskById(taskId);
     }
   }, [taskId, isVisible, fetchTaskById]);
+
+  const handleStartTask = async () => {
+    if (!selectedTask?.id) return;
+
+    try {
+      await dispatch(
+        updateTaskState({
+          taskId: selectedTask.id,
+          state: "IN_PROGRESS",
+        }),
+      ).unwrap();
+
+      toast.success("Task started successfully!");
+
+      // Refresh the task list to show updated status
+      await fetchTasksByProfile();
+
+      onClose(); // Navigate back to task list
+    } catch (error) {
+      toast.error((error as string) || "Failed to start task.");
+    }
+  };
 
   if (!taskId || !isVisible) return null;
 
@@ -209,14 +235,30 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
             </p>
           </div>
         </div>
-        <Button
-          onClick={onClose}
-          variant="ghost"
-          size="sm"
-          className="hover:bg-gray-100 rounded-full p-2"
-        >
-          <X className="h-6 w-6" />
-        </Button>
+        <div className="flex items-center gap-3">
+          {selectedTask.status === "TODO" && (
+            <Button
+              onClick={handleStartTask}
+              disabled={loading}
+              className="bg-[#FF9DB0] hover:bg-pink-600 text-white flex items-center gap-2"
+            >
+              {loading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              ) : (
+                <Check className="h-4 w-4" />
+              )}
+              {loading ? "Starting..." : "Start this task"}
+            </Button>
+          )}
+          <Button
+            onClick={onClose}
+            variant="ghost"
+            size="sm"
+            className="hover:bg-gray-100 rounded-full p-2"
+          >
+            <X className="h-6 w-6" />
+          </Button>
+        </div>
       </motion.div>
 
       {/* Content */}

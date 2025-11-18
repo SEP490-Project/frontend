@@ -3,7 +3,7 @@ interface Props {
   data: any[];
 }
 
-export default function TableWidget({ title, data }: Props) {
+function TableWidget({ title, data }: Props) {
   if (!data) return null;
 
   // Nếu data là array of string (alerts)
@@ -59,3 +59,5 @@ export default function TableWidget({ title, data }: Props) {
     </div>
   );
 }
+
+export default TableWidget;

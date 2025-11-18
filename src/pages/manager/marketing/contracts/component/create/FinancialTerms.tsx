@@ -34,7 +34,8 @@ const CostBreakdown: React.FC<{
 }> = ({ breakdown = [], onChange, total }) => {
   const addItem = () => {
     const id = `item-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-    onChange([...breakdown, { id, label: "", value: 0 }]);
+    const newBreakdown = [...breakdown, { id, label: "", value: 0 }];
+    onChange(newBreakdown);
   };
 
   const updateItem = (id: string, key: "label" | "value", val: any) => {
@@ -195,21 +196,37 @@ const FinancialOverview: React.FC<{
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label className="text-sm font-medium">Deposit Percentage (%)</Label>
+              <Label className="text-sm font-medium">Deposit Percentage (% - Max 50%)</Label>
               <Input
                 type="number"
                 min={0}
-                step={0.1}
+                max={50}
+                step={1}
                 value={percent || ""}
                 enforceRange
                 placeholder="10"
                 onChange={(e) => {
-                  const newPercent = Number(e.target.value) || 0;
-                  onUpdate({ deposit_percent: newPercent });
+                  let newPercent = Number(e.target.value) || 0;
+
+                  // Ensure deposit percentage doesn't exceed 50%
+                  if (newPercent > 50) {
+                    newPercent = 50;
+                  }
+
+                  // Calculate deposit_amount based on total_cost and deposit_percent
+                  const newDepositAmount = Math.round((total * newPercent) / 100);
+
+                  onUpdate({
+                    deposit_percent: newPercent,
+                    deposit_amount: newDepositAmount,
+                  });
                 }}
               />
               {errors.deposit_percent && (
                 <p className="text-xs text-red-500 mt-1">{errors.deposit_percent}</p>
+              )}
+              {percent > 50 && (
+                <p className="text-xs text-orange-500 mt-1">Maximum deposit is 50% of total cost</p>
               )}
             </div>
 
@@ -219,7 +236,6 @@ const FinancialOverview: React.FC<{
                 id="is-paid"
                 checked={paid}
                 onCheckedChange={(checked) => {
-                  console.log("Checkbox changed:", checked);
                   onUpdate({ is_deposit_paid: checked });
                 }}
               />
@@ -303,14 +319,15 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({
   errors = {},
 }) => {
   const contractType = formData?.type;
-  const financial_terms = formData?.financial_terms || {}; // Changed from financialTerms to financial_terms
+  const financial_terms = formData?.financial_terms || {};
 
   const handleUpdate = (updates: any) => {
-    console.log("handleUpdate called with:", updates);
-
-    // Nếu update có deposit_percent hoặc is_deposit_paid, cập nhật trực tiếp formData
     if (updates.deposit_percent !== undefined) {
       onInputChange("deposit_percent", updates.deposit_percent);
+    }
+
+    if (updates.deposit_amount !== undefined) {
+      onInputChange("deposit_amount", updates.deposit_amount);
     }
 
     if (updates.is_deposit_paid !== undefined) {
@@ -319,13 +336,10 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({
 
     // Lọc ra các updates khác cho financial_terms
     const financialUpdates = Object.keys(updates).reduce((acc: any, key) => {
-      if (key !== "deposit_percent" && key !== "is_deposit_paid") {
-        // Đối với cost_breakdown, lưu trữ cả array format (để UI dùng) và object format (để backend)
+      if (key !== "deposit_percent" && key !== "deposit_amount" && key !== "is_deposit_paid") {
         if (key === "cost_breakdown" && Array.isArray(updates[key])) {
-          // Lưu array format để UI có thể dùng
           acc[`${key}_array`] = updates[key];
 
-          // Convert sang object format cho backend
           const breakdownObject: Record<string, number> = {};
           updates[key].forEach((item: { label: string; value: number }) => {
             if (item.label && item.label.trim()) {

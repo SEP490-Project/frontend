@@ -22,13 +22,26 @@ const CoProducingScope: React.FC<CoProducingScopeProps> = ({ formData, onUpdate,
   const start_date = formData?.start_date;
   const end_date = formData?.end_date;
 
+  // Use ref to prevent infinite loops when schedule updates
+  const previousScheduleRef = React.useRef<string>("");
+
   const handleScheduleGenerated = useCallback(
     (newSchedule: any[]) => {
-      console.log("Schedule generated:", newSchedule); // Debug log
-      // Just store the schedule as-is, without calculating amounts
-      onUpdate({ schedule: newSchedule });
+      // Only apply the schedule format for QUARTERLY cycle
+      if (financial_terms.profit_distribution_cycle === "QUARTERLY") {
+        const scheduleString = JSON.stringify(newSchedule);
+
+        // Only update if the schedule has actually changed
+        if (previousScheduleRef.current !== scheduleString) {
+          console.log("Quarterly schedule generated:", newSchedule);
+          previousScheduleRef.current = scheduleString;
+          // Store the schedule as profit_distribution_date for backend submission (only for QUARTERLY)
+          onUpdate({ profit_distribution_date: newSchedule });
+        }
+      }
+      // For MONTHLY and ANNUALLY, we don't use the schedule callback
     },
-    [onUpdate],
+    [onUpdate, financial_terms.profit_distribution_cycle],
   );
 
   return (
@@ -113,8 +126,8 @@ const CoProducingScope: React.FC<CoProducingScopeProps> = ({ formData, onUpdate,
           onChange={(value) =>
             onUpdate({
               profit_distribution_cycle: value,
-              profit_distribution_date: null,
-              schedule: [], // Clear existing schedule when cycle changes
+              profit_distribution_date: value === "QUARTERLY" ? [] : "",
+              profit_distribution_date_selector: null,
             })
           }
           options={PAYMENT_CYCLE_OPTIONS}
@@ -127,8 +140,19 @@ const CoProducingScope: React.FC<CoProducingScopeProps> = ({ formData, onUpdate,
         {financial_terms.profit_distribution_cycle && (
           <PaymentDateSelector
             cycle={financial_terms.profit_distribution_cycle}
-            value={financial_terms.profit_distribution_date}
-            onChange={(val) => onUpdate({ profit_distribution_date: val })}
+            value={
+              financial_terms.profit_distribution_cycle === "QUARTERLY"
+                ? financial_terms.profit_distribution_date_selector
+                : financial_terms.profit_distribution_date
+            }
+            onChange={(val) => {
+              if (financial_terms.profit_distribution_cycle === "QUARTERLY") {
+                onUpdate({ profit_distribution_date_selector: val });
+              } else {
+                // For MONTHLY and ANNUALLY, store directly to profit_distribution_date
+                onUpdate({ profit_distribution_date: val });
+              }
+            }}
             onScheduleGenerated={handleScheduleGenerated}
             startDate={start_date}
             endDate={end_date}

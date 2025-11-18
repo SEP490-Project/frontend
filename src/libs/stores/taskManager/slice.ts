@@ -1,5 +1,11 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { getTaskList, getTaskDetail, assignTask, getTaskDetailById } from "./thunk";
+import {
+  getTaskList,
+  getTaskDetail,
+  assignTask,
+  getTaskDetailById,
+  updateTaskState,
+} from "./thunk";
 import type {
   SingleTaskResponse,
   TaskListMarketing,
@@ -89,6 +95,30 @@ export const manageTaskSlice = createSlice({
       })
       .addCase(getTaskDetailById.rejected, (state) => {
         state.detailLoading = false;
+      })
+      .addCase(updateTaskState.pending, (state) => {
+        state.actionLoading = true;
+      })
+      .addCase(updateTaskState.fulfilled, (state, action) => {
+        state.actionLoading = false;
+        // Update the task in the list if it exists
+        const taskIndex = state.taskListMarketing.findIndex(
+          (task) => task.id === action.payload.taskId,
+        );
+        if (taskIndex !== -1) {
+          state.taskListMarketing[taskIndex].status = action.payload.state;
+        }
+        // Update task detail if it matches
+        if (state.taskDetail && state.taskDetail.id === action.payload.taskId) {
+          state.taskDetail.status = action.payload.state;
+        }
+        // Update task detail by ID if it matches
+        if (state.taskDetailById?.data && state.taskDetailById.data.id === action.payload.taskId) {
+          state.taskDetailById.data.status = action.payload.state;
+        }
+      })
+      .addCase(updateTaskState.rejected, (state) => {
+        state.actionLoading = false;
       });
   },
 });

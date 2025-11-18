@@ -1,8 +1,8 @@
 export interface Content {
   id: string;
   title: string;
-  body: string;
-  type: "POST";
+  body: string | object;
+  type: string;
   status: string;
   task_id: string;
   created_at: string;
@@ -61,7 +61,7 @@ export interface ContentListParams {
 export interface CreateContentRequest {
   title: string;
   body: string;
-  type: "POST";
+  type: "POST" | "VIDEO";
   blog_fields?: {
     author_id: string;
     excerpt: string;
@@ -78,7 +78,7 @@ export interface UpdateContentRequest {
   id: string;
   title: string;
   body: string;
-  type: "POST";
+  type: "POST" | "VIDEO";
   blog_fields?: {
     author_id: string;
     excerpt: string;

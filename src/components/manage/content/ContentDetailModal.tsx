@@ -1,5 +1,5 @@
 import React from "react";
-import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, CheckCircle, Tag, XCircle } from "lucide-react";
@@ -20,6 +20,106 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
   onRequestApproval,
 }) => {
   if (!content) return null;
+
+  // Validate video URL
+  const isValidVideoUrl = (url: string | any): boolean => {
+    if (!url || typeof url !== "string") return false;
+    const videoExtensions = [".mp4", ".webm", ".ogg", ".mov", ".avi"];
+    const lowerUrl = url.toLowerCase();
+    return (
+      videoExtensions.some((ext) => lowerUrl.includes(ext)) ||
+      lowerUrl.includes("youtube.com") ||
+      lowerUrl.includes("vimeo.com") ||
+      lowerUrl.includes("cloudfront.net")
+    );
+  };
+
+  // Determine if this is video content
+  const isVideoContent = (() => {
+    // Check if type is VIDEO
+    if (content.type === "VIDEO") return true;
+
+    // Check if blog field is missing (indicates video content)
+    if (content.blog) return false;
+
+    // Check if body is an object with video_url
+    if (typeof content.body === "object" && content.body && (content.body as any).video_url) {
+      return true;
+    }
+
+    // Check if body contains video URL as string
+    if (typeof content.body === "string" && isValidVideoUrl(content.body)) return true;
+
+    // Check if video_url field exists
+    if (content.video_url && isValidVideoUrl(content.video_url)) return true;
+
+    // Check if body contains JSON with video data
+    try {
+      const parsed = typeof content.body === "string" ? JSON.parse(content.body) : content.body;
+      if (parsed && (parsed.type === "video" || parsed.video_url)) {
+        return true;
+      }
+    } catch {
+      // Not JSON, continue
+    }
+
+    return false;
+  })();
+
+  // Extract video URL from content
+  const getVideoUrl = (): string | null => {
+    if (!content.body) return content.video_url || null;
+
+    // Check if body is an object with video_url
+    if (typeof content.body === "object" && content.body && (content.body as any).video_url) {
+      const videoUrl = (content.body as any).video_url;
+      if (isValidVideoUrl(videoUrl)) {
+        return videoUrl;
+      }
+    }
+
+    // Check if body is a direct URL string
+    if (typeof content.body === "string" && isValidVideoUrl(content.body)) {
+      return content.body;
+    }
+
+    // Check if body contains JSON with video URL
+    try {
+      const parsed = typeof content.body === "string" ? JSON.parse(content.body) : content.body;
+      if (parsed && parsed.video_url && isValidVideoUrl(parsed.video_url)) {
+        return parsed.video_url;
+      }
+      if (parsed && parsed.body && isValidVideoUrl(parsed.body)) {
+        return parsed.body;
+      }
+    } catch {
+      // Not JSON, continue
+    }
+
+    return content.video_url || null;
+  };
+
+  // Get video description
+  const getVideoDescription = (): string => {
+    // Check if body is an object with description
+    if (typeof content.body === "object" && content.body && (content.body as any).description) {
+      return (content.body as any).description;
+    }
+
+    // Check if body is an object with title
+    if (typeof content.body === "object" && content.body && (content.body as any).title) {
+      return (content.body as any).title;
+    }
+
+    try {
+      const parsed = typeof content.body === "string" ? JSON.parse(content.body) : content.body;
+      return (
+        parsed?.description || parsed?.title || content.description || "No description available"
+      );
+    } catch {
+      return content.description || "No description available";
+    }
+  };
 
   const formatDateTime = (dateTime: string | null | undefined) => {
     if (!dateTime) return "Unknown date";
@@ -100,6 +200,11 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
   };
 
   const getReadTimeEstimate = (htmlContent: string | object | null | undefined) => {
+    // Return fixed time for video content
+    if (isVideoContent) {
+      return 3; // Assume 3 minutes for video content
+    }
+
     // Return default if no content
     if (!htmlContent) return 1;
 
@@ -143,6 +248,7 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0 pb-4">
+          <DialogTitle className="sr-only">{content.title}</DialogTitle>
           <div className="flex items-center justify-between pr-8">
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="sm" onClick={onClose}>
@@ -196,7 +302,9 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span>{getReadTimeEstimate(content.body)} min to read</span>
+                  <span>
+                    {getReadTimeEstimate(content.body)} min to {isVideoContent ? "watch" : "read"}
+                  </span>
                 </div>
                 <div>{getStatusBadge(content.status)}</div>
               </div>
@@ -220,6 +328,63 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
             {/* Content Body */}
             <div>
               {(() => {
+                // Handle video content
+                if (isVideoContent) {
+                  const videoUrl = getVideoUrl();
+                  const videoDescription = getVideoDescription();
+
+                  return (
+                    <div className="space-y-6">
+                      {videoUrl && (
+                        <div className="bg-black rounded-lg overflow-hidden">
+                          <video
+                            src={videoUrl}
+                            controls
+                            className="w-full h-auto max-h-[500px]"
+                            preload="metadata"
+                          >
+                            Your browser does not support the video tag.
+                          </video>
+                        </div>
+                      )}
+
+                      {videoDescription !== "No description available" && (
+                        <div className="text-gray-800 leading-relaxed">
+                          <p className="mb-4">{videoDescription}</p>
+                        </div>
+                      )}
+
+                      {!videoUrl && (
+                        <div className="text-gray-500 text-center p-8 bg-gray-50 rounded-lg">
+                          <p>Video content detected but no valid video URL found.</p>
+                          <div className="text-sm mt-4 space-y-2">
+                            <p>
+                              <strong>Content body:</strong>{" "}
+                              {typeof content.body === "string"
+                                ? content.body.substring(0, 200)
+                                : JSON.stringify(content.body)?.substring(0, 200)}
+                              ...
+                            </p>
+                            <p>
+                              <strong>Video URL field:</strong> {content.video_url || "Not found"}
+                            </p>
+                            <p>
+                              <strong>Has blog field:</strong> {content.blog ? "Yes" : "No"}
+                            </p>
+                            <p>
+                              <strong>Body type:</strong> {typeof content.body}
+                            </p>
+                            <p>
+                              <strong>Content type:</strong> {content.type}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                // Handle blog/text content
                 if (!content.body) {
                   return (
                     <div className="text-gray-800 leading-relaxed">
@@ -228,7 +393,7 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                   );
                 }
 
-                // Handle different content body formats
+                // Handle different content body formats for text content
                 let htmlToDisplay: string;
 
                 if (typeof content.body === "string") {

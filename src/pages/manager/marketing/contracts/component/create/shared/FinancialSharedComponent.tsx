@@ -769,36 +769,167 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
     }
   });
 
+  // Calculate available months for Quarterly selection
+  const availableQuarterlyMonths = React.useMemo(() => {
+    const months: { value: number; label: string }[] = [];
+    const startMonth = start.getMonth() + 1; // Convert to 1-based
+    const endMonth = end.getMonth() + 1;
+    const startYear = start.getFullYear();
+    const endYear = end.getFullYear();
+
+    // Get current month to determine quarter
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth() + 1;
+    const currentYear = currentDate.getFullYear();
+
+    // Determine current quarter (0-3)
+    const getCurrentQuarter = (month: number) => Math.floor((month - 1) / 3);
+    const currentQuarter = getCurrentQuarter(currentMonth);
+
+    // Get months of a quarter
+    const getQuarterMonths = (quarter: number) => {
+      const baseMonth = quarter * 3 + 1;
+      return [baseMonth, baseMonth + 1, baseMonth + 2];
+    };
+
+    // Include current quarter and next quarter
+    const quartersToInclude = [currentQuarter, (currentQuarter + 1) % 4];
+
+    for (const quarter of quartersToInclude) {
+      const quarterMonths = getQuarterMonths(quarter);
+
+      for (const month of quarterMonths) {
+        // Check if this month is within contract period
+        let isValidMonth = false;
+
+        // For current year - check against current month
+        if (currentYear >= startYear && currentYear <= endYear) {
+          if (currentYear === startYear && currentYear === endYear) {
+            // Contract within single year
+            isValidMonth = month >= Math.max(startMonth, currentMonth) && month <= endMonth;
+          } else if (currentYear === startYear) {
+            // First year of contract
+            isValidMonth = month >= Math.max(startMonth, currentMonth);
+          } else if (currentYear === endYear) {
+            // Last year of contract
+            isValidMonth = month <= endMonth;
+          } else {
+            // Middle years of contract - all months valid
+            isValidMonth = true;
+          }
+        }
+
+        // For next quarter that crosses into next year
+        if (!isValidMonth && quarter === (currentQuarter + 1) % 4) {
+          const nextYear = currentYear + (currentQuarter === 3 ? 1 : 0);
+          if (nextYear <= endYear) {
+            if (nextYear === endYear) {
+              isValidMonth = month <= endMonth;
+            } else {
+              isValidMonth = true;
+            }
+          }
+        }
+
+        if (isValidMonth && !months.some((m) => m.value === month)) {
+          months.push({
+            value: month,
+            label: `Month ${month}`,
+          });
+        }
+      }
+    }
+
+    // Sort by month order
+    return months.sort((a, b) => a.value - b.value);
+  }, [start, end]);
+
   // Cập nhật state cục bộ khi `value` hoặc `cycle` từ props thay đổi
   React.useEffect(() => {
-    if (cycle === "QUARTERLY" && value) {
+    if (cycle === "QUARTERLY" && value && availableQuarterlyMonths.length > 0) {
       try {
         const parsed = JSON.parse(value);
         const newDay = parsed.day || 1;
         const newMonth = parsed.month || 1;
 
-        // Chỉ cập nhật nếu giá trị từ prop khác với giá trị hiện tại trong state
-        if (newDay !== quarterlySelectedDay) setQuarterlySelectedDay(newDay);
-        if (newMonth !== quarterlySelectedMonth) setQuarterlySelectedMonth(newMonth);
+        // Kiểm tra xem tháng có trong danh sách available không
+        const isMonthAvailable = availableQuarterlyMonths.some((m) => m.value === newMonth);
+
+        if (isMonthAvailable) {
+          // Chỉ cập nhật nếu giá trị từ prop khác với giá trị hiện tại trong state
+          if (newMonth !== quarterlySelectedMonth) setQuarterlySelectedMonth(newMonth);
+
+          // Kiểm tra và điều chỉnh ngày nếu cần
+          const yearForCalc = start.getFullYear();
+          const maxDays = getDaysInMonth(yearForCalc, newMonth - 1);
+          let minDay = 1;
+
+          if (newMonth === start.getMonth() + 1 && start.getFullYear() === yearForCalc) {
+            minDay = start.getDate();
+          }
+
+          const adjustedDay = Math.min(Math.max(newDay, minDay), maxDays);
+          if (adjustedDay !== quarterlySelectedDay) setQuarterlySelectedDay(adjustedDay);
+        } else {
+          // Reset về tháng đầu tiên có sẵn
+          const firstAvailableMonth = availableQuarterlyMonths[0]?.value || 1;
+          if (firstAvailableMonth !== quarterlySelectedMonth)
+            setQuarterlySelectedMonth(firstAvailableMonth);
+
+          // Reset ngày về giá trị hợp lệ cho tháng mới
+          const yearForCalc = start.getFullYear();
+          let minDay = 1;
+          if (firstAvailableMonth === start.getMonth() + 1 && start.getFullYear() === yearForCalc) {
+            minDay = start.getDate();
+          }
+          if (minDay !== quarterlySelectedDay) setQuarterlySelectedDay(minDay);
+        }
       } catch {
-        if (quarterlySelectedDay !== 1) setQuarterlySelectedDay(1);
-        if (quarterlySelectedMonth !== 1) setQuarterlySelectedMonth(1);
+        // Reset về giá trị mặc định
+        const firstAvailableMonth = availableQuarterlyMonths[0]?.value || 1;
+        if (firstAvailableMonth !== quarterlySelectedMonth)
+          setQuarterlySelectedMonth(firstAvailableMonth);
+
+        const yearForCalc = start.getFullYear();
+        let minDay = 1;
+        if (firstAvailableMonth === start.getMonth() + 1 && start.getFullYear() === yearForCalc) {
+          minDay = start.getDate();
+        }
+        if (minDay !== quarterlySelectedDay) setQuarterlySelectedDay(minDay);
       }
     } else if (cycle !== "QUARTERLY") {
       // Reset nếu chuyển sang cycle khác
       if (quarterlySelectedDay !== 1) setQuarterlySelectedDay(1);
       if (quarterlySelectedMonth !== 1) setQuarterlySelectedMonth(1);
-    }
-  }, [cycle, value]);
+    } else if (cycle === "QUARTERLY" && availableQuarterlyMonths.length > 0 && !value) {
+      // Khởi tạo giá trị mặc định khi chưa có value
+      const firstAvailableMonth = availableQuarterlyMonths[0]?.value || 1;
+      setQuarterlySelectedMonth(firstAvailableMonth);
 
-  // Tính toán số ngày tối đa cho tháng được chọn hiện tại trong QUARTERLY
-  const maxDaysForQuarterlyMonth = React.useMemo(() => {
-    // Để lấy số ngày tối đa, chúng ta cần một năm.
-    // Sử dụng năm hiện tại hoặc năm bắt đầu hợp đồng là an toàn.
-    const yearForCalc = new Date().getFullYear();
-    // month là 1-indexed từ dropdown, cần chuyển về 0-indexed cho getDaysInMonth
-    return getDaysInMonth(yearForCalc, quarterlySelectedMonth - 1);
-  }, [quarterlySelectedMonth]);
+      const yearForCalc = start.getFullYear();
+      let minDay = 1;
+      if (firstAvailableMonth === start.getMonth() + 1 && start.getFullYear() === yearForCalc) {
+        minDay = start.getDate();
+      }
+      setQuarterlySelectedDay(minDay);
+    }
+  }, [cycle, value, availableQuarterlyMonths, start]);
+
+  // Tính toán số ngày tối đa và ngày tối thiểu cho tháng được chọn hiện tại trong QUARTERLY
+  const quarterlyDayConstraints = React.useMemo(() => {
+    // Sử dụng năm của start date để tính toán
+    const yearForCalc = start.getFullYear();
+    const maxDays = getDaysInMonth(yearForCalc, quarterlySelectedMonth - 1);
+
+    let minDay = 1;
+
+    // Nếu tháng được chọn trùng với tháng start_date, thì ngày phải >= ngày start_date
+    if (quarterlySelectedMonth === start.getMonth() + 1 && start.getFullYear() === yearForCalc) {
+      minDay = start.getDate();
+    }
+
+    return { minDay, maxDays };
+  }, [quarterlySelectedMonth, start]);
 
   return (
     <div className="space-y-3">
@@ -825,60 +956,94 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
       )}
 
       {cycle === "QUARTERLY" && (
-        <div className="flex items-center gap-2">
-          <Label htmlFor="quarterly-day-select">Quarterly Day</Label>
-          <Select
-            value={quarterlySelectedDay.toString()} // Sử dụng state cục bộ
-            onValueChange={(v) => {
-              const newDay = parseInt(v, 10);
-              setQuarterlySelectedDay(newDay); // Cập nhật state cục bộ
-              handleQuarterlyChange(newDay, quarterlySelectedMonth); // Gọi onChange của prop
-            }}
-          >
-            <SelectTrigger id="quarterly-day-select" className="w-24">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="max-h-60 overflow-y-auto">
-              {/* Render số ngày dựa trên tháng đã chọn */}
-              {Array.from({ length: maxDaysForQuarterlyMonth }, (_, i) => (
-                <SelectItem key={i + 1} value={(i + 1).toString()}>
-                  {i + 1}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex flex-col gap-4">
+          {/* Hiển thị tháng trước */}
+          <div className="flex items-center gap-2">
+            <Label htmlFor="quarterly-month-select">Quarterly Month</Label>
+            <Select
+              value={quarterlySelectedMonth.toString()} // Sử dụng state cục bộ
+              onValueChange={(v) => {
+                const newMonth = parseInt(v, 10);
+                setQuarterlySelectedMonth(newMonth); // Cập nhật state cục bộ
 
-          <Label htmlFor="quarterly-month-select">Quarterly Month</Label>
-          <Select
-            value={quarterlySelectedMonth.toString()} // Sử dụng state cục bộ
-            onValueChange={(v) => {
-              const newMonth = parseInt(v, 10);
-              setQuarterlySelectedMonth(newMonth); // Cập nhật state cục bộ
+                // Tính lại constraints cho tháng mới
+                const yearForCalc = start.getFullYear();
+                const newMaxDays = getDaysInMonth(yearForCalc, newMonth - 1);
 
-              // Tính lại maxDays cho tháng mới
-              const currentYear = new Date().getFullYear();
-              const newMaxDays = getDaysInMonth(currentYear, newMonth - 1);
+                let newMinDay = 1;
+                // Nếu tháng được chọn trùng với tháng start_date, thì ngày phải >= ngày start_date
+                if (newMonth === start.getMonth() + 1 && start.getFullYear() === yearForCalc) {
+                  newMinDay = start.getDate();
+                }
 
-              let adjustedDay = quarterlySelectedDay;
-              // Nếu ngày hiện tại lớn hơn số ngày tối đa của tháng mới, điều chỉnh
-              if (quarterlySelectedDay > newMaxDays) {
-                adjustedDay = newMaxDays;
-                setQuarterlySelectedDay(newMaxDays); // Cập nhật state cục bộ
-              }
-              handleQuarterlyChange(adjustedDay, newMonth); // Gọi onChange của prop với ngày đã điều chỉnh
-            }}
-          >
-            <SelectTrigger id="quarterly-month-select" className="w-24">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="max-h-60 overflow-y-auto">
-              {Array.from({ length: 12 }, (_, i) => (
-                <SelectItem key={i + 1} value={(i + 1).toString()}>
-                  {i + 1}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+                let adjustedDay = quarterlySelectedDay;
+                // Nếu ngày hiện tại nhỏ hơn minDay hoặc lớn hơn maxDays, điều chỉnh
+                if (quarterlySelectedDay < newMinDay) {
+                  adjustedDay = newMinDay;
+                  setQuarterlySelectedDay(newMinDay);
+                } else if (quarterlySelectedDay > newMaxDays) {
+                  adjustedDay = newMaxDays;
+                  setQuarterlySelectedDay(newMaxDays);
+                }
+
+                handleQuarterlyChange(adjustedDay, newMonth); // Gọi onChange của prop với ngày đã điều chỉnh
+              }}
+            >
+              <SelectTrigger id="quarterly-month-select" className="w-40">
+                <SelectValue placeholder="Select month" />
+              </SelectTrigger>
+              <SelectContent className="max-h-60 overflow-y-auto">
+                {availableQuarterlyMonths.map((month) => (
+                  <SelectItem key={month.value} value={month.value.toString()}>
+                    {month.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Hiển thị ngày sau khi đã chọn tháng */}
+          <div className="flex items-center gap-2">
+            <Label htmlFor="quarterly-day-select">Quarterly Day</Label>
+            <Select
+              value={quarterlySelectedDay.toString()} // Sử dụng state cục bộ
+              onValueChange={(v) => {
+                const newDay = parseInt(v, 10);
+                setQuarterlySelectedDay(newDay); // Cập nhật state cục bộ
+                handleQuarterlyChange(newDay, quarterlySelectedMonth); // Gọi onChange của prop
+              }}
+            >
+              <SelectTrigger id="quarterly-day-select" className="w-24">
+                <SelectValue placeholder="Day" />
+              </SelectTrigger>
+              <SelectContent className="max-h-60 overflow-y-auto">
+                {/* Render số ngày dựa trên constraints */}
+                {Array.from(
+                  { length: quarterlyDayConstraints.maxDays - quarterlyDayConstraints.minDay + 1 },
+                  (_, i) => {
+                    const day = quarterlyDayConstraints.minDay + i;
+                    return (
+                      <SelectItem key={day} value={day.toString()}>
+                        {day}
+                      </SelectItem>
+                    );
+                  },
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Additional Information */}
+          <div className="text-xs text-gray-600 space-y-1">
+            <p>• Only showing months from current and next quarter within contract period</p>
+            {quarterlySelectedMonth === start.getMonth() + 1 &&
+              start.getFullYear() === new Date().getFullYear() && (
+                <p>• Day must be from {start.getDate()} onwards (after contract start date)</p>
+              )}
+            <p>
+              • System will automatically calculate payment periods based on selected month and day
+            </p>
+          </div>
         </div>
       )}
 

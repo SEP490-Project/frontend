@@ -224,40 +224,54 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
 
   return (
     <div className="space-y-6">
-      <Card className="shadow-sm border border-pink-200">
-        <CardHeader className="bg-gradient-to-r from-pink-50 via-rose-50 to-pink-100">
-          <CardTitle className="flex items-center gap-2 text-pink-900">
-            <FaLink className="w-5 h-5" style={{ color: "#ff9fb2" }} />
-            Affiliate Marketing Program
+      <Card className="shadow-lg border border-gray-200 rounded-xl">
+        <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 border-b border-gray-200">
+          <CardTitle className="flex items-center gap-3 text-gray-800">
+            <div className="bg-emerald-100 p-2 rounded-lg">
+              <FaLink className="w-5 h-5 text-emerald-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold">Affiliate Marketing Program</h2>
+              <p className="text-sm text-gray-600 font-normal mt-1">
+                Configure affiliate links and target platforms
+              </p>
+            </div>
           </CardTitle>
         </CardHeader>
 
         <CardContent className="pt-6 space-y-6">
-          <div className="space-y-4 p-4 border border-pink-200 rounded-lg bg-white shadow-sm">
-            <div className="text-pink-900 font-semibold text-lg mb-4">
-              Affiliate Link & Target Platforms
+          <div className="space-y-6 p-6 border border-gray-200 rounded-xl bg-gradient-to-br from-gray-50 to-white shadow-sm">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="bg-blue-100 p-2 rounded-lg">
+                <FaLink className="w-5 h-5 text-blue-600" />
+              </div>
+              <h3 className="text-gray-900 font-semibold text-lg">
+                Affiliate Link & Target Platforms
+              </h3>
             </div>
             <div>
               <Label
                 htmlFor="tracking-link"
-                className="text-sm font-medium mb-2 flex items-center gap-2 text-pink-800"
+                className="text-sm font-semibold mb-2 flex items-center gap-2 text-gray-700"
               >
-                <FaLink className="w-4 h-4" />
+                <div className="bg-blue-100 p-1 rounded">
+                  <FaLink className="w-4 h-4 text-blue-600" />
+                </div>
                 Tracking Link
               </Label>
               <Input
                 id="tracking-link"
                 placeholder="example.com"
-                value={deliverables.tracking_link || ""} // snake_case
+                value={deliverables.tracking_link || ""}
                 onChange={(e) => {
                   let val = e.target.value.trim();
                   if (val && !/^https?:\/\//i.test(val)) {
-                    val = "https://" + val.replace(/^\/+/, "");
+                    val = `https://${val}`;
                   }
 
-                  updateDeliverables({ tracking_link: val }); // snake_case
+                  updateDeliverables({ tracking_link: val });
                 }}
-                className="bg-white border-pink-200 focus:border-pink-400"
+                className="bg-white border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg"
               />
               <p className="text-xs text-gray-500 mt-1">
                 The main affiliate link that should be promoted across all platforms.
@@ -265,8 +279,10 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
             </div>
 
             <div>
-              <Label className="text-sm font-medium mb-3 flex items-center gap-2 text-pink-800">
-                <FaBullhorn className="w-4 h-4" />
+              <Label className="text-sm font-semibold mb-3 flex items-center gap-2 text-gray-700">
+                <div className="bg-purple-100 p-1 rounded">
+                  <FaBullhorn className="w-4 h-4 text-purple-600" />
+                </div>
                 Target Platforms
               </Label>
 

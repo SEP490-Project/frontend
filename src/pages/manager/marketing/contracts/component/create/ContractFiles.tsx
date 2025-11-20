@@ -56,12 +56,12 @@ const ContractFiles: React.FC<ContractFilesProps> = ({
           <p className="text-sm text-gray-600">Upload required contract and proposal documents</p>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Contract Files */}
           <div className="space-y-3">
             <Label className="text-sm font-medium">
               Contract Document <span className="text-red-500">*</span>
             </Label>
             <ContractUploader
+              key={`contract-${JSON.stringify(formData?.contract_file_url)}`}
               userId={formData?.userId || "b758136a-f78c-4a36-985a-974c39d5cd0d"}
               accept=".pdf,.doc,.docx"
               multiple={false}
@@ -74,6 +74,13 @@ const ContractFiles: React.FC<ContractFilesProps> = ({
               title="Contract File"
               className="w-full"
               initialFiles={formData?.contract_files || []}
+              initialUrls={
+                Array.isArray(formData?.contract_file_url)
+                  ? formData.contract_file_url
+                  : formData?.contract_file_url
+                    ? [formData.contract_file_url]
+                    : []
+              }
               context="contract"
             />
             <p className="text-xs text-slate-500">
@@ -83,12 +90,12 @@ const ContractFiles: React.FC<ContractFilesProps> = ({
 
           <Separator />
 
-          {/* Proposal Files */}
           <div className="space-y-3">
             <Label className="text-sm font-medium">
               Proposal Document <span className="text-red-500">*</span>
             </Label>
             <ContractUploader
+              key={`proposal-${JSON.stringify(formData?.proposal_file_url)}`}
               userId={formData?.userId || "b758136a-f78c-4a36-985a-974c39d5cd0d"}
               accept=".pdf,.doc,.docx,.ppt,.pptx"
               multiple={false}
@@ -101,6 +108,13 @@ const ContractFiles: React.FC<ContractFilesProps> = ({
               title="Proposal File"
               className="w-full"
               initialFiles={formData?.proposal_files || []}
+              initialUrls={
+                Array.isArray(formData?.proposal_file_url)
+                  ? formData.proposal_file_url
+                  : formData?.proposal_file_url
+                    ? [formData.proposal_file_url]
+                    : []
+              }
               context="proposal"
             />
             <p className="text-xs text-slate-500">

@@ -16,7 +16,7 @@ interface ScopeOfWorkProps {
 
 const ScopeOfWork: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork }) => {
   const CONTRACT_TYPE: CONTRACT_TYPE | undefined = formData?.type;
-  const [scope, setScope] = useState<ScopeOfWorkShape>(formData?.scope_of_work || {}); // Changed from scopeOfWork to scope_of_work
+  const [scope, setScope] = useState<ScopeOfWorkShape>(formData?.scope_of_work || {});
 
   const updateScope = (partial: Partial<ScopeOfWorkShape>) => {
     setScope((prev) => {
@@ -36,12 +36,16 @@ const ScopeOfWork: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork
   if (!CONTRACT_TYPE) {
     return (
       <div className="text-center py-20">
-        <FaFileLines className="w-16 h-16 mx-auto mb-4" style={{ color: "#ff9fb2" }} />
-        <h3 className="text-lg font-medium text-pink-900 mb-2">No Contract Type Selected</h3>
-        <p className="text-pink-700 max-w-sm mx-auto">
-          Please select a <strong>Contract Type</strong> from the previous step to configure the
-          scope of work.
-        </p>
+        <div className="bg-gray-100 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
+          <FaFileLines className="w-8 h-8 text-gray-600" />
+        </div>
+        <h3 className="text-xl font-semibold text-gray-900 mb-3">No Contract Type Selected</h3>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
+          <p className="text-gray-700">
+            Please select a <strong className="text-blue-700">Contract Type</strong> from the
+            previous step to configure the scope of work.
+          </p>
+        </div>
       </div>
     );
   }
@@ -65,7 +69,7 @@ const ScopeOfWork: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork
     <div className="space-y-6">
       {/* General Requirements */}
       <GeneralRequirements
-        requirements={scope.general_requirements || [""]} // Changed from general_requirements to general_requirements
+        requirements={scope.general_requirements || [""]}
         onChange={(newReqs) => updateScope({ general_requirements: newReqs })}
       />
 

@@ -117,11 +117,18 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
 
   return (
     <div className="space-y-6">
-      <Card className="shadow-sm border border-pink-200">
-        <CardHeader className="bg-gradient-to-r from-pink-50 via-rose-50 to-pink-100">
-          <CardTitle className="flex items-center gap-2 text-pink-900">
-            <FaHandshake className="w-5 h-5" style={{ color: "#ff9fb2" }} />
-            Co-Producing Deliverables
+      <Card className="shadow-lg border border-gray-200 rounded-xl">
+        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
+          <CardTitle className="flex items-center gap-3 text-gray-800">
+            <div className="bg-blue-100 p-2 rounded-lg">
+              <FaHandshake className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold">Co-Producing Deliverables</h2>
+              <p className="text-sm text-gray-600 font-normal mt-1">
+                Define products and concepts for collaboration
+              </p>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-6 space-y-6">
@@ -168,7 +175,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                           updated[i] = { ...updated[i], name: e.target.value, id: i + 1 };
                           updateDeliverables({ products: updated });
                         }}
-                        className="bg-white border-pink-200 focus:border-pink-400"
+                        className="bg-white border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg"
                       />
                     </div>
 
@@ -182,13 +189,15 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                           updated[i] = { ...updated[i], description: e.target.value };
                           updateDeliverables({ products: updated });
                         }}
-                        className="bg-white border-pink-200 focus:border-pink-400"
+                        className="bg-white border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg"
                       />
                     </div>
 
                     <div>
-                      <Label className="text-sm font-medium mb-2 flex items-center gap-2 text-pink-800">
-                        <FaPalette className="w-4 h-4" />
+                      <Label className="text-sm font-semibold mb-2 flex items-center gap-2 text-gray-700">
+                        <div className="bg-green-100 p-1 rounded">
+                          <FaPalette className="w-4 h-4 text-green-600" />
+                        </div>
                         Product Materials
                       </Label>
 
@@ -242,7 +251,12 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
 
                     {/* Concepts Section inside Product */}
                     <div className="space-y-4 mt-6">
-                      <div className="font-semibold text-pink-900">Concepts</div>
+                      <div className="flex items-center gap-2 font-semibold text-gray-800">
+                        <div className="bg-purple-100 p-1 rounded">
+                          <FaNewspaper className="w-4 h-4 text-purple-600" />
+                        </div>
+                        Concepts
+                      </div>
                       {p.concepts.map((c: Concept, j: number) => {
                         const isConceptOpen = j === 0 || j === p.concepts.length - 1;
                         const DeleteConceptAction = (
@@ -285,7 +299,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                                     updated[i].concepts = concepts;
                                     updateDeliverables({ products: updated });
                                   }}
-                                  className="bg-white border-pink-200 focus:border-pink-400"
+                                  className="bg-white border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg"
                                 />
                               </div>
 
@@ -310,7 +324,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                                     updateDeliverables({ products: updated });
                                   }}
                                 >
-                                  <SelectTrigger className="bg-white border-pink-200 focus:border-pink-400">
+                                  <SelectTrigger className="bg-white border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg">
                                     <SelectValue placeholder="Select platform" />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -335,7 +349,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                                     updated[i].concepts = concepts;
                                     updateDeliverables({ products: updated });
                                   }}
-                                  className="bg-white border-pink-200 focus:border-pink-400"
+                                  className="bg-white border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg"
                                 />
                               </div>
 
@@ -353,7 +367,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                                     updated[i].concepts = concepts;
                                     updateDeliverables({ products: updated });
                                   }}
-                                  className="bg-white border-pink-200 focus:border-pink-400"
+                                  className="bg-white border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg"
                                 />
                               </div>
 
@@ -374,20 +388,22 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                                     updated[i].concepts = concepts;
                                     updateDeliverables({ products: updated });
                                   }}
-                                  className="bg-white border-pink-200 focus:border-pink-400"
+                                  className="bg-white border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg"
                                 />
                               </div>
 
                               <div className="space-y-2">
-                                <Label className="text-sm font-medium flex items-center gap-2 text-pink-800">
-                                  <FaHashtag className="w-4 h-4" />
+                                <Label className="text-sm font-semibold flex items-center gap-2 text-gray-700">
+                                  <div className="bg-blue-100 p-1 rounded">
+                                    <FaHashtag className="w-4 h-4 text-blue-600" />
+                                  </div>
                                   Hashtags
                                 </Label>
-                                <div className="flex flex-wrap items-center gap-2 border border-pink-200 rounded-lg p-3">
+                                <div className="flex flex-wrap items-center gap-2 border border-gray-200 rounded-xl p-4 bg-gradient-to-br from-white to-gray-50">
                                   {ensureArray(c.hash_tag).map((tag, idx) => (
                                     <div
                                       key={idx}
-                                      className="flex items-center gap-1 bg-white border border-pink-200 rounded-full px-3 py-1 shadow-sm"
+                                      className="flex items-center gap-1 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 shadow-sm hover:bg-blue-100 transition-colors"
                                     >
                                       <Input
                                         placeholder={`#hashtag${idx + 1}`}
@@ -440,7 +456,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                                       updated[i].concepts = concepts;
                                       updateDeliverables({ products: updated });
                                     }}
-                                    className="border-pink-300 text-pink-700 hover:bg-pink-100/70 rounded-full px-3 py-1"
+                                    className="border-blue-300 text-blue-700 hover:bg-blue-100 rounded-full px-3 py-1 transition-colors"
                                   >
                                     <FaPlus className="w-3 h-3 mr-1" /> Add Hashtag
                                   </Button>
@@ -466,8 +482,10 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                               />
 
                               <div>
-                                <Label className="text-sm font-medium mb-2 flex items-center gap-2 text-pink-800">
-                                  <FaPalette className="w-4 h-4" />
+                                <Label className="text-sm font-semibold mb-2 flex items-center gap-2 text-gray-700">
+                                  <div className="bg-green-100 p-1 rounded">
+                                    <FaPalette className="w-4 h-4 text-green-600" />
+                                  </div>
                                   Concept Materials
                                 </Label>
                                 <ContractUploader
@@ -538,11 +556,12 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                           ];
                           updateDeliverables({ products: updated });
                         }}
-                        className="w-full py-6 border-2 border-dashed hover:bg-pink-50"
-                        style={{ borderColor: "#ff9fb2" }}
+                        className="w-full py-6 border-2 border-dashed border-purple-300 hover:bg-purple-50 hover:border-purple-400 transition-all rounded-lg"
                       >
-                        <FaPlus className="w-5 h-5 mr-2" style={{ color: "#ff9fb2" }} /> Add New
-                        Concept
+                        <div className="flex items-center gap-2">
+                          <FaPlus className="w-5 h-5 text-purple-600" />
+                          <span className="font-medium text-purple-700">Add New Concept</span>
+                        </div>
                       </Button>
                     </div>
                   </div>
@@ -557,10 +576,12 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                   products: [...products, { ...newProduct(), id: products.length + 1 }],
                 })
               }
-              className="w-full py-6 border-2 border-dashed hover:bg-pink-50"
-              style={{ borderColor: "#ff9fb2" }}
+              className="w-full py-6 border-2 border-dashed border-blue-300 hover:bg-blue-50 hover:border-blue-400 transition-all rounded-lg"
             >
-              <FaPlus className="w-5 h-5 mr-2" style={{ color: "#ff9fb2" }} /> Add New Product
+              <div className="flex items-center gap-2">
+                <FaPlus className="w-5 h-5 text-blue-600" />
+                <span className="font-medium text-blue-700">Add New Product</span>
+              </div>
             </Button>
           </div>
         </CardContent>

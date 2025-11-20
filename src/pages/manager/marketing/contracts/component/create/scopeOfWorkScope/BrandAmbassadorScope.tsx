@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { FaCrown, FaBullseye, FaScroll, FaTrash, FaPlus } from "react-icons/fa6";
+import { FaCrown, FaBullseye, FaScroll, FaTrash, FaPlus, FaCalendar } from "react-icons/fa6";
 import {
   CollapsibleSection,
   DynamicListInput,
@@ -82,23 +82,35 @@ const BrandAmbassadorScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateSc
 
   return (
     <div className="space-y-6">
-      <Card className="shadow-sm border border-pink-200">
-        <CardHeader className="bg-gradient-to-r from-pink-50 via-rose-50 to-pink-100">
-          <CardTitle className="flex items-center justify-between text-pink-900">
-            <div className="flex items-center gap-2">
-              <FaCrown className="w-5 h-5" style={{ color: "#ff9fb2" }} />
-              Brand Ambassador Events & Appearances
+      <Card className="shadow-lg border border-gray-200 rounded-xl">
+        <CardHeader className="bg-gradient-to-r from-amber-50 to-orange-50 border-b border-gray-200">
+          <CardTitle className="flex items-center justify-between text-gray-800">
+            <div className="flex items-center gap-3">
+              <div className="bg-amber-100 p-2 rounded-lg">
+                <FaCrown className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold">Brand Ambassador Events & Appearances</h2>
+                <p className="text-sm text-gray-600 font-normal mt-1">
+                  Schedule and manage brand events
+                </p>
+              </div>
             </div>
-            <span className="text-sm font-semibold text-pink-700 bg-pink-100 px-3 py-1 rounded-full">
-              {eventsList.length} items
+            <span className="text-sm font-semibold text-gray-700 bg-gray-100 px-3 py-1 rounded-full border">
+              {eventsList.length} events
             </span>
           </CardTitle>
         </CardHeader>
 
         <CardContent className="pt-6 space-y-6">
           {contractStartDate && contractEndDate && (
-            <Card className="p-4 bg-blue-50 border-blue-200 mb-4">
-              <h4 className="font-medium text-blue-900 mb-2">Contract Period</h4>
+            <Card className="p-5 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 mb-6 rounded-xl">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="bg-blue-100 p-1 rounded">
+                  <FaCalendar className="w-4 h-4 text-blue-600" />
+                </div>
+                <h4 className="font-semibold text-blue-900">Contract Period</h4>
+              </div>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="font-medium">Start Date:</span>{" "}
@@ -163,7 +175,7 @@ const BrandAmbassadorScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateSc
                         };
                         updateDeliverables({ events: updated });
                       }}
-                      className="bg-white border-pink-200 focus:border-pink-400"
+                      className="bg-white border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg"
                     />
                   </div>
 
@@ -271,10 +283,12 @@ const BrandAmbassadorScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateSc
                 events: [...eventsList, { ...newEvent(), id: eventsList.length + 1 }],
               })
             }
-            className="w-full py-6 border-2 border-dashed hover:bg-pink-50"
-            style={{ borderColor: "#ff9fb2" }}
+            className="w-full py-6 border-2 border-dashed border-amber-300 hover:bg-amber-50 hover:border-amber-400 transition-all rounded-lg"
           >
-            <FaPlus className="w-5 h-5 mr-2" style={{ color: "#ff9fb2" }} /> Add New Event
+            <div className="flex items-center gap-2">
+              <FaPlus className="w-5 h-5 text-amber-600" />
+              <span className="font-medium text-amber-700">Add New Event</span>
+            </div>
           </Button>
         </CardContent>
       </Card>

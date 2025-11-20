@@ -20,7 +20,6 @@ import {
   FaChevronUp,
   FaChartLine,
   FaClipboardList,
-  FaPenToSquare,
 } from "react-icons/fa6";
 
 export const CollapsibleSection: React.FC<{
@@ -34,37 +33,31 @@ export const CollapsibleSection: React.FC<{
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <div className="border border-pink-200 rounded-lg overflow-hidden shadow-sm">
-        <div className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-pink-50 via-rose-50 to-pink-100 hover:from-pink-100 hover:to-rose-100 transition-all">
-          <CollapsibleTrigger asChild>
-            <button
-              type="button"
-              className="flex items-center gap-2 text-pink-900 font-medium focus:outline-none"
-            >
+      <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+        <CollapsibleTrigger asChild>
+          <div className="w-full flex items-center justify-between px-6 py-4 cursor-pointer bg-gradient-to-r from-slate-50 to-gray-50 hover:from-slate-100 hover:to-gray-100 transition-all border-b border-gray-100">
+            <div className="flex items-center gap-3 text-gray-800 font-semibold">
               <span>{title}</span>
               {badge !== undefined && (
-                <span
-                  className="text-white text-xs px-2 py-1 rounded-full"
-                  style={{ backgroundColor: "#ff9fb2" }}
-                >
+                <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-semibold border border-blue-200">
                   {badge}
                 </span>
               )}
-            </button>
-          </CollapsibleTrigger>
-          <div className="flex items-center gap-3">
-            {actionComponent}
-            <button type="button" onClick={() => setOpen(!open)} className="focus:outline-none">
+            </div>
+
+            <div className="flex items-center gap-3">
+              {actionComponent}
               {open ? (
-                <FaChevronUp className="w-4 h-4" style={{ color: "#ff9fb2" }} />
+                <FaChevronUp className="w-4 h-4 text-gray-600" />
               ) : (
-                <FaChevronDown className="w-4 h-4" style={{ color: "#ff9fb2" }} />
+                <FaChevronDown className="w-4 h-4 text-gray-600" />
               )}
-            </button>
+            </div>
           </div>
-        </div>
+        </CollapsibleTrigger>
+
         <CollapsibleContent>
-          <div className="p-4 bg-white">{children}</div>
+          <div className="p-6 bg-white">{children}</div>
         </CollapsibleContent>
       </div>
     </Collapsible>
@@ -85,7 +78,6 @@ export const CompactKPISelector: React.FC<{
     onChange(updated);
   };
 
-  // Định nghĩa metric giống KPISelector
   const KPI_METRICS_GENERAL = [
     { value: "likes", label: "Total Likes" },
     { value: "comments", label: "Total Comments" },
@@ -129,11 +121,10 @@ export const CompactKPISelector: React.FC<{
 
   return (
     <div className="space-y-3">
-      <Label className="text-sm font-medium flex items-center gap-2 text-pink-800">
-        <FaChartLine className="w-4 h-4" />
+      <Label className="text-sm font-semibold flex items-center gap-2 text-gray-700">
         Key Performance Indicators
         {kpis.length > 0 && (
-          <span className="bg-pink-100 text-pink-800 text-xs w-6 h-6 flex items-center justify-center rounded-full">
+          <span className="bg-indigo-100 text-indigo-800 text-xs w-6 h-6 flex items-center justify-center rounded-full border border-indigo-200">
             {kpis.length}
           </span>
         )}
@@ -141,85 +132,79 @@ export const CompactKPISelector: React.FC<{
 
       <div className="space-y-4">
         {kpis.map((kpi, i) => {
-          // Lấy các metric đã chọn ở các KPI khác
           const selectedMetrics = kpis
             .map((k, idx) => (idx !== i ? k.metric : null))
             .filter(Boolean);
 
-          // Chỉ hiển thị các metric chưa được chọn hoặc là metric hiện tại
           const availableMetrics = metricOptions.filter(
             (opt) => !selectedMetrics.includes(opt.value) || opt.value === kpi.metric,
           );
 
           return (
-            <div key={i} className="p-3 rounded-lg border border-pink-200 shadow-sm">
-              <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-3 items-start">
-                {/* 1. Metric */}
-                <div className="space-y-1">
-                  <Label htmlFor={`metric-${i}`} className="text-xs font-medium text-gray-600">
-                    Metric
-                  </Label>
-                  <Select
-                    value={kpi.metric}
-                    onValueChange={(value) => handleChange(i, "metric", value)}
-                  >
-                    <SelectTrigger
-                      id={`metric-${i}`}
-                      className="flex-1 bg-white border-pink-200 focus:border-pink-400 text-sm h-9"
+            <div key={i} className="flex items-center gap-3">
+              <div className="flex-1 p-4 rounded-xl border border-gray-200 shadow-sm bg-gradient-to-br from-white to-gray-50">
+                <div className="grid grid-cols-[1fr_1fr_1fr] gap-3 items-start">
+                  <div className="space-y-1">
+                    <Label htmlFor={`metric-${i}`} className="text-xs font-medium text-gray-600">
+                      Metric
+                    </Label>
+                    <Select
+                      value={kpi.metric}
+                      onValueChange={(value) => handleChange(i, "metric", value)}
                     >
-                      <SelectValue placeholder="Select metric..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableMetrics.map((metric) => (
-                        <SelectItem key={metric.value} value={metric.value}>
-                          {metric.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                      <SelectTrigger
+                        id={`metric-${i}`}
+                        className="flex-1 bg-white border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm h-9 rounded-lg"
+                      >
+                        <SelectValue placeholder="Select metric..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableMetrics.map((metric) => (
+                          <SelectItem key={metric.value} value={metric.value}>
+                            {metric.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                {/* 2. Target */}
-                <div className="space-y-1">
-                  <Label htmlFor={`target-${i}`} className="text-xs font-medium text-gray-600">
-                    Target
-                  </Label>
-                  <Input
-                    id={`target-${i}`}
-                    placeholder="e.g., 100"
-                    value={kpi.target}
-                    onChange={(e) => handleChange(i, "target", e.target.value)}
-                    className="bg-white border-pink-200 focus:border-pink-400 text-sm h-9"
-                  />
-                </div>
+                  <div className="space-y-1">
+                    <Label htmlFor={`target-${i}`} className="text-xs font-medium text-gray-600">
+                      Target
+                    </Label>
+                    <Input
+                      id={`target-${i}`}
+                      placeholder="e.g., 100"
+                      value={kpi.target}
+                      onChange={(e) => handleChange(i, "target", e.target.value)}
+                      className="bg-white border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm h-9 rounded-lg"
+                    />
+                  </div>
 
-                {/* 3. Description */}
-                <div className="space-y-1">
-                  <Label htmlFor={`desc-${i}`} className="text-xs font-medium text-gray-600">
-                    Description
-                  </Label>
-                  <Input
-                    id={`desc-${i}`}
-                    placeholder="e.g., For 30 days"
-                    value={kpi.description || ""}
-                    onChange={(e) => handleChange(i, "description", e.target.value)}
-                    className="bg-white border-pink-200 focus:border-pink-400 text-sm h-9"
-                  />
-                </div>
-
-                {/* 4. Nút Xóa (Trash Button) */}
-                <div className="flex items-end h-full">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-red-500 hover:bg-red-50 h-9 w-9"
-                    onClick={() => handleRemove(i)}
-                    title="Remove KPI" // Thêm title để dễ hiểu hơn
-                  >
-                    <FaTrash className="w-4 h-4" />
-                  </Button>
+                  <div className="space-y-1">
+                    <Label htmlFor={`desc-${i}`} className="text-xs font-medium text-gray-600">
+                      Description
+                    </Label>
+                    <Input
+                      id={`desc-${i}`}
+                      placeholder="e.g., For 30 days"
+                      value={kpi.description || ""}
+                      onChange={(e) => handleChange(i, "description", e.target.value)}
+                      className="bg-white border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm h-9 rounded-lg"
+                    />
+                  </div>
                 </div>
               </div>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-red-500 hover:bg-red-50 h-9 w-9 flex-shrink-0 mt-4"
+                onClick={() => handleRemove(i)}
+                title="Remove KPI"
+              >
+                <FaTrash className="w-4 h-4" />
+              </Button>
             </div>
           );
         })}
@@ -229,10 +214,12 @@ export const CompactKPISelector: React.FC<{
         type="button"
         variant="outline"
         onClick={handleAdd}
-        className="w-full mt-3 py-6 border-2 border-dashed hover:bg-pink-50"
-        style={{ borderColor: "#ff9fb2" }}
+        className="w-full mt-4 py-6 border-2 border-dashed border-indigo-300 hover:bg-indigo-50 hover:border-indigo-400 transition-all rounded-lg"
       >
-        <FaPlus className="w-3 h-3 mr-1" /> Add KPI
+        <div className="flex items-center gap-2">
+          <FaPlus className="w-4 h-4 text-indigo-600" />
+          <span className="font-medium text-indigo-700">Add KPI</span>
+        </div>
       </Button>
     </div>
   );
@@ -255,11 +242,13 @@ export const KPIFields: React.FC<{
   return (
     <div className="mt-4">
       <div className="flex justify-between items-center mb-3">
-        <Label className="font-semibold text-sm flex items-center gap-2 text-pink-800">
-          <FaChartLine className="w-4 h-4" style={{ color: "#ff9fb2" }} />
+        <Label className="font-semibold text-sm flex items-center gap-2 text-gray-700">
+          <div className="bg-indigo-100 p-1 rounded">
+            <FaChartLine className="w-4 h-4 text-indigo-600" />
+          </div>
           KPIs
           {kpis.length > 0 && (
-            <span className="bg-pink-100 text-pink-800 text-xs px-2 py-1 rounded-full">
+            <span className="bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded-full border border-indigo-200">
               {kpis.length}
             </span>
           )}
@@ -268,23 +257,26 @@ export const KPIFields: React.FC<{
           size="sm"
           variant="outline"
           onClick={handleAdd}
-          className="border-pink-200 text-pink-700 hover:bg-pink-50"
+          className="border-indigo-300 text-indigo-700 hover:bg-indigo-50 hover:border-indigo-400 transition-colors"
         >
-          <FaPlus className="w-4 h-4 mr-1" style={{ color: "#ff9fb2" }} /> Add KPI
+          <FaPlus className="w-4 h-4 mr-1 text-indigo-600" /> Add KPI
         </Button>
       </div>
       {kpis.length === 0 && (
-        <div
-          className="text-center py-6 bg-pink-50 rounded-lg border-2 border-dashed"
-          style={{ borderColor: "#ff9fb2" }}
-        >
-          <p className="text-sm text-pink-700">No KPIs defined yet</p>
-          <p className="text-xs text-pink-600 mt-1">Click "Add KPI" to get started</p>
+        <div className="text-center py-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+          <div className="bg-gray-100 rounded-full w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+            <FaChartLine className="w-5 h-5 text-gray-500" />
+          </div>
+          <p className="text-sm text-gray-700">No KPIs defined yet</p>
+          <p className="text-xs text-gray-600 mt-1">Click "Add KPI" to get started</p>
         </div>
       )}
       <div className="space-y-3">
         {kpis.map((kpi, i) => (
-          <div key={i} className="bg-pink-50 p-3 rounded-lg border border-pink-200">
+          <div
+            key={i}
+            className="bg-gradient-to-br from-gray-50 to-white p-4 rounded-xl border border-gray-200 shadow-sm"
+          >
             <div className="grid md:grid-cols-3 gap-3 mb-2">
               <Input
                 placeholder="Metric (e.g., Views)"
@@ -357,16 +349,21 @@ export const DynamicListInput: React.FC<{
   return (
     <div className="mt-4 space-y-4">
       {label && (
-        <Label className="font-semibold flex items-center gap-2 text-pink-800">
-          {icon} {label}
+        <Label className="font-semibold flex items-center gap-2 text-gray-700">
+          {icon && <div className="bg-blue-100 p-1 rounded">{icon}</div>}
+          {label}
           {items.length > 0 && (
-            <span className="bg-pink-100 text-pink-800 text-xs w-6 h-6 flex items-center justify-center rounded-full">
+            <span className="bg-blue-100 text-blue-800 text-xs w-6 h-6 flex items-center justify-center rounded-full border border-blue-200">
               {items.length}
             </span>
           )}
         </Label>
       )}
-      {helpText && <p className="text-xs text-pink-600 mb-2">{helpText}</p>}
+      {helpText && (
+        <p className="text-xs text-gray-600 mb-2 bg-blue-50 p-2 rounded border-l-4 border-blue-300">
+          {helpText}
+        </p>
+      )}
 
       <div className="space-y-2">
         {items.map((it, i) => (
@@ -376,7 +373,7 @@ export const DynamicListInput: React.FC<{
                 placeholder={placeholder || "Item"}
                 value={it}
                 onChange={(e) => handleChange(i, e.target.value)}
-                className="bg-white flex-1 border-pink-200 focus:border-pink-400"
+                className="bg-white flex-1 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg"
                 rows={3}
               />
             ) : (
@@ -384,7 +381,7 @@ export const DynamicListInput: React.FC<{
                 placeholder={placeholder || "Item"}
                 value={it}
                 onChange={(e) => handleChange(i, e.target.value)}
-                className="bg-white flex-1 border-pink-200 focus:border-pink-400"
+                className="bg-white flex-1 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg"
               />
             )}
             <Button
@@ -401,10 +398,12 @@ export const DynamicListInput: React.FC<{
       <Button
         variant="outline"
         onClick={handleAdd}
-        className="w-full mt-3 py-6 border-2 border-dashed hover:bg-pink-50"
-        style={{ borderColor: "#ff9fb2" }}
+        className="w-full mt-3 py-6 border-2 border-dashed border-blue-300 hover:bg-blue-50 hover:border-blue-400 transition-all rounded-lg"
       >
-        <FaPlus className="w-4 h-4 mr-2" /> {addLabel || defaultAddLabel}
+        <div className="flex items-center gap-2">
+          <FaPlus className="w-4 h-4 text-blue-600" />
+          <span className="font-medium text-blue-700">{addLabel || defaultAddLabel}</span>
+        </div>
       </Button>
     </div>
   );
@@ -415,11 +414,18 @@ export const GeneralRequirements: React.FC<{
   onChange: (requirements: string[]) => void;
 }> = ({ requirements, onChange }) => {
   return (
-    <Card className="shadow-sm border border-pink-200">
-      <CardHeader className="bg-gradient-to-r from-pink-50 via-rose-50 to-pink-100">
-        <CardTitle className="flex items-center gap-2 text-pink-900">
-          <FaClipboardList className="w-5 h-5" style={{ color: "#ff9fb2" }} />
-          General Requirements
+    <Card className="rounded-2xl shadow-md border border-slate-200 overflow-hidden">
+      <CardHeader className="bg-gradient-to-r from-slate-50 to-gray-50 border-b border-gray-200">
+        <CardTitle className="flex items-center gap-3 text-gray-800">
+          <div className="bg-slate-100 p-2 rounded-lg">
+            <FaClipboardList className="w-5 h-5 text-slate-600" />
+          </div>
+          <div>
+            <h2 className="text-xl font-semibold">General Requirements</h2>
+            <p className="text-sm text-gray-600 font-normal mt-1">
+              Define overall requirements for all deliverables
+            </p>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -427,9 +433,7 @@ export const GeneralRequirements: React.FC<{
           label="Requirements"
           items={requirements}
           placeholder="Enter a general requirement..."
-          icon={<FaPenToSquare className="w-4 h-4" style={{ color: "#ff9fb2" }} />}
           onChange={onChange}
-          helpText="Define overall requirements that apply to all deliverables"
           multiline
           addLabel="Add Requirement"
         />

@@ -71,7 +71,6 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
 
   const advertisedItems = ensureArray(deliverables.advertised_items);
 
-  // Ensure hashtags always have at least one item
   useEffect(() => {
     const items = [...advertisedItems];
     let hasChanges = false;

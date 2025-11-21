@@ -23,10 +23,7 @@ const ScopeOfWork: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork
       const updated = {
         ...prev,
         ...partial,
-        deliverables: {
-          ...prev.deliverables,
-          ...partial.deliverables,
-        },
+        deliverables: partial.deliverables !== undefined ? partial.deliverables : prev.deliverables,
       };
       onUpdateScopeOfWork(updated);
       return updated;
@@ -67,7 +64,6 @@ const ScopeOfWork: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork
 
   return (
     <div className="space-y-6">
-      {/* General Requirements */}
       <GeneralRequirements
         requirements={scope.general_requirements || [""]}
         onChange={(newReqs) => updateScope({ general_requirements: newReqs })}

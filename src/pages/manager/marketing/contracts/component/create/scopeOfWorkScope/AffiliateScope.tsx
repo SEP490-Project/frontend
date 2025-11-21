@@ -19,6 +19,7 @@ import {
 import type { AdvertisingItem, ScopeOfWorkProps } from "../types/scopeTypes";
 import ContractUploader from "@/components/global/ContractUploader";
 import WarningDialog from "@/components/global/WarningDialog";
+import { getItem } from "@/libs/local-storage";
 
 const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork }) => {
   const scope = formData?.scope_of_work || {};
@@ -26,6 +27,10 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
 
   const ensureArray = (arr: any) => (Array.isArray(arr) ? arr : []);
   const advertisedItems = ensureArray(deliverables.advertised_items);
+
+  const user = getItem<{
+    id: string;
+  }>("user");
 
   const [deleteDialog, setDeleteDialog] = useState<{
     isOpen: boolean;
@@ -558,12 +563,25 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
 
                     <div>
                       <ContractUploader
-                        userId={formData?.brand_id || "unknown"}
-                        accept="image/*,video/*"
+                        userId={user?.id || "unknown"}
+                        accept="image/*,video/*, .pdf, .doc, .docx, .ppt,.pptx"
                         multiple
                         maxFiles={10}
                         maxSize={100}
-                        allowedTypes={["jpg", "jpeg", "png", "webp", "mp4", "mov", "avi"]}
+                        allowedTypes={[
+                          "jpg",
+                          "jpeg",
+                          "png",
+                          "webp",
+                          "mp4",
+                          "mov",
+                          "avi",
+                          "pdf",
+                          "doc",
+                          "docx",
+                          "ppt",
+                          "pptx",
+                        ]}
                         title="Upload creative materials"
                         context={`affiliate-content-${i + 1}`}
                         initialUrls={item.material_url || []}

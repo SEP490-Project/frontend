@@ -59,9 +59,16 @@ interface FileListProps {
   onRemove?: (id: string) => void;
   onDownload?: (file: FileItem) => void;
   className?: string;
+  showStatus?: boolean;
 }
 
-const FileList: React.FC<FileListProps> = ({ files, onRemove, onDownload, className = "" }) => {
+const FileList: React.FC<FileListProps> = ({
+  files,
+  onRemove,
+  onDownload,
+  className = "",
+  showStatus = true,
+}) => {
   return (
     <div className={`space-y-2 ${className}`}>
       {files.map((file) => (
@@ -75,20 +82,22 @@ const FileList: React.FC<FileListProps> = ({ files, onRemove, onDownload, classN
             <div className="flex-1 min-w-0">
               <div className="flex items-center space-x-2">
                 <p className="text-sm font-medium text-slate-900 truncate">{file.name}</p>
-                <Badge
-                  variant={
-                    file.status === "completed"
-                      ? "default"
-                      : file.status === "error"
-                        ? "destructive"
-                        : "secondary"
-                  }
-                  className="text-xs h-5 px-2 flex-shrink-0"
-                >
-                  {file.status === "completed" && <FaCheck className="h-2 w-2 mr-1" />}
-                  {file.status === "error" && <FaXmark className="h-2 w-2 mr-1" />}
-                  {file.status}
-                </Badge>
+                {showStatus && (
+                  <Badge
+                    variant={
+                      file.status === "completed"
+                        ? "default"
+                        : file.status === "error"
+                          ? "destructive"
+                          : "secondary"
+                    }
+                    className="text-xs h-5 px-2 flex-shrink-0"
+                  >
+                    {file.status === "completed" && <FaCheck className="h-2 w-2 mr-1" />}
+                    {file.status === "error" && <FaXmark className="h-2 w-2 mr-1" />}
+                    {file.status}
+                  </Badge>
+                )}
               </div>
 
               {file.status === "uploading" && (

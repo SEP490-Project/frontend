@@ -19,11 +19,13 @@ import {
 import type { AdvertisingItem, ScopeOfWorkProps } from "../types/scopeTypes";
 import ContractUploader from "@/components/global/ContractUploader";
 import { WarningDialog } from "@/components/global";
+import { getItem } from "@/libs/local-storage";
 
 const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork }) => {
   const scope = formData?.scope_of_work || {};
   const deliverables = scope.deliverables || {};
   const ensureArray = (arr: any) => (Array.isArray(arr) ? arr : []);
+  const user = getItem<{ id: string }>("user");
 
   const [deleteDialog, setDeleteDialog] = useState<{
     isOpen: boolean;
@@ -329,8 +331,8 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
 
                 <div>
                   <ContractUploader
-                    userId={formData?.brand_id || "unknown"}
-                    accept="image/*,video/*, .pdf,.doc,.docx, .ppt,.pptx"
+                    userId={user?.id || "unknown"}
+                    accept="image/*,video/*, .pdf, .doc, .docx, .ppt,.pptx"
                     multiple
                     maxFiles={10}
                     maxSize={100}
@@ -342,8 +344,10 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                       "mp4",
                       "mov",
                       "avi",
+                      "doc",
                       "docx",
                       "pdf",
+                      "ppt",
                       "pptx",
                     ]}
                     title="Upload creative assets"

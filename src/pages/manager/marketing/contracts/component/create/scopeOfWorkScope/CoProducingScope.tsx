@@ -11,7 +11,6 @@ import {
 } from "../shared/SharedComponents";
 import type { Product, Concept, ScopeOfWorkProps } from "../types/scopeTypes";
 import ContractUploader from "@/components/global/ContractUploader";
-import { useAuth } from "@/libs/hooks/useAuth";
 import WarningDialog from "@/components/global/WarningDialog";
 import {
   Select,
@@ -20,11 +19,12 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { getItem } from "@/libs/local-storage";
 
 const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork }) => {
   const scope = formData?.scope_of_work || {};
   const deliverables = scope.deliverables || {};
-  const { user } = useAuth();
+  const user = getItem<{ id: string }>("user");
 
   const ensureArray = (arr: any) => (Array.isArray(arr) ? arr : []);
 
@@ -44,7 +44,39 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
 
   const updateDeliverables = (partialDeliverables: any) => {
     const updated = { ...deliverables, ...partialDeliverables };
-    onUpdateScopeOfWork({ ...scope, deliverables: updated });
+
+    if (updated.products) {
+      const allConcepts: Concept[] = [];
+      const productsWithoutConcepts: any[] = [];
+
+      updated.products.forEach((product: Product) => {
+        if (product.concepts && product.concepts.length > 0) {
+          product.concepts.forEach((concept: Concept) => {
+            allConcepts.push({
+              ...concept,
+              product_id: product.id || 0,
+            });
+          });
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { concepts, ...productWithoutConcepts } = product;
+        productsWithoutConcepts.push({
+          ...productWithoutConcepts,
+          material: product.material_url || [],
+        });
+      });
+
+      const backendCompatibleData = {
+        ...updated,
+        products: productsWithoutConcepts,
+        concepts: allConcepts,
+      };
+
+      onUpdateScopeOfWork({ ...scope, deliverables: backendCompatibleData });
+    } else {
+      onUpdateScopeOfWork({ ...scope, deliverables: updated });
+    }
   };
 
   const newProduct = (): Product => ({
@@ -69,10 +101,25 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
     kpis: [{ metric: "", target: "", description: "" }],
   });
 
-  const products = ensureArray(deliverables.products).map((p: any) => ({
-    ...p,
-    concepts: ensureArray(p.concepts),
-  }));
+  const products = ensureArray(deliverables.products).map((p: any) => {
+    if (p.concepts && p.concepts.length > 0) {
+      return {
+        ...p,
+        concepts: ensureArray(p.concepts),
+        material_url: p.material_url || p.material || [],
+      };
+    }
+
+    const productConcepts = ensureArray(deliverables.concepts).filter(
+      (concept: any) => concept.product_id === p.id,
+    );
+
+    return {
+      ...p,
+      concepts: productConcepts,
+      material_url: p.material_url || p.material || [],
+    };
+  });
 
   useEffect(() => {
     if (!products.length) {
@@ -210,11 +257,24 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                   <div>
                     <ContractUploader
                       userId={user?.id || "unknown"}
-                      accept="image/*,video/*"
+                      accept="image/*,video/*, .pdf, .doc, .docx, .ppt,.pptx"
                       multiple={true}
                       maxFiles={20}
                       maxSize={200}
-                      allowedTypes={["jpg", "jpeg", "png", "webp", "mp4", "mov", "avi"]}
+                      allowedTypes={[
+                        "jpg",
+                        "jpeg",
+                        "png",
+                        "webp",
+                        "mp4",
+                        "mov",
+                        "avi",
+                        "pdf",
+                        "doc",
+                        "docx",
+                        "ppt",
+                        "pptx",
+                      ]}
                       title="Upload product materials"
                       context={`coproducing-product-${i + 1}`}
                       initialUrls={p.material_url || []}
@@ -486,7 +546,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
 
                             <div>
                               <ContractUploader
-                                userId={formData?.brand_id || "unknown"}
+                                userId={user?.id || "unknown"}
                                 accept="image/*,video/*"
                                 multiple={true}
                                 maxFiles={20}

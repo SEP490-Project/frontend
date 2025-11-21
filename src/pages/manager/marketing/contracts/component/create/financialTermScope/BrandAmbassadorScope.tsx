@@ -69,7 +69,6 @@ const BrandAmbassadorScope: React.FC<BrandAmbassadorScopeProps> = ({ formData, o
           </p>
         </div>
 
-        {/* Payment Schedule */}
         <PaymentSchedule
           schedules={financial_terms.schedule || []}
           totalCost={financial_terms.total_cost || 0}

@@ -13,14 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { KPI } from "../types/scopeTypes";
-import {
-  FaPlus,
-  FaTrash,
-  FaChevronDown,
-  FaChevronUp,
-  FaChartLine,
-  FaClipboardList,
-} from "react-icons/fa6";
+import { FaPlus, FaTrash, FaChevronDown, FaChevronUp, FaClipboardList } from "react-icons/fa6";
 
 export const CollapsibleSection: React.FC<{
   title: string;
@@ -64,7 +57,6 @@ export const CollapsibleSection: React.FC<{
   );
 };
 
-// NEW: Compact KPI Component with Metric Dropdown
 export const CompactKPISelector: React.FC<{
   kpis?: KPI[];
   onChange: (v: KPI[]) => void;
@@ -225,95 +217,6 @@ export const CompactKPISelector: React.FC<{
   );
 });
 CompactKPISelector.displayName = "CompactKPISelector";
-
-// Keep existing KPIFields for backward compatibility but mark as deprecated
-export const KPIFields: React.FC<{
-  kpis?: KPI[];
-  onChange: (v: KPI[]) => void;
-}> = memo(({ kpis = [], onChange }) => {
-  const handleAdd = () => onChange([...kpis, { metric: "", target: "", description: "" }]);
-  const handleRemove = (i: number) => onChange(kpis.filter((_, idx) => idx !== i));
-  const handleChange = (i: number, field: keyof KPI, value: string) => {
-    const updated = [...kpis];
-    updated[i] = { ...updated[i], [field]: value };
-    onChange(updated);
-  };
-
-  return (
-    <div className="mt-4">
-      <div className="flex justify-between items-center mb-3">
-        <Label className="font-semibold text-sm flex items-center gap-2 text-gray-700">
-          <div className="bg-indigo-100 p-1 rounded">
-            <FaChartLine className="w-4 h-4 text-indigo-600" />
-          </div>
-          KPIs
-          {kpis.length > 0 && (
-            <span className="bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded-full border border-indigo-200">
-              {kpis.length}
-            </span>
-          )}
-        </Label>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={handleAdd}
-          className="border-indigo-300 text-indigo-700 hover:bg-indigo-50 hover:border-indigo-400 transition-colors"
-        >
-          <FaPlus className="w-4 h-4 mr-1 text-indigo-600" /> Add KPI
-        </Button>
-      </div>
-      {kpis.length === 0 && (
-        <div className="text-center py-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-          <div className="bg-gray-100 rounded-full w-12 h-12 mx-auto mb-3 flex items-center justify-center">
-            <FaChartLine className="w-5 h-5 text-gray-500" />
-          </div>
-          <p className="text-sm text-gray-700">No KPIs defined yet</p>
-          <p className="text-xs text-gray-600 mt-1">Click "Add KPI" to get started</p>
-        </div>
-      )}
-      <div className="space-y-3">
-        {kpis.map((kpi, i) => (
-          <div
-            key={i}
-            className="bg-gradient-to-br from-gray-50 to-white p-4 rounded-xl border border-gray-200 shadow-sm"
-          >
-            <div className="grid md:grid-cols-3 gap-3 mb-2">
-              <Input
-                placeholder="Metric (e.g., Views)"
-                value={kpi.metric}
-                onChange={(e) => handleChange(i, "metric", e.target.value)}
-                className="bg-white border-pink-200 focus:border-pink-400"
-              />
-              <Input
-                placeholder="Target (e.g., 10K)"
-                value={kpi.target}
-                onChange={(e) => handleChange(i, "target", e.target.value)}
-                className="bg-white border-pink-200 focus:border-pink-400"
-              />
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Description (optional)"
-                  value={kpi.description || ""}
-                  onChange={(e) => handleChange(i, "description", e.target.value)}
-                  className="bg-white border-pink-200 focus:border-pink-400"
-                />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-red-500 hover:bg-red-50"
-                  onClick={() => handleRemove(i)}
-                >
-                  <FaTrash className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-});
-KPIFields.displayName = "KPIFields";
 
 export const DynamicListInput: React.FC<{
   label?: string;

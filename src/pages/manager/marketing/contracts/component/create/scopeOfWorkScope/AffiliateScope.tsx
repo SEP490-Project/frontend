@@ -216,7 +216,6 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
     return leastUsedPlatform || selectedPlatformsUpper[0];
   };
 
-  //bg: "bg-blue-100", text: "text-blue-800", border: "border-blue-200"
   return (
     <div>
       <div className="bg-gradient-to-r from-blue-100 to-blue-200 border border-gray-200 rounded-xl p-5 flex items-center justify-between">

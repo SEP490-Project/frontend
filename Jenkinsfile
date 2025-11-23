@@ -7,6 +7,10 @@ pipeline {
         nodejs 'NodeJS_22.21.0'
     } 
 
+    triggers {
+        githubPush()
+    }
+
     parameters {
         booleanParam(name: 'RUN_TESTS', defaultValue: false, description: 'Run tests before build')
         choice(name: 'ENVIRONMENT', choices: ['STAGING', 'PRODUCTION'], description: 'Environment to inject .env file for')

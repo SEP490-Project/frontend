@@ -1,61 +1,152 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   KPIWidget,
   BarChartWidget,
-  LineChartWidget,
   PieChartWidget,
   TableWidget,
 } from "@/components/dashboard/chart";
 import { FaBullhorn, FaCheckCircle, FaChartLine } from "react-icons/fa";
 import { MdCampaign } from "react-icons/md";
+import { useAppDispatch } from "@/libs/stores";
+import { dashboard as marketingDashboard } from "@/libs/stores/marketingAnalyticManager/thunk";
+import { useMarketingAnalytic } from "@/libs/hooks/useMarketingAnalytic";
 
 const MarketingDashboard: React.FC = () => {
-  // Mock data - replace with real API calls
-  const activeBrandsData = { value: 24, status: "up" as const, statusText: "+3 this month" };
-  const activeCampaignsData = { value: 8, statusText: "Running" };
-  const finishedCampaignsData = { value: 15, status: "up" as const, statusText: "+5 completed" };
-  const monthlyRevenueData = { value: 850000000, status: "up" as const, statusText: "+12%" };
+  const dispatch = useAppDispatch();
+  const { loading, dashboard } = useMarketingAnalytic();
 
-  const brandRevenueData = [
-    { name: "Nike", value: 125000 },
-    { name: "Adidas", value: 98000 },
-    { name: "Puma", value: 76000 },
-    { name: "Under Armour", value: 54000 },
-  ];
+  useEffect(() => {
+    dispatch(marketingDashboard());
+  }, [dispatch]);
 
-  const monthlyReachData = [
-    { month: "Jan", reach: 2500000, engagement: 85000 },
-    { month: "Feb", reach: 2800000, engagement: 92000 },
-    { month: "Mar", reach: 3100000, engagement: 98000 },
-    { month: "Apr", reach: 2900000, engagement: 89000 },
-    { month: "May", reach: 3300000, engagement: 105000 },
-    { month: "Jun", reach: 3600000, engagement: 115000 },
-  ];
+  const activeBrandsData = {
+    value: dashboard?.active_brands || 0,
+    statusText: `${dashboard?.active_brands || 0} brands`,
+  };
+  const activeCampaignsData = {
+    value: dashboard?.active_campaigns || 0,
+    statusText: "Running",
+  };
+  const draftCampaignsData = {
+    value: dashboard?.draft_campaigns || 0,
+    statusText: "Draft status",
+  };
+  const monthlyRevenueData = {
+    value: dashboard?.monthly_revenue || 0,
+    status: "up" as const,
+    statusText: `${dashboard?.revenue_month}/${dashboard?.revenue_year}`,
+  };
 
-  const collabRevenueShareData = [
-    { type: "Influencer A", value: 35 },
-    { type: "Influencer B", value: 25 },
-    { type: "Influencer C", value: 20 },
-    { type: "Others", value: 20 },
-  ];
+  const brandRevenueData =
+    dashboard?.top_brands?.map((brand: any) => ({
+      name: brand.brand_name,
+      value: Math.round(brand.revenue),
+    })) || [];
 
-  const campaignTimelineData = [
-    { campaign: "Summer Sale 2024", status: "Active", endDate: "2024-12-01", budget: "$50,000" },
-    { campaign: "Black Friday", status: "Planning", endDate: "2024-11-29", budget: "$75,000" },
-    { campaign: "Holiday Special", status: "Draft", endDate: "2024-12-25", budget: "$60,000" },
-  ];
+  const revenueByTypeData = dashboard?.revenue_by_type
+    ? [
+        { name: "Advertising", value: Math.round(dashboard.revenue_by_type.advertising) },
+        { name: "Affiliate", value: Math.round(dashboard.revenue_by_type.affiliate) },
+        { name: "Co-produce", value: Math.round(dashboard.revenue_by_type.co_produce) },
+        { name: "Brand Ambassador", value: Math.round(dashboard.revenue_by_type.brand_ambassador) },
+        { name: "Standard Product", value: Math.round(dashboard.revenue_by_type.standard_product) },
+      ].filter((item) => item.value > 0)
+    : [];
+
+  const revenueShareData = dashboard?.revenue_by_type
+    ? [
+        {
+          type: "Advertising",
+          value: parseFloat(
+            (
+              (dashboard.revenue_by_type.advertising / dashboard.revenue_by_type.total_revenue) *
+              100
+            ).toFixed(1),
+          ),
+        },
+        {
+          type: "Affiliate",
+          value: parseFloat(
+            (
+              (dashboard.revenue_by_type.affiliate / dashboard.revenue_by_type.total_revenue) *
+              100
+            ).toFixed(1),
+          ),
+        },
+        {
+          type: "Co-produce",
+          value: parseFloat(
+            (
+              (dashboard.revenue_by_type.co_produce / dashboard.revenue_by_type.total_revenue) *
+              100
+            ).toFixed(1),
+          ),
+        },
+        {
+          type: "Brand Ambassador",
+          value: parseFloat(
+            (
+              (dashboard.revenue_by_type.brand_ambassador /
+                dashboard.revenue_by_type.total_revenue) *
+              100
+            ).toFixed(1),
+          ),
+        },
+        {
+          type: "Standard Product",
+          value: parseFloat(
+            (
+              (dashboard.revenue_by_type.standard_product /
+                dashboard.revenue_by_type.total_revenue) *
+              100
+            ).toFixed(1),
+          ),
+        },
+      ].filter((item) => item.value > 0)
+    : [];
+
+  const upcomingDeadlinesData =
+    dashboard?.upcoming_deadlines?.map((deadline: any) => ({
+      campaign: deadline.name,
+      brand: deadline.brand_name,
+      endDate: new Date(deadline.end_date).toLocaleDateString(),
+      daysRemaining: `${deadline.days_remaining} days`,
+    })) || [];
 
   const alertsData = [
-    { type: "Budget Alert", message: "Campaign XYZ approaching 80% budget", priority: "High" },
-    { type: "Performance", message: "CTR below target for Instagram ads", priority: "Medium" },
-    { type: "Approval", message: "3 campaigns pending approval", priority: "Low" },
+    ...(dashboard?.upcoming_deadlines
+      ?.filter((d: any) => d.days_remaining <= 7)
+      .map((deadline: any) => ({
+        type: "Deadline Alert",
+        message: `Campaign "${deadline.name}" ending in ${deadline.days_remaining} days`,
+        priority: deadline.days_remaining <= 3 ? "High" : "Medium",
+      })) || []),
+    ...(dashboard?.draft_campaigns && dashboard.draft_campaigns > 0
+      ? [
+          {
+            type: "Draft Campaigns",
+            message: `${dashboard.draft_campaigns} campaigns in draft status`,
+            priority: "Low" as const,
+          },
+        ]
+      : []),
   ];
+
+  if (loading) {
+    return (
+      <div className="p-2 sm:p-6 w-full flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading dashboard data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-2 sm:p-6 w-full flex flex-col gap-6">
       <h1 className="text-xl sm:text-2xl font-semibold">Marketing Staff Dashboard</h1>
 
-      {/* KPI Section */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPIWidget
           title="Active Brands"
@@ -72,11 +163,11 @@ const MarketingDashboard: React.FC = () => {
           iconBg="bg-pink-100"
         />
         <KPIWidget
-          title="Finished Campaigns"
-          data={finishedCampaignsData}
+          title="Draft Campaigns"
+          data={draftCampaignsData}
           icon={<FaCheckCircle size={20} />}
-          iconColor="text-emerald-600"
-          iconBg="bg-emerald-100"
+          iconColor="text-orange-600"
+          iconBg="bg-orange-100"
         />
         <KPIWidget
           title="Monthly Revenue"
@@ -87,16 +178,14 @@ const MarketingDashboard: React.FC = () => {
         />
       </div>
 
-      {/* Chart Section */}
       <div className="flex flex-col gap-4">
-        <BarChartWidget title="Brand Revenue" data={brandRevenueData} />
-        <LineChartWidget title="Monthly Reach & Engagement" data={monthlyReachData} />
-        <PieChartWidget title="Collaborative Revenue Share" data={collabRevenueShareData} />
+        <BarChartWidget title="Top Brands by Revenue" data={brandRevenueData} />
+        <BarChartWidget title="Revenue by Type" data={revenueByTypeData} />
+        <PieChartWidget title="Revenue Distribution" data={revenueShareData} />
       </div>
 
-      {/* Table Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <TableWidget title="Campaign Timeline" data={campaignTimelineData} />
+        <TableWidget title="Upcoming Deadlines" data={upcomingDeadlinesData} />
         <TableWidget title="Alerts" data={alertsData} />
       </div>
     </div>

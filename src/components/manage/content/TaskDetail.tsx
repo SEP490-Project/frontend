@@ -26,6 +26,12 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
   const handleStartTask = async () => {
     if (!selectedTask?.id) return;
 
+    // Check if task is overdue and prevent starting
+    if (!canStartTask()) {
+      toast.error("Cannot start this task because it is overdue. Please contact your manager.");
+      return;
+    }
+
     try {
       await dispatch(
         updateTaskState({
@@ -84,6 +90,26 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
   }
 
   // Utility functions
+  const isTaskOverdue = (): boolean => {
+    if (!selectedTask?.deadline) return false;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const taskDeadline = new Date(selectedTask.deadline);
+    taskDeadline.setHours(0, 0, 0, 0);
+
+    return taskDeadline.getTime() < today.getTime();
+  };
+
+  const canStartTask = (): boolean => {
+    // Staff can't start tasks that are overdue and not yet started
+    if (isTaskOverdue() && selectedTask?.status === "TODO") {
+      return false;
+    }
+    return true;
+  };
+
   const getTaskColor = (type: string): string => {
     switch (type) {
       case "CONTENT":
@@ -237,18 +263,30 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
         </div>
         <div className="flex items-center gap-3">
           {selectedTask.status === "TODO" && (
-            <Button
-              onClick={handleStartTask}
-              disabled={loading}
-              className="bg-[#FF9DB0] hover:bg-pink-600 text-white flex items-center gap-2"
-            >
-              {loading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              ) : (
-                <Check className="h-4 w-4" />
+            <div className="flex flex-col items-end gap-2">
+              <Button
+                onClick={handleStartTask}
+                disabled={loading || !canStartTask()}
+                className={`flex items-center gap-2 ${
+                  !canStartTask()
+                    ? "bg-gray-400 hover:bg-gray-400 cursor-not-allowed text-white"
+                    : "bg-[#FF9DB0] hover:bg-pink-600 text-white"
+                }`}
+              >
+                {loading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+                {loading ? "Starting..." : "Start this task"}
+              </Button>
+              {!canStartTask() && isTaskOverdue() && (
+                <p className="text-xs text-red-600 font-medium flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  Task is overdue
+                </p>
               )}
-              {loading ? "Starting..." : "Start this task"}
-            </Button>
+            </div>
           )}
           <Button
             onClick={onClose}
@@ -309,12 +347,24 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
                 <p className="font-semibold text-gray-900">{selectedTask.assigned_to_name}</p>
               </div>
 
-              <div className="bg-white p-4 rounded-lg border border-gray-100">
+              <div
+                className={`bg-white p-4 rounded-lg border ${
+                  isTaskOverdue() ? "border-red-200 bg-red-50" : "border-gray-100"
+                }`}
+              >
                 <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
-                  <Clock className="h-4 w-4" />
+                  <Clock className={`h-4 w-4 ${isTaskOverdue() ? "text-red-500" : ""}`} />
                   Due Time
+                  {isTaskOverdue() && <AlertTriangle className="h-3 w-3 text-red-500" />}
                 </div>
-                <p className="font-semibold text-gray-900">{formatDate(selectedTask.deadline)}</p>
+                <p
+                  className={`font-semibold ${isTaskOverdue() ? "text-red-700" : "text-gray-900"}`}
+                >
+                  {formatDate(selectedTask.deadline)}
+                </p>
+                {isTaskOverdue() && (
+                  <p className="text-xs text-red-600 font-medium mt-1">This task is overdue</p>
+                )}
               </div>
 
               <div className="bg-white p-4 rounded-lg border border-gray-100">

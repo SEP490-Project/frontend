@@ -10,7 +10,6 @@ import {
 const DashboardPage: React.FC = () => {
   const { role } = useAuth();
 
-  // Render dashboard component based on user role
   const renderDashboard = () => {
     switch (role) {
       case "ADMIN":

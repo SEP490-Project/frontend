@@ -164,7 +164,7 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
             Create a campaign based on an existing contract with predefined terms and milestones.
           </p>
         </div>
-        <div
+        {/* <div
           className={`flex-1 p-4 border rounded-lg cursor-pointer transition-colors ${
             campaignMode === "internal" ? "bg-blue-50 border-blue-500" : "hover:bg-gray-100"
           }`}
@@ -190,7 +190,7 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
           <p className="text-xs text-gray-600 mt-1">
             Create a custom campaign with flexible settings and manually defined milestones.
           </p>
-        </div>
+        </div> */}
       </div>
 
       {/* STEP 1: CONTRACT OR CAMPAIGN TYPE */}
@@ -312,7 +312,9 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
           <div>
             <CardTitle className="text-lg font-semibold">3. Timeline</CardTitle>
             <CardDescription>
-              Select start and end dates (must be within the contract period).
+              {campaignMode === "contract"
+                ? "Timeline is automatically set based on the selected contract."
+                : "Select start and end dates for your campaign."}
             </CardDescription>
           </div>
         </CardHeader>
@@ -326,7 +328,13 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
               required
               minDate={minDate}
               maxDate={maxDate}
+              disabled={campaignMode === "contract"}
             />
+            {campaignMode === "contract" && (
+              <p className="text-xs text-gray-500 mt-1">
+                Start date is set from the selected contract.
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <DatePicker
@@ -337,7 +345,13 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
               required
               minDate={minDate}
               maxDate={maxDate}
+              disabled={campaignMode === "contract"}
             />
+            {campaignMode === "contract" && (
+              <p className="text-xs text-gray-500 mt-1">
+                End date is set from the selected contract.
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>

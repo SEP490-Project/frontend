@@ -199,7 +199,7 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
 
   if (!contentId) return null;
 
-  const isPending = content?.status === "AWAIT_STAFF";
+  const isPending = content?.status === "AWAIT_STAFF" || content?.status === "AWAIT_BRAND";
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

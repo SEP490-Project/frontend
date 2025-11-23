@@ -5,8 +5,8 @@ import {
   PieChartWidget,
   TableWidget,
 } from "@/components/dashboard/chart";
-import { FaBullhorn, FaCheckCircle, FaChartLine } from "react-icons/fa";
-import { MdCampaign } from "react-icons/md";
+import { FaBullhorn, FaRegCircleCheck, FaChartLine } from "react-icons/fa6";
+import { Loader2 } from "lucide-react";
 import { useAppDispatch } from "@/libs/stores";
 import { dashboard as marketingDashboard } from "@/libs/stores/marketingAnalyticManager/thunk";
 import { useMarketingAnalytic } from "@/libs/hooks/useMarketingAnalytic";
@@ -136,7 +136,7 @@ const MarketingDashboard: React.FC = () => {
     return (
       <div className="p-2 sm:p-6 w-full flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <Loader2 className="mx-auto mb-4 h-12 w-12 text-primary animate-spin" />
           <p className="text-gray-600">Loading dashboard data...</p>
         </div>
       </div>
@@ -158,14 +158,14 @@ const MarketingDashboard: React.FC = () => {
         <KPIWidget
           title="Active Campaigns"
           data={activeCampaignsData}
-          icon={<MdCampaign size={20} />}
+          icon={<FaBullhorn size={20} />}
           iconColor="text-pink-600"
           iconBg="bg-pink-100"
         />
         <KPIWidget
           title="Draft Campaigns"
           data={draftCampaignsData}
-          icon={<FaCheckCircle size={20} />}
+          icon={<FaRegCircleCheck size={20} />}
           iconColor="text-orange-600"
           iconBg="bg-orange-100"
         />

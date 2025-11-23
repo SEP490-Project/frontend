@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.kevintruong.bshowsell",
+      "sha256_cert_fingerprints": [
+        "B6:F8:D0:F6:05:14:F3:4B:51:DF:10:A3:BD:3E:CB:A6:93:0F:A4:26:59:E0:EA:62:E1:8A:ED:B6:73:A3:58:87",
+        "EA:CE:85:0B:F2:9A:A6:85:0B:89:99:09:7D:FD:38:23:82:49:F5:14:57:EB:4E:6A:88:C1:45:67:F2:8C:FB:F1"
+      ]
+    }
+  }
+]

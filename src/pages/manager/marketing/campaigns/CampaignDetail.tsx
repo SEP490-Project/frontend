@@ -34,6 +34,7 @@ import {
   FaFlag,
   FaClipboardCheck,
   FaArrowRight,
+  FaPencil,
 } from "react-icons/fa6";
 import { motion } from "framer-motion";
 import { formatDate } from "@/libs/helper/helper";
@@ -236,6 +237,18 @@ const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({ userRole = "mar
                 Approve Campaign
               </Button>
             </div>
+          )}
+
+          {/* Edit Button */}
+          {userRole !== "brand" && (
+            <Button
+              variant="outline"
+              className="flex items-center gap-2"
+              onClick={() => navigate(`/manage/marketing/campaigns/edit/${id}`)}
+            >
+              <FaPencil className="w-4 h-4" />
+              Edit Campaign
+            </Button>
           )}
         </motion.div>
 

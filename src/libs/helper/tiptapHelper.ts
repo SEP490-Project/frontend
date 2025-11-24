@@ -7,6 +7,7 @@ import Color from "@tiptap/extension-color";
 import Highlight from "@tiptap/extension-highlight";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
+import { VideoExtension } from "@/components/global/tiptap-extensions/VideoExtension";
 
 /**
  * Convert TipTap JSON content to HTML
@@ -49,6 +50,7 @@ export const tiptapJsonToHtml = (json: string | object | null | undefined): stri
           class: "max-w-full h-auto",
         },
       }),
+      VideoExtension,
       TextStyle,
       Color,
       Highlight.configure({
@@ -59,7 +61,7 @@ export const tiptapJsonToHtml = (json: string | object | null | undefined): stri
       }),
       Underline,
       TextAlign.configure({
-        types: ["heading", "paragraph"],
+        types: ["heading", "paragraph", "image", "video"],
       }),
     ]);
 

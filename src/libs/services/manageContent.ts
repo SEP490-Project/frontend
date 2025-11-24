@@ -24,7 +24,11 @@ export const manageContent = {
 
   publishContent: (id: string, publishDate?: string) => {
     const body = publishDate ? { publish_date: publishDate } : {};
-    return api.patch(`/contents/${id}/publish`, body);
+    return api.post(`/contents/${id}/publish`, body);
+  },
+
+  publishContentToChannel: (id: string, channelId: string) => {
+    return api.post(`/contents/${id}/publish/channel/${channelId}`);
   },
 
   // unpublishContent: (id: string) => {

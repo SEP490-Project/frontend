@@ -8,6 +8,7 @@ import Color from "@tiptap/extension-color";
 import Highlight from "@tiptap/extension-highlight";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
+import { VideoExtension } from "./tiptap-extensions/VideoExtension";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -42,6 +43,9 @@ import {
   Redo,
   Quote,
   Minus,
+  Video,
+  UploadCloud,
+  Link as LinkIcon,
   Unlink,
 } from "lucide-react";
 import { isTiptapJson } from "@/libs/helper/tiptapHelper";
@@ -57,6 +61,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
   onChange,
 }) => {
   const [showImageUploader, setShowImageUploader] = useState(false);
+  const [showVideoUploader, setShowVideoUploader] = useState(false);
 
   // Convert initial content to proper format
   const getInitialContent = () => {
@@ -83,38 +88,26 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        bulletList: {
-          keepMarks: true,
-          keepAttributes: false,
-        },
-        orderedList: {
-          keepMarks: true,
-          keepAttributes: false,
-        },
+        bulletList: { keepMarks: true, keepAttributes: false },
+        orderedList: { keepMarks: true, keepAttributes: false },
       }),
       Link.configure({
         openOnClick: false,
-        HTMLAttributes: {
-          rel: "noopener noreferrer",
-          target: "_blank",
-        },
+        HTMLAttributes: { rel: "noopener noreferrer", target: "_blank" },
       }),
       Image.configure({
-        HTMLAttributes: {
-          class: "max-w-full h-auto",
-        },
+        HTMLAttributes: { class: "max-w-full h-auto rounded-lg border" },
       }),
+      VideoExtension, // Register Custom Video Extension
       TextStyle,
       Color,
       Highlight.configure({
         multicolor: true,
-        HTMLAttributes: {
-          class: "highlight",
-        },
+        HTMLAttributes: { class: "highlight" },
       }),
       Underline,
       TextAlign.configure({
-        types: ["heading", "paragraph"],
+        types: ["heading", "paragraph", "image", "video"],
       }),
     ],
     content: getInitialContent(),
@@ -150,42 +143,44 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
     return words.length;
   };
 
-  const getCharacterCount = () => {
-    return editor.getText().length;
-  };
+  const getCharacterCount = () => editor.getText().length;
 
-  const handleUploadComplete = (urls: string[]) => {
+  // --- Image Handlers ---
+  const handleImageUploadComplete = (urls: string[]) => {
     if (urls.length > 0) {
-      const imageUrl = urls[0];
-      // Insert the uploaded image into the editor
-      editor?.chain().focus().setImage({ src: imageUrl }).run();
+      editor?.chain().focus().setImage({ src: urls[0] }).run();
       setShowImageUploader(false);
     }
   };
 
-  const addImage = () => {
-    setShowImageUploader(true);
+  // --- Video Handlers ---
+  const handleVideoUploadComplete = (urls: string[]) => {
+    if (urls.length > 0) {
+      editor?.chain().focus().setVideo({ src: urls[0] }).run();
+      setShowVideoUploader(false);
+    }
   };
 
+  const addVideoUrl = () => {
+    const url = window.prompt("Enter Video URL (mp4, webm, etc.)");
+    if (url) {
+      editor?.chain().focus().setVideo({ src: url }).run();
+    }
+  };
+
+  // --- Link Handlers ---
   const addLink = () => {
     const previousUrl = editor.getAttributes("link").href;
     const url = window.prompt("Enter link URL", previousUrl);
-
-    // If url is null, user cancelled
-    if (url === null) {
-      return;
-    }
-
-    // If url is empty, remove link
+    if (url === null) return;
     if (url === "") {
       editor.chain().focus().extendMarkRange("link").unsetLink().run();
       return;
     }
-
-    // Update link
     editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
   };
 
+  // Color Palette
   const colors = [
     "#000000",
     "#434343",
@@ -344,10 +339,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
                       key={color}
                       className="w-6 h-6 rounded border border-gray-200 hover:scale-110 transition-transform"
                       style={{ backgroundColor: color }}
-                      onClick={() => {
-                        editor.chain().focus().setColor(color).run();
-                      }}
-                      title={`Set text color to ${color}`}
+                      onClick={() => editor.chain().focus().setColor(color).run()}
                     />
                   ))}
                 </div>
@@ -365,9 +357,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
                 <div className="grid grid-cols-10 gap-1 p-2">
                   <button
                     className="w-6 h-6 rounded border border-gray-200 hover:scale-110 transition-transform bg-transparent"
-                    onClick={() => {
-                      editor.chain().focus().unsetHighlight().run();
-                    }}
+                    onClick={() => editor.chain().focus().unsetHighlight().run()}
                   >
                     <Minus className="w-3 h-3 mx-auto" />
                   </button>
@@ -376,9 +366,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
                       key={color}
                       className="w-6 h-6 rounded border border-gray-200 hover:scale-110 transition-transform"
                       style={{ backgroundColor: color }}
-                      onClick={() => {
-                        editor.chain().focus().setHighlight({ color }).run();
-                      }}
+                      onClick={() => editor.chain().focus().setHighlight({ color }).run()}
                       title={`Set highlight color to ${color}`}
                     />
                   ))}
@@ -484,7 +472,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
 
             <Separator orientation="vertical" className="mx-1 h-5" />
 
-            {/* Links and Images */}
+            {/* Media Group */}
             <Button
               variant="ghost"
               size="icon"
@@ -493,6 +481,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
             >
               <Link2 className="w-4 h-4" />
             </Button>
+            {/* Link Removal */}
             <Button
               variant="ghost"
               size="icon"
@@ -501,9 +490,11 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
             >
               <Unlink className="w-4 h-4" />
             </Button>
+
+            {/* Image Dialog */}
             <Dialog open={showImageUploader} onOpenChange={setShowImageUploader}>
               <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={addImage}>
+                <Button variant="ghost" size="icon" onClick={() => setShowImageUploader(true)}>
                   <ImageIcon className="w-4 h-4" />
                 </Button>
               </DialogTrigger>
@@ -518,8 +509,55 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
                   maxSize={5}
                   maxFiles={1}
                   allowedTypes={["jpg", "jpeg", "png", "gif", "webp"]}
-                  onUploadComplete={handleUploadComplete}
+                  onUploadComplete={handleImageUploadComplete}
                   title="Select Image"
+                />
+              </DialogContent>
+            </Dialog>
+
+            {/* Video Popover & Dialog */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={editor.isActive("video") ? "bg-muted" : ""}
+                >
+                  <Video className="w-4 h-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-40 p-2" align="start">
+                <div className="flex flex-col gap-1">
+                  <Button variant="ghost" size="sm" className="justify-start" onClick={addVideoUrl}>
+                    <LinkIcon className="w-4 h-4 mr-2" /> URL
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="justify-start"
+                    onClick={() => setShowVideoUploader(true)}
+                  >
+                    <UploadCloud className="w-4 h-4 mr-2" /> Upload
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            {/* Video Upload Dialog (Controlled by state, separate from Popover) */}
+            <Dialog open={showVideoUploader} onOpenChange={setShowVideoUploader}>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Upload Video</DialogTitle>
+                </DialogHeader>
+                <FileUploader
+                  userId={user?.id || ""}
+                  accept="video/*"
+                  multiple={false}
+                  maxSize={50} // Videos are larger, adjusted to 50MB
+                  maxFiles={1}
+                  allowedTypes={["mp4", "webm", "ogg"]}
+                  onUploadComplete={handleVideoUploadComplete}
+                  title="Select Video"
                 />
               </DialogContent>
             </Dialog>

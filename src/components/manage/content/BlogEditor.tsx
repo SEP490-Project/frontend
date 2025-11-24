@@ -1,10 +1,17 @@
 import TiptapEditor from "@/components/global/Editor";
-import React, { useState } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -33,6 +40,7 @@ import { useTag } from "@/libs/hooks/useTag";
 import { manageChannel } from "@/libs/services/manageChannel";
 
 import type { Tag } from "@/libs/types/tag";
+import { HlsPlyrHydrator } from "@/components/hls-video-hydrator";
 
 type ContentType = "blog" | "video";
 
@@ -58,7 +66,8 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
   const { tags: availableTags, loading: tagsLoading, error: tagsError } = useTag();
 
   // Channel state
-  const [websiteChannel, setWebsiteChannel] = React.useState<Channel | null>(null);
+  const [availableChannels, setAvailableChannels] = React.useState<Channel[]>([]);
+  const [selectedChannel, setSelectedChannel] = React.useState<string>("");
   const [channelLoading, setChannelLoading] = React.useState(true);
 
   // Fetch channels on component mount
@@ -69,15 +78,22 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
         const response = await manageChannel.channelList();
         const channels = response.data.data || [];
 
-        // Find the Website channel
-        const website = channels.find(
-          (channel: Channel) => channel.name.toLowerCase() === "website",
+        // Filter for Website and Facebook channels only
+        const blogChannels = channels.filter(
+          (channel: Channel) =>
+            channel.name.toLowerCase() === "website" || channel.name.toLowerCase() === "facebook",
         );
 
-        if (website) {
-          setWebsiteChannel(website);
-        } else {
-          console.warn("Website channel not found in available channels");
+        setAvailableChannels(blogChannels);
+
+        // Set default selection to Website if available
+        const websiteChannel = blogChannels.find(
+          (channel: Channel) => channel.name.toLowerCase() === "website",
+        );
+        if (websiteChannel) {
+          setSelectedChannel(websiteChannel.id);
+        } else if (blogChannels.length > 0) {
+          setSelectedChannel(blogChannels[0].id);
         }
       } catch (error) {
         console.error("Error fetching channels:", error);
@@ -89,10 +105,9 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
     fetchChannels();
   }, []);
 
-  // Initialize selected tags from editing content
+  // Initialize selected tags from editing content - memoized to avoid recalculation
   const [selectedTags, setSelectedTags] = useState<Tag[]>(() => {
-    if (editingContent?.blog?.tags) {
-      // Map tag names from editing content to Tag objects
+    if (editingContent?.blog?.tags && availableTags.length > 0) {
       return editingContent.blog.tags
         .map((tagName: string) => availableTags.find((tag) => tag.name === tagName))
         .filter((tag): tag is Tag => tag !== undefined);
@@ -100,74 +115,105 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
     return [];
   });
 
-  // State for content tracking
-  const [content, setContent] = React.useState<{ html: string; json: any } | null>(
-    editingContent
-      ? {
-          html: typeof editingContent.body === "string" ? editingContent.body : "",
-          json:
-            typeof editingContent.body === "object"
-              ? editingContent.body
-              : editingContent.body || null,
-        }
-      : null,
-  );
+  // Memoized read time calculation
+  const calculateReadTime = useCallback((htmlContent: string) => {
+    const textContent = htmlContent.replace(/<[^>]*>/g, "");
+    const wordsPerMinute = 200;
+    const wordCount = textContent.trim().split(/\s+/).length;
+    const readTime = Math.ceil(wordCount / wordsPerMinute);
+    return readTime > 0 ? readTime : 1;
+  }, []);
+
+  // Update selected tags when availableTags loads and we have editing content
+  React.useEffect(() => {
+    if (editingContent?.blog?.tags && availableTags.length > 0 && selectedTags.length === 0) {
+      const tags = editingContent.blog.tags
+        .map((tagName: string) => availableTags.find((tag) => tag.name === tagName))
+        .filter((tag): tag is Tag => tag !== undefined);
+      setSelectedTags(tags);
+    }
+  }, [availableTags, editingContent?.blog?.tags, selectedTags.length]);
+
+  // State for content tracking - memoized initialization
+  const initialContentState = useMemo(() => {
+    if (!editingContent) return null;
+    return {
+      html: typeof editingContent.body === "string" ? editingContent.body : "",
+      json:
+        typeof editingContent.body === "object" ? editingContent.body : editingContent.body || null,
+    };
+  }, [editingContent]);
+
+  const [content, setContent] = useState<{ html: string; json: any } | null>(initialContentState);
 
   // Local state for title to avoid watch() performance issues
   const [localTitle, setLocalTitle] = React.useState(editingContent?.title || "");
 
-  // Simple content update handler
-  const handleContentChange = (data: any) => {
+  // Memoized content update handler to prevent unnecessary re-renders
+  const handleContentChange = useCallback((data: any) => {
     setContent(data);
-  };
+  }, []);
 
-  // Tag selection handlers
-  const handleTagSelect = (tag: Tag) => {
-    const isAlreadySelected = selectedTags.some((t) => t.id === tag.id);
-    if (!isAlreadySelected) {
-      setSelectedTags([...selectedTags, tag]);
-    }
+  // Memoized tag selection handlers
+  const handleTagSelect = useCallback((tag: Tag) => {
+    setSelectedTags((prev) => {
+      const isAlreadySelected = prev.some((t) => t.id === tag.id);
+      if (!isAlreadySelected) {
+        return [...prev, tag];
+      }
+      return prev;
+    });
     setTagPopoverOpen(false);
-  };
+  }, []);
 
-  const handleTagRemove = (tagId: string) => {
-    setSelectedTags(selectedTags.filter((tag) => tag.id !== tagId));
-  };
+  const handleTagRemove = useCallback((tagId: string) => {
+    setSelectedTags((prev) => prev.filter((tag) => tag.id !== tagId));
+  }, []);
 
-  const clearAllTags = () => {
+  const clearAllTags = useCallback(() => {
     setSelectedTags([]);
-  };
+  }, []);
 
   // Memoized save button disabled state
-  const isSaveDisabled = React.useMemo(() => {
+  const isSaveDisabled = useMemo(() => {
     return (
       !content ||
       !localTitle.trim() ||
       localTitle.length < 3 ||
       localTitle.length > 200 ||
       channelLoading ||
-      !websiteChannel
+      !selectedChannel
     );
-  }, [content, localTitle, channelLoading, websiteChannel]);
+  }, [content, localTitle, channelLoading, selectedChannel]);
 
-  // Handle form submission
-  const handleFormSubmit = () => {
-    if (content && localTitle.trim() && websiteChannel) {
+  // Memoized preview toggle handler
+  const handlePreviewToggle = useCallback(() => {
+    setShowPreview((prev) => !prev);
+  }, []);
+
+  // Memoized preview disabled state
+  const isPreviewDisabled = useMemo(() => {
+    return !content || !localTitle.trim();
+  }, [content, localTitle]);
+
+  // Memoized form submission handler
+  const handleFormSubmit = useCallback(() => {
+    if (content && localTitle.trim() && selectedChannel) {
       // Create excerpt from content (first 150 characters of plain text)
       const plainText = content.html.replace(/<[^>]*>/g, "");
       const excerpt = plainText.substring(0, 150) + (plainText.length > 150 ? "..." : "");
 
       const apiData: CreateContentRequest = {
         title: localTitle.trim(),
-        body: content.json, // Export as JSON instead of HTML
+        body: content.json,
         type: "POST",
         blog_fields: {
           author_id: user?.id || getBrandIdFromToken() || "",
           excerpt: excerpt,
           read_time: calculateReadTime(content.html),
-          tags: selectedTags.map((tag) => tag.name), // Convert selected tags to array of names
+          tags: selectedTags.map((tag) => tag.name),
         },
-        channels: [websiteChannel.id],
+        channels: [selectedChannel],
         task_id: selectedTask?.id?.toString() || null,
         affiliate_link: null,
         ai_generated_text: null,
@@ -175,33 +221,40 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
 
       onSave(apiData, contentType);
     }
-  };
+  }, [
+    content,
+    localTitle,
+    selectedChannel,
+    selectedTags,
+    user?.id,
+    selectedTask?.id,
+    onSave,
+    contentType,
+    calculateReadTime,
+  ]);
 
-  // Keep track of initial content to detect unsaved changes
-  const initialContent = React.useMemo(
+  // Memoized initial content for unsaved changes detection
+  const initialContent = useMemo(
     () => ({
-      html: editingContent
-        ? typeof editingContent.body === "string"
+      html: editingContent && typeof editingContent.body === "string" ? editingContent.body : "",
+      json:
+        editingContent && typeof editingContent.body === "object"
           ? editingContent.body
-          : ""
-        : "",
-      json: editingContent
-        ? typeof editingContent.body === "object"
-          ? editingContent.body
-          : editingContent.body || null
-        : null,
+          : editingContent?.body || null,
     }),
     [editingContent],
   );
 
-  // Check if there are unsaved changes
-  const hasUnsavedChanges = React.useMemo(() => {
-    if (!content) return localTitle !== (editingContent?.title || "");
-    return (
-      localTitle !== (editingContent?.title || "") ||
+  // Optimized unsaved changes detection
+  const hasUnsavedChanges = useMemo(() => {
+    const titleChanged = localTitle !== (editingContent?.title || "");
+    if (!content) return titleChanged;
+
+    const contentChanged =
       content.html !== initialContent.html ||
-      JSON.stringify(content.json) !== JSON.stringify(initialContent.json)
-    );
+      JSON.stringify(content.json) !== JSON.stringify(initialContent.json);
+
+    return titleChanged || contentChanged;
   }, [content, initialContent, localTitle, editingContent?.title]);
 
   // Block browser navigation when there are unsaved changes
@@ -213,51 +266,35 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
     },
   });
 
-  // Handle back navigation with unsaved changes check
-  const handleBackClick = () => {
+  // Memoized navigation handlers
+  const handleBackClick = useCallback(() => {
     if (hasUnsavedChanges) {
       setShowUnsavedDialog(true);
     } else {
       onBack();
     }
-  };
+  }, [hasUnsavedChanges, onBack]);
 
-  // Handle discarding changes and going back
-  const handleDiscardChanges = () => {
+  const handleDiscardChanges = useCallback(() => {
     setShowUnsavedDialog(false);
     onBack();
-  };
+  }, [onBack]);
 
-  // Handle keeping changes (close dialog)
-  const handleKeepEditing = () => {
+  const handleKeepEditing = useCallback(() => {
     setShowUnsavedDialog(false);
-  };
+  }, []);
 
-  // Handle navigation dialog - stay on page
-  const handleStayOnPage = () => {
+  const handleStayOnPage = useCallback(() => {
     setShowNavigationDialog(false);
     setPendingNavigation(null);
-  };
+  }, []);
 
-  // Handle navigation dialog - proceed with navigation
-  const handleProceedNavigation = () => {
+  const handleProceedNavigation = useCallback(() => {
     setShowNavigationDialog(false);
-    // Allow navigation by temporarily disabling the blocker
     if (pendingNavigation) {
       window.location.href = pendingNavigation;
     }
-  };
-
-  // Calculate estimated read time based on content
-  const calculateReadTime = (htmlContent: string) => {
-    // Remove HTML tags and get plain text
-    const textContent = htmlContent.replace(/<[^>]*>/g, "");
-    // Average reading speed: 200 words per minute
-    const wordsPerMinute = 200;
-    const wordCount = textContent.trim().split(/\s+/).length;
-    const readTime = Math.ceil(wordCount / wordsPerMinute);
-    return readTime > 0 ? readTime : 1; // Minimum 1 minute
-  };
+  }, [pendingNavigation]);
 
   const defaultContent = "Edit your blog content here...";
 
@@ -307,6 +344,29 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
               onChange={(e) => setLocalTitle(e.target.value)}
               className="w-full"
             />
+          </div>
+
+          {/* Channel Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="channel">Channel *</Label>
+            <Select
+              value={selectedChannel}
+              onValueChange={(value) => setSelectedChannel(value)}
+              disabled={channelLoading}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue
+                  placeholder={channelLoading ? "Loading channels..." : "Select a channel"}
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {availableChannels.map((channel) => (
+                  <SelectItem key={channel.id} value={channel.id}>
+                    {channel.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Tag Selection */}
@@ -442,41 +502,43 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
       <div className="flex justify-center">
         <Button
           variant="default"
-          onClick={() => setShowPreview(!showPreview)}
+          onClick={handlePreviewToggle}
           className="w-[200px]"
-          disabled={!content || !localTitle.trim()}
+          disabled={isPreviewDisabled}
         >
           {showPreview ? "Hide Preview" : "Show Preview"}
         </Button>
       </div>
 
-      {/* Preview Section */}
-      {showPreview && content && localTitle.trim() && (
-        <Card>
-          <CardHeader>
-            <h3 className="text-lg font-semibold">Blog Preview</h3>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Title and Read Time */}
-              <div className="border-b pb-4">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">{localTitle}</h1>
-                <div className="flex items-center text-sm text-gray-500">
-                  <Calendar className="w-4 h-4 mr-1" />
-                  <span className="mr-4">{new Date().toLocaleDateString()}</span>
-                  <span>{calculateReadTime(content.html)} min read</span>
-                </div>
-              </div>
+      {/* Preview Section - Memoized */}
+      {useMemo(() => {
+        if (!showPreview || !content || !localTitle.trim()) return null;
 
-              {/* Content */}
-              <div
-                className="ProseMirror prose prose-sm sm:prose-base lg:prose-lg max-w-none prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-blockquote:my-2"
-                dangerouslySetInnerHTML={{ __html: content.html }}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      )}
+        return (
+          <Card>
+            <CardHeader>
+              <h3 className="text-lg font-semibold">Blog Preview</h3>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="border-b pb-4">
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">{localTitle}</h1>
+                  <div className="flex items-center text-sm text-gray-500">
+                    <Calendar className="w-4 h-4 mr-1" />
+                    <span className="mr-4">{new Date().toLocaleDateString()}</span>
+                    <span>{calculateReadTime(content.html)} min read</span>
+                  </div>
+                </div>
+                <div
+                  className="ProseMirror prose prose-sm sm:prose-base lg:prose-lg max-w-none prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-blockquote:my-2"
+                  dangerouslySetInnerHTML={{ __html: content.html }}
+                />
+                <HlsPlyrHydrator />
+              </div>
+            </CardContent>
+          </Card>
+        );
+      }, [showPreview, content, localTitle, calculateReadTime])}
 
       {/* Unsaved Changes Dialog */}
       <Dialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>

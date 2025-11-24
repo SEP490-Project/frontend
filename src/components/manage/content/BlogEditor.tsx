@@ -114,6 +114,15 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
     return [];
   });
 
+  // Memoized read time calculation
+  const calculateReadTime = useCallback((htmlContent: string) => {
+    const textContent = htmlContent.replace(/<[^>]*>/g, "");
+    const wordsPerMinute = 200;
+    const wordCount = textContent.trim().split(/\s+/).length;
+    const readTime = Math.ceil(wordCount / wordsPerMinute);
+    return readTime > 0 ? readTime : 1;
+  }, []);
+
   // Update selected tags when availableTags loads and we have editing content
   React.useEffect(() => {
     if (editingContent?.blog?.tags && availableTags.length > 0 && selectedTags.length === 0) {
@@ -220,6 +229,7 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
     selectedTask?.id,
     onSave,
     contentType,
+    calculateReadTime,
   ]);
 
   // Memoized initial content for unsaved changes detection
@@ -284,15 +294,6 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
       window.location.href = pendingNavigation;
     }
   }, [pendingNavigation]);
-
-  // Memoized read time calculation
-  const calculateReadTime = useCallback((htmlContent: string) => {
-    const textContent = htmlContent.replace(/<[^>]*>/g, "");
-    const wordsPerMinute = 200;
-    const wordCount = textContent.trim().split(/\s+/).length;
-    const readTime = Math.ceil(wordCount / wordsPerMinute);
-    return readTime > 0 ? readTime : 1;
-  }, []);
 
   const defaultContent = "Edit your blog content here...";
 

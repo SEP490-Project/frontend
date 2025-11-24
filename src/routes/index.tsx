@@ -48,6 +48,7 @@ import {
   BasicInfoStep,
   VariantsStep,
   DoneStep,
+  PreOrder,
 } from "@/pages/manager/sale";
 import ContentPreviewPage from "@/pages/manager/marketing/content-approval/ContentPreviewPage";
 import AddProductStep from "@/components/manage/sale/product/AddProductStep";
@@ -115,7 +116,11 @@ const AppRoutes = () => (
           {/* <Route path="product/:id/edit" element={<ProductDetail />} /> */}
           <Route path="product/:id" element={<ProductDetail />} />
           <Route path="category" element={<Category />} />
-          <Route path="order" element={<Order />} />
+          <Route path="order">
+            <Route index element={<Order />} />
+            <Route path="pre-order" element={<PreOrder />} />
+          </Route>
+
           <Route path="review" element={<Review />} />
           <Route path="transaction" element={<Transaction />} />
         </Route>

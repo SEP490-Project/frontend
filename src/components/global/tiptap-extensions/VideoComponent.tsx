@@ -1,19 +1,11 @@
 import React from "react";
 import { NodeViewWrapper } from "@tiptap/react";
+import type { NodeViewProps } from "@tiptap/react";
 import PlyrPlayer from "@/components/global/PlyrPlayer";
 
-interface VideoComponentProps {
-  node: {
-    attrs: {
-      src: string;
-      width: string;
-    };
-  };
-  updateAttributes: (attrs: { width: string }) => void;
-}
-
-const VideoComponent: React.FC<VideoComponentProps> = ({ node }) => {
-  const { src, width } = node.attrs;
+const VideoComponent: React.FC<NodeViewProps> = ({ node }) => {
+  const src = node.attrs.src as string;
+  const width = node.attrs.width as string;
 
   return (
     <NodeViewWrapper className="video-component-wrapper">

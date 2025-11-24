@@ -8,9 +8,7 @@ import Color from "@tiptap/extension-color";
 import Highlight from "@tiptap/extension-highlight";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
-// Import the custom extension we created
 import { VideoExtension } from "./tiptap-extensions/VideoExtension";
-
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -31,19 +29,24 @@ import {
   Heading1,
   Heading2,
   Heading3,
+  List,
+  ListOrdered,
   Link2,
   ImageIcon,
   AlignLeft,
   AlignCenter,
   AlignRight,
+  AlignJustify,
   Palette,
   Highlighter,
   Undo,
   Redo,
+  Quote,
   Minus,
-  Video, // Import Video Icon
+  Video,
   UploadCloud,
   Link as LinkIcon,
+  Unlink,
 } from "lucide-react";
 import { isTiptapJson } from "@/libs/helper/tiptapHelper";
 import { useAuth } from "@/libs/hooks/useAuth";
@@ -63,8 +66,11 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
   // Convert initial content to proper format
   const getInitialContent = () => {
     if (!initialContent) return "<p>Start typing...</p>";
+
+    // If it's a string, check if it's JSON
     if (typeof initialContent === "string") {
       if (isTiptapJson(initialContent)) {
+        // Parse and return JSON object
         try {
           return JSON.parse(initialContent);
         } catch {
@@ -73,6 +79,8 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
       }
       return initialContent;
     }
+
+    // If it's already an object, return it
     return initialContent;
   };
 
@@ -99,7 +107,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
       }),
       Underline,
       TextAlign.configure({
-        types: ["heading", "paragraph", "image", "video"], // Add video to text align
+        types: ["heading", "paragraph", "image", "video"],
       }),
     ],
     content: getInitialContent(),
@@ -125,6 +133,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
 
   if (!editor) return null;
 
+  // Word count function
   const getWordCount = () => {
     const text = editor.getText();
     const words = text
@@ -280,7 +289,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
 
             <Separator orientation="vertical" className="mx-1 h-5" />
 
-            {/* Formatting */}
+            {/* Text Formatting */}
             <Button
               variant="ghost"
               size="icon"
@@ -316,7 +325,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
 
             <Separator orientation="vertical" className="mx-1 h-5" />
 
-            {/* Colors */}
+            {/* Text Color */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="icon">
@@ -337,6 +346,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
               </PopoverContent>
             </Popover>
 
+            {/* Highlight Color */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="icon">
@@ -357,6 +367,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
                       className="w-6 h-6 rounded border border-gray-200 hover:scale-110 transition-transform"
                       style={{ backgroundColor: color }}
                       onClick={() => editor.chain().focus().setHighlight({ color }).run()}
+                      title={`Set highlight color to ${color}`}
                     />
                   ))}
                 </div>
@@ -393,7 +404,27 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
 
             <Separator orientation="vertical" className="mx-1 h-5" />
 
-            {/* Alignment */}
+            {/* Lists */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => editor.chain().focus().toggleBulletList().run()}
+              className={editor.isActive("bulletList") ? "bg-muted" : ""}
+            >
+              <List className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => editor.chain().focus().toggleOrderedList().run()}
+              className={editor.isActive("orderedList") ? "bg-muted" : ""}
+            >
+              <ListOrdered className="w-4 h-4" />
+            </Button>
+
+            <Separator orientation="vertical" className="mx-1 h-5" />
+
+            {/* Text Alignment */}
             <Button
               variant="ghost"
               size="icon"
@@ -418,6 +449,26 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
             >
               <AlignRight className="w-4 h-4" />
             </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => editor.chain().focus().setTextAlign("justify").run()}
+              className={editor.isActive({ textAlign: "justify" }) ? "bg-muted" : ""}
+            >
+              <AlignJustify className="w-4 h-4" />
+            </Button>
+
+            <Separator orientation="vertical" className="mx-1 h-5" />
+
+            {/* Quote */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => editor.chain().focus().toggleBlockquote().run()}
+              className={editor.isActive("blockquote") ? "bg-muted" : ""}
+            >
+              <Quote className="w-4 h-4" />
+            </Button>
 
             <Separator orientation="vertical" className="mx-1 h-5" />
 
@@ -429,6 +480,15 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
               className={editor.isActive("link") ? "bg-muted" : ""}
             >
               <Link2 className="w-4 h-4" />
+            </Button>
+            {/* Link Removal */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => editor.chain().focus().unsetLink().run()}
+              disabled={!editor.isActive("link")}
+            >
+              <Unlink className="w-4 h-4" />
             </Button>
 
             {/* Image Dialog */}
@@ -503,10 +563,11 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
             </Dialog>
           </div>
 
+          {/* Word Count Section */}
           <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 px-3 py-1 rounded-md">
             <span>{getWordCount()} words</span>
             <Separator orientation="vertical" className="h-4" />
-            <span>{getCharacterCount()} chars</span>
+            <span>{getCharacterCount()} characters</span>
           </div>
         </div>
       </CardHeader>

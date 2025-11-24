@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, CheckCircle, Tag, XCircle, Play, Loader2 } from "lucide-react";
 import type { Content } from "@/libs/types/content";
 import { tiptapJsonToHtml, isTiptapJson } from "@/libs/helper/tiptapHelper";
+import { HlsPlyrHydrator } from "@/components/hls-video-hydrator";
 
 interface ContentDetailModalProps {
   content: Content | null;
@@ -521,10 +522,13 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                 }
 
                 return (
-                  <div
-                    dangerouslySetInnerHTML={{ __html: htmlToDisplay }}
-                    className="ProseMirror prose prose-sm sm:prose-base lg:prose-lg max-w-none prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-blockquote:my-2"
-                  />
+                  <>
+                    <div
+                      dangerouslySetInnerHTML={{ __html: htmlToDisplay }}
+                      className="ProseMirror prose prose-sm sm:prose-base lg:prose-lg max-w-none prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-blockquote:my-2"
+                    />
+                    <HlsPlyrHydrator />
+                  </>
                 );
               })()}
             </div>

@@ -40,6 +40,7 @@ import { useTag } from "@/libs/hooks/useTag";
 import { manageChannel } from "@/libs/services/manageChannel";
 
 import type { Tag } from "@/libs/types/tag";
+import { HlsPlyrHydrator } from "@/components/hls-video-hydrator";
 
 type ContentType = "blog" | "video";
 
@@ -532,6 +533,7 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
                   className="ProseMirror prose prose-sm sm:prose-base lg:prose-lg max-w-none prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-blockquote:my-2"
                   dangerouslySetInnerHTML={{ __html: content.html }}
                 />
+                <HlsPlyrHydrator />
               </div>
             </CardContent>
           </Card>

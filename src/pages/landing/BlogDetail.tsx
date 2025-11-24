@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Loader2, Tag, Calendar, User, Clock } from "lucide-react";
 import { tiptapJsonToHtml } from "@/libs/helper/tiptapHelper";
 import type { ListContent } from "@/libs/types/content";
+import { HlsPlyrHydrator } from "@/components/hls-video-hydrator";
 
 const BlogDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -164,6 +165,7 @@ const BlogDetail = () => {
                     return <div className="text-red-500 italic">Error loading content</div>;
                   }
                 })()}
+                <HlsPlyrHydrator />
               </div>
 
               {/* Additional Content Info */}

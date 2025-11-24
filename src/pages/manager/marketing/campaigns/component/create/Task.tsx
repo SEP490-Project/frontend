@@ -13,16 +13,53 @@ import {
 } from "@/components/ui/select";
 import { DatePicker } from "@/components/date-picker";
 import { ContractUploader } from "@/components/global";
-import { Plus, Trash2 } from "lucide-react";
+import FileList from "@/components/global/FileList";
+import { Plus, Trash2, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import { useAppDispatch } from "@/libs/stores";
 import { getContractById } from "@/libs/stores/contractManager/thunk";
+import { suggestCampaign as suggestCampaignThunk } from "@/libs/stores/campaignManager/thunk";
+import { useCampaign } from "@/libs/hooks/useCampaign";
 import { useContract } from "@/libs/hooks/useContract";
 import { generateMilestonesFromContract } from "../../utils/milestoneGenerator";
+
+interface TaskDescriptionJson {
+  // Common fields
+  kpi_goals?: { metric: string; target: string }[] | null;
+  material_urls?: string[];
+
+  // Affiliate & Advertising specific
+  advertised_item_id?: number;
+  product_name?: string;
+  platform?: string;
+  tagline?: string;
+  creative_notes?: string;
+  hashtags?: string[];
+  is_affiliate_content?: boolean;
+  tracking_link?: string;
+
+  // Co-Production specific
+  is_product_creation_task?: boolean;
+  product_id?: number;
+  product_description?: string;
+  subtasks?: string[];
+  materials?: any;
+
+  // Brand Ambassador specific
+  event_id?: number;
+  event_name?: string;
+  event_date?: string;
+  event_duration?: string;
+  location?: string;
+  activities?: string[];
+  representation_rules?: string[];
+}
 
 interface TaskDescription {
   description: string;
   material_url?: string;
+  description_json?: TaskDescriptionJson;
 }
 
 interface Task {
@@ -104,38 +141,34 @@ const CreateTask: React.FC<CreateTaskProps> = ({
   const contractEnd = formatDateForInput(selectedContract?.end_date);
   const dispatch = useAppDispatch();
   const { contractDetail, detailLoading } = useContract();
+  const { suggestCampaign, suggestLoading } = useCampaign();
   const [hasLoadedContract, setHasLoadedContract] = React.useState<string | null>(null);
 
-  // Reset flag when campaign mode changes
   React.useEffect(() => {
     if (campaignMode === "internal") {
       setHasLoadedContract(null);
     }
   }, [campaignMode]);
 
-  // Auto-populate milestones from contract financial terms
   React.useEffect(() => {
     if (
       campaignMode === "contract" &&
       selectedContract?.id &&
       hasLoadedContract !== selectedContract.id
     ) {
-      // Fetch contract detail to get financial terms
       dispatch(getContractById(selectedContract.id));
       setHasLoadedContract(selectedContract.id);
     }
   }, [dispatch, selectedContract?.id, campaignMode, hasLoadedContract]);
 
-  // Populate milestones from contract financial terms
   React.useEffect(() => {
     if (
       campaignMode === "contract" &&
       contractDetail?.id === selectedContract?.id &&
       campaignData?.start_date &&
       campaignData?.end_date &&
-      milestones.length === 0 // Only populate if milestones are empty
+      milestones.length === 0
     ) {
-      // For contracts with schedule (ADVERTISING, BRAND_AMBASSADOR)
       if ((contractDetail?.financial_terms as any)?.schedule) {
         const schedule = (contractDetail!.financial_terms as any).schedule;
         const contractMilestones = schedule.map((scheduleItem: any) => ({
@@ -145,9 +178,7 @@ const CreateTask: React.FC<CreateTaskProps> = ({
           tasks: [],
         }));
         setMilestones(contractMilestones);
-      }
-      // For contracts with payment cycles (CO_PRODUCING, AFFILIATE)
-      else if (contractDetail?.type === "CO_PRODUCING" || contractDetail?.type === "AFFILIATE") {
+      } else if (contractDetail?.type === "CO_PRODUCING" || contractDetail?.type === "AFFILIATE") {
         const generatedMilestones = generateMilestonesFromContract(
           contractDetail,
           campaignData.start_date,
@@ -228,39 +259,82 @@ const CreateTask: React.FC<CreateTaskProps> = ({
       ),
     );
 
-  // Manual regenerate milestones from contract
-  const regenerateMilestonesFromContract = () => {
-    if (
-      campaignMode === "contract" &&
-      contractDetail &&
-      campaignData?.start_date &&
-      campaignData?.end_date
-    ) {
-      // For contracts with schedule (ADVERTISING, BRAND_AMBASSADOR)
-      if ((contractDetail?.financial_terms as any)?.schedule) {
-        const schedule = (contractDetail!.financial_terms as any).schedule;
-        const contractMilestones = schedule.map((scheduleItem: any) => ({
-          id: crypto.randomUUID(),
-          description: scheduleItem.milestone || `Payment milestone ${scheduleItem.id}`,
-          due_date: formatDateForInput(scheduleItem.due_date),
-          tasks: [],
-        }));
-        setMilestones(contractMilestones);
-      }
-      // For contracts with payment cycles (CO_PRODUCING, AFFILIATE)
-      else if (contractDetail?.type === "CO_PRODUCING" || contractDetail?.type === "AFFILIATE") {
-        const generatedMilestones = generateMilestonesFromContract(
-          contractDetail,
-          campaignData.start_date,
-          campaignData.end_date,
-        );
+  // const regenerateMilestonesFromContract = () => {
+  //   if (
+  //     campaignMode === "contract" &&
+  //     contractDetail &&
+  //     campaignData?.start_date &&
+  //     campaignData?.end_date
+  //   ) {
+  //     if ((contractDetail?.financial_terms as any)?.schedule) {
+  //       const schedule = (contractDetail!.financial_terms as any).schedule;
+  //       const contractMilestones = schedule.map((scheduleItem: any) => ({
+  //         id: crypto.randomUUID(),
+  //         description: scheduleItem.milestone || `Payment milestone ${scheduleItem.id}`,
+  //         due_date: formatDateForInput(scheduleItem.due_date),
+  //         tasks: [],
+  //       }));
+  //       setMilestones(contractMilestones);
+  //     } else if (contractDetail?.type === "CO_PRODUCING" || contractDetail?.type === "AFFILIATE") {
+  //       const generatedMilestones = generateMilestonesFromContract(
+  //         contractDetail,
+  //         campaignData.start_date,
+  //         campaignData.end_date,
+  //       );
 
-        if (generatedMilestones.length > 0) {
-          setMilestones(generatedMilestones);
-        }
+  //       if (generatedMilestones.length > 0) {
+  //         setMilestones(generatedMilestones);
+  //       }
+  //     }
+  //   }
+  // };
+
+  const handleSuggestCampaign = async () => {
+    if (campaignMode === "contract" && selectedContract?.id) {
+      try {
+        await dispatch(suggestCampaignThunk(selectedContract.id)).unwrap();
+        toast.success("Campaign suggestion generated successfully!");
+      } catch (error: any) {
+        toast.error(error || "Failed to generate campaign suggestion");
       }
     }
   };
+
+  React.useEffect(() => {
+    if (suggestCampaign && campaignMode === "contract") {
+      const suggested = suggestCampaign.suggested_campaign;
+      if (suggested && suggested.milestones) {
+        const newMilestones = suggested.milestones.map((milestone: any) => ({
+          id: crypto.randomUUID(),
+          description: milestone.description,
+          due_date: formatDateForInput(milestone.due_date),
+          tasks: milestone.tasks.map((task: any) => {
+            const descriptionJson = task.description_json || {};
+            const materialUrls = descriptionJson.material_urls || [];
+
+            return {
+              id: crypto.randomUUID(),
+              name: task.name,
+              type: task.type,
+              deadline: formatDateForInput(task.deadline),
+              description: {
+                description:
+                  task.description_json?.product_description ||
+                  task.description_json?.creative_notes ||
+                  task.description_json?.event_name ||
+                  "",
+                material_url: materialUrls[0] || "",
+                description_json: descriptionJson,
+              },
+              materialFiles: [],
+              material_urls: materialUrls,
+            };
+          }),
+        }));
+        setMilestones(newMilestones);
+      }
+    }
+  }, [suggestCampaign, campaignMode, setMilestones]);
   const handleTaskMaterialUpload = (milestoneId: string, taskId: string, urls: string[]) => {
     const material_url = urls[0] || "";
     const task = milestones.find((m) => m.id === milestoneId)?.tasks.find((t) => t.id === taskId);
@@ -278,7 +352,6 @@ const CreateTask: React.FC<CreateTaskProps> = ({
   const handleTaskMaterialRemove = (milestoneId: string, taskId: string, removedUrls: string[]) => {
     const task = milestones.find((m) => m.id === milestoneId)?.tasks.find((t) => t.id === taskId);
     if (task) {
-      // Remove URLs from material_urls array
       const currentUrls = task.material_urls || [];
       const updatedUrls = currentUrls.filter((url) => !removedUrls.includes(url));
 
@@ -292,7 +365,6 @@ const CreateTask: React.FC<CreateTaskProps> = ({
 
   return (
     <div className="pt-6 space-y-6">
-      {/* Loading State */}
       {campaignMode === "contract" && detailLoading && (
         <div className="flex items-center justify-center p-8">
           <div className="flex items-center gap-2">
@@ -302,7 +374,6 @@ const CreateTask: React.FC<CreateTaskProps> = ({
         </div>
       )}
 
-      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h3 className="text-lg font-semibold">Milestones & Tasks</h3>
@@ -343,12 +414,23 @@ const CreateTask: React.FC<CreateTaskProps> = ({
         <div className="flex gap-2">
           {campaignMode === "contract" && contractDetail && (
             <Button
-              onClick={regenerateMilestonesFromContract}
+              onClick={handleSuggestCampaign}
               variant="outline"
               size="sm"
               className="flex items-center gap-1 border-dashed"
+              disabled={suggestLoading}
             >
-              🔄 Regenerate from Contract
+              {suggestLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-3 w-3 border-2 border-blue-500 border-t-transparent" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles size={14} />
+                  Suggest Campaign from Contract
+                </>
+              )}
             </Button>
           )}
           {campaignMode === "internal" && (
@@ -361,23 +443,10 @@ const CreateTask: React.FC<CreateTaskProps> = ({
               <Plus size={14} /> Add Milestone
             </Button>
           )}
-          {campaignMode === "contract" && (
-            <Button
-              onClick={addMilestone}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-1"
-            >
-              <Plus size={14} /> Add Custom Milestone
-            </Button>
-          )}
         </div>
       </div>
 
-      {/* Milestones */}
       {milestones.map((m, mi) => {
-        // First milestone: start from contract start
-        // Subsequent milestones: start from previous milestone's due date
         const milestoneMin =
           mi === 0 ? contractStart : milestones[mi - 1]?.due_date || contractStart;
         const milestoneMax = contractEnd;
@@ -416,7 +485,6 @@ const CreateTask: React.FC<CreateTaskProps> = ({
             </CardHeader>
 
             <CardContent className="space-y-5 p-5">
-              {/* Milestone fields */}
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <Label>Description *</Label>
@@ -456,7 +524,6 @@ const CreateTask: React.FC<CreateTaskProps> = ({
                 </div>
               </div>
 
-              {/* Tasks */}
               <div className="mt-4 space-y-3">
                 <div className="flex justify-between items-center">
                   <Label className="text-sm font-medium">Tasks</Label>
@@ -471,7 +538,6 @@ const CreateTask: React.FC<CreateTaskProps> = ({
                 </div>
 
                 {m.tasks.map((t, ti) => {
-                  // Task deadline must be between milestone start and milestone due date
                   const taskMin = milestoneMin;
                   const taskMax = m.due_date || contractEnd;
 
@@ -544,6 +610,202 @@ const CreateTask: React.FC<CreateTaskProps> = ({
                           />
                         </div>
 
+                        {/* Display description_json details if available */}
+                        {t.description?.description_json && (
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium text-slate-700">
+                              Task Details from Suggestion
+                            </Label>
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2 text-xs">
+                              {/* Affiliate & Advertising */}
+                              {t.type === "CONTENT" &&
+                                t.description.description_json.advertised_item_id && (
+                                  <>
+                                    {t.description.description_json.product_name && (
+                                      <p>
+                                        <span className="font-medium">Product:</span>{" "}
+                                        {t.description.description_json.product_name}
+                                      </p>
+                                    )}
+                                    {t.description.description_json.platform && (
+                                      <p>
+                                        <span className="font-medium">Platform:</span>{" "}
+                                        {t.description.description_json.platform}
+                                      </p>
+                                    )}
+                                    {t.description.description_json.tagline && (
+                                      <p>
+                                        <span className="font-medium">Tagline:</span>{" "}
+                                        {t.description.description_json.tagline}
+                                      </p>
+                                    )}
+                                    {t.description.description_json.creative_notes && (
+                                      <p>
+                                        <span className="font-medium">Creative Notes:</span>{" "}
+                                        {t.description.description_json.creative_notes}
+                                      </p>
+                                    )}
+                                    {t.description.description_json.hashtags &&
+                                      t.description.description_json.hashtags.length > 0 && (
+                                        <p>
+                                          <span className="font-medium">Hashtags:</span>{" "}
+                                          {t.description.description_json.hashtags.join(", ")}
+                                        </p>
+                                      )}
+                                    {t.description.description_json.tracking_link && (
+                                      <p>
+                                        <span className="font-medium">Tracking Link:</span>{" "}
+                                        <a
+                                          href={t.description.description_json.tracking_link}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-blue-600 hover:underline"
+                                        >
+                                          {t.description.description_json.tracking_link}
+                                        </a>
+                                      </p>
+                                    )}
+                                  </>
+                                )}
+
+                              {/* Co-Production */}
+                              {t.type === "PRODUCT" &&
+                                t.description.description_json.is_product_creation_task && (
+                                  <>
+                                    {t.description.description_json.product_name && (
+                                      <p>
+                                        <span className="font-medium">Product:</span>{" "}
+                                        {t.description.description_json.product_name}
+                                      </p>
+                                    )}
+                                    {t.description.description_json.product_description && (
+                                      <p>
+                                        <span className="font-medium">Description:</span>{" "}
+                                        {t.description.description_json.product_description}
+                                      </p>
+                                    )}
+                                    {t.description.description_json.subtasks &&
+                                      t.description.description_json.subtasks.length > 0 && (
+                                        <div>
+                                          <p className="font-medium mb-1">Subtasks:</p>
+                                          <ul className="list-disc list-inside ml-2">
+                                            {t.description.description_json.subtasks.map(
+                                              (subtask: string, idx: number) => (
+                                                <li key={idx}>{subtask}</li>
+                                              ),
+                                            )}
+                                          </ul>
+                                        </div>
+                                      )}
+                                  </>
+                                )}
+
+                              {/* Brand Ambassador */}
+                              {t.type === "EVENT" && t.description.description_json.event_id && (
+                                <>
+                                  {t.description.description_json.event_name && (
+                                    <p>
+                                      <span className="font-medium">Event:</span>{" "}
+                                      {t.description.description_json.event_name}
+                                    </p>
+                                  )}
+                                  {t.description.description_json.event_date && (
+                                    <p>
+                                      <span className="font-medium">Date:</span>{" "}
+                                      {t.description.description_json.event_date}
+                                    </p>
+                                  )}
+                                  {t.description.description_json.event_duration && (
+                                    <p>
+                                      <span className="font-medium">Duration:</span>{" "}
+                                      {t.description.description_json.event_duration}
+                                    </p>
+                                  )}
+                                  {t.description.description_json.location && (
+                                    <p>
+                                      <span className="font-medium">Location:</span>{" "}
+                                      {t.description.description_json.location}
+                                    </p>
+                                  )}
+                                  {t.description.description_json.activities &&
+                                    t.description.description_json.activities.length > 0 && (
+                                      <p>
+                                        <span className="font-medium">Activities:</span>{" "}
+                                        {t.description.description_json.activities.join(", ")}
+                                      </p>
+                                    )}
+                                  {t.description.description_json.representation_rules &&
+                                    t.description.description_json.representation_rules.length >
+                                      0 && (
+                                      <div>
+                                        <p className="font-medium mb-1">Representation Rules:</p>
+                                        <ul className="list-disc list-inside ml-2">
+                                          {t.description.description_json.representation_rules.map(
+                                            (rule: string, idx: number) => (
+                                              <li key={idx}>{rule}</li>
+                                            ),
+                                          )}
+                                        </ul>
+                                      </div>
+                                    )}
+                                </>
+                              )}
+
+                              {/* KPI Goals (common) */}
+                              {t.description.description_json.kpi_goals &&
+                                t.description.description_json.kpi_goals.length > 0 && (
+                                  <div>
+                                    <p className="font-medium mb-1">KPI Goals:</p>
+                                    <ul className="list-disc list-inside ml-2">
+                                      {t.description.description_json.kpi_goals.map(
+                                        (kpi: any, idx: number) => (
+                                          <li key={idx}>
+                                            {kpi.metric}: {kpi.target}
+                                          </li>
+                                        ),
+                                      )}
+                                    </ul>
+                                  </div>
+                                )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Display material URLs if available from suggestion */}
+                        {t.material_urls && t.material_urls.length > 0 && (
+                          <div>
+                            <Label>Suggested Materials</Label>
+                            <FileList
+                              files={t.material_urls.map((url, idx) => ({
+                                id: `${t.id}-material-${idx}`,
+                                name: url.split("/").pop() || `Material ${idx + 1}`,
+                                url: url,
+                                progress: 100,
+                                status: "completed" as const,
+                              }))}
+                              onDownload={(file) => {
+                                if (file.url) {
+                                  window.open(file.url, "_blank");
+                                }
+                              }}
+                              onRemove={(id) => {
+                                const urlIndex = parseInt(id.split("-").pop() || "0");
+                                const updatedUrls =
+                                  t.material_urls?.filter((_, idx) => idx !== urlIndex) || [];
+                                updateTask(m.id, t.id, {
+                                  material_urls: updatedUrls,
+                                  description: {
+                                    ...t.description,
+                                    material_url: updatedUrls[0] || "",
+                                  },
+                                });
+                              }}
+                              className="mt-2"
+                              showStatus={false}
+                            />
+                          </div>
+                        )}
+
                         <div>
                           <Label>Task Material (Optional)</Label>
                           <ContractUploader
@@ -599,7 +861,6 @@ const CreateTask: React.FC<CreateTaskProps> = ({
         );
       })}
 
-      {/* Footer Buttons */}
       <div className="flex justify-between pt-4">
         <Button variant="outline" onClick={onBack}>
           Back

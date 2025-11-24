@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useAppDispatch } from "@/libs/stores";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -169,6 +169,17 @@ const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({ userRole = "mar
       transition: { staggerChildren: 0.1 },
     },
   };
+
+  const sortedMilestones = useMemo(() => {
+    const ms = campaignDetail?.milestones ?? [];
+
+    return [...ms].sort((a, b) => {
+      const ta = a.due_date ? Date.parse(a.due_date) : Infinity;
+      const tb = b.due_date ? Date.parse(b.due_date) : Infinity;
+
+      return ta - tb;
+    });
+  }, [campaignDetail?.milestones]);
 
   if (detailLoading) {
     return (
@@ -418,7 +429,7 @@ const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({ userRole = "mar
         </motion.div>
 
         {/* Milestones Section */}
-        {campaignDetail?.milestones && campaignDetail.milestones.length > 0 && (
+        {sortedMilestones && sortedMilestones.length > 0 && (
           <motion.div variants={itemVariants}>
             <Card>
               <CardHeader>
@@ -427,8 +438,9 @@ const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({ userRole = "mar
                   Campaign Milestones
                 </CardTitle>
               </CardHeader>
+
               <CardContent className="space-y-4">
-                {campaignDetail.milestones.map((milestone, index) => (
+                {sortedMilestones.map((milestone, index) => (
                   <div
                     key={milestone.id}
                     className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
@@ -437,6 +449,7 @@ const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({ userRole = "mar
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                           <h4 className="font-medium text-gray-900">Milestone {index + 1}</h4>
+
                           <Badge
                             className={`border text-xs font-medium px-2 py-1 ${
                               MILESTONE_STATUS_COLORS[milestone.status] ||
@@ -445,12 +458,14 @@ const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({ userRole = "mar
                           >
                             {MILESTONE_STATUS_LABELS[milestone.status] || milestone.status}
                           </Badge>
+
                           {milestone.behind_schedule && (
                             <Badge className="bg-red-100 text-red-800 border-red-200 text-xs font-medium px-2 py-1">
                               Behind Schedule
                             </Badge>
                           )}
                         </div>
+
                         <p className="text-gray-700 mb-2">{milestone.description}</p>
 
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
@@ -458,6 +473,7 @@ const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({ userRole = "mar
                             <span className="text-gray-600">Due Date:</span>
                             <p className="font-medium">{formatDate(milestone.due_date)}</p>
                           </div>
+
                           {milestone.completed_at && (
                             <div>
                               <span className="text-gray-600">Completed:</span>
@@ -466,6 +482,7 @@ const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({ userRole = "mar
                               </p>
                             </div>
                           )}
+
                           <div>
                             <span className="text-gray-600">Tasks:</span>
                             <p className="font-medium">{milestone.number_of_tasks}</p>
@@ -474,7 +491,6 @@ const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({ userRole = "mar
                       </div>
                     </div>
 
-                    {/* Progress Bar */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-gray-700">
@@ -482,6 +498,7 @@ const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({ userRole = "mar
                         </span>
                         <FaClipboardCheck className="h-4 w-4 text-gray-400" />
                       </div>
+
                       <Progress value={milestone.completion_percentage} className="h-2" />
                     </div>
                   </div>

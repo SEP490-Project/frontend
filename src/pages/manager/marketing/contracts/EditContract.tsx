@@ -12,7 +12,6 @@ import { useContract } from "@/libs/hooks/useContract";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 import { ContractPreviewModal } from "@/components/manage/marketing/contract/ContractPreviewModal";
-// import { WarningDialog } from "@/components/global";
 import {
   ContractInformation,
   ScopeOfWork,

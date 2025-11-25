@@ -7,7 +7,6 @@ import type { CampaignRequest } from "@/libs/types/campaign";
 import { useAppDispatch } from "@/libs/stores";
 import { createCampaign, createInternalCampaign } from "@/libs/stores/campaignManager/thunk";
 import { useNavigate } from "react-router";
-import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { FaCalendarDays, FaFileLines, FaListCheck, FaArrowLeft } from "react-icons/fa6";
@@ -128,25 +127,34 @@ const AddCampaignPage: React.FC = () => {
 
   const handleSubmit = async () => {
     if (!isCampaignValid) {
-      toast.error("Please fill in all required campaign details!");
       return;
     }
     const payload = toPayload();
 
     try {
+      let result;
       if (campaignMode === "contract") {
-        await dispatch(createCampaign(payload));
-        toast.success("Contract-based campaign created successfully!");
+        result = await dispatch(createCampaign(payload));
       } else {
-        await dispatch(createInternalCampaign(payload));
-        toast.success("Internal campaign created successfully!");
+        result = await dispatch(createInternalCampaign(payload));
       }
 
-      setTimeout(() => {
-        navigate("/manage/marketing/campaigns");
-      }, 1000);
-    } catch {
-      return;
+      // Check if the action was fulfilled (not rejected)
+      if (
+        createCampaign.fulfilled.match(result) ||
+        createInternalCampaign.fulfilled.match(result)
+      ) {
+        // Only navigate on success
+        setTimeout(() => {
+          navigate("/manage/marketing/campaigns");
+        }, 1000);
+      } else {
+        // Handle rejected case - stay on page
+        console.error("Campaign creation was rejected:", result.payload);
+      }
+    } catch (error: any) {
+      // This catch should not be reached with proper Redux Toolkit setup
+      console.error("Unexpected error:", error);
     }
   };
 
@@ -337,6 +345,7 @@ const AddCampaignPage: React.FC = () => {
                     selectedContract={selectedContract}
                     campaignType={campaignData.type}
                     campaignMode={campaignMode}
+                    campaignData={campaignData}
                     onBack={() => setActiveTab("campaign")}
                     onNext={() => setActiveTab("review")}
                   />

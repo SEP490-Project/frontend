@@ -79,7 +79,10 @@ const TaskSelectionDialog: React.FC<TaskSelectionDialogProps> = ({
       const isMatchingType =
         task.type === "CONTENT" || task.type === "MARKETING" || task.type === "PRODUCT";
 
-      return isMatchingType;
+      // Filter by status - only show IN_PROGRESS tasks
+      const isInProgressStatus = task.status === "IN_PROGRESS";
+
+      return isMatchingType && isInProgressStatus;
     });
   }, [tasks]);
 
@@ -144,11 +147,10 @@ const TaskSelectionDialog: React.FC<TaskSelectionDialogProps> = ({
           <>
             <DialogHeader>
               <DialogTitle className="text-lg font-medium leading-6 text-gray-900">
-                Select Task for Content Select Task for Content
+                Select Task for Content
               </DialogTitle>
               <DialogDescription>
-                Choose a task from the list below to create content for Choose a task from the list
-                below to create content for
+                Choose a task from the list below to create content
               </DialogDescription>
             </DialogHeader>
 

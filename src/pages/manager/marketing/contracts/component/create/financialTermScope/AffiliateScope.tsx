@@ -27,13 +27,27 @@ const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, err
   const start_date = formData?.start_date;
   const end_date = formData?.end_date;
 
-  // Handle schedule generation from PaymentDateSelector - For PREVIEW ONLY
+  // Use ref to prevent infinite loops when schedule updates
+  const previousScheduleRef = React.useRef<string>("");
+
+  // Handle schedule generation from PaymentDateSelector
   const handleScheduleGenerated = React.useCallback(
     (newSchedule: any[]) => {
-      console.log("Schedule generated for preview:", newSchedule);
-      onUpdate({ schedule: newSchedule });
+      // Only apply the schedule format for QUARTERLY cycle
+      if (financial_terms.payment_cycle === "QUARTERLY") {
+        const scheduleString = JSON.stringify(newSchedule);
+
+        // Only update if the schedule has actually changed
+        if (previousScheduleRef.current !== scheduleString) {
+          console.log("Quarterly schedule generated:", newSchedule);
+          previousScheduleRef.current = scheduleString;
+          // Store the schedule as payment_date for backend submission (only for QUARTERLY)
+          onUpdate({ payment_date: newSchedule });
+        }
+      }
+      // For MONTHLY and ANNUALLY, we don't use the schedule callback
     },
-    [onUpdate],
+    [onUpdate, financial_terms.payment_cycle],
   );
 
   return (
@@ -84,7 +98,8 @@ const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, err
             onChange={(value) =>
               onUpdate({
                 payment_cycle: value,
-                payment_date: null,
+                payment_date: value === "QUARTERLY" ? [] : "",
+                payment_date_selector: null,
               })
             }
             options={PAYMENT_CYCLE_OPTIONS}
@@ -98,8 +113,19 @@ const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, err
         {financial_terms.payment_cycle && (
           <PaymentDateSelector
             cycle={financial_terms.payment_cycle}
-            value={financial_terms.payment_date}
-            onChange={(val) => onUpdate({ payment_date: val })}
+            value={
+              financial_terms.payment_cycle === "QUARTERLY"
+                ? financial_terms.payment_date_selector
+                : financial_terms.payment_date
+            }
+            onChange={(val) => {
+              if (financial_terms.payment_cycle === "QUARTERLY") {
+                onUpdate({ payment_date_selector: val });
+              } else {
+                // For MONTHLY and ANNUALLY, store directly to payment_date
+                onUpdate({ payment_date: val });
+              }
+            }}
             onScheduleGenerated={handleScheduleGenerated}
             startDate={start_date}
             endDate={end_date}

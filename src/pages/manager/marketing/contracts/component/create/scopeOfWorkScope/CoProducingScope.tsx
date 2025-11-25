@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 
 const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork }) => {
-  const scope = formData?.scope_of_work || {}; // Changed from scopeOfWork to scope_of_work
+  const scope = formData?.scope_of_work || {};
   const deliverables = scope.deliverables || {};
   const { user } = useAuth();
 

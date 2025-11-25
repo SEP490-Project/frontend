@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FaAngleDown,
   FaRegBell,
@@ -17,6 +17,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { NavLink } from "react-router-dom";
 import { useAuth } from "@/libs/hooks/useAuth";
 import { logout } from "@/libs/stores/authentManager/thunk";
+import { notifications as getNotifications } from "@/libs/stores/notificationManager/thunk";
+import { useNotification } from "@/libs/hooks/useNotification";
 import { defaultAvatarByName } from "@/libs/helper/default-avatar";
 import { useAppDispatch } from "@/libs/stores";
 
@@ -34,11 +36,13 @@ const Header: React.FC<HeaderProps> = ({
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const { user } = useAuth();
   const dispatch = useAppDispatch();
+  const { notifications } = useNotification();
 
-  const notifications = [
-    { id: 1, text: "You have a meeting at 10 AM today" },
-    { id: 2, text: "System will be under maintenance at 11 PM" },
-  ];
+  useEffect(() => {
+    dispatch(getNotifications({ page: 1, limit: 10, user_id: user?.id }));
+  }, [dispatch, user?.id]);
+
+  const displayedNotifications = notifications.slice(0, 3);
 
   const handleLogout = async () => {
     await dispatch(logout());
@@ -155,7 +159,7 @@ const Header: React.FC<HeaderProps> = ({
                 >
                   <FaRegBell size={18} className="text-gray-500" />
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full px-1 border border-white shadow">
-                    {notifications.length}
+                    {displayedNotifications.length}
                   </span>
                 </button>
               </DropdownMenuTrigger>
@@ -171,16 +175,19 @@ const Header: React.FC<HeaderProps> = ({
               <FaRegBell size={18} className="text-primary" />
               Notifications
             </div>
-            {notifications.length === 0 ? (
+            {displayedNotifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-gray-400">
                 <FaRegBell size={18} className="mb-2" />
                 <span className="text-base">No new notifications</span>
               </div>
             ) : (
-              notifications.map((n) => (
+              displayedNotifications.map((n) => (
                 <DropdownMenuItem key={n.id} className="px-5 py-3 hover:bg-gray-50 cursor-pointer">
-                  <div className="font-medium text-gray-800 text-sm">{n.text}</div>
-                  <div className="text-xs text-gray-400 mt-1">Just now</div>
+                  <div className="font-medium text-gray-800 text-sm">{n.content_data.title}</div>
+                  <div className="text-xs text-gray-700 mt-1">{n.content_data.body}</div>
+                  <div className="text-xs text-gray-400 mt-1">
+                    {new Date(n.created_at).toLocaleString()}
+                  </div>
                 </DropdownMenuItem>
               ))
             )}

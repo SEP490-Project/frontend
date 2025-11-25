@@ -42,8 +42,9 @@ const nextState = (currentState: string, nextState?: string) => {
 export const ChangeStatusModal = ({ order, onSuccess }: ChangeStatusModalProps) => {
   const dispatch = useAppDispatch();
   const [selectedStatus, setSelectedStatus] = useState<string>("");
+  const [reason, setReason] = useState<string>("");
 
-  const handleCensorOrder = async (action: "CONFIRM" | "CANCEL", reason: any) => {
+  const handleCensorOrder = async (action: "CONFIRM" | "CANCEL", reason?: any) => {
     if (!order) return;
     try {
       await dispatch(
@@ -85,7 +86,12 @@ export const ChangeStatusModal = ({ order, onSuccess }: ChangeStatusModalProps) 
         {selectedStatus === "CANCELLED" && (
           <div className="mb-2">
             <Label htmlFor="reason">Reason for cancellation:</Label>
-            <Input type="text" id="reason" name="reason" />
+            <Input
+              type="text"
+              id="reason"
+              name="reason"
+              onChange={(e) => setReason(e.target.value)}
+            />
           </div>
         )}
         <div className="flex justify-end">
@@ -93,7 +99,7 @@ export const ChangeStatusModal = ({ order, onSuccess }: ChangeStatusModalProps) 
             disabled={!selectedStatus}
             onClick={() =>
               handleCensorOrder(selectedStatus === "CONFIRMED" ? "CONFIRM" : "CANCEL", {
-                reason: selectedStatus === "CANCELLED" ? "Customer requested cancellation" : "",
+                reason: selectedStatus === "CANCELLED" ? reason : undefined,
               })
             }
             className="mt-4"

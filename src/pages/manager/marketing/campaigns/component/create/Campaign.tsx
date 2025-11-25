@@ -2,10 +2,9 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -137,63 +136,62 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
   return (
     <div className="pt-8 space-y-8">
       {/* STEP 0: CAMPAIGN MODE */}
-      <Card className="border-2 border-blue-100 bg-gradient-to-br from-blue-50 to-white shadow-sm">
-        <CardHeader>
-          <div>
-            <CardTitle className="text-lg font-semibold text-blue-900">Campaign Type</CardTitle>
-            <CardDescription>Choose how you want to create your campaign.</CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <RadioGroup
-            value={campaignMode}
-            onValueChange={(value) => {
-              const newMode = value as "contract" | "internal";
-              setCampaignMode(newMode);
+      <div className="flex space-x-4">
+        <div
+          className={`flex-1 p-4 border rounded-lg cursor-pointer transition-colors ${
+            campaignMode === "contract" ? "bg-blue-50 border-blue-500" : "hover:bg-gray-100"
+          }`}
+          onClick={() => {
+            setCampaignMode("contract");
+            // Reset relevant fields when switching modes
+            setCampaignData((prev) => ({
+              name: prev.name,
+              description: prev.description,
+              // Reset type and contract fields based on mode
+              type: "contract",
+              contract_id: "",
+              // Keep dates but allow them to be overridden
+              start_date: prev.start_date,
+              end_date: prev.end_date,
+            }));
 
-              // Reset relevant fields when switching modes
-              setCampaignData((prev) => ({
-                name: prev.name,
-                description: prev.description,
-                // Reset type and contract fields based on mode
-                type: newMode === "internal" ? prev.type : "",
-                contract_id: newMode === "contract" ? "" : "",
-                // Keep dates but allow them to be overridden
-                start_date: prev.start_date,
-                end_date: prev.end_date,
-              }));
+            // Clear selected contract
+            onContractSelect(null);
+          }}
+        >
+          <div className="text-sm font-medium">Contract-based Campaign</div>
+          <p className="text-xs text-gray-600 mt-1">
+            Create a campaign based on an existing contract with predefined terms and milestones.
+          </p>
+        </div>
+        {/* <div
+          className={`flex-1 p-4 border rounded-lg cursor-pointer transition-colors ${
+            campaignMode === "internal" ? "bg-blue-50 border-blue-500" : "hover:bg-gray-100"
+          }`}
+          onClick={() => {
+            setCampaignMode("internal");
+            // Reset relevant fields when switching modes
+            setCampaignData((prev) => ({
+              name: prev.name,
+              description: prev.description,
+              // Reset type and contract fields based on mode
+              type: "internal",
+              contract_id: "",
+              // Keep dates but allow them to be overridden
+              start_date: prev.start_date,
+              end_date: prev.end_date,
+            }));
 
-              // Clear selected contract
-              onContractSelect(null);
-            }}
-            className="grid grid-cols-1 md:grid-cols-2 gap-4"
-          >
-            <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-blue-50 transition-colors">
-              <RadioGroupItem value="contract" id="contract" />
-              <div className="flex-1">
-                <Label htmlFor="contract" className="text-sm font-medium cursor-pointer">
-                  Contract-based Campaign
-                </Label>
-                <p className="text-xs text-gray-600 mt-1">
-                  Create a campaign based on an existing contract with predefined terms and
-                  milestones.
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-blue-50 transition-colors">
-              <RadioGroupItem value="internal" id="internal" />
-              <div className="flex-1">
-                <Label htmlFor="internal" className="text-sm font-medium cursor-pointer">
-                  Internal Campaign
-                </Label>
-                <p className="text-xs text-gray-600 mt-1">
-                  Create a custom campaign with flexible settings and manually defined milestones.
-                </p>
-              </div>
-            </div>
-          </RadioGroup>
-        </CardContent>
-      </Card>
+            // Clear selected contract
+            onContractSelect(null);
+          }}
+        >
+          <div className="text-sm font-medium">Internal Campaign</div>
+          <p className="text-xs text-gray-600 mt-1">
+            Create a custom campaign with flexible settings and manually defined milestones.
+          </p>
+        </div> */}
+      </div>
 
       {/* STEP 1: CONTRACT OR CAMPAIGN TYPE */}
       {campaignMode === "contract" ? (
@@ -314,7 +312,9 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
           <div>
             <CardTitle className="text-lg font-semibold">3. Timeline</CardTitle>
             <CardDescription>
-              Select start and end dates (must be within the contract period).
+              {campaignMode === "contract"
+                ? "Timeline is automatically set based on the selected contract."
+                : "Select start and end dates for your campaign."}
             </CardDescription>
           </div>
         </CardHeader>
@@ -328,7 +328,13 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
               required
               minDate={minDate}
               maxDate={maxDate}
+              disabled={campaignMode === "contract"}
             />
+            {campaignMode === "contract" && (
+              <p className="text-xs text-gray-500 mt-1">
+                Start date is set from the selected contract.
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <DatePicker
@@ -339,7 +345,13 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
               required
               minDate={minDate}
               maxDate={maxDate}
+              disabled={campaignMode === "contract"}
             />
+            {campaignMode === "contract" && (
+              <p className="text-xs text-gray-500 mt-1">
+                End date is set from the selected contract.
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>

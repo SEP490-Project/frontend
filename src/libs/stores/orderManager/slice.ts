@@ -9,6 +9,9 @@ import {
   markSelfDeliveryOrderAsInTransitThunk,
   censorAnPreOrderThunk,
   getPreOrdersForSaleStaffThunk,
+  approveRefundAnOrderThunk,
+  compensateAnOrderThunk,
+  compensateAnPreOrderThunk,
 } from "./thunk";
 import type { OrderResponse } from "@/libs/types/order";
 import type { PreOrderResponse } from "@/libs/types/pre-order";
@@ -123,6 +126,39 @@ const orderManagerSlice = createSlice({
         state.loading = false;
       })
       .addCase(censorAnPreOrderThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.errors = action.error;
+      })
+      .addCase(approveRefundAnOrderThunk.pending, (state) => {
+        state.loading = true;
+        state.errors = null;
+      })
+      .addCase(approveRefundAnOrderThunk.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(approveRefundAnOrderThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.errors = action.error;
+      })
+      .addCase(compensateAnOrderThunk.pending, (state) => {
+        state.loading = true;
+        state.errors = null;
+      })
+      .addCase(compensateAnOrderThunk.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(compensateAnOrderThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.errors = action.error;
+      })
+      .addCase(compensateAnPreOrderThunk.pending, (state) => {
+        state.loading = true;
+        state.errors = null;
+      })
+      .addCase(compensateAnPreOrderThunk.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(compensateAnPreOrderThunk.rejected, (state, action) => {
         state.loading = false;
         state.errors = action.error;
       });

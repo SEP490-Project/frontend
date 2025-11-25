@@ -102,14 +102,12 @@ const PreOrder: React.FC = () => {
       pending: "bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200",
       paid: "bg-green-100 text-green-800 border border-green-200 hover:bg-green-200",
       pre_ordered: "bg-purple-100 text-purple-800 border border-purple-200 hover:bg-purple-200",
-      awaiting_release:
-        "bg-yellow-100 text-yellow-800 border border-yellow-200 hover:bg-yellow-200",
-      awaiting_pickup: "bg-indigo-100 text-indigo-800 border border-indigo-200 hover:bg-indigo-200",
+      awaiting_pickup: "bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200",
       confirmed: "bg-green-100 text-green-800 border border-green-200 hover:bg-green-200",
       cancelled: "bg-red-100 text-red-800 border border-red-200 hover:bg-red-200",
       in_transit: "bg-orange-100 text-orange-800 border border-orange-200 hover:bg-orange-200",
       delivered: "bg-green-200 text-green-900 border border-green-300 hover:bg-green-300",
-      received: "bg-teal-100 text-teal-800 border border-teal-200 hover:bg-teal-200",
+      received: "bg-green-100 text-green-800 border border-green-200 hover:bg-green-200",
     };
     return (
       statusMap[status.toLowerCase()] ||
@@ -119,11 +117,9 @@ const PreOrder: React.FC = () => {
 
   const getNextStates = (currentStatus: string): string[] => {
     const stateTransitions: Record<string, string[]> = {
-      PAID: ["AWAITING_RELEASE"],
       PENDING: ["CANCELLED, PAID"],
-      PRE_ORDERED: ["STOCK_READY", "STOCK_PREPARING"],
-      STOCK_READY: ["AWAITING_PICKUP"],
-      STOCK_PREPARING: ["IN_TRANSIT", "AWAITING_PICKUP"],
+      PAID: ["PRE_ORDERED"],
+      PRE_ORDERED: ["AWAITING_PICKUP", "IN_TRANSIT"],
       AWAITING_PICKUP: ["RECEIVED"],
       IN_TRANSIT: ["DELIVERED"],
       DELIVERED: ["RECEIVED"],
@@ -177,15 +173,15 @@ const PreOrder: React.FC = () => {
 
   const handleUpdateStatus = async () => {
     if (!selectedPreOrder || !selectedStatus) return;
-    if (
-      (selectedStatus === "RECEIVED" && selectedPreOrder?.is_self_picked_up === true) ||
-      (selectedStatus === "DELIVERED" && selectedPreOrder?.is_self_picked_up === false)
-    ) {
-      toast.error("Proof required", {
-        description: "Please upload a proof photo for this status change.",
-      });
-      return;
-    }
+    // if (
+    //   (selectedStatus === "RECEIVED" && selectedPreOrder?.is_self_picked_up === true) ||
+    //   (selectedStatus === "DELIVERED" && selectedPreOrder?.is_self_picked_up === false)
+    // ) {
+    //   toast.error("Proof required", {
+    //     description: "Please upload a proof photo for this status change.",
+    //   });
+    //   return;
+    // }
 
     const files = new FormData();
     files.append("state", selectedStatus);

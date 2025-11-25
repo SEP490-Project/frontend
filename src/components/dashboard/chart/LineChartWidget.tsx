@@ -20,8 +20,10 @@ function LineChartWidget({ title, data }: Props) {
     !data.length ||
     !data[0]?.month ||
     (!data[0]?.value && !data[0]?.reach && !data[0]?.engagement)
-  )
+  ) {
     return null;
+  }
+
   return (
     <div className="p-6 bg-white shadow-lg rounded-2xl h-[340px] flex flex-col">
       <h3 className="text-gray-700 text-base font-semibold mb-3">{title}</h3>

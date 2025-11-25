@@ -230,7 +230,7 @@ const PreOrderDetail: React.FC<PreOrderDetailProps> = ({ preOrder }) => {
 
           <div className="space-y-3">
             <h4 className="text-sm font-semibold text-gray-700">Dimensions</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
                 <span className="text-sm text-gray-500">Length:</span>
                 <p className="text-sm font-medium text-gray-900">{preOrder.length} cm</p>
@@ -242,6 +242,10 @@ const PreOrderDetail: React.FC<PreOrderDetailProps> = ({ preOrder }) => {
               <div>
                 <span className="text-sm text-gray-500">Height:</span>
                 <p className="text-sm font-medium text-gray-900">{preOrder.height} cm</p>
+              </div>
+              <div>
+                <span className="text-sm text-gray-500">Weight:</span>
+                <p className="text-sm font-medium text-gray-900">{preOrder.weight} g</p>
               </div>
             </div>
           </div>
@@ -368,50 +372,6 @@ const PreOrderDetail: React.FC<PreOrderDetailProps> = ({ preOrder }) => {
           </CardContent>
         </Card>
       )}
-
-      {/* Action Notes Card */}
-      {/* {preOrder.action_notes && preOrder.action_notes.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Clock className="h-5 w-5" />
-              Action History
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {preOrder.action_notes.map((note, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900">{note.user_name}</p>
-                      <p className="text-xs text-gray-500">{note.user_email}</p>
-                    </div>
-                    <Badge
-                      className={
-                        note.action_type === "CONFIRM"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }
-                    >
-                      {note.action_type}
-                    </Badge>
-                  </div>
-                  {note.reason && (
-                    <div className="mt-2">
-                      <span className="text-xs text-gray-500">Reason:</span>
-                      <p className="text-sm text-gray-700 mt-1">{note.reason}</p>
-                    </div>
-                  )}
-                  <p className="text-xs text-gray-500 mt-2">
-                    {formatDate(note.created_at)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )} */}
 
       {/* Summary Card */}
       <Card className="bg-gradient-to-br from-primary/5 to-primary/10">

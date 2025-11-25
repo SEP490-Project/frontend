@@ -91,13 +91,16 @@ const Order: React.FC = () => {
       paid: "bg-green-100 text-green-800 border border-green-200 hover:bg-green-200",
       pending: "bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200",
       cancelled: "bg-red-100 text-red-800 border border-red-200 hover:bg-red-200",
-      refunded: "bg-purple-100 text-purple-800 border border-purple-200 hover:bg-purple-200",
-      received: "bg-teal-100 text-teal-800 border border-teal-200 hover:bg-teal-200",
-      shipped: "bg-yellow-100 text-yellow-800 border border-yellow-200 hover:bg-yellow-200",
+      refunded: "bg-green-100 text-green-800 border border-green-200 hover:bg-green-200",
+      received: "bg-green-100 text-green-800 border border-green-200 hover:bg-green-200",
+      shipped: "bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200",
       delivered: "bg-green-200 text-green-900 border border-green-300 hover:bg-green-300",
       confirmed: "bg-green-100 text-green-800 border border-green-200 hover:bg-green-200",
       in_transit: "bg-orange-100 text-orange-800 border border-orange-200 hover:bg-orange-200",
       awaiting_pickup: "bg-indigo-100 text-indigo-800 border border-indigo-200 hover:bg-indigo-200",
+      compensated: "bg-green-100 text-green-800 border border-green-200 hover:bg-green-200",
+      refund_request: "bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200",
+      compensate_request: "bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200",
     };
     return (
       statusMap[status.toLowerCase()] ||
@@ -269,23 +272,29 @@ const Order: React.FC = () => {
                         >
                           <FaEye className="text-blue-600" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="hover:bg-yellow-100"
-                          title="Change Status"
-                          onClick={() => {
-                            setSelectedOrder(order);
-                            setIsChangeStatusModalOpen(true);
-                          }}
-                          disabled={
-                            order.status === "CANCELLED" ||
-                            order.status === "REFUNDED" ||
-                            order.status === "RECEIVED"
-                          }
-                        >
-                          <SquarePen className="text-yellow-600" />
-                        </Button>
+                        {order.status === "CANCELLED" ||
+                        order.status === "REFUNDED" ||
+                        order.status === "RECEIVED" ||
+                        order.status === "COMPENSATED" ? null : (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="hover:bg-yellow-100"
+                            title="Change Status"
+                            onClick={() => {
+                              setSelectedOrder(order);
+                              setIsChangeStatusModalOpen(true);
+                            }}
+                            disabled={
+                              order.status === "CANCELLED" ||
+                              order.status === "REFUNDED" ||
+                              order.status === "RECEIVED" ||
+                              order.status === "COMPENSATED"
+                            }
+                          >
+                            <SquarePen className="text-yellow-600" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -365,7 +374,8 @@ const Order: React.FC = () => {
                     disabled={
                       order.status === "CANCELLED" ||
                       order.status === "REFUNDED" ||
-                      order.status === "RECEIVED"
+                      order.status === "RECEIVED" ||
+                      order.status === "COMPENSATED"
                     }
                   >
                     <SquarePen className="text-yellow-600 mr-2" />

@@ -133,6 +133,42 @@ const censorAnPreOrderThunk = createAsyncThunk(
   },
 );
 
+const approveRefundAnOrderThunk = createAsyncThunk(
+  "orderManager/approveRefundAnOrder",
+  async ({ orderId, file }: { orderId: string; file: FormData }, { rejectWithValue }) => {
+    try {
+      const response = await manageOrder.approveRefundAnOrder(orderId, file);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
+const compensateAnOrderThunk = createAsyncThunk(
+  "orderManager/compensateAnOrder",
+  async ({ orderId, file }: { orderId: string; file: FormData }, { rejectWithValue }) => {
+    try {
+      const response = await manageOrder.compensateAnOrder(orderId, file);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
+const compensateAnPreOrderThunk = createAsyncThunk(
+  "orderManager/compensateAnPreOrder",
+  async ({ id, file }: { id: string; file: FormData }, { rejectWithValue }) => {
+    try {
+      const response = await manageOrder.compensateAPreOrder(id, file);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
 export {
   getOrderForSaleStaffThunk,
   markOrderIsReadyToPickedUpThunk,
@@ -143,4 +179,7 @@ export {
   markSelfDeliveryOrderAsInTransitThunk,
   getPreOrdersForSaleStaffThunk,
   censorAnPreOrderThunk,
+  approveRefundAnOrderThunk,
+  compensateAnOrderThunk,
+  compensateAnPreOrderThunk,
 };

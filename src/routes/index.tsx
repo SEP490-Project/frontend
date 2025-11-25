@@ -48,11 +48,12 @@ import {
   BasicInfoStep,
   VariantsStep,
   DoneStep,
+  PreOrder,
 } from "@/pages/manager/sale";
 import ContentPreviewPage from "@/pages/manager/marketing/content-approval/ContentPreviewPage";
 import AddProductStep from "@/components/manage/sale/product/AddProductStep";
 import ProductDetail from "@/pages/manager/sale/product/ProductDetail";
-import { User, VariantAttribute } from "@/pages/manager/admin";
+import { Channel, User, VariantAttribute } from "@/pages/manager/admin";
 import { CreateConceptStep } from "@/pages/manager/sale/product/add-product-step/CreateConceptStep";
 
 const AppRoutes = () => (
@@ -99,6 +100,7 @@ const AppRoutes = () => (
         <Route path="/manage/admin" element={<ManageLayout />}>
           <Route path="users" element={<User />} />
           <Route path="variant-attribute" element={<VariantAttribute />} />
+          <Route path="channel" element={<Channel />} />
         </Route>
       </Route>
 
@@ -114,7 +116,11 @@ const AppRoutes = () => (
           {/* <Route path="product/:id/edit" element={<ProductDetail />} /> */}
           <Route path="product/:id" element={<ProductDetail />} />
           <Route path="category" element={<Category />} />
-          <Route path="order" element={<Order />} />
+          <Route path="order">
+            <Route index element={<Order />} />
+            <Route path="pre-order" element={<PreOrder />} />
+          </Route>
+
           <Route path="review" element={<Review />} />
           <Route path="transaction" element={<Transaction />} />
         </Route>

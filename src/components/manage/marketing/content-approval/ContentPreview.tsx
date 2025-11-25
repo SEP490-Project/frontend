@@ -14,6 +14,7 @@ import {
 } from "@/libs/stores/contentMarketingManager/thunk";
 import { useContentMarketing } from "@/libs/hooks/useContentMarketing";
 import { useAppDispatch } from "@/libs/stores";
+import { HlsPlyrHydrator } from "@/components/hls-video-hydrator";
 
 interface ContentPreviewProps {
   contentId: string | null;
@@ -199,7 +200,7 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
 
   if (!contentId) return null;
 
-  const isPending = content?.status === "AWAIT_STAFF";
+  const isPending = content?.status === "AWAIT_STAFF" || content?.status === "AWAIT_BRAND";
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -348,6 +349,7 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
                       return <div className="text-red-500 italic">Error loading content</div>;
                     }
                   })()}
+                  <HlsPlyrHydrator />
                 </div>
 
                 {/* Additional Content Info */}

@@ -8,8 +8,8 @@ interface ContractFilesProps {
   formData: any;
   onContractFilesChange: (files: File[]) => void;
   onProposalFilesChange: (files: File[]) => void;
-  onContractUrlsChange: (urls: string[]) => void; // URL handler cho contract files
-  onProposalUrlsChange: (urls: string[]) => void; // URL handler cho proposal files
+  onContractUrlsChange: (urls: string[]) => void;
+  onProposalUrlsChange: (urls: string[]) => void;
   onSubmit?: (e: React.FormEvent) => void;
 }
 
@@ -21,20 +21,14 @@ const ContractFiles: React.FC<ContractFilesProps> = ({
   onProposalUrlsChange,
 }) => {
   const handleContractUploadComplete = (urls: string[]) => {
-    console.log("Contract file URLs received:", urls);
-    // Set contract_file_url với URL đầu tiên (vì chỉ cho phép 1 file)
     onContractUrlsChange(urls);
   };
 
   const handleProposalUploadComplete = (urls: string[]) => {
-    console.log("Proposal file URLs received:", urls);
-    // Set proposal_file_url với URL đầu tiên (vì chỉ cho phép 1 file)
     onProposalUrlsChange(urls);
   };
 
   const handleContractFilesRemove = (removedUrls: string[]) => {
-    console.log("Contract files removed:", removedUrls);
-    // Xóa URLs khỏi contract_file_url
     const currentUrls = Array.isArray(formData?.contract_file_url)
       ? formData.contract_file_url
       : formData?.contract_file_url
@@ -45,8 +39,6 @@ const ContractFiles: React.FC<ContractFilesProps> = ({
   };
 
   const handleProposalFilesRemove = (removedUrls: string[]) => {
-    console.log("Proposal files removed:", removedUrls);
-    // Xóa URLs khỏi proposal_file_url
     const currentUrls = Array.isArray(formData?.proposal_file_url)
       ? formData.proposal_file_url
       : formData?.proposal_file_url

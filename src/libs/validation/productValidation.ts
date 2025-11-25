@@ -57,7 +57,7 @@ export const productVariantSchema: yup.ObjectSchema<ProductVariant> = yup.object
   capacity_unit: yup.mixed<CapacityUnit>().required("Capacity unit is required"),
   container_type: yup.mixed<ContainerType>().required("Container type is required"),
   dispenser_type: yup.mixed<DispenserType>().required("Dispenser type is required"),
-  manufacture_date: yup.date().nullable().default(null),
+  manufacturing_date: yup.date().nullable().default(null),
   expiry_date: yup.date().nullable().default(null),
   attributes: yup
     .array()

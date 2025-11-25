@@ -3,10 +3,9 @@ interface Props {
   data: any[];
 }
 
-export default function TableWidget({ title, data }: Props) {
+function TableWidget({ title, data }: Props) {
   if (!data) return null;
 
-  // Nếu data là array of string (alerts)
   const isSimple = typeof data[0] === "string";
 
   return (
@@ -18,7 +17,7 @@ export default function TableWidget({ title, data }: Props) {
             <li key={i}>{item}</li>
           ))}
         </ul>
-      ) : (
+      ) : data.length > 0 && data[0] != null ? (
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
             <thead>
@@ -38,7 +37,6 @@ export default function TableWidget({ title, data }: Props) {
                 <tr key={i} className="border-b last:border-0">
                   {Object.entries(row).map(([k, v], j) => (
                     <td key={j} className="py-2">
-                      {/* Nếu là trạng thái thì render badge màu */}
                       {k.toLowerCase().includes("status") ? (
                         <span
                           className={`px-2 py-1 rounded text-xs font-semibold ${v === "Completed" ? "bg-green-100 text-green-600" : v === "Pending" ? "bg-yellow-100 text-yellow-600" : v === "Cancelled" ? "bg-red-100 text-red-600" : "bg-gray-100 text-gray-600"}`}
@@ -55,7 +53,11 @@ export default function TableWidget({ title, data }: Props) {
             </tbody>
           </table>
         </div>
+      ) : (
+        <div className="text-gray-400 text-sm">No data available.</div>
       )}
     </div>
   );
 }
+
+export default TableWidget;

@@ -67,7 +67,7 @@ const VariantsStep = () => {
       is_default: false,
       type: state?.productType,
       expiry_date: null,
-      manufacture_date: null,
+      manufacturing_date: null,
       instructions: "",
       weight: null,
       height: null,

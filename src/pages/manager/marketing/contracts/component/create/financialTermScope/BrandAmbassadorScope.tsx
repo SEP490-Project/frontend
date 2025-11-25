@@ -76,6 +76,7 @@ const BrandAmbassadorScope: React.FC<BrandAmbassadorScopeProps> = ({ formData, o
           onUpdate={(schedule) => onUpdate({ schedule })}
           startDate={start_date}
           endDate={end_date}
+          depositPercent={formData.deposit_percent || 0}
         />
       </CardContent>
     </Card>

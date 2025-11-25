@@ -18,6 +18,7 @@ import { format, parseISO } from "date-fns";
 import { useAppDispatch } from "@/libs/stores";
 import { getContractById } from "@/libs/stores/contractManager/thunk";
 import { useContract } from "@/libs/hooks/useContract";
+import { generateMilestonesFromContract } from "../../utils/milestoneGenerator";
 
 interface TaskDescription {
   description: string;
@@ -47,6 +48,10 @@ interface CreateTaskProps {
   selectedContract: any;
   campaignType: string;
   campaignMode: "contract" | "internal";
+  campaignData?: {
+    start_date: string;
+    end_date: string;
+  };
   onBack: () => void;
   onNext: () => void;
 }
@@ -90,6 +95,7 @@ const CreateTask: React.FC<CreateTaskProps> = ({
   selectedContract,
   campaignType,
   campaignMode,
+  campaignData,
   onBack,
   onNext,
 }) => {
@@ -120,25 +126,48 @@ const CreateTask: React.FC<CreateTaskProps> = ({
     }
   }, [dispatch, selectedContract?.id, campaignMode, hasLoadedContract]);
 
-  // Populate milestones from contract financial terms schedule
+  // Populate milestones from contract financial terms
   React.useEffect(() => {
     if (
       campaignMode === "contract" &&
       contractDetail?.id === selectedContract?.id &&
-      (contractDetail?.financial_terms as any)?.schedule &&
+      campaignData?.start_date &&
+      campaignData?.end_date &&
       milestones.length === 0 // Only populate if milestones are empty
     ) {
-      const schedule = (contractDetail!.financial_terms as any).schedule;
-      const contractMilestones = schedule.map((scheduleItem: any) => ({
-        id: crypto.randomUUID(),
-        description: scheduleItem.milestone || `Payment milestone ${scheduleItem.id}`,
-        due_date: formatDateForInput(scheduleItem.due_date),
-        tasks: [],
-      }));
+      // For contracts with schedule (ADVERTISING, BRAND_AMBASSADOR)
+      if ((contractDetail?.financial_terms as any)?.schedule) {
+        const schedule = (contractDetail!.financial_terms as any).schedule;
+        const contractMilestones = schedule.map((scheduleItem: any) => ({
+          id: crypto.randomUUID(),
+          description: scheduleItem.milestone || `Payment milestone ${scheduleItem.id}`,
+          due_date: formatDateForInput(scheduleItem.due_date),
+          tasks: [],
+        }));
+        setMilestones(contractMilestones);
+      }
+      // For contracts with payment cycles (CO_PRODUCING, AFFILIATE)
+      else if (contractDetail?.type === "CO_PRODUCING" || contractDetail?.type === "AFFILIATE") {
+        const generatedMilestones = generateMilestonesFromContract(
+          contractDetail,
+          campaignData.start_date,
+          campaignData.end_date,
+        );
 
-      setMilestones(contractMilestones);
+        if (generatedMilestones.length > 0) {
+          setMilestones(generatedMilestones);
+        }
+      }
     }
-  }, [contractDetail, selectedContract?.id, campaignMode, milestones.length, setMilestones]);
+  }, [
+    contractDetail,
+    selectedContract?.id,
+    campaignMode,
+    campaignData?.start_date,
+    campaignData?.end_date,
+    milestones.length,
+    setMilestones,
+  ]);
 
   console.log("contract selected", selectedContract);
   console.log("contract detail", contractDetail);
@@ -199,6 +228,39 @@ const CreateTask: React.FC<CreateTaskProps> = ({
       ),
     );
 
+  // Manual regenerate milestones from contract
+  const regenerateMilestonesFromContract = () => {
+    if (
+      campaignMode === "contract" &&
+      contractDetail &&
+      campaignData?.start_date &&
+      campaignData?.end_date
+    ) {
+      // For contracts with schedule (ADVERTISING, BRAND_AMBASSADOR)
+      if ((contractDetail?.financial_terms as any)?.schedule) {
+        const schedule = (contractDetail!.financial_terms as any).schedule;
+        const contractMilestones = schedule.map((scheduleItem: any) => ({
+          id: crypto.randomUUID(),
+          description: scheduleItem.milestone || `Payment milestone ${scheduleItem.id}`,
+          due_date: formatDateForInput(scheduleItem.due_date),
+          tasks: [],
+        }));
+        setMilestones(contractMilestones);
+      }
+      // For contracts with payment cycles (CO_PRODUCING, AFFILIATE)
+      else if (contractDetail?.type === "CO_PRODUCING" || contractDetail?.type === "AFFILIATE") {
+        const generatedMilestones = generateMilestonesFromContract(
+          contractDetail,
+          campaignData.start_date,
+          campaignData.end_date,
+        );
+
+        if (generatedMilestones.length > 0) {
+          setMilestones(generatedMilestones);
+        }
+      }
+    }
+  };
   const handleTaskMaterialUpload = (milestoneId: string, taskId: string, urls: string[]) => {
     const material_url = urls[0] || "";
     const task = milestones.find((m) => m.id === milestoneId)?.tasks.find((t) => t.id === taskId);
@@ -250,9 +312,23 @@ const CreateTask: React.FC<CreateTaskProps> = ({
               <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs">
                 {campaignType.replace(/_/g, " ")}
               </span>
-              <span className="ml-2 text-xs text-green-600">
-                • Milestones auto-populated from contract
-              </span>
+              {contractDetail && (contractDetail?.financial_terms as any)?.schedule ? (
+                <span className="ml-2 text-xs text-green-600">
+                  • Milestones from payment schedule
+                </span>
+              ) : contractDetail &&
+                (contractDetail.type === "CO_PRODUCING" || contractDetail.type === "AFFILIATE") ? (
+                <span className="ml-2 text-xs text-green-600">
+                  • Milestones from payment cycles (
+                  {(contractDetail.financial_terms as any)?.profit_distribution_cycle ||
+                    (contractDetail.financial_terms as any)?.payment_cycle}
+                  )
+                </span>
+              ) : (
+                <span className="ml-2 text-xs text-amber-600">
+                  • Manual milestone creation required
+                </span>
+              )}
             </p>
           )}
           {campaignMode === "internal" && (
@@ -264,21 +340,46 @@ const CreateTask: React.FC<CreateTaskProps> = ({
             </p>
           )}
         </div>
-        {campaignMode === "internal" && (
-          <Button
-            onClick={addMilestone}
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-1"
-          >
-            <Plus size={14} /> Add Milestone
-          </Button>
-        )}
+        <div className="flex gap-2">
+          {campaignMode === "contract" && contractDetail && (
+            <Button
+              onClick={regenerateMilestonesFromContract}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1 border-dashed"
+            >
+              🔄 Regenerate from Contract
+            </Button>
+          )}
+          {campaignMode === "internal" && (
+            <Button
+              onClick={addMilestone}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1"
+            >
+              <Plus size={14} /> Add Milestone
+            </Button>
+          )}
+          {campaignMode === "contract" && (
+            <Button
+              onClick={addMilestone}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1"
+            >
+              <Plus size={14} /> Add Custom Milestone
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Milestones */}
       {milestones.map((m, mi) => {
-        const milestoneMin = contractStart;
+        // First milestone: start from contract start
+        // Subsequent milestones: start from previous milestone's due date
+        const milestoneMin =
+          mi === 0 ? contractStart : milestones[mi - 1]?.due_date || contractStart;
         const milestoneMax = contractEnd;
 
         return (
@@ -295,6 +396,11 @@ const CreateTask: React.FC<CreateTaskProps> = ({
                 </CardTitle>
                 <p className="text-xs text-gray-500 mt-1">
                   {m.tasks.length} task(s) • Due: {m.due_date || "Not set"}
+                  {milestoneMin && (
+                    <span className="ml-2">
+                      • Period: {milestoneMin} → {m.due_date || contractEnd}
+                    </span>
+                  )}
                 </p>
               </div>
               {campaignMode === "internal" && (
@@ -341,6 +447,12 @@ const CreateTask: React.FC<CreateTaskProps> = ({
                       Due date is from contract payment schedule.
                     </p>
                   )}
+                  {campaignMode === "internal" && milestoneMin && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Select date between {milestoneMin} and {contractEnd}
+                      {mi > 0 && ` (after milestone ${mi} completion)`}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -359,7 +471,8 @@ const CreateTask: React.FC<CreateTaskProps> = ({
                 </div>
 
                 {m.tasks.map((t, ti) => {
-                  const taskMin = contractStart;
+                  // Task deadline must be between milestone start and milestone due date
+                  const taskMin = milestoneMin;
                   const taskMax = m.due_date || contractEnd;
 
                   return (

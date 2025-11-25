@@ -5,7 +5,7 @@ interface Props {
   data: { name: string; value: number }[];
 }
 
-export default function BarChartWidget({ title, data }: Props) {
+function BarChartWidget({ title, data }: Props) {
   if (!Array.isArray(data) || !data.length || !data[0]?.name || !data[0]?.value) return null;
   return (
     <div className="p-6 bg-white shadow-lg rounded-2xl h-[340px] flex flex-col">
@@ -24,3 +24,5 @@ export default function BarChartWidget({ title, data }: Props) {
     </div>
   );
 }
+
+export default BarChartWidget;

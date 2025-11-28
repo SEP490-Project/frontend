@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { KPIWidget, BarChartWidget, PieChartWidget } from "@/components/dashboard/chart";
+import { KPIWidget, LineChartWidget, PieChartWidget } from "@/components/dashboard/chart";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   FaUsers,
@@ -46,14 +46,10 @@ const ContentDashboard: React.FC = () => {
     { type: "Website", value: 23 },
   ];
 
-  const weeklyPerformance = [
-    { name: "Mon", value: 120 },
-    { name: "Tue", value: 180 },
-    { name: "Wed", value: 140 },
-    { name: "Thu", value: 220 },
-    { name: "Fri", value: 280 },
-    { name: "Sat", value: 160 },
-    { name: "Sun", value: 200 },
+  const weeklyCTR = [
+    { month: "Facebook", value: 2.8 },
+    { month: "TikTok", value: 3.6 },
+    { month: "Website", value: 2.4 },
   ];
 
   // Top performing content
@@ -180,11 +176,11 @@ const ContentDashboard: React.FC = () => {
 
             <Card className="rounded-2xl shadow-sm">
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-medium">Weekly Activity</CardTitle>
-                <p className="text-sm text-gray-500">Content performance</p>
+                <CardTitle className="text-lg font-medium">Weekly CTR Trends</CardTitle>
+                <p className="text-sm text-gray-500">Click-through rate by channel</p>
               </CardHeader>
               <CardContent>
-                <BarChartWidget title="" data={weeklyPerformance} />
+                <LineChartWidget title="" data={weeklyCTR} />
               </CardContent>
             </Card>
           </div>

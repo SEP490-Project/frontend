@@ -132,6 +132,34 @@ export interface RejectContentParams {
   feedback: string;
 }
 
+export interface TikTokCreatorInfo {
+  comment_disabled: boolean;
+  creator_avatar_url: string;
+  creator_nickname: string;
+  creator_username: string;
+  duet_disabled: boolean;
+  max_video_post_duration_sec: number;
+  privacy_level_options: string[];
+  stitch_disabled: boolean;
+}
+
+export interface TikTokApiError {
+  code: string;
+  log_id: string;
+  message: string;
+}
+
+export interface TikTokCreatorResponse {
+  data: {
+    data: TikTokCreatorInfo;
+    error: TikTokApiError;
+  };
+  message: string;
+  status: string;
+  status_code: number;
+  success: boolean;
+}
+
 export interface ListContent {
   id: string;
   task_id: string;

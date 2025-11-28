@@ -57,4 +57,8 @@ export const manageContent = {
   contentPostedDetail: (id: string) => {
     return api.get(`/contents/public/${id}`);
   },
+
+  getTikTokCreatorInfo: () => {
+    return api.get("/social/tiktok/creator-info");
+  },
 };

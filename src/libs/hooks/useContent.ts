@@ -13,8 +13,13 @@ import {
   submitContent,
   approveContent,
   rejectContent,
+  getTikTokCreatorInfo,
 } from "@/libs/stores/contentManager/thunk";
-import { clearError, clearContent } from "@/libs/stores/contentManager/slice";
+import {
+  clearError,
+  clearContent,
+  clearTikTokCreatorInfo,
+} from "@/libs/stores/contentManager/slice";
 import type {
   ContentListParams,
   CreateContentRequest,
@@ -27,6 +32,7 @@ export const useContentManager = () => {
     loading,
     contents: contentList,
     content,
+    tikTokCreatorInfo,
     pagination,
     error,
   } = useSelector((state: RootState) => state.manageContent);
@@ -109,11 +115,20 @@ export const useContentManager = () => {
     dispatch(clearContent());
   }, [dispatch]);
 
+  const fetchTikTokCreatorInfo = useCallback(() => {
+    return dispatch(getTikTokCreatorInfo());
+  }, [dispatch]);
+
+  const clearTikTokCreator = useCallback(() => {
+    dispatch(clearTikTokCreatorInfo());
+  }, [dispatch]);
+
   return {
     // State
     loading,
     contentList,
     content,
+    tikTokCreatorInfo,
     pagination,
     error,
 
@@ -128,7 +143,9 @@ export const useContentManager = () => {
     submitExistingContent,
     approveExistingContent,
     rejectExistingContent,
+    fetchTikTokCreatorInfo,
     clearErrors,
     clearCurrentContent,
+    clearTikTokCreator,
   };
 };

@@ -59,6 +59,6 @@ export const manageContent = {
   },
 
   getTikTokCreatorInfo: () => {
-    return api.get("/api/v1/social/tiktok/creator-info");
+    return api.get("/social/tiktok/creator-info");
   },
 };

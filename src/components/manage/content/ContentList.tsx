@@ -146,9 +146,10 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
       // Fetch detailed content from API first
       const response = await manageContent.contentDetail(content.id);
       const apiData = response.data.data;
-      if (apiData && apiData.length > 0) {
-        // Use the API response directly as Content
-        const detailedContent: Content = apiData[0];
+
+      if (apiData) {
+        // Use the API response directly as Content (not as array!)
+        const detailedContent: Content = apiData;
         // Show modal only after we have the complete data
         setSelectedContent(detailedContent);
         setIsDetailModalOpen(true);
@@ -157,8 +158,8 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
         setSelectedContent(content);
         setIsDetailModalOpen(true);
       }
-    } catch {
-      // On error, still try to show the content we have
+    } catch (error) {
+      console.error("Error fetching content detail:", error);
       setSelectedContent(content);
       setIsDetailModalOpen(true);
     } finally {

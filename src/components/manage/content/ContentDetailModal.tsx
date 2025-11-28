@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, CheckCircle, Tag, XCircle, Play, Loader2 } from "lucide-react";
+import { ArrowLeft, CheckCircle, Tag, XCircle, Loader2 } from "lucide-react";
 import type { Content } from "@/libs/types/content";
 import { tiptapJsonToHtml, isTiptapJson } from "@/libs/helper/tiptapHelper";
 import { HlsPlyrHydrator } from "@/components/hls-video-hydrator";
@@ -74,7 +74,6 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
   }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [hasError, setHasError] = useState(false);
-    const [showVideo, setShowVideo] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
 
     const handleLoadStart = () => {
@@ -91,50 +90,13 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
       setHasError(true);
     };
 
-    const handlePlayClick = () => {
-      setShowVideo(true);
-      // Small delay to ensure video element is rendered
-      setTimeout(() => {
-        if (videoRef.current) {
-          videoRef.current.load();
-        }
-      }, 100);
+    const handleRetry = () => {
+      setHasError(false);
+      setIsLoading(true);
+      if (videoRef.current) {
+        videoRef.current.load();
+      }
     };
-
-    if (!showVideo) {
-      return (
-        <div
-          className="relative bg-gray-900 rounded-lg overflow-hidden aspect-video max-h-[500px] flex items-center justify-center group cursor-pointer"
-          onClick={handlePlayClick}
-        >
-          {/* Poster/Thumbnail */}
-          {poster ? (
-            <img
-              src={poster}
-              alt="Video thumbnail"
-              className="absolute inset-0 w-full h-full object-cover"
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-              }}
-            />
-          ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-gray-700 to-gray-900"></div>
-          )}
-
-          {/* Play Button Overlay */}
-          <div className="relative z-10 bg-white/20 backdrop-blur-sm rounded-full p-4 group-hover:bg-white/30 transition-all duration-300 group-hover:scale-110">
-            <Play className="h-12 w-12 text-white fill-white" />
-          </div>
-
-          {/* Video Info Overlay */}
-          <div className="absolute bottom-4 left-4 text-white">
-            <div className="text-sm bg-black/50 px-2 py-1 rounded backdrop-blur-sm">
-              Click to load video
-            </div>
-          </div>
-        </div>
-      );
-    }
 
     return (
       <div className="relative bg-black rounded-lg overflow-hidden">
@@ -153,8 +115,8 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
               <XCircle className="h-8 w-8 mx-auto mb-2 text-red-400" />
               <p className="text-sm">Failed to load video</p>
               <button
-                onClick={handlePlayClick}
-                className="mt-2 px-3 py-1 bg-white/20 rounded text-xs hover:bg-white/30"
+                onClick={handleRetry}
+                className="mt-2 px-3 py-1 bg-white/20 rounded text-xs hover:bg-white/30 transition-colors"
               >
                 Retry
               </button>
@@ -166,12 +128,13 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
           ref={videoRef}
           className="w-full h-auto max-h-[500px]"
           controls
-          preload="none" // Don't preload any data
+          poster={poster}
+          preload="metadata"
           onLoadStart={handleLoadStart}
           onCanPlay={handleCanPlay}
           onError={handleError}
-          playsInline // Better mobile experience
-          controlsList="nodownload" // Prevent download if needed
+          playsInline
+          controlsList="nodownload"
         >
           <source src={videoUrl} type="video/mp4" />
           <source src={videoUrl} type="video/webm" />

@@ -14,8 +14,22 @@ import {
   FaBell,
   FaDownload,
 } from "react-icons/fa";
+// import { useAppDispatch } from "@/libs/stores";
+// import { useContentAnalytic } from "@/libs/hooks/useContentAnalytic";
+// import {
+//   contentCampaign,
+//   contentStatus,
+// } from "@/libs/stores/contentAnalyticManager/thunk";
 
 const ContentDashboard: React.FC = () => {
+  // const dispatch = useAppDispatch();
+  // const {
+  //   loadingCampaigns,
+  //   loadingStatus,
+  //   campaigns,
+  //   status,
+  // } = useContentAnalytic();
+
   const [selectedPeriod, setSelectedPeriod] = useState<"week" | "month" | "year">("month");
 
   // Main KPI Data based on instruction.ts

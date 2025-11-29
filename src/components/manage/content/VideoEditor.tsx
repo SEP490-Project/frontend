@@ -25,6 +25,7 @@ import { ArrowLeft, Upload, X } from "lucide-react";
 import { useNavigationBlocker } from "@/libs/hooks/useNavigationBlocker";
 import { useChunkUpload } from "@/libs/hooks/useChunkUpload";
 import { useChannel } from "@/libs/hooks/useChannel";
+import TikTokGuidelineCard from "./TikTokGuideline";
 import { useDispatch } from "react-redux";
 import type { AppDispatch } from "@/libs/stores";
 import { channelList } from "@/libs/stores/channelManager/thunk";
@@ -62,9 +63,12 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
     title: editingContent ? editingContent.title || "" : "",
     description: editingContent ? editingContent.description || "" : "",
     body: editingContent
-      ? typeof editingContent.body === "string"
-        ? editingContent.body
-        : (editingContent.body as any)?.video_url || ""
+      ? // Try multiple ways to extract video URL
+        editingContent.video_url || // Direct video_url field
+        (typeof editingContent.body === "string"
+          ? editingContent.body
+          : (editingContent.body as any)?.video_url || (editingContent.body as any)?.body || "") ||
+        ""
       : "",
   });
 
@@ -75,9 +79,14 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
       title: editingContent ? editingContent.title || "" : "",
       description: editingContent ? editingContent.description || "" : "",
       body: editingContent
-        ? typeof editingContent.body === "string"
-          ? editingContent.body
-          : (editingContent.body as any)?.video_url || ""
+        ? // Try multiple ways to extract video URL
+          editingContent.video_url || // Direct video_url field
+          (typeof editingContent.body === "string"
+            ? editingContent.body
+            : (editingContent.body as any)?.video_url ||
+              (editingContent.body as any)?.body ||
+              "") ||
+          ""
         : "",
     }),
     [editingContent],
@@ -86,7 +95,15 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
   // Fetch channels on component mount
   useEffect(() => {
     dispatch(channelList());
-  }, [dispatch]); // Filter channels for video content (only Facebook and TikTok allowed)
+  }, [dispatch]);
+
+  // Debug log to see what content we're working with
+  useEffect(() => {
+    if (editingContent) {
+      console.log("Editing content:", editingContent);
+      console.log("Extracted video URL:", videoContent.body);
+    }
+  }, [editingContent, videoContent.body]); // Filter channels for video content (only Facebook and TikTok allowed)
   const allowedVideoChannels = React.useMemo(() => {
     return channels.filter(
       (channel) =>
@@ -302,6 +319,16 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
             />
           </div>
 
+          {/* TikTok Guidelines - Show only when TikTok is selected */}
+          {videoContent.channel &&
+            allowedVideoChannels
+              .find((ch) => ch.id === videoContent.channel)
+              ?.name.toLowerCase() === "tiktok" && (
+              <div className="space-y-2">
+                <TikTokGuidelineCard />
+              </div>
+            )}
+
           {/* Video Upload */}
           <div className="space-y-2">
             <Label htmlFor="video">Video *</Label>
@@ -339,10 +366,15 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
               </div>
             ) : (
               <div className="relative">
+                <div className="mb-2 text-xs text-gray-500">Video URL: {videoContent.body}</div>
                 <video
-                  src={videoContent.body || undefined}
+                  src={videoContent.body}
                   controls
                   className="w-full max-h-[300px] rounded-lg"
+                  onError={(e) => {
+                    console.error("Video load error:", e);
+                    console.log("Video URL that failed:", videoContent.body);
+                  }}
                 >
                   Your browser does not support the video tag.
                 </video>
@@ -354,9 +386,36 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
                 >
                   <X className="w-4 h-4" />
                 </Button>
-                {uploadedFile && (
-                  <div className="mt-2 text-sm text-gray-600">Uploaded: {uploadedFile.name}</div>
-                )}
+                <div className="mt-2 flex items-center justify-between">
+                  <div className="text-sm text-gray-600">
+                    {uploadedFile ? (
+                      <span>Uploaded: {uploadedFile.name}</span>
+                    ) : editingContent ? (
+                      <span>Current video loaded</span>
+                    ) : (
+                      <span>Video ready</span>
+                    )}
+                  </div>
+                  <div className="space-x-2">
+                    <input
+                      type="file"
+                      id="video-replace"
+                      accept="video/*"
+                      onChange={handleVideoUpload}
+                      disabled={isUploading}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={isUploading}
+                      onClick={() => document.getElementById("video-replace")?.click()}
+                    >
+                      {isUploading ? `Uploading ${progress}%` : "Replace Video"}
+                    </Button>
+                  </div>
+                </div>
               </div>
             )}
           </div>

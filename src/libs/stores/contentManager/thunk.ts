@@ -138,3 +138,18 @@ export const rejectContent = createAsyncThunk(
     }
   },
 );
+
+export const getTikTokCreatorInfo = createAsyncThunk(
+  "/tiktok/creator-info",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await manageContent.getTikTokCreatorInfo();
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(
+        err.response?.data?.message || "Failed to fetch TikTok creator information",
+      );
+    }
+  },
+);

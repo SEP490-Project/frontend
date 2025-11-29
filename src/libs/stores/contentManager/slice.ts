@@ -10,14 +10,16 @@ import {
   submitContent,
   approveContent,
   rejectContent,
+  getTikTokCreatorInfo,
 } from "./thunk";
-import type { ContentResponse, Content } from "@/libs/types/content";
+import type { ContentResponse, Content, TikTokCreatorInfo } from "@/libs/types/content";
 import { toast } from "sonner";
 
 interface stateType {
   loading: boolean;
   contents: Content[];
   content: Content | null;
+  tikTokCreatorInfo: TikTokCreatorInfo | null;
   pagination: {
     page: number;
     limit: number;
@@ -33,6 +35,7 @@ const initialState: stateType = {
   loading: false,
   contents: [],
   content: null,
+  tikTokCreatorInfo: null,
   pagination: null,
   error: null,
 };
@@ -46,6 +49,9 @@ export const manageContentSlice = createSlice({
     },
     clearContent: (state) => {
       state.content = null;
+    },
+    clearTikTokCreatorInfo: (state) => {
+      state.tikTokCreatorInfo = null;
     },
   },
   extraReducers: (builder) => {
@@ -280,9 +286,31 @@ export const manageContentSlice = createSlice({
           description: "Please check your connection and try again.",
           duration: 4000,
         });
+      })
+
+      // Get TikTok Creator Info
+      .addCase(getTikTokCreatorInfo.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getTikTokCreatorInfo.fulfilled, (state, action) => {
+        state.loading = false;
+        state.tikTokCreatorInfo = action.payload.data.data;
+        toast.success("TikTok creator information loaded!", {
+          description: "Successfully retrieved creator profile data.",
+          duration: 4000,
+        });
+      })
+      .addCase(getTikTokCreatorInfo.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        toast.error("Failed to load TikTok creator information", {
+          description: "Please check your connection and try again.",
+          duration: 4000,
+        });
       });
   },
 });
 
-export const { clearError, clearContent } = manageContentSlice.actions;
+export const { clearError, clearContent, clearTikTokCreatorInfo } = manageContentSlice.actions;
 export const { reducer: manageContentReducer, actions: manageContentActions } = manageContentSlice;

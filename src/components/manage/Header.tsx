@@ -21,6 +21,7 @@ import { notifications as getNotifications } from "@/libs/stores/notificationMan
 import { useNotification } from "@/libs/hooks/useNotification";
 import { defaultAvatarByName } from "@/libs/helper/default-avatar";
 import { useAppDispatch } from "@/libs/stores";
+import { useNotification as useFuckingNotification } from "@/libs/contexts/NotificationContext";
 
 interface HeaderProps {
   collapsed?: boolean;
@@ -37,6 +38,8 @@ const Header: React.FC<HeaderProps> = ({
   const { user } = useAuth();
   const dispatch = useAppDispatch();
   const { notifications } = useNotification();
+
+  const { unreadCount } = useFuckingNotification();
 
   useEffect(() => {
     dispatch(getNotifications({ page: 1, limit: 10, user_id: user?.id }));
@@ -159,7 +162,7 @@ const Header: React.FC<HeaderProps> = ({
                 >
                   <FaRegBell size={18} className="text-gray-500" />
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full px-1 border border-white shadow">
-                    {displayedNotifications.length}
+                    {unreadCount > 99 ? "99+" : unreadCount}
                   </span>
                 </button>
               </DropdownMenuTrigger>

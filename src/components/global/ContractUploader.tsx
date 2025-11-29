@@ -1,61 +1,14 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
-import type { ReactElement } from "react";
 import { useAppDispatch } from "@/libs/stores";
 import { uploadFilesThunk } from "@/libs/stores/fileManager/thunk";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import {
-  FaCloudArrowUp,
-  FaFile,
-  FaFilePdf,
-  FaFileWord,
-  FaFileExcel,
-  FaFileImage,
-  FaFileVideo,
-  FaFileAudio,
-  FaTrash,
-  FaDownload,
-  FaEye,
-  FaCheck,
-  FaXmark,
-  FaFileZipper,
-} from "react-icons/fa6";
+import { FaCloudArrowUp, FaXmark } from "react-icons/fa6";
+import FileList from "./FileList";
 
-// Global preview map (giữ nguyên)
 const GLOBAL_FILE_PREVIEWS: Record<string, string | undefined> =
   (globalThis as any).__FILE_UPLOADER_PREVIEWS__ ||
   ((globalThis as any).__FILE_UPLOADER_PREVIEWS__ = {});
 
-const FILE_ICONS: Record<string, ReactElement> = {
-  pdf: <FaFilePdf className="h-5 w-5 text-red-500" />,
-  doc: <FaFileWord className="h-5 w-5 text-blue-500" />,
-  docx: <FaFileWord className="h-5 w-5 text-blue-500" />,
-  xls: <FaFileExcel className="h-5 w-5 text-green-500" />,
-  xlsx: <FaFileExcel className="h-5 w-5 text-green-500" />,
-  jpg: <FaFileImage className="h-5 w-5 text-purple-500" />,
-  jpeg: <FaFileImage className="h-5 w-5 text-purple-500" />,
-  png: <FaFileImage className="h-5 w-5 text-purple-500" />,
-  gif: <FaFileImage className="h-5 w-5 text-purple-500" />,
-  webp: <FaFileImage className="h-5 w-5 text-purple-500" />,
-  mp4: <FaFileVideo className="h-5 w-5 text-orange-500" />,
-  avi: <FaFileVideo className="h-5 w-5 text-orange-500" />,
-  mov: <FaFileVideo className="h-5 w-5 text-orange-500" />,
-  wmv: <FaFileVideo className="h-5 w-5 text-orange-500" />,
-  mp3: <FaFileAudio className="h-5 w-5 text-pink-500" />,
-  wav: <FaFileAudio className="h-5 w-5 text-pink-500" />,
-  flac: <FaFileAudio className="h-5 w-5 text-pink-500" />,
-  zip: <FaFileZipper className="h-5 w-5 text-yellow-600" />,
-  rar: <FaFileZipper className="h-5 w-5 text-yellow-600" />,
-};
-
-const getFileIcon = (fileName: string) => {
-  const ext = fileName.split(".").pop()?.toLowerCase() || "";
-  return FILE_ICONS[ext] || <FaFile className="h-5 w-5 text-slate-500" />;
-};
-
-// Types (giữ nguyên)
 interface FileItem {
   id: string;
   file?: File;
@@ -278,7 +231,26 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     });
   };
 
-  // Sync preview from global
+  const handleDownload = (file: FileItem) => {
+    if (file.url) {
+      const link = document.createElement("a");
+      link.href = file.url;
+      link.download = file.name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else if (file.file) {
+      const url = URL.createObjectURL(file.file);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = file.name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+  };
+
   useEffect(() => {
     setFiles((prev) =>
       prev.map((f) => ({
@@ -304,7 +276,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         </Button>
       </div>
 
-      {/* Error */}
       {error && (
         <div className="flex items-center gap-2 p-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded">
           <FaXmark className="h-3 w-3" />
@@ -312,83 +283,26 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         </div>
       )}
 
-      {/* Vertical File Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {files.map((file) => (
-          <Card key={file.id} className="overflow-hidden hover:shadow-md transition-shadow">
-            <div className="p-3 space-y-2">
-              {/* Preview or Icon */}
-              <div className="flex justify-center">
-                {file.preview ? (
-                  <img
-                    src={file.preview}
-                    alt={file.name}
-                    className="h-20 w-full object-cover rounded border"
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-20 w-full bg-slate-50 rounded border">
-                    {getFileIcon(file.name)}
-                  </div>
-                )}
-              </div>
+      {files.length > 0 && (
+        <FileList
+          files={files}
+          onRemove={removeFile}
+          onDownload={handleDownload}
+          className="mt-4"
+        />
+      )}
 
-              {/* File Info */}
-              <div className="space-y-1">
-                <p className="text-xs font-medium text-slate-900 truncate">{file.name}</p>
-                <div className="flex items-center justify-between text-xs text-slate-500">
-                  <Badge
-                    variant={
-                      file.status === "completed"
-                        ? "default"
-                        : file.status === "error"
-                          ? "destructive"
-                          : "secondary"
-                    }
-                    className="text-[10px] h-4 px-1.5"
-                  >
-                    {file.status === "completed" && <FaCheck className="h-2 w-2 mr-0.5" />}
-                    {file.status === "error" && <FaXmark className="h-2 w-2 mr-0.5" />}
-                    {file.status}
-                  </Badge>
-                </div>
-              </div>
-
-              {/* Progress */}
-              {file.status === "uploading" && <Progress value={file.progress} className="h-1" />}
-
-              {/* Actions */}
-              <div className="flex justify-end gap-1 pt-1">
-                {file.status === "completed" && (
-                  <>
-                    <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
-                      <FaEye className="h-3 w-3" />
-                    </Button>
-                    <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
-                      <FaDownload className="h-3 w-3" />
-                    </Button>
-                  </>
-                )}
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                  onClick={() => removeFile(file.id)}
-                >
-                  <FaTrash className="h-3 w-3" />
-                </Button>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
-
-      {/* Hidden Input */}
       <input
         ref={fileInputRef}
         type="file"
         accept={accept}
         multiple={multiple}
-        onChange={(e) => e.target.files && processFiles(e.target.files)}
+        onChange={(e) => {
+          if (e.target.files) {
+            processFiles(e.target.files);
+            e.target.value = "";
+          }
+        }}
         className="hidden"
         disabled={disabled}
       />

@@ -74,3 +74,29 @@ export interface CampaignRequest {
     }[];
   }[];
 }
+
+export interface CampaignSuggestion {
+  contract_id: string;
+  contract_type: string;
+  suggested_campaign: {
+    name: string;
+    description: string;
+    type: string;
+    start_date: string;
+    end_date: string;
+    milestones: [
+      {
+        description: string;
+        due_date: string;
+        tasks: [
+          {
+            name: string;
+            type: string;
+            deadline: string;
+            description_json: object;
+          },
+        ];
+      },
+    ];
+  };
+}

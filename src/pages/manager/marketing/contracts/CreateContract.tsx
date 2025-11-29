@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom"; // Thêm useLocation
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   ContractFiles,
   ContractInformation,
@@ -55,17 +55,14 @@ const INITIAL_FORM_DATA = {
   signed_location: "",
   start_date: "",
   end_date: "",
-  // Brand representative (from brand data -readonly)
   brand_representative_name: "",
   brand_representative_role: "",
   brand_representative_phone: "",
   brand_representative_email: "",
   brand_tax_number: "",
-  // Brand banking (editable)
   brand_bank_name: "",
   brand_bank_account_number: "",
   brand_bank_account_holder: "",
-  // Web representative (editable) - field names khớp với payload
   representative_name: "",
   representative_role: "",
   representative_phone: "",
@@ -83,7 +80,6 @@ const INITIAL_FORM_DATA = {
   proposal_file_url: "",
 };
 
-// Helper functions
 const getContractTypeColor = (type: string) =>
   CONTRACT_TYPE_COLORS[type as keyof typeof CONTRACT_TYPE_COLORS] || {
     bg: "bg-gray-100",
@@ -91,7 +87,6 @@ const getContractTypeColor = (type: string) =>
     border: "border-gray-200",
   };
 
-//TODO: Check Financial term for each contract type
 const getDefaultFinancialTerms = (type: string) => {
   const baseTerms = {
     payment_method: "BANK_TRANSFER",
@@ -251,7 +246,6 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
             );
           });
 
-        // Validate that all selected platforms are covered by content
         const allPlatformsCovered = targetPlatforms.every((platform: string) =>
           affiliateItems.some(
             (item: any) => item.platform?.toUpperCase() === platform.toUpperCase(),
@@ -305,57 +299,74 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
 
       if (formData.type === "CO_PRODUCING") {
         const products = deliverables.products || [];
+        const concepts = deliverables.concepts || [];
 
         const hasValidProducts =
           products.length > 0 &&
           products.every((product: any) => {
             const hasProductBasicInfo = product.name?.trim() && product.description?.trim();
-            const hasProductKPIs =
-              Array.isArray(product.kpis) &&
-              product.kpis.length > 0 &&
-              product.kpis.some((k: any) => k.metric?.trim() && k.target?.trim());
+
+            const productKPIs = product.kpis || [];
+            const hasValidProductKPIs =
+              productKPIs.length === 0 ||
+              productKPIs.some((k: any) => k.metric?.trim() && k.target?.trim());
+
+            const materialUrls = product.material || product.material_url || [];
             const hasProductMaterial =
-              Array.isArray(product.material_url) && product.material_url.length > 0;
-            const concepts = product.concepts || [];
-            const hasValidConcepts =
-              concepts.length > 0 &&
-              concepts.every((concept: any) => {
-                const hasConceptBasicInfo =
-                  concept.name?.trim() &&
-                  concept.platform?.trim() &&
-                  concept.tagline?.trim() &&
-                  concept.description?.trim();
-                const hasCreativeNotes = !!concept.creative_notes?.trim();
-                const hasHashtags =
-                  Array.isArray(concept.hash_tag) &&
-                  concept.hash_tag.length > 0 &&
-                  concept.hash_tag.every((t: any) => t.trim() && t.trim() !== "#");
-                const hasValidContentReqs =
-                  Array.isArray(concept.content_requirements) &&
-                  concept.content_requirements.length > 0 &&
-                  concept.content_requirements.every((r: any) => r.trim());
-                const hasConceptKPIs =
-                  Array.isArray(concept.kpis) &&
-                  concept.kpis.length > 0 &&
-                  concept.kpis.some((k: any) => k.metric?.trim() && k.target?.trim());
-                const hasConceptMaterial =
-                  Array.isArray(concept.material_url) && concept.material_url.length > 0;
-                return (
-                  hasConceptBasicInfo &&
-                  hasCreativeNotes &&
-                  hasHashtags &&
-                  hasValidContentReqs &&
-                  hasConceptKPIs &&
-                  hasConceptMaterial
-                );
-              });
-            return hasProductBasicInfo && hasProductKPIs && hasProductMaterial && hasValidConcepts;
+              !Array.isArray(materialUrls) ||
+              materialUrls.length === 0 ||
+              materialUrls.some((url: string) => url?.trim());
+
+            return hasProductBasicInfo && hasValidProductKPIs && hasProductMaterial;
           });
+
+        const hasValidConcepts = products.every((product: any) => {
+          const productConcepts = concepts.filter(
+            (concept: any) => concept.product_id === product.id,
+          );
+
+          return (
+            productConcepts.length > 0 &&
+            productConcepts.every((concept: any) => {
+              const hasConceptBasicInfo =
+                concept.name?.trim() && concept.platform?.trim() && concept.description?.trim();
+
+              const hasHashtags =
+                Array.isArray(concept.hash_tag) &&
+                concept.hash_tag.length > 0 &&
+                concept.hash_tag.every((t: any) => t.trim() && t.trim() !== "#");
+
+              const hasValidContentReqs =
+                Array.isArray(concept.content_requirements) &&
+                concept.content_requirements.length > 0 &&
+                concept.content_requirements.every((r: any) => r.trim());
+
+              const conceptKPIs = concept.kpis || [];
+              const hasValidConceptKPIs =
+                conceptKPIs.length === 0 ||
+                conceptKPIs.some((k: any) => k.metric?.trim() && k.target?.trim());
+
+              const hasConceptMaterial =
+                !Array.isArray(concept.material_url) ||
+                concept.material_url.length === 0 ||
+                concept.material_url.some((url: string) => url?.trim());
+
+              return (
+                hasConceptBasicInfo &&
+                hasHashtags &&
+                hasValidContentReqs &&
+                hasValidConceptKPIs &&
+                hasConceptMaterial
+              );
+            })
+          );
+        });
+
         const general_reqs = scope_of_work.general_requirements || [];
         const hasValidGeneralReqs =
           general_reqs.length === 0 || general_reqs.every((req: any) => req.trim());
 
-        return hasValidProducts && hasValidGeneralReqs;
+        return hasValidProducts && hasValidConcepts && hasValidGeneralReqs;
       }
 
       return false;
@@ -379,7 +390,6 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
           0,
         );
 
-        // Calculate expected amount considering deposit
         const depositPercent = formData.deposit_percent || 0;
         const expectedScheduleAmount = financial_terms.total_cost
           ? Math.round((financial_terms.total_cost * (100 - depositPercent)) / 100)
@@ -491,7 +501,6 @@ const AddContractPage: React.FC = () => {
   const [pendingNewType, setPendingNewType] = useState("");
   const [showResetModal, setShowResetModal] = useState(false);
 
-  // Lấy preselected brand ID từ navigation state
   const preselectedBrandId = location.state?.preselectedBrandId;
   const preselectedBrandData = location.state?.brandData;
 
@@ -639,7 +648,6 @@ const AddContractPage: React.FC = () => {
       brand_bank_name: formData.brand_bank_name,
       brand_bank_account_number: formData.brand_bank_account_number,
       brand_bank_account_holder: formData.brand_bank_account_holder,
-      // GIỮ LẠI WEB REPRESENTATIVE DATA
       representative_name: formData.representative_name,
       representative_role: formData.representative_role,
       representative_phone: formData.representative_phone,
@@ -649,7 +657,6 @@ const AddContractPage: React.FC = () => {
       representative_bank_account_number: formData.representative_bank_account_number,
       representative_bank_account_holder: formData.representative_bank_account_holder,
       currency: formData.currency,
-      // Set new type and its defaults
       type: pendingNewType,
       financial_terms: getDefaultFinancialTerms(pendingNewType),
       scope_of_work: {},
@@ -724,10 +731,19 @@ const AddContractPage: React.FC = () => {
   };
 
   const update_scope_of_work = (updates: any) => {
-    setFormData((prev: typeof INITIAL_FORM_DATA) => ({
-      ...prev,
-      scope_of_work: { ...prev.scope_of_work, ...updates },
-    }));
+    setFormData((prev: typeof INITIAL_FORM_DATA) => {
+      const prevDeliverables = (prev.scope_of_work as any)?.deliverables;
+      const updatedScope = {
+        ...prev.scope_of_work,
+        ...updates,
+        deliverables: updates.deliverables !== undefined ? updates.deliverables : prevDeliverables,
+      };
+
+      return {
+        ...prev,
+        scope_of_work: updatedScope,
+      };
+    });
   };
 
   const handleContractTypeChange = async (type: string) => {
@@ -745,13 +761,11 @@ const AddContractPage: React.FC = () => {
   };
 
   const handleContractUrlsChange = (urls: string[]) => {
-    // Chỉ lấy URL đầu tiên vì chỉ cho phép 1 file
     const url = urls.length > 0 ? urls[0] : "";
     handleInputChange("contract_file_url", url);
   };
 
   const handleProposalUrlsChange = (urls: string[]) => {
-    // Chỉ lấy URL đầu tiên vì chỉ cho phép 1 file
     const url = urls.length > 0 ? urls[0] : "";
     handleInputChange("proposal_file_url", url);
   };
@@ -794,13 +808,11 @@ const AddContractPage: React.FC = () => {
         type: formData.type,
         status: "DRAFT",
 
-        // Brand Information
         brand_id: formData.brand_id,
         brand_bank_name: formData.brand_bank_name,
         brand_bank_account_number: formData.brand_bank_account_number,
         brand_bank_account_holder: formData.brand_bank_account_holder,
 
-        // Web Representative - field names chính xác
         representative_name: formData.representative_name,
         representative_role: formData.representative_role,
         representative_phone: formData.representative_phone,
@@ -810,7 +822,6 @@ const AddContractPage: React.FC = () => {
         representative_bank_account_number: formData.representative_bank_account_number,
         representative_bank_account_holder: formData.representative_bank_account_holder,
 
-        // Contract dates and location - FORMAT DATES PROPERLY
         signed_date: formatDateForBackend(formData.signed_date),
         signed_location: formData.signed_location,
         start_date: formatDateForBackend(formData.start_date),
@@ -825,13 +836,11 @@ const AddContractPage: React.FC = () => {
           : {}),
         is_deposit_paid: formData.is_deposit_paid,
 
-        // Scope of Work
         scope_of_work: {
           general_requirements: formData.scope_of_work?.general_requirements || [],
           deliverables: formData.scope_of_work?.deliverables || {},
         },
 
-        // Financial Terms
         financial_terms: {
           model:
             formData.type === "ADVERTISING"
@@ -874,7 +883,6 @@ const AddContractPage: React.FC = () => {
             : {}),
         },
 
-        // Legal Terms
         legal_terms: {
           breach_of_contract: {
             label: formData.legal_terms?.breach_of_contract?.label || "Breach of Contract",
@@ -978,7 +986,6 @@ const AddContractPage: React.FC = () => {
   return (
     <div className="min-h-fit p-4 sm:p-6">
       <div className="max-w-7xl mx-auto pb-10">
-        {/* Header - Thêm thông tin về preselected brand */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
           <Button
             variant="ghost"
@@ -1021,7 +1028,6 @@ const AddContractPage: React.FC = () => {
           </Button>
         </div>
 
-        {/* Step Indicator */}
         <div className="mb-6">
           <div className="flex justify-between text-sm text-gray-600 mb-2">
             <span>
@@ -1032,7 +1038,6 @@ const AddContractPage: React.FC = () => {
           <Progress value={progressPercentage} className="h-2" />
         </div>
 
-        {/* Tabs Navigation */}
         <div className="border-b border-gray-200 mb-8">
           <Tabs value={activeTab} onValueChange={handleTabChange}>
             <TabsList className="flex w-full">
@@ -1074,7 +1079,6 @@ const AddContractPage: React.FC = () => {
         )}
       </div>
 
-      {/* Fixed Action Bar */}
       <div className="sticky bottom-0 -mx-2 bg-white/90 border-t rounded-xl border-gray-200 shadow-lg z-40">
         <div className="flex justify-between items-center px-4 py-3">
           <div className="flex gap-2">

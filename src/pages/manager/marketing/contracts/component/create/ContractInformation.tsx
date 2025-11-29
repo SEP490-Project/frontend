@@ -64,7 +64,6 @@ const CONTRACT_TYPE_COLORS = {
   CO_PRODUCING: { bg: "bg-violet-100", text: "text-violet-800", border: "border-violet-200" },
 };
 
-// map config keys (snake_case) to form fields (snake_case)
 const REP_CONFIG_TO_FORM_MAP: Record<string, string> = {
   representative_name: "representative_name",
   representative_role: "representative_role",
@@ -76,7 +75,6 @@ const REP_CONFIG_TO_FORM_MAP: Record<string, string> = {
   representative_bank_account_holder: "representative_bank_account_holder",
 };
 
-// Small presentational components
 const FieldError = ({ message }: { message?: string | null }) =>
   message ? <p className="text-xs text-red-500 mt-1">{message}</p> : null;
 
@@ -249,11 +247,9 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
 
   const handleBrandSelect = (brandId: string | null) => {
     onInputChange("brand_id", brandId || "");
-    // Sửa logic này - chỉ đóng khi không có brandId
     if (!brandId) {
       setBrandDetailsOpen(false);
     }
-    // Không cần set true ở đây vì useEffect sẽ handle
   };
 
   const handleBankSelect = (bankId: string | null) => {
@@ -261,18 +257,13 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
     onInputChange("brand_bank_name", selectedBank ? selectedBank.name : "");
   };
 
-  // Effect để auto-fetch brand detail nếu brand_id đã có sẵn
   useEffect(() => {
     if (formData.brand_id) {
-      // Nếu có brand_id nhưng chưa có brand data hoặc brand data không khớp
       if (!brand || formData.brand_id !== brand.id) {
-        console.log("Fetching brand detail for ID:", formData.brand_id); // Debug log
         dispatch(fetchBrandDetail(formData.brand_id));
       }
-      // Luôn mở brand details khi có brand_id
       setBrandDetailsOpen(true);
     } else {
-      // Đóng brand details khi không có brand_id
       setBrandDetailsOpen(false);
     }
   }, [formData.brand_id, brand?.id, dispatch]);
@@ -310,7 +301,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
   useEffect(() => {
     if (representativeConfig) {
       Object.entries(REP_CONFIG_TO_FORM_MAP).forEach(([cfgKey, formKey]) => {
-        // @ts-expect-error representativeConfig keys are dynamic (snake_case from backend)
+        // @ts-expect-error representativeConfig keys are dynamic
         const value = representativeConfig[cfgKey];
         if (value && !formData[formKey]) {
           onInputChange(formKey, value);
@@ -459,7 +450,6 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
 
   return (
     <div className="space-y-8">
-      {/* Contract Type */}
       <motion.div
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
@@ -513,7 +503,6 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
         </Card>
       </motion.div>
 
-      {/* Brand Selection */}
       <AnimatePresence>
         {formData.type && (
           <motion.div
@@ -562,7 +551,6 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                           </h2>
                         </div>
 
-                        {/* Hiển thị loading state nếu đang fetch brand */}
                         {brandLoading && !brand ? (
                           <div className="flex items-center justify-center p-8 bg-gray-50 rounded-lg">
                             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
@@ -589,7 +577,6 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Contract Information */}
       <AnimatePresence>
         {formData.type && (
           <motion.div
@@ -629,16 +616,6 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                     required
                     error={errors.signed_location}
                   />
-                  {/* <div className="space-y-2">
-                    <Label className="text-sm font-medium">Contract Number *</Label>
-                    <Input
-                      value={formData.contract_number || ""}
-                      onChange={(e) => handleFieldChange("contract_number", e.target.value)}
-                      placeholder="Contract number e.g. CT-2025-001"
-                      className={`h-11 ${errors.contract_number ? "border-red-500" : ""}`}
-                    />
-                    <FieldError message={errors.contract_number} />
-                  </div> */}
                   <DatePicker
                     label="Signed Date"
                     value={formData.signed_date || ""}
@@ -685,7 +662,6 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Representatives - Update với snake_case fields */}
       <AnimatePresence>
         {formData.type && (
           <motion.div
@@ -705,7 +681,6 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                 </p>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Brand Representative */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                     <div className="flex items-center gap-2">
@@ -751,7 +726,6 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                   </div>
                 </div>
 
-                {/* Brand Banking */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                     <div className="flex items-center gap-2">
@@ -822,7 +796,6 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                   </div>
                 </div>
 
-                {/* Web Representative */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                     <div className="flex items-center gap-2">

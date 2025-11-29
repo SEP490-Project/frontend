@@ -15,7 +15,6 @@ import { Plus, Trash2 } from "lucide-react";
 import { FaCalendarDay, FaChartLine } from "react-icons/fa6";
 import { format } from "date-fns";
 
-// Helper functions
 const formatCurrency = (value: number | string) => {
   if (!value) return 0;
   const numValue = typeof value === "string" ? parseFloat(value) : value;
@@ -36,7 +35,6 @@ interface PaymentDateSelectorProps {
   endDate: string;
 }
 
-// Shared Components
 export const CurrencyInput: React.FC<{
   label?: string;
   value: number;
@@ -128,7 +126,6 @@ export const PaymentSchedule: React.FC<{
         0,
       );
 
-      // Calculate max allowed percentage (100% - deposit percentage)
       const maxAllowedPercent = 100 - depositPercent;
 
       if (otherTotal + newPercent > maxAllowedPercent) {
@@ -152,7 +149,6 @@ export const PaymentSchedule: React.FC<{
   const minDate = startDate || undefined;
   const maxDate = endDate || undefined;
 
-  // Calculate expected totals considering deposit
   const expectedPercent = 100 - depositPercent;
   const expectedAmount = totalCost ? Math.round((totalCost * expectedPercent) / 100) : 0;
 
@@ -262,7 +258,6 @@ export const PaymentSchedule: React.FC<{
         </Card>
       ))}
 
-      {/* Summary Section */}
       <Card className="p-4 bg-blue-50 border-blue-200">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
           <div>
@@ -295,7 +290,6 @@ export const PaymentSchedule: React.FC<{
           </div>
         </div>
 
-        {/* Validation message */}
         {(!percentValid || !amountValid) && (
           <div className="mt-3 text-center text-xs text-red-600">
             {depositPercent > 0
@@ -395,7 +389,6 @@ export const CommissionLevels: React.FC<{
                   }
                 }}
                 onBlur={(e) => {
-                  // Set default value of 1.0 if empty on blur
                   if (
                     e.target.value === "" ||
                     level.multiplier === null ||
@@ -435,7 +428,6 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
   startDate,
   endDate,
 }) => {
-  // Hàm trợ giúp để chuẩn hóa ngày về 00:00:00.000
   const normalizeDate = (date: Date): Date => {
     return new Date(date.getFullYear(), date.getMonth(), date.getDate());
   };
@@ -465,7 +457,6 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
     milestone: string;
     display: string;
   }
-  // Generate schedule data separately without calling onScheduleGenerated
   const generateScheduleData = React.useMemo((): {
     dates: Date[];
     schedule: { id: number; day: number; month: number; year: number }[];
@@ -510,7 +501,6 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
         current = normalizeDate(new Date(nextYear, nextMonth, actualDayForNextMonth));
       }
 
-      // Thêm ngày kết thúc hợp đồng nếu chưa có
       if (end >= start && !dates.some((d) => d.getTime() === end.getTime())) {
         dates.push(new Date(end));
       }
@@ -520,7 +510,7 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
       const schedule = dates.map((d, idx) => ({
         id: idx + 1,
         day: d.getDate(),
-        month: d.getMonth() + 1, // Convert to 1-based month
+        month: d.getMonth() + 1,
         year: d.getFullYear(),
       }));
 
@@ -529,17 +519,15 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
 
     if (cycle === "QUARTERLY" && value && typeof value === "string") {
       try {
-        const { day: selectedDay, month: selectedMonth1Indexed } = JSON.parse(value); // month là 1-indexed
+        const { day: selectedDay, month: selectedMonth1Indexed } = JSON.parse(value);
         const dates: Date[] = [];
 
         let currentYear = start.getFullYear();
-        let currentMonth0Indexed = selectedMonth1Indexed - 1; // 0-indexed month
+        let currentMonth0Indexed = selectedMonth1Indexed - 1;
 
-        // Tính toán ngày thanh toán đầu tiên
         let firstPaymentDateCandidate: Date;
         do {
-          // Tạo ngày mới bằng cách đặt năm và tháng trước, sau đó điều chỉnh ngày
-          const tempDate = new Date(currentYear, currentMonth0Indexed, 1); // Đặt về ngày 1 trước để tránh tràn tháng
+          const tempDate = new Date(currentYear, currentMonth0Indexed, 1);
           const maxDayInCurrentMonth = new Date(
             tempDate.getFullYear(),
             tempDate.getMonth() + 1,
@@ -551,7 +539,6 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
           );
 
           if (firstPaymentDateCandidate < start) {
-            // Nếu ngày này trước ngày bắt đầu hợp đồng, chuyển sang quý tiếp theo
             currentMonth0Indexed += 3;
             if (currentMonth0Indexed > 11) {
               currentMonth0Indexed -= 12;
@@ -563,29 +550,23 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
         if (firstPaymentDateCandidate > end) return { dates: [], schedule: [] };
 
         dates.push(firstPaymentDateCandidate);
-        let currentQuarterDate = new Date(firstPaymentDateCandidate); // Bắt đầu từ ngày đã tính
+        let currentQuarterDate = new Date(firstPaymentDateCandidate);
 
         while (true) {
-          // Luôn tạo một Date object mới hoặc reset ngày về 1 trước khi setMonth
-          // để tránh hiệu ứng tràn ngày của Date.setMonth()
           let nextPaymentMonth = currentQuarterDate.getMonth() + 3;
           let nextPaymentYear = currentQuarterDate.getFullYear();
 
           if (nextPaymentMonth > 11) {
-            // Nếu vượt quá tháng 11, tăng năm
             nextPaymentMonth -= 12;
             nextPaymentYear++;
           }
 
-          // Tạo một Date object tạm thời cho tháng mới (đặt ngày là 1)
           const tempNextDate = new Date(nextPaymentYear, nextPaymentMonth, 1);
-          // Sau đó, tìm số ngày tối đa của tháng đó
           const maxDayInNextQuarterMonth = new Date(
             tempNextDate.getFullYear(),
             tempNextDate.getMonth() + 1,
             0,
           ).getDate();
-          // Và điều chỉnh ngày về giá trị đã chọn ban đầu, nhưng không vượt quá maxDay
           const actualDayForNextQuarter = Math.min(selectedDay, maxDayInNextQuarterMonth);
 
           currentQuarterDate = normalizeDate(
@@ -596,7 +577,6 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
           dates.push(new Date(currentQuarterDate));
         }
 
-        // Thêm ngày kết thúc hợp đồng nếu chưa có
         if (end >= start && !dates.some((d) => d.getTime() === end.getTime())) {
           dates.push(new Date(end));
         }
@@ -606,7 +586,7 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
         const schedule = dates.map((d, idx) => ({
           id: idx + 1,
           day: d.getDate(),
-          month: d.getMonth() + 1, // Convert to 1-based month
+          month: d.getMonth() + 1,
           year: d.getFullYear(),
         }));
 
@@ -627,10 +607,8 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
       const oneYearAfterStart = new Date(start);
       oneYearAfterStart.setFullYear(oneYearAfterStart.getFullYear() + 1);
 
-      // Giới hạn ngày đầu trả
       const maxFirstPayment = end < oneYearAfterStart ? end : oneYearAfterStart;
 
-      // Nếu selectedDate < start hoặc > maxFirstPayment → điều chỉnh về start
       let currentYear = selectedDateFromValue.getFullYear();
       let firstPossiblePaymentDate = normalizeDate(
         new Date(currentYear, selectedMonth, selectedDay),
@@ -642,7 +620,6 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
         }
       }
 
-      // Generate các annual payment từ firstPossiblePaymentDate
       currentYear = firstPossiblePaymentDate.getFullYear();
       while (true) {
         const maxDayInMonth = new Date(currentYear, selectedMonth + 1, 0).getDate();
@@ -656,7 +633,6 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
         currentYear++;
       }
 
-      // Thêm ngày kết thúc hợp đồng nếu chưa có
       if (end >= start && !dates.some((d) => d.getTime() === end.getTime())) {
         dates.push(new Date(end));
       }
@@ -666,7 +642,7 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
       const schedule = dates.map((d, idx) => ({
         id: idx + 1,
         day: d.getDate(),
-        month: d.getMonth() + 1, // Convert to 1-based month
+        month: d.getMonth() + 1,
         year: d.getFullYear(),
       }));
 
@@ -676,7 +652,6 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
     return { dates: [], schedule: [] };
   }, [value, cycle, start, end]);
 
-  // Use useEffect to call onScheduleGenerated to avoid infinite loops - only for QUARTERLY
   const scheduleStringRef = React.useRef<string>("");
   React.useEffect(() => {
     if (onScheduleGenerated && cycle === "QUARTERLY" && generateScheduleData.schedule.length > 0) {
@@ -688,7 +663,6 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
     }
   }, [onScheduleGenerated, cycle, generateScheduleData.schedule]);
 
-  // Generate preview items for display
   const previewSchedule: PreviewItem[] = React.useMemo(() => {
     const { dates } = generateScheduleData;
 
@@ -734,9 +708,6 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
     onChange(JSON.stringify({ day, month }));
   const handleAnnualChange = (date: Date | string | undefined) => {
     if (date instanceof Date) {
-      // DatePicker của bạn đã định dạng thành "yyyy-MM-dd",
-      // nên chúng ta có thể truyền thẳng chuỗi này.
-      // Chỉ cần đảm bảo date là hợp lệ trước khi format.
       onChange(format(date, "yyyy-MM-dd"));
     } else if (typeof date === "string") {
       onChange(date);
@@ -745,15 +716,10 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
     }
   };
 
-  // Hàm trợ giúp để lấy số ngày tối đa trong một tháng cụ thể của một năm cụ thể
   const getDaysInMonth = (year: number, month: number): number => {
-    // month là 0-indexed (0-11) cho Date constructor
-    // month + 1, 0 sẽ trả về ngày cuối cùng của tháng trước
     return new Date(year, month + 1, 0).getDate();
   };
 
-  // State cục bộ để lưu trữ ngày và tháng cho Quarterly để tính toán số ngày tối đa
-  // Khởi tạo từ `value` prop
   const [quarterlySelectedDay, setQuarterlySelectedDay] = React.useState<number>(() => {
     try {
       return value && cycle === "QUARTERLY" ? JSON.parse(value).day || 1 : 1;
@@ -769,57 +735,45 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
     }
   });
 
-  // Calculate available months for Quarterly selection
   const availableQuarterlyMonths = React.useMemo(() => {
     const months: { value: number; label: string }[] = [];
-    const startMonth = start.getMonth() + 1; // Convert to 1-based
+    const startMonth = start.getMonth() + 1;
     const endMonth = end.getMonth() + 1;
     const startYear = start.getFullYear();
     const endYear = end.getFullYear();
 
-    // Get current month to determine quarter
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth() + 1;
     const currentYear = currentDate.getFullYear();
 
-    // Determine current quarter (0-3)
     const getCurrentQuarter = (month: number) => Math.floor((month - 1) / 3);
     const currentQuarter = getCurrentQuarter(currentMonth);
 
-    // Get months of a quarter
     const getQuarterMonths = (quarter: number) => {
       const baseMonth = quarter * 3 + 1;
       return [baseMonth, baseMonth + 1, baseMonth + 2];
     };
 
-    // Include current quarter and next quarter
     const quartersToInclude = [currentQuarter, (currentQuarter + 1) % 4];
 
     for (const quarter of quartersToInclude) {
       const quarterMonths = getQuarterMonths(quarter);
 
       for (const month of quarterMonths) {
-        // Check if this month is within contract period
         let isValidMonth = false;
 
-        // For current year - check against current month
         if (currentYear >= startYear && currentYear <= endYear) {
           if (currentYear === startYear && currentYear === endYear) {
-            // Contract within single year
             isValidMonth = month >= Math.max(startMonth, currentMonth) && month <= endMonth;
           } else if (currentYear === startYear) {
-            // First year of contract
             isValidMonth = month >= Math.max(startMonth, currentMonth);
           } else if (currentYear === endYear) {
-            // Last year of contract
             isValidMonth = month <= endMonth;
           } else {
-            // Middle years of contract - all months valid
             isValidMonth = true;
           }
         }
 
-        // For next quarter that crosses into next year
         if (!isValidMonth && quarter === (currentQuarter + 1) % 4) {
           const nextYear = currentYear + (currentQuarter === 3 ? 1 : 0);
           if (nextYear <= endYear) {
@@ -840,11 +794,9 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
       }
     }
 
-    // Sort by month order
     return months.sort((a, b) => a.value - b.value);
   }, [start, end]);
 
-  // Cập nhật state cục bộ khi `value` hoặc `cycle` từ props thay đổi
   React.useEffect(() => {
     if (cycle === "QUARTERLY" && value && availableQuarterlyMonths.length > 0) {
       try {
@@ -852,14 +804,11 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
         const newDay = parsed.day || 1;
         const newMonth = parsed.month || 1;
 
-        // Kiểm tra xem tháng có trong danh sách available không
         const isMonthAvailable = availableQuarterlyMonths.some((m) => m.value === newMonth);
 
         if (isMonthAvailable) {
-          // Chỉ cập nhật nếu giá trị từ prop khác với giá trị hiện tại trong state
           if (newMonth !== quarterlySelectedMonth) setQuarterlySelectedMonth(newMonth);
 
-          // Kiểm tra và điều chỉnh ngày nếu cần
           const yearForCalc = start.getFullYear();
           const maxDays = getDaysInMonth(yearForCalc, newMonth - 1);
           let minDay = 1;
@@ -871,12 +820,10 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
           const adjustedDay = Math.min(Math.max(newDay, minDay), maxDays);
           if (adjustedDay !== quarterlySelectedDay) setQuarterlySelectedDay(adjustedDay);
         } else {
-          // Reset về tháng đầu tiên có sẵn
           const firstAvailableMonth = availableQuarterlyMonths[0]?.value || 1;
           if (firstAvailableMonth !== quarterlySelectedMonth)
             setQuarterlySelectedMonth(firstAvailableMonth);
 
-          // Reset ngày về giá trị hợp lệ cho tháng mới
           const yearForCalc = start.getFullYear();
           let minDay = 1;
           if (firstAvailableMonth === start.getMonth() + 1 && start.getFullYear() === yearForCalc) {
@@ -885,7 +832,6 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
           if (minDay !== quarterlySelectedDay) setQuarterlySelectedDay(minDay);
         }
       } catch {
-        // Reset về giá trị mặc định
         const firstAvailableMonth = availableQuarterlyMonths[0]?.value || 1;
         if (firstAvailableMonth !== quarterlySelectedMonth)
           setQuarterlySelectedMonth(firstAvailableMonth);
@@ -898,11 +844,9 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
         if (minDay !== quarterlySelectedDay) setQuarterlySelectedDay(minDay);
       }
     } else if (cycle !== "QUARTERLY") {
-      // Reset nếu chuyển sang cycle khác
       if (quarterlySelectedDay !== 1) setQuarterlySelectedDay(1);
       if (quarterlySelectedMonth !== 1) setQuarterlySelectedMonth(1);
     } else if (cycle === "QUARTERLY" && availableQuarterlyMonths.length > 0 && !value) {
-      // Khởi tạo giá trị mặc định khi chưa có value
       const firstAvailableMonth = availableQuarterlyMonths[0]?.value || 1;
       setQuarterlySelectedMonth(firstAvailableMonth);
 
@@ -915,15 +859,12 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
     }
   }, [cycle, value, availableQuarterlyMonths, start]);
 
-  // Tính toán số ngày tối đa và ngày tối thiểu cho tháng được chọn hiện tại trong QUARTERLY
   const quarterlyDayConstraints = React.useMemo(() => {
-    // Sử dụng năm của start date để tính toán
     const yearForCalc = start.getFullYear();
     const maxDays = getDaysInMonth(yearForCalc, quarterlySelectedMonth - 1);
 
     let minDay = 1;
 
-    // Nếu tháng được chọn trùng với tháng start_date, thì ngày phải >= ngày start_date
     if (quarterlySelectedMonth === start.getMonth() + 1 && start.getFullYear() === yearForCalc) {
       minDay = start.getDate();
     }
@@ -933,7 +874,6 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
 
   return (
     <div className="space-y-3">
-      {/* Select Fields */}
       {cycle === "MONTHLY" && (
         <div className="flex items-center gap-2">
           <Label htmlFor="monthly-day-select">Monthly Day</Label>
@@ -957,27 +897,23 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
 
       {cycle === "QUARTERLY" && (
         <div className="flex flex-col gap-4">
-          {/* Hiển thị tháng trước */}
           <div className="flex items-center gap-2">
             <Label htmlFor="quarterly-month-select">Quarterly Month</Label>
             <Select
-              value={quarterlySelectedMonth.toString()} // Sử dụng state cục bộ
+              value={quarterlySelectedMonth.toString()}
               onValueChange={(v) => {
                 const newMonth = parseInt(v, 10);
-                setQuarterlySelectedMonth(newMonth); // Cập nhật state cục bộ
+                setQuarterlySelectedMonth(newMonth);
 
-                // Tính lại constraints cho tháng mới
                 const yearForCalc = start.getFullYear();
                 const newMaxDays = getDaysInMonth(yearForCalc, newMonth - 1);
 
                 let newMinDay = 1;
-                // Nếu tháng được chọn trùng với tháng start_date, thì ngày phải >= ngày start_date
                 if (newMonth === start.getMonth() + 1 && start.getFullYear() === yearForCalc) {
                   newMinDay = start.getDate();
                 }
 
                 let adjustedDay = quarterlySelectedDay;
-                // Nếu ngày hiện tại nhỏ hơn minDay hoặc lớn hơn maxDays, điều chỉnh
                 if (quarterlySelectedDay < newMinDay) {
                   adjustedDay = newMinDay;
                   setQuarterlySelectedDay(newMinDay);
@@ -986,7 +922,7 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
                   setQuarterlySelectedDay(newMaxDays);
                 }
 
-                handleQuarterlyChange(adjustedDay, newMonth); // Gọi onChange của prop với ngày đã điều chỉnh
+                handleQuarterlyChange(adjustedDay, newMonth);
               }}
             >
               <SelectTrigger id="quarterly-month-select" className="w-40">
@@ -1002,22 +938,20 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
             </Select>
           </div>
 
-          {/* Hiển thị ngày sau khi đã chọn tháng */}
           <div className="flex items-center gap-2">
             <Label htmlFor="quarterly-day-select">Quarterly Day</Label>
             <Select
-              value={quarterlySelectedDay.toString()} // Sử dụng state cục bộ
+              value={quarterlySelectedDay.toString()}
               onValueChange={(v) => {
                 const newDay = parseInt(v, 10);
-                setQuarterlySelectedDay(newDay); // Cập nhật state cục bộ
-                handleQuarterlyChange(newDay, quarterlySelectedMonth); // Gọi onChange của prop
+                setQuarterlySelectedDay(newDay);
+                handleQuarterlyChange(newDay, quarterlySelectedMonth);
               }}
             >
               <SelectTrigger id="quarterly-day-select" className="w-24">
                 <SelectValue placeholder="Day" />
               </SelectTrigger>
               <SelectContent className="max-h-60 overflow-y-auto">
-                {/* Render số ngày dựa trên constraints */}
                 {Array.from(
                   { length: quarterlyDayConstraints.maxDays - quarterlyDayConstraints.minDay + 1 },
                   (_, i) => {
@@ -1033,7 +967,6 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
             </Select>
           </div>
 
-          {/* Additional Information */}
           <div className="text-xs text-gray-600 space-y-1">
             <p>• Only showing months from current and next quarter within contract period</p>
             {quarterlySelectedMonth === start.getMonth() + 1 &&
@@ -1061,7 +994,6 @@ export const PaymentDateSelector: React.FC<PaymentDateSelectorProps> = ({
 
       {warning && <p className="text-xs text-yellow-700">{warning}</p>}
 
-      {/* Preview Cards - vertical scroll */}
       {previewSchedule.length > 0 && (
         <div className="max-h-64 overflow-y-auto flex flex-col gap-2">
           {previewSchedule.map((p, idx) => (

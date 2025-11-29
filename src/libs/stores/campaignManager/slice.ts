@@ -7,8 +7,9 @@ import {
   getCampaignById,
   approveCampaign,
   rejectCampaign,
+  suggestCampaign,
 } from "./thunk";
-import type { CampaignData } from "@/libs/types/campaign";
+import type { CampaignData, CampaignSuggestion } from "@/libs/types/campaign";
 import { toast } from "sonner";
 
 interface stateType {
@@ -23,6 +24,8 @@ interface stateType {
     has_prev: boolean;
   } | null;
   campaignDetail: CampaignData | null;
+  suggestCampaign: CampaignSuggestion | null;
+  suggestLoading: boolean;
   detailLoading: boolean;
   error: string | null;
 }
@@ -32,6 +35,8 @@ const initialState: stateType = {
   campaigns: [],
   pagination: null,
   campaignDetail: null,
+  suggestCampaign: null,
+  suggestLoading: false,
   detailLoading: false,
   error: null,
 };
@@ -123,6 +128,21 @@ export const manageCampaignSlice = createSlice({
       .addCase(getCampaignById.rejected, (state, action) => {
         state.detailLoading = false;
         state.campaignDetail = null;
+        state.error = action.payload as string;
+      })
+
+      .addCase(suggestCampaign.pending, (state) => {
+        state.suggestLoading = true;
+        state.error = null;
+      })
+      .addCase(suggestCampaign.fulfilled, (state, action) => {
+        state.suggestLoading = false;
+        state.suggestCampaign = action.payload.data;
+        state.error = null;
+      })
+      .addCase(suggestCampaign.rejected, (state, action) => {
+        state.suggestLoading = false;
+        state.suggestCampaign = null;
         state.error = action.payload as string;
       })
 

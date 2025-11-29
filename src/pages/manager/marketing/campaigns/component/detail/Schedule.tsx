@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useAppDispatch } from "@/libs/stores";
 import { useParams } from "react-router-dom";
-import { getTaskList, assignTask } from "@/libs/stores/taskManager/thunk";
+import { getTaskList, assignTask, getTaskDetail } from "@/libs/stores/taskManager/thunk";
+import { clearTaskDetail } from "@/libs/stores/taskManager/slice";
 import { getAllUsersThunk } from "@/libs/stores/userManager/thunk";
 import { useTaskMarketing } from "@/libs/hooks/useTaskMarketing";
 import { useCampaign } from "@/libs/hooks/useCampaign";
@@ -10,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import DataSelector from "@/components/global/DataSelector";
 import { Loader2 } from "lucide-react";
 import {
@@ -19,9 +21,12 @@ import {
   FaGlobe,
   FaClock,
   FaCalendarCheck,
+  FaEye,
+  FaUserPlus,
 } from "react-icons/fa6";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import TaskCalendar from "@/components/manage/marketing/task/Calendar";
+import TaskDetailSlider from "@/components/manage/marketing/task/TaskDetailSlider";
 import { formatDate } from "@/libs/helper/helper";
 import type { TaskListMarketing } from "@/libs/types/task";
 
@@ -34,7 +39,12 @@ const Schedule: React.FC<ScheduleProps> = ({ campaignId }) => {
   const { id } = useParams<{ id: string }>();
   const currentCampaignId = campaignId || id;
 
-  const { taskListMarketing, loading: tasksLoading } = useTaskMarketing();
+  const {
+    taskListMarketing,
+    loading: tasksLoading,
+    taskDetail,
+    detailLoading,
+  } = useTaskMarketing();
   const { campaignDetail } = useCampaign();
   const { users, loading: usersLoading, pagination: usersPagination } = useUserManager();
 
@@ -42,6 +52,7 @@ const Schedule: React.FC<ScheduleProps> = ({ campaignId }) => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>("ALL");
   const [showModal, setShowModal] = useState(false);
+  const [showDetailSlider, setShowDetailSlider] = useState(false);
 
   const [selectedTask, setSelectedTask] = useState<TaskListMarketing | null>(null);
   const [showTaskDetail, setShowTaskDetail] = useState(false);
@@ -126,11 +137,27 @@ const Schedule: React.FC<ScheduleProps> = ({ campaignId }) => {
     }
   };
 
-  const handleOpenTaskDetail = (task: TaskListMarketing) => {
+  const handleOpenTaskDetail = async (task: TaskListMarketing) => {
+    setSelectedTask(task);
+    setShowDetailSlider(true);
+    try {
+      await dispatch(getTaskDetail(task.id));
+    } catch (error) {
+      console.error("Error fetching task detail:", error);
+    }
+  };
+
+  const handleCloseDetailSlider = () => {
+    setShowDetailSlider(false);
+    dispatch(clearTaskDetail());
+  };
+
+  const handleOpenAssignment = (task: TaskListMarketing) => {
     setSelectedTask(task);
     setCurrentTaskType(task.type);
     setSelectedUser("");
     setShowTaskDetail(true);
+    // Don't close the task list modal
   };
 
   const handleAssign = async () => {
@@ -154,9 +181,21 @@ const Schedule: React.FC<ScheduleProps> = ({ campaignId }) => {
           );
         }
 
+        // Refresh task detail if currently viewing
+        if (showDetailSlider && selectedTask) {
+          await dispatch(getTaskDetail(selectedTask.id));
+        }
+
         setShowTaskDetail(false);
         setSelectedUser("");
         setCurrentTaskType("");
+        // Reload the task list modal to show updated assignment
+        if (selectedDate) {
+          const tasksForDate = getTasksForDate(selectedDate);
+          if (tasksForDate.length > 0) {
+            setShowModal(true);
+          }
+        }
       } catch (error) {
         console.error("Failed to assign task:", error);
       }
@@ -307,6 +346,45 @@ const Schedule: React.FC<ScheduleProps> = ({ campaignId }) => {
                               </div>
                             )}
                           </div>
+
+                          {/* Action buttons */}
+                          <div className="flex gap-2 mt-3">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-xs flex-1"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenTaskDetail(task);
+                                  }}
+                                >
+                                  <FaEye className="h-3 w-3 mr-1" />
+                                  View Details
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>View full task details</TooltipContent>
+                            </Tooltip>
+                            {campaignDetail?.status === "RUNNING" && !task.assigned_to_id && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    className="text-xs flex-1 bg-primary hover:bg-primary/90"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleOpenAssignment(task);
+                                    }}
+                                  >
+                                    <FaUserPlus className="h-3 w-3 mr-1" />
+                                    Assign Task
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Assign this task to a team member</TooltipContent>
+                              </Tooltip>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -326,11 +404,36 @@ const Schedule: React.FC<ScheduleProps> = ({ campaignId }) => {
         </DialogContent>
       </Dialog>
 
-      {/* Task Detail Modal */}
+      {/* Task Detail Slider */}
+      <Dialog
+        open={showModal && showDetailSlider}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCloseDetailSlider();
+          }
+        }}
+      >
+        <DialogContent className="max-w-4xl h-[90vh] p-0 overflow-hidden">
+          <div className="relative h-full">
+            <AnimatePresence>
+              {showDetailSlider && (
+                <TaskDetailSlider
+                  task={taskDetail}
+                  onBack={handleCloseDetailSlider}
+                  isVisible={showDetailSlider}
+                  loading={detailLoading}
+                />
+              )}
+            </AnimatePresence>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Task Assignment Modal */}
       <Dialog open={showTaskDetail} onOpenChange={setShowTaskDetail}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Task Details</DialogTitle>
+            <DialogTitle>Assign Task</DialogTitle>
           </DialogHeader>
 
           {selectedTask && (
@@ -353,57 +456,49 @@ const Schedule: React.FC<ScheduleProps> = ({ campaignId }) => {
                 </div>
               </div>
 
-              {/* Chỉ hiển thị phần assign nếu campaign đang RUNNING và task chưa có assigned_to_id */}
-              {campaignDetail?.status === "RUNNING" && !selectedTask.assigned_to_id && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Assign to:</label>
-                  <DataSelector
-                    data={users}
-                    selectedId={selectedUser}
-                    onSelect={(userId) => setSelectedUser(userId || "")}
-                    renderItem={(user) => (
-                      <div className="flex items-center gap-3 p-2">
-                        <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                          <span className="text-sm font-medium">
-                            {user.full_name?.charAt(0)?.toUpperCase() || "U"}
-                          </span>
-                        </div>
-                        <div className="flex-1">
-                          <div className="font-medium text-sm">{user.full_name}</div>
-                          <div className="text-xs text-gray-500">{user.role}</div>
-                        </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Assign to:</label>
+                <DataSelector
+                  data={users}
+                  selectedId={selectedUser}
+                  onSelect={(userId) => setSelectedUser(userId || "")}
+                  renderItem={(user) => (
+                    <div className="flex items-center gap-3 p-2">
+                      <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-medium">
+                          {user.full_name?.charAt(0)?.toUpperCase() || "U"}
+                        </span>
                       </div>
-                    )}
-                    getLabel={(user) => user.full_name || "Unknown User"}
-                    title="Staff Members"
-                    placeholder="Search and select staff member..."
-                    onSearch={setUserSearch}
-                    searchValue={userSearch}
-                    onScrollEnd={loadMoreUsers}
-                    loading={usersLoading}
-                  />
-                  <div className="flex justify-end pt-4">
-                    <Button onClick={handleAssign} disabled={!selectedUser}>
-                      Assign Task
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {(campaignDetail?.status !== "RUNNING" || selectedTask.assigned_to_id) && (
-                <div className="border-t pt-4 text-sm text-gray-600">
-                  {selectedTask.assigned_to_name ? (
-                    <p>
-                      Assigned to:{" "}
-                      <span className="font-medium text-gray-900">
-                        {selectedTask.assigned_to_name}
-                      </span>
-                    </p>
-                  ) : (
-                    <p>No assigned staff.</p>
+                      <div className="flex-1">
+                        <div className="font-medium text-sm">{user.full_name}</div>
+                        <div className="text-xs text-gray-500">{user.role}</div>
+                      </div>
+                    </div>
                   )}
+                  getLabel={(user) => user.full_name || "Unknown User"}
+                  title="Staff Members"
+                  placeholder="Search and select staff member..."
+                  onSearch={setUserSearch}
+                  searchValue={userSearch}
+                  onScrollEnd={loadMoreUsers}
+                  loading={usersLoading}
+                />
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button variant="outline" onClick={() => setShowTaskDetail(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleAssign} disabled={!selectedUser || usersLoading}>
+                    {usersLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Assigning...
+                      </>
+                    ) : (
+                      "Assign Task"
+                    )}
+                  </Button>
                 </div>
-              )}
+              </div>
             </div>
           )}
         </DialogContent>

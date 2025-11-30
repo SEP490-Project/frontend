@@ -120,7 +120,7 @@ export const YoutubeExtension = Node.create<YoutubeOptions>({
   parseHTML() {
     return [
       {
-        tag: 'div[class="youtube-embed"]',
+        tag: "div.youtube-embed",
       },
       {
         tag: "iframe",

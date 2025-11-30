@@ -556,12 +556,16 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
             <TiptapEditor
               key={editorKey}
               initialContent={
-                content?.html ||
-                (editingContent
-                  ? typeof editingContent.body === "string"
-                    ? editingContent.body
-                    : defaultContent
-                  : defaultContent)
+                content?.json?.type === "doc"
+                  ? content.json
+                  : content?.html ||
+                    (editingContent
+                      ? typeof editingContent.body === "string"
+                        ? editingContent.body
+                        : typeof editingContent.body === "object"
+                          ? editingContent.body
+                          : defaultContent
+                      : defaultContent)
               }
               onChange={handleContentChange}
             />

@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/command";
 import { X, Tag as TagIcon } from "lucide-react";
 
-import type { Content, CreateContentRequest } from "@/libs/types/content";
+import type { Content, CreateContentRequest, TipTapDocument } from "@/libs/types/content";
 import type { Channel } from "@/libs/types/channel";
 import { ArrowLeft, Calendar } from "lucide-react";
 import { useAuth } from "@/libs/hooks/useAuth";
@@ -38,6 +38,7 @@ import { getBrandIdFromToken } from "@/libs/helper/helper";
 import { useNavigationBlocker } from "@/libs/hooks/useNavigationBlocker";
 import { useTag } from "@/libs/hooks/useTag";
 import { manageChannel } from "@/libs/services/manageChannel";
+import { tiptapToHtml } from "@/libs/utils/tiptapConverter";
 
 import type { Tag } from "@/libs/types/tag";
 import { HlsPlyrHydrator } from "@/components/hls-video-hydrator";
@@ -150,6 +151,11 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
   // Key to force TiptapEditor re-render when AI content is added
   const [editorKey, setEditorKey] = useState(0);
 
+  // Track AI-generated text for API submission
+  const [aiGeneratedText, setAiGeneratedText] = useState<string | null>(
+    editingContent?.ai_generated_text || null,
+  );
+
   // Local state for title to avoid watch() performance issues
   const [localTitle, setLocalTitle] = React.useState(editingContent?.title || "");
 
@@ -220,7 +226,7 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
         channels: [selectedChannel],
         task_id: selectedTask?.id?.toString() || null,
         affiliate_link: null,
-        ai_generated_text: null,
+        ai_generated_text: aiGeneratedText || null,
       };
 
       onSave(apiData, contentType);
@@ -235,6 +241,7 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
     onSave,
     contentType,
     calculateReadTime,
+    aiGeneratedText,
   ]);
 
   // Memoized initial content for unsaved changes detection
@@ -302,7 +309,21 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
 
   // AI Content Integration Handlers
   const handleAIContentGenerated = useCallback(
-    (generatedContent: string) => {
+    (generatedContent: string, tiptapJson?: TipTapDocument) => {
+      // Track AI-generated text (store plain text for tracking)
+      const plainTextContent = generatedContent.replace(/<[^>]*>/g, "");
+      setAiGeneratedText((prev) => (prev ? `${prev}\n\n${plainTextContent}` : plainTextContent));
+
+      // Determine the HTML content to use
+      let htmlContent = generatedContent;
+      let jsonContent = tiptapJson;
+
+      // If we have a TipTap JSON document, convert it to HTML
+      if (tiptapJson && tiptapJson.type === "doc") {
+        htmlContent = tiptapToHtml(tiptapJson);
+        jsonContent = tiptapJson;
+      }
+
       if (content) {
         // Append AI content to existing content
         const separator =
@@ -311,67 +332,37 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
           content.html !== "<p>Start typing...</p>"
             ? "<br><br>"
             : "";
-        const newHTML = content.html + separator + generatedContent;
+        const newHTML = content.html + separator + htmlContent;
+
+        // Merge JSON content if we have TipTap JSON
+        let mergedJson = content.json;
+        if (jsonContent && content.json?.type === "doc" && content.json?.content) {
+          // Merge the content arrays
+          mergedJson = {
+            type: "doc",
+            content: [...content.json.content, ...(jsonContent.content || [])],
+          };
+        }
 
         // Update content state and force editor re-render
         setContent({
           html: newHTML,
-          json: content.json,
+          json: mergedJson,
         });
         setEditorKey((prev) => prev + 1);
       } else {
         // If no existing content, set AI content as the initial content
         setContent({
-          html: generatedContent,
-          json: {
+          html: htmlContent,
+          json: jsonContent || {
             type: "doc",
-            content: [{ type: "paragraph", content: [{ type: "text", text: generatedContent }] }],
+            content: [{ type: "paragraph", content: [{ type: "text", text: htmlContent }] }],
           },
         });
         setEditorKey((prev) => prev + 1);
       }
     },
     [content],
-  );
-
-  const handleAIStructuredContentGenerated = useCallback(
-    (structuredContent: any) => {
-      // Update title if provided and current title is empty
-      if (structuredContent.title && !localTitle.trim()) {
-        setLocalTitle(structuredContent.title);
-      }
-
-      // Update editor content
-      if (structuredContent.content) {
-        if (content) {
-          const separator =
-            content.html.trim() &&
-            content.html !== "<p></p>" &&
-            content.html !== "<p>Start typing...</p>"
-              ? "<br><br>"
-              : "";
-          const newHTML = content.html + separator + structuredContent.content;
-
-          setContent({
-            html: newHTML,
-            json: content.json,
-          });
-          setEditorKey((prev) => prev + 1);
-        } else {
-          setContent({
-            html: structuredContent.content,
-            json: {
-              type: "doc",
-              content: [
-                { type: "paragraph", content: [{ type: "text", text: structuredContent.content }] },
-              ],
-            },
-          });
-          setEditorKey((prev) => prev + 1);
-        }
-      }
-    },
-    [content, localTitle],
   );
 
   const defaultContent = "Edit your blog content here...";
@@ -579,7 +570,6 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
           {/* AI Content Generator */}
           <AIGeneratedContent
             onContentGenerated={handleAIContentGenerated}
-            onStructuredContentGenerated={handleAIStructuredContentGenerated}
             selectedPlatform={availableChannels.find((ch) => ch.id === selectedChannel)?.name || ""}
           />
         </CardContent>

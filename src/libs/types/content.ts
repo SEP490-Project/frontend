@@ -260,3 +260,43 @@ export interface AIModelsResponse {
   message: string;
   data: AIModel[];
 }
+
+// TipTap JSON Content Types
+export interface TipTapMark {
+  type: string;
+  attrs?: Record<string, any>;
+}
+
+export interface TipTapNode {
+  type: string;
+  attrs?: Record<string, any>;
+  content?: TipTapNode[];
+  text?: string;
+  marks?: TipTapMark[];
+}
+
+export interface TipTapDocument {
+  type: "doc";
+  content: TipTapNode[];
+}
+
+// Streaming State Types
+export interface StreamingState {
+  isStreaming: boolean;
+  streamingContent: string;
+  streamingProgress: number;
+  tokensUsed: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  } | null;
+}
+
+export interface StreamedContentResult {
+  content: string | TipTapDocument;
+  isJSON: boolean;
+  title?: string;
+  description?: string;
+  tags?: string[];
+  excerpt?: string;
+}

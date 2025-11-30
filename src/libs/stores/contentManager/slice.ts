@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import {
   contents,
   createContent,
@@ -15,7 +15,13 @@ import {
   generateStructuredContent,
   getSupportedAIModels,
 } from "./thunk";
-import type { ContentResponse, Content, TikTokCreatorInfo, AIModel } from "@/libs/types/content";
+import type {
+  ContentResponse,
+  Content,
+  TikTokCreatorInfo,
+  AIModel,
+  TipTapDocument,
+} from "@/libs/types/content";
 import { toast } from "sonner";
 
 interface stateType {
@@ -27,10 +33,19 @@ interface stateType {
   generatedContent: string | null;
   structuredContent: {
     title: string;
-    content: string;
+    content: string | TipTapDocument;
     description?: string;
     tags?: string[];
     excerpt?: string;
+  } | null;
+  // Streaming state
+  isStreaming: boolean;
+  streamingContent: string;
+  streamingTipTapContent: TipTapDocument | null;
+  tokensUsed: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
   } | null;
   pagination: {
     page: number;
@@ -51,6 +66,11 @@ const initialState: stateType = {
   aiModels: [],
   generatedContent: null,
   structuredContent: null,
+  // Streaming initial state
+  isStreaming: false,
+  streamingContent: "",
+  streamingTipTapContent: null,
+  tokensUsed: null,
   pagination: null,
   error: null,
 };
@@ -76,6 +96,76 @@ export const manageContentSlice = createSlice({
     },
     clearAIModels: (state) => {
       state.aiModels = [];
+    },
+    // Streaming reducers
+    startStreaming: (state) => {
+      state.isStreaming = true;
+      state.streamingContent = "";
+      state.streamingTipTapContent = null;
+      state.tokensUsed = null;
+      state.error = null;
+    },
+    appendStreamingContent: (
+      state,
+      action: PayloadAction<{
+        content: string;
+        usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
+      }>,
+    ) => {
+      state.streamingContent += action.payload.content;
+      if (action.payload.usage) {
+        state.tokensUsed = action.payload.usage;
+      }
+    },
+    completeStreaming: (
+      state,
+      action: PayloadAction<{ content: string; isStructured?: boolean; title?: string }>,
+    ) => {
+      state.isStreaming = false;
+
+      // Try to parse as TipTap JSON
+      try {
+        const parsed = JSON.parse(action.payload.content);
+        if (parsed.type === "doc" && Array.isArray(parsed.content)) {
+          state.streamingTipTapContent = parsed;
+          if (action.payload.isStructured) {
+            state.structuredContent = {
+              title: action.payload.title || "",
+              content: parsed,
+            };
+          }
+        } else {
+          // Not a TipTap document, store as string
+          if (action.payload.isStructured) {
+            state.structuredContent = {
+              title: action.payload.title || "",
+              content: action.payload.content,
+            };
+          } else {
+            state.generatedContent = action.payload.content;
+          }
+        }
+      } catch {
+        // Not JSON, store as string
+        if (action.payload.isStructured) {
+          state.structuredContent = {
+            title: action.payload.title || "",
+            content: action.payload.content,
+          };
+        } else {
+          state.generatedContent = action.payload.content;
+        }
+      }
+    },
+    streamingError: (state, action: PayloadAction<string>) => {
+      state.isStreaming = false;
+      state.error = action.payload;
+    },
+    clearStreaming: (state) => {
+      state.isStreaming = false;
+      state.streamingContent = "";
+      state.streamingTipTapContent = null;
+      state.tokensUsed = null;
     },
   },
   extraReducers: (builder) => {
@@ -411,5 +501,11 @@ export const {
   clearGeneratedContent,
   clearStructuredContent,
   clearAIModels,
+  // Streaming actions
+  startStreaming,
+  appendStreamingContent,
+  completeStreaming,
+  streamingError,
+  clearStreaming,
 } = manageContentSlice.actions;
 export const { reducer: manageContentReducer, actions: manageContentActions } = manageContentSlice;

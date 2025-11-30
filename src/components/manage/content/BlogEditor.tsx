@@ -41,6 +41,7 @@ import { manageChannel } from "@/libs/services/manageChannel";
 
 import type { Tag } from "@/libs/types/tag";
 import { HlsPlyrHydrator } from "@/components/hls-video-hydrator";
+import AIGeneratedContent from "./AIGeneratedContent";
 
 type ContentType = "blog" | "video";
 
@@ -145,6 +146,9 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
   }, [editingContent]);
 
   const [content, setContent] = useState<{ html: string; json: any } | null>(initialContentState);
+
+  // Key to force TiptapEditor re-render when AI content is added
+  const [editorKey, setEditorKey] = useState(0);
 
   // Local state for title to avoid watch() performance issues
   const [localTitle, setLocalTitle] = React.useState(editingContent?.title || "");
@@ -295,6 +299,80 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
       window.location.href = pendingNavigation;
     }
   }, [pendingNavigation]);
+
+  // AI Content Integration Handlers
+  const handleAIContentGenerated = useCallback(
+    (generatedContent: string) => {
+      if (content) {
+        // Append AI content to existing content
+        const separator =
+          content.html.trim() &&
+          content.html !== "<p></p>" &&
+          content.html !== "<p>Start typing...</p>"
+            ? "<br><br>"
+            : "";
+        const newHTML = content.html + separator + generatedContent;
+
+        // Update content state and force editor re-render
+        setContent({
+          html: newHTML,
+          json: content.json,
+        });
+        setEditorKey((prev) => prev + 1);
+      } else {
+        // If no existing content, set AI content as the initial content
+        setContent({
+          html: generatedContent,
+          json: {
+            type: "doc",
+            content: [{ type: "paragraph", content: [{ type: "text", text: generatedContent }] }],
+          },
+        });
+        setEditorKey((prev) => prev + 1);
+      }
+    },
+    [content],
+  );
+
+  const handleAIStructuredContentGenerated = useCallback(
+    (structuredContent: any) => {
+      // Update title if provided and current title is empty
+      if (structuredContent.title && !localTitle.trim()) {
+        setLocalTitle(structuredContent.title);
+      }
+
+      // Update editor content
+      if (structuredContent.content) {
+        if (content) {
+          const separator =
+            content.html.trim() &&
+            content.html !== "<p></p>" &&
+            content.html !== "<p>Start typing...</p>"
+              ? "<br><br>"
+              : "";
+          const newHTML = content.html + separator + structuredContent.content;
+
+          setContent({
+            html: newHTML,
+            json: content.json,
+          });
+          setEditorKey((prev) => prev + 1);
+        } else {
+          setContent({
+            html: structuredContent.content,
+            json: {
+              type: "doc",
+              content: [
+                { type: "paragraph", content: [{ type: "text", text: structuredContent.content }] },
+              ],
+            },
+          });
+          setEditorKey((prev) => prev + 1);
+        }
+      }
+    },
+    [content, localTitle],
+  );
 
   const defaultContent = "Edit your blog content here...";
 
@@ -485,16 +563,25 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
           <div className="space-y-2">
             <Label htmlFor="content">Content *</Label>
             <TiptapEditor
+              key={editorKey}
               initialContent={
-                editingContent
+                content?.html ||
+                (editingContent
                   ? typeof editingContent.body === "string"
                     ? editingContent.body
                     : defaultContent
-                  : defaultContent
+                  : defaultContent)
               }
               onChange={handleContentChange}
             />
           </div>
+
+          {/* AI Content Generator */}
+          <AIGeneratedContent
+            onContentGenerated={handleAIContentGenerated}
+            onStructuredContentGenerated={handleAIStructuredContentGenerated}
+            selectedPlatform={availableChannels.find((ch) => ch.id === selectedChannel)?.name || ""}
+          />
         </CardContent>
       </Card>
 

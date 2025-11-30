@@ -242,10 +242,13 @@ export interface AIStructuredContentResponse {
 }
 
 export interface AIModel {
-  id: string;
-  name: string;
   provider: string;
-  type: string;
+  base_url: string;
+  enable: boolean;
+  models: string[];
+  id?: string;
+  name?: string;
+  type?: string;
   max_tokens?: number;
   description?: string;
 }

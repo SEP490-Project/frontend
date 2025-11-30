@@ -46,7 +46,8 @@ export const useNotification = () => useContext(NotificationContext);
 export const NotificationProvider: React.FC<{
   children: React.ReactNode;
   ssePath?: string;
-}> = ({ children, ssePath }) => {
+  isAuthenticated?: boolean;
+}> = ({ children, ssePath, isAuthenticated = false }) => {
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [sseConnected, setSseConnected] = useState(false);
@@ -57,6 +58,11 @@ export const NotificationProvider: React.FC<{
   const backoffRef = useRef<number>(1000);
   const lastLocalIncrementRef = useRef<number | null>(null);
   const unreadRef = useRef<number>(0);
+
+  const isAuthenticatedRef = useRef<boolean>(isAuthenticated);
+  useEffect(() => {
+    isAuthenticatedRef.current = isAuthenticated;
+  }, [isAuthenticated]);
 
   useEffect(() => {
     unreadRef.current = unreadCount;
@@ -85,14 +91,9 @@ export const NotificationProvider: React.FC<{
       unreadRef.current = next;
       return next;
     });
-    api
-      .put(`/notifications/${id}/read`)
-      .then(() => {
-        // noop
-      })
-      .catch((err) => {
-        console.warn("[NotificationContext] markAsRead API failed", err);
-      });
+    api.put(`/notifications/${id}/read`).catch((err) => {
+      console.warn("[NotificationContext] markAsRead API failed", err);
+    });
   }, []);
 
   const clearNotifications = useCallback(() => {
@@ -129,13 +130,17 @@ export const NotificationProvider: React.FC<{
         (defaults?.common && (defaults.common.Authorization || defaults.common.authorization)) ||
         defaults.Authorization ||
         defaults.authorization;
+
       if (cand) return { Authorization: String(cand) };
+
       const token = await getRaw("access_token");
       if (!token) return {};
+
       const val =
         typeof token === "string" && token.toLowerCase().startsWith("bearer ")
           ? token
           : `Bearer ${token}`;
+
       return { Authorization: val };
     } catch (err) {
       console.warn("[NotificationContext] prepareAuthHeaders failed", err);
@@ -143,9 +148,47 @@ export const NotificationProvider: React.FC<{
     }
   }, []);
 
+  const disconnectSse = useCallback(() => {
+    if (reconnectTimerRef.current) {
+      clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = null;
+    }
+    try {
+      controllerRef.current?.abort();
+    } catch (err) {
+      console.warn("[NotificationContext] abort controller failed on disconnect", err);
+    }
+    controllerRef.current = null;
+    setSseConnected(false);
+  }, []);
+
+  const scheduleReconnect = useCallback(() => {
+    if (!isAuthenticatedRef.current) {
+      console.info("[NotificationContext] skip reconnect: not authenticated");
+      return;
+    }
+    if (reconnectTimerRef.current != null) return;
+
+    const delay = Math.min(backoffRef.current, 30000);
+    reconnectTimerRef.current = globalThis.setTimeout(() => {
+      reconnectTimerRef.current = null;
+      backoffRef.current = Math.min(backoffRef.current * 1.8, 30000);
+      if (isAuthenticatedRef.current) {
+        connectSse();
+      } else {
+        console.info("[NotificationContext] cancelled reconnect: not authenticated anymore");
+      }
+    }, delay) as unknown as number;
+  }, []);
+
   const connectSse = useCallback(async () => {
     if (!sseUrl) {
       console.info("[NotificationContext] connectSse skipped: no sseUrl");
+      return;
+    }
+
+    if (!isAuthenticatedRef.current) {
+      console.info("[NotificationContext] connectSse skipped: not authenticated");
       return;
     }
 
@@ -160,6 +203,12 @@ export const NotificationProvider: React.FC<{
 
     try {
       const headers = await prepareAuthHeaders();
+
+      if (!headers.Authorization) {
+        console.info("[NotificationContext] connectSse skipped: no Authorization header");
+        return;
+      }
+
       const controller = new AbortController();
       controllerRef.current = controller;
       setSseConnected(false);
@@ -182,6 +231,11 @@ export const NotificationProvider: React.FC<{
         },
         async onopen(res) {
           console.info("[NotificationContext][SSE] onopen", res.status);
+          if (!isAuthenticatedRef.current) {
+            console.info("[NotificationContext][SSE] onopen but not authenticated anymore");
+            controller.abort();
+            return;
+          }
           setSseConnected(true);
           setTimeout(() => {
             fetchInitialUnreadCount().catch((err) =>
@@ -190,6 +244,11 @@ export const NotificationProvider: React.FC<{
           }, 600);
         },
         onmessage(msg) {
+          if (!isAuthenticatedRef.current) {
+            console.info("[NotificationContext][SSE] onmessage but not authenticated anymore");
+            return;
+          }
+
           try {
             const raw = (msg && (msg.data ?? "")) || "";
             let payload: any;
@@ -248,66 +307,42 @@ export const NotificationProvider: React.FC<{
         onclose() {
           console.info("[NotificationContext][SSE] closed by server");
           setSseConnected(false);
-          if (reconnectTimerRef.current == null) {
-            const delay = Math.min(backoffRef.current, 30000);
-            reconnectTimerRef.current = globalThis.setTimeout(() => {
-              reconnectTimerRef.current = null;
-              backoffRef.current = Math.min(backoffRef.current * 1.8, 30000);
-              connectSse();
-            }, delay) as unknown as number;
-          }
+          if (controller.signal.aborted) return;
+          scheduleReconnect();
         },
         onerror(err) {
           console.warn("[NotificationContext][SSE] error", err);
           setSseConnected(false);
           if (controller.signal.aborted) return;
-          if (reconnectTimerRef.current == null) {
-            const delay = Math.min(backoffRef.current, 30000);
-            reconnectTimerRef.current = globalThis.setTimeout(() => {
-              reconnectTimerRef.current = null;
-              backoffRef.current = Math.min(backoffRef.current * 1.8, 30000);
-              connectSse();
-            }, delay) as unknown as number;
-          }
+          scheduleReconnect();
         },
       });
     } catch (err) {
       console.warn("[NotificationContext] connectSse failed", err);
       setSseConnected(false);
-      if (reconnectTimerRef.current == null) {
-        const delay = Math.min(backoffRef.current, 30000);
-        reconnectTimerRef.current = globalThis.setTimeout(() => {
-          reconnectTimerRef.current = null;
-          backoffRef.current = Math.min(backoffRef.current * 1.8, 30000);
-          connectSse();
-        }, delay) as unknown as number;
-      }
+      scheduleReconnect();
     }
-  }, [sseUrl, prepareAuthHeaders, fetchInitialUnreadCount, pushNotification]);
-
-  const disconnectSse = useCallback(() => {
-    if (reconnectTimerRef.current) {
-      clearTimeout(reconnectTimerRef.current);
-      reconnectTimerRef.current = null;
-    }
-    try {
-      controllerRef.current?.abort();
-    } catch (err) {
-      console.warn("[NotificationContext] abort controller failed on disconnect", err);
-    }
-    controllerRef.current = null;
-    setSseConnected(false);
-  }, []);
+  }, [sseUrl, prepareAuthHeaders, fetchInitialUnreadCount, pushNotification, scheduleReconnect]);
 
   useEffect(() => {
-    if (!sseUrl) return;
+    if (!sseUrl || !isAuthenticated) {
+      disconnectSse();
+      return;
+    }
+
     connectSse();
+
     return () => {
       disconnectSse();
     };
-  }, [sseUrl, connectSse, disconnectSse]);
+  }, [sseUrl, isAuthenticated, connectSse, disconnectSse]);
 
   const reconnectSse = useCallback(() => {
+    // Nếu chưa login thì khỏi reconnect
+    if (!isAuthenticatedRef.current) {
+      console.info("[NotificationContext] reconnectSse called but not authenticated");
+      return;
+    }
     disconnectSse();
     backoffRef.current = 1000;
     setTimeout(() => connectSse(), 300);

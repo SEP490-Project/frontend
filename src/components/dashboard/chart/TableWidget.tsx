@@ -1,60 +1,73 @@
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
 interface Props {
   title: string;
   data: any[];
 }
 
 function TableWidget({ title, data }: Props) {
-  if (!data) return null;
+  const hasData = Array.isArray(data) && data.length > 0;
 
-  const isSimple = typeof data[0] === "string";
+  if (!hasData) {
+    return (
+      <div className="p-4 rounded-lg border bg-white">
+        <h3 className="text-sm font-semibold mb-2">{title}</h3>
+        <div className="text-sm text-muted-foreground italic">No data available</div>
+      </div>
+    );
+  }
+
+  const firstItem = data[0];
+  const isSimple = typeof firstItem === "string" || typeof firstItem === "number";
 
   return (
-    <div className="p-6 bg-white shadow-lg rounded-2xl">
-      <h3 className="text-gray-700 text-base font-semibold mb-3">{title}</h3>
+    <div className="p-4 rounded-lg border bg-white">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold">{title}</h3>
+      </div>
+
       {isSimple ? (
-        <ul className="list-disc list-inside text-sm text-gray-700">
+        <ul className="space-y-1 text-sm">
           {data.map((item, i) => (
-            <li key={i}>{item}</li>
+            <li key={i} className="px-3 py-2 border rounded-md bg-muted">
+              {String(item)}
+            </li>
           ))}
         </ul>
-      ) : data.length > 0 && data[0] != null ? (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr>
-                {Object.keys(data[0]).map((k) => (
-                  <th
-                    key={k}
-                    className="border-b py-2 text-left capitalize font-semibold text-gray-500 bg-gray-50"
-                  >
-                    {k}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((row, i) => (
-                <tr key={i} className="border-b last:border-0">
-                  {Object.entries(row).map(([k, v], j) => (
-                    <td key={j} className="py-2">
-                      {k.toLowerCase().includes("status") ? (
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-semibold ${v === "Completed" ? "bg-green-100 text-green-600" : v === "Pending" ? "bg-yellow-100 text-yellow-600" : v === "Cancelled" ? "bg-red-100 text-red-600" : "bg-gray-100 text-gray-600"}`}
-                        >
-                          {String(v)}
-                        </span>
-                      ) : (
-                        String(v)
-                      )}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
       ) : (
-        <div className="text-gray-400 text-sm">No data available.</div>
+        <div className="rounded-md border overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/60">
+                {Object.keys(firstItem).map((key) => (
+                  <TableHead
+                    key={key}
+                    className="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                  >
+                    {key.replace(/_/g, " ")}
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+
+            <TableBody>
+              {data.map((row, i) => (
+                <TableRow key={i}>
+                  {Object.values(row).map((value, j) => (
+                    <TableCell key={j}>{value != null ? String(value) : "-"}</TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       )}
     </div>
   );

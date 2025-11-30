@@ -9,6 +9,7 @@ import Highlight from "@tiptap/extension-highlight";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import { VideoExtension } from "./tiptap-extensions/VideoExtension";
+import { YoutubeExtension } from "./tiptap-extensions/YoutubeExtension";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -99,6 +100,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
         HTMLAttributes: { class: "max-w-full h-auto rounded-lg border" },
       }),
       VideoExtension, // Register Custom Video Extension
+      YoutubeExtension, // Register YouTube Extension for AI-generated content
       TextStyle,
       Color,
       Highlight.configure({

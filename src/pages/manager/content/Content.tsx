@@ -23,7 +23,8 @@ const ManageContent = () => {
     contentType: "blog" | "video";
   } | null>(null);
 
-  const { createNewContent, updateExistingContent, fetchContents } = useContentManager();
+  const { createNewContent, updateExistingContent, fetchContents, clearAIGeneratedContent } =
+    useContentManager();
 
   const handleSave = async (
     content: CreateContentRequest | { html: string; json: object },
@@ -111,6 +112,7 @@ const ManageContent = () => {
     setEditingContent(null);
     setCurrentContentType(contentType);
     setSelectedTask(task);
+    clearAIGeneratedContent(); // Clear any previous AI generated content
     setViewMode("editor");
   };
 
@@ -126,6 +128,7 @@ const ManageContent = () => {
     setViewMode("list");
     setEditingContent(null);
     setSelectedTask(null);
+    clearAIGeneratedContent(); // Clear AI generated content when leaving editor
   };
 
   return (

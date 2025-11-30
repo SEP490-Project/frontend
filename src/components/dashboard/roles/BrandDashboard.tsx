@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
+import { DatePicker } from "@/components/date-picker";
 
 const BrandDashboard: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -44,33 +45,22 @@ const BrandDashboard: React.FC = () => {
     topProducts,
   } = useBrandAnalytic();
 
-  const [currentDate] = useState(() => {
-    const now = new Date();
-    const sixMonthsAgo = new Date(now);
-    sixMonthsAgo.setMonth(now.getMonth() - 6);
-
-    return {
-      now: now.toISOString(),
-      sixMonthsAgo: sixMonthsAgo.toISOString(),
-    };
-  });
-
   // Affiliate filter
   const [affiliateFilter, setAffiliateFilter] = useState({
-    start_date: currentDate.sixMonthsAgo,
-    end_date: currentDate.now,
+    start_date: "",
+    end_date: "",
   });
 
   // Content filter
   const [contentFilter, setContentFilter] = useState({
-    start_date: currentDate.sixMonthsAgo,
-    end_date: currentDate.now,
+    start_date: "",
+    end_date: "",
   });
 
   // Campaign filter
   const [campaignFilter, setCampaignFilter] = useState({
-    start_date: currentDate.sixMonthsAgo,
-    end_date: currentDate.now,
+    start_date: "",
+    end_date: "",
     status: "ALL" as
       | "ALL"
       | "DRAFT"
@@ -90,40 +80,38 @@ const BrandDashboard: React.FC = () => {
 
   // Top Product filter
   const [topProductFilter, setTopProductFilter] = useState({
-    start_date: currentDate.sixMonthsAgo,
-    end_date: currentDate.now,
+    start_date: "",
+    end_date: "",
     limit: 10,
   });
 
   // Revenue Trend filter
   const [revenueTrendFilter, setRevenueTrendFilter] = useState({
-    start_date: currentDate.sixMonthsAgo,
-    end_date: currentDate.now,
+    start_date: "",
+    end_date: "",
     granularity: "MONTH" as "DAY" | "WEEK" | "MONTH",
   });
 
   const fetchAffiliates = () => {
-    const filter = {
-      start_date: affiliateFilter.start_date,
-      end_date: affiliateFilter.end_date,
-    };
+    const filter: any = {};
+    if (affiliateFilter.start_date) filter.start_date = affiliateFilter.start_date;
+    if (affiliateFilter.end_date) filter.end_date = affiliateFilter.end_date;
     dispatch(brandAffiliates(filter));
   };
 
   const fetchContent = () => {
-    const filter = {
-      start_date: contentFilter.start_date,
-      end_date: contentFilter.end_date,
-    };
+    const filter: any = {};
+    if (contentFilter.start_date) filter.start_date = contentFilter.start_date;
+    if (contentFilter.end_date) filter.end_date = contentFilter.end_date;
     dispatch(brandContent(filter));
   };
 
   const fetchCampaigns = () => {
     const filter: any = {
-      start_date: campaignFilter.start_date,
-      end_date: campaignFilter.end_date,
       limit: campaignFilter.limit,
     };
+    if (campaignFilter.start_date) filter.start_date = campaignFilter.start_date;
+    if (campaignFilter.end_date) filter.end_date = campaignFilter.end_date;
     if (campaignFilter.status && campaignFilter.status !== "ALL") {
       filter.status = campaignFilter.status;
     }
@@ -141,20 +129,20 @@ const BrandDashboard: React.FC = () => {
   };
 
   const fetchTopProducts = () => {
-    const filter = {
-      start_date: topProductFilter.start_date,
-      end_date: topProductFilter.end_date,
+    const filter: any = {
       limit: topProductFilter.limit,
     };
+    if (topProductFilter.start_date) filter.start_date = topProductFilter.start_date;
+    if (topProductFilter.end_date) filter.end_date = topProductFilter.end_date;
     dispatch(brandTopProduct(filter));
   };
 
   const fetchRevenueTrend = () => {
-    const filter = {
-      start_date: revenueTrendFilter.start_date,
-      end_date: revenueTrendFilter.end_date,
+    const filter: any = {
       granularity: revenueTrendFilter.granularity,
     };
+    if (revenueTrendFilter.start_date) filter.start_date = revenueTrendFilter.start_date;
+    if (revenueTrendFilter.end_date) filter.end_date = revenueTrendFilter.end_date;
     dispatch(brandRevenueTrend(filter));
   };
 
@@ -253,21 +241,21 @@ const BrandDashboard: React.FC = () => {
         <div className="flex justify-between items-center flex-wrap gap-2 mb-4">
           <h3 className="text-lg font-semibold">Affiliate & Content Metrics</h3>
           <div className="flex gap-2 flex-wrap">
-            <Input
-              type="date"
-              value={affiliateFilter.start_date.split("T")[0]}
-              onChange={(e) => {
-                const newDate = new Date(e.target.value).toISOString();
+            <DatePicker
+              placeholder="Start date"
+              value={affiliateFilter.start_date ? affiliateFilter.start_date.split("T")[0] : ""}
+              onChange={(date) => {
+                const newDate = date ? new Date(date).toISOString() : "";
                 setAffiliateFilter({ ...affiliateFilter, start_date: newDate });
                 setContentFilter({ ...contentFilter, start_date: newDate });
               }}
               className="w-40"
             />
-            <Input
-              type="date"
-              value={affiliateFilter.end_date.split("T")[0]}
-              onChange={(e) => {
-                const newDate = new Date(e.target.value).toISOString();
+            <DatePicker
+              placeholder="End date"
+              value={affiliateFilter.end_date ? affiliateFilter.end_date.split("T")[0] : ""}
+              onChange={(date) => {
+                const newDate = date ? new Date(date).toISOString() : "";
                 setAffiliateFilter({ ...affiliateFilter, end_date: newDate });
                 setContentFilter({ ...contentFilter, end_date: newDate });
               }}
@@ -346,24 +334,26 @@ const BrandDashboard: React.FC = () => {
           <div className="flex justify-between items-center flex-wrap gap-2">
             <h3 className="text-lg font-semibold">Revenue Trend</h3>
             <div className="flex gap-2 flex-wrap">
-              <Input
-                type="date"
-                value={revenueTrendFilter.start_date.split("T")[0]}
-                onChange={(e) =>
+              <DatePicker
+                placeholder="Start date"
+                value={
+                  revenueTrendFilter.start_date ? revenueTrendFilter.start_date.split("T")[0] : ""
+                }
+                onChange={(date) =>
                   setRevenueTrendFilter({
                     ...revenueTrendFilter,
-                    start_date: new Date(e.target.value).toISOString(),
+                    start_date: date ? new Date(date).toISOString() : "",
                   })
                 }
                 className="w-40"
               />
-              <Input
-                type="date"
-                value={revenueTrendFilter.end_date.split("T")[0]}
-                onChange={(e) =>
+              <DatePicker
+                placeholder="End date"
+                value={revenueTrendFilter.end_date ? revenueTrendFilter.end_date.split("T")[0] : ""}
+                onChange={(date) =>
                   setRevenueTrendFilter({
                     ...revenueTrendFilter,
-                    end_date: new Date(e.target.value).toISOString(),
+                    end_date: date ? new Date(date).toISOString() : "",
                   })
                 }
                 className="w-40"
@@ -400,24 +390,24 @@ const BrandDashboard: React.FC = () => {
           <div className="flex justify-between items-center flex-wrap gap-2">
             <h3 className="text-lg font-semibold">Top Products</h3>
             <div className="flex gap-2 flex-wrap">
-              <Input
-                type="date"
-                value={topProductFilter.start_date.split("T")[0]}
-                onChange={(e) =>
+              <DatePicker
+                placeholder="Start date"
+                value={topProductFilter.start_date ? topProductFilter.start_date.split("T")[0] : ""}
+                onChange={(date) =>
                   setTopProductFilter({
                     ...topProductFilter,
-                    start_date: new Date(e.target.value).toISOString(),
+                    start_date: date ? new Date(date).toISOString() : "",
                   })
                 }
                 className="w-40"
               />
-              <Input
-                type="date"
-                value={topProductFilter.end_date.split("T")[0]}
-                onChange={(e) =>
+              <DatePicker
+                placeholder="End date"
+                value={topProductFilter.end_date ? topProductFilter.end_date.split("T")[0] : ""}
+                onChange={(date) =>
                   setTopProductFilter({
                     ...topProductFilter,
-                    end_date: new Date(e.target.value).toISOString(),
+                    end_date: date ? new Date(date).toISOString() : "",
                   })
                 }
                 className="w-40"
@@ -454,24 +444,24 @@ const BrandDashboard: React.FC = () => {
             <div className="flex justify-between items-center flex-wrap gap-2">
               <h3 className="text-lg font-semibold">Campaigns</h3>
               <div className="flex gap-2 flex-wrap">
-                <Input
-                  type="date"
-                  value={campaignFilter.start_date.split("T")[0]}
-                  onChange={(e) =>
+                <DatePicker
+                  placeholder="Start date"
+                  value={campaignFilter.start_date ? campaignFilter.start_date.split("T")[0] : ""}
+                  onChange={(date) =>
                     setCampaignFilter({
                       ...campaignFilter,
-                      start_date: new Date(e.target.value).toISOString(),
+                      start_date: date ? new Date(date).toISOString() : "",
                     })
                   }
                   className="w-40"
                 />
-                <Input
-                  type="date"
-                  value={campaignFilter.end_date.split("T")[0]}
-                  onChange={(e) =>
+                <DatePicker
+                  placeholder="End date"
+                  value={campaignFilter.end_date ? campaignFilter.end_date.split("T")[0] : ""}
+                  onChange={(date) =>
                     setCampaignFilter({
                       ...campaignFilter,
-                      end_date: new Date(e.target.value).toISOString(),
+                      end_date: date ? new Date(date).toISOString() : "",
                     })
                   }
                   className="w-40"

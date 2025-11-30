@@ -16,7 +16,7 @@ export const manageMarketingAnalytic = {
 
 export const manageAdminAnalytic = {
   getAdminCampaignsSummary: () => api.get("/analytics/admin/campaigns"),
-  getAdminContractsSummary: () => api.get("/analytics/admin/contracts-summary"),
+  getAdminContractsSummary: () => api.get("/analytics/admin/contracts"),
   getAdminHealth: () => api.get("/analytics/admin/health"),
   getAdminRevenue: (params: any) => api.get("/analytics/admin/revenue", { params }),
   getAdminUserGrowth: (params: any) => api.get("/analytics/admin/user-growth", { params }),

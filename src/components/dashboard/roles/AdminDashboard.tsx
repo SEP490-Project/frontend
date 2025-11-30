@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   KPIWidget,
   LineChartWidget,
@@ -26,9 +26,44 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import DatePicker from "@/components/date-picker";
+
+type Granularity = "DAY" | "WEEK" | "MONTH";
+type Role =
+  | "ALL"
+  | "ADMIN"
+  | "MARKETING_STAFF"
+  | "SALES_STAFF"
+  | "CONTENT_STAFF"
+  | "BRAND_PARTNER"
+  | "CUSTOMER";
+
+type ChartMode = "count" | "percent";
+
+interface RangeFilter {
+  start_date: string;
+  end_date: string;
+}
+
+interface RevenueFilter extends RangeFilter {
+  granularity: Granularity;
+}
+
+interface UserGrowthFilter extends RangeFilter {
+  granularity: Granularity;
+  role: Role;
+}
+
+const formatCurrency = (value: number | null | undefined) =>
+  typeof value === "number" ? value.toLocaleString("vi-VN") : "-";
+
+const formatDateInput = (value?: string) => (value ? value.substring(0, 10) : "");
 
 const AdminDashboard: React.FC = () => {
+  const [revenueChartMode, setRevenueChartMode] = useState<ChartMode>("percent");
+  const [roleChartMode, setRoleChartMode] = useState<ChartMode>("percent");
+
   const dispatch = useAppDispatch();
   const {
     loading,
@@ -43,259 +78,270 @@ const AdminDashboard: React.FC = () => {
     userOverview,
   } = useAdminAnalytic();
 
-  const [currentDate] = useState(() => {
-    const now = new Date();
-    const sixMonthsAgo = new Date(now);
-    sixMonthsAgo.setMonth(now.getMonth() - 6);
-
-    return {
-      now: now.toISOString(),
-      sixMonthsAgo: sixMonthsAgo.toISOString(),
-    };
+  const [revenueFilter, setRevenueFilter] = useState<RevenueFilter>({
+    start_date: "",
+    end_date: "",
+    granularity: "MONTH",
   });
 
-  // Revenue filter
-  const [revenueFilter, setRevenueFilter] = useState({
-    start_date: currentDate.sixMonthsAgo,
-    end_date: currentDate.now,
-    granularity: "MONTH" as "DAY" | "WEEK" | "MONTH",
+  const [userGrowthFilter, setUserGrowthFilter] = useState<UserGrowthFilter>({
+    start_date: "",
+    end_date: "",
+    granularity: "MONTH",
+    role: "ALL",
   });
 
-  // User Growth filter
-  const [userGrowthFilter, setUserGrowthFilter] = useState({
-    start_date: currentDate.sixMonthsAgo,
-    end_date: currentDate.now,
-    granularity: "MONTH" as "DAY" | "WEEK" | "MONTH",
-    role: "ALL" as
-      | "ALL"
-      | "ADMIN"
-      | "MARKETING_STAFF"
-      | "SALES_STAFF"
-      | "CONTENT_STAFF"
-      | "BRAND_PARTNER"
-      | "CUSTOMER",
-  });
-
-  // User Overview filter
-  const [userOverviewFilter, setUserOverviewFilter] = useState({
-    start_date: currentDate.sixMonthsAgo,
-    end_date: currentDate.now,
-    role: "ALL" as
-      | "ALL"
-      | "ADMIN"
-      | "MARKETING_STAFF"
-      | "SALES_STAFF"
-      | "CONTENT_STAFF"
-      | "BRAND_PARTNER"
-      | "CUSTOMER",
-  });
-
-  const fetchBasicData = () => {
+  useEffect(() => {
     dispatch(adminCampaigns());
     dispatch(adminContracts());
     dispatch(adminHealth());
-  };
-
-  const fetchRevenue = () => {
-    const filter: any = {
-      start_date: revenueFilter.start_date,
-      end_date: revenueFilter.end_date,
-      granularity: revenueFilter.granularity,
-    };
-    dispatch(adminRevenue(filter));
-  };
-
-  const fetchUserGrowth = () => {
-    const filter: any = {
-      start_date: userGrowthFilter.start_date,
-      end_date: userGrowthFilter.end_date,
-      granularity: userGrowthFilter.granularity,
-    };
-    if (userGrowthFilter.role && userGrowthFilter.role !== "ALL") {
-      filter.role = userGrowthFilter.role;
-    }
-    dispatch(adminUserGrowth(filter));
-  };
-
-  const fetchUserOverview = () => {
-    const filter: any = {
-      start_date: userOverviewFilter.start_date,
-      end_date: userOverviewFilter.end_date,
-    };
-    if (userOverviewFilter.role && userOverviewFilter.role !== "ALL") {
-      filter.role = userOverviewFilter.role;
-    }
-    dispatch(adminUserOverview(filter));
-  };
-
-  useEffect(() => {
-    fetchBasicData();
   }, [dispatch]);
 
   useEffect(() => {
-    fetchRevenue();
-  }, [revenueFilter]);
+    const { start_date, end_date, granularity } = revenueFilter;
+    const payload: any = {};
+    if (start_date) payload.start_date = start_date;
+    if (end_date) payload.end_date = end_date;
+    if (granularity) payload.granularity = granularity;
+    dispatch(adminRevenue(payload));
+  }, [dispatch, revenueFilter]);
 
   useEffect(() => {
-    fetchUserGrowth();
-  }, [userGrowthFilter]);
+    const { start_date, end_date, granularity, role } = userGrowthFilter;
+    const payload: any = {};
+    if (start_date) payload.start_date = start_date;
+    if (end_date) payload.end_date = end_date;
+    if (granularity) payload.granularity = granularity;
+    if (role && role !== "ALL") payload.role = role;
+    dispatch(adminUserGrowth(payload));
+  }, [dispatch, userGrowthFilter]);
 
   useEffect(() => {
-    fetchUserOverview();
-  }, [userOverviewFilter]);
+    dispatch(adminUserOverview({}));
+  }, [dispatch]);
 
-  // Data transformations
-  const campaignsKPIData = {
-    value: campaigns?.total_campaigns || 0,
-    statusText: `${campaigns?.running || 0} running`,
-  };
+  const campaignsKPIData = useMemo(
+    () => ({
+      value: campaigns?.total_campaigns || 0,
+      statusText: `${campaigns?.running || 0} running`,
+    }),
+    [campaigns],
+  );
 
-  const contractsKPIData = {
-    value: contracts?.total_contracts || 0,
-    statusText: `${contracts?.active || 0} active`,
-  };
+  const contractsKPIData = useMemo(
+    () => ({
+      value: contracts?.total_contracts || 0,
+      statusText: `${contracts?.active || 0} active`,
+    }),
+    [contracts],
+  );
 
-  const totalUsersData = {
-    value: userOverview?.total_users || 0,
-    status: "up" as const,
-    statusText: `${userOverview?.new_users_this_month || 0} new this month`,
-  };
+  const totalUsersData = useMemo(
+    () => ({
+      value: userOverview?.total_users || 0,
+      status: "up" as const,
+      statusText: `${userOverview?.new_users_this_month || 0} new this month`,
+    }),
+    [userOverview],
+  );
 
-  const totalRevenueData = {
-    value: revenue?.total_revenue || 0,
-    status: "up" as const,
-    statusText: "Total",
-  };
+  const totalRevenueData = useMemo(
+    () => ({
+      value: revenue?.total_revenue || 0,
+      status: "up" as const,
+      statusText: "Total",
+    }),
+    [revenue],
+  );
 
-  const revenueBreakdownData = revenue?.revenue_breakdown
-    ? [
-        { name: "Advertising", value: Math.round(revenue.revenue_breakdown.advertising_revenue) },
-        { name: "Affiliate", value: Math.round(revenue.revenue_breakdown.affiliate_revenue) },
-        { name: "Ambassador", value: Math.round(revenue.revenue_breakdown.ambassador_revenue) },
-        { name: "Co-Produce", value: Math.round(revenue.revenue_breakdown.co_producing_revenue) },
-        {
-          name: "Standard Product",
-          value: Math.round(revenue.revenue_breakdown.standard_product_revenue),
-        },
-        {
-          name: "Limited Product",
-          value: Math.round(revenue.revenue_breakdown.limited_product_revenue),
-        },
-      ].filter((item) => item.value > 0)
-    : [];
+  const revenueBreakdownData = useMemo(() => {
+    if (!revenue?.revenue_breakdown) return [];
+    const r = revenue.revenue_breakdown;
+    const data = [
+      { name: "Advertising", value: Math.round(r.advertising_revenue) },
+      { name: "Affiliate", value: Math.round(r.affiliate_revenue) },
+      { name: "Ambassador", value: Math.round(r.ambassador_revenue) },
+      { name: "Co-Produce", value: Math.round(r.co_producing_revenue) },
+      { name: "Standard Product", value: Math.round(r.standard_product_revenue) },
+      { name: "Limited Product", value: Math.round(r.limited_product_revenue) },
+    ];
+    return data.filter((item) => item.value > 0);
+  }, [revenue?.revenue_breakdown]);
 
-  const revenueShareData =
-    revenue?.revenue_breakdown && revenue.total_revenue > 0
-      ? [
-          {
-            type: "Contract Revenue",
-            value: parseFloat(
-              (
-                (revenue.revenue_breakdown.total_contract_revenue / revenue.total_revenue) *
-                100
-              ).toFixed(1),
-            ),
-          },
-          {
-            type: "Product Revenue",
-            value: parseFloat(
-              (
-                (revenue.revenue_breakdown.total_product_revenue / revenue.total_revenue) *
-                100
-              ).toFixed(1),
-            ),
-          },
-        ].filter((item) => item.value > 0)
-      : [];
+  const rawRevenueShareData = useMemo(() => {
+    if (!revenue?.revenue_breakdown || !revenue.total_revenue) return [];
+    const r = revenue.revenue_breakdown;
+    const data = [
+      { type: "Contract Revenue", value: Number(r.total_contract_revenue) },
+      { type: "Product Revenue", value: Number(r.total_product_revenue) },
+    ];
+    return data.filter((item) => item.value > 0);
+  }, [revenue?.revenue_breakdown, revenue?.total_revenue]);
 
-  const revenueTrendData =
-    revenue?.revenue_trend?.map((item: any) => ({
-      date: new Date(item.date).toLocaleDateString("default", { month: "short", day: "numeric" }),
-      value: Math.round(item.revenue),
-    })) || [];
+  const revenueShareData = useMemo(() => {
+    if (!rawRevenueShareData.length) return [];
+    if (revenueChartMode === "count") return rawRevenueShareData;
 
-  const userGrowthData =
-    userGrowth?.map((item: any) => ({
-      date: new Date(item.date).toLocaleDateString("default", { month: "short", day: "numeric" }),
-      value: item.new_users,
-    })) || [];
+    const total = rawRevenueShareData.reduce((sum, item) => sum + item.value, 0);
+    return rawRevenueShareData.map((item) => ({
+      type: item.type,
+      value: total ? Number(((item.value / total) * 100).toFixed(1)) : 0,
+    }));
+  }, [rawRevenueShareData, revenueChartMode]);
 
-  const roleBreakdownData = userOverview?.role_breakdown
-    ? [
-        { name: "Admin", value: userOverview.role_breakdown.admin },
-        { name: "Marketing", value: userOverview.role_breakdown.marketing_staff },
-        { name: "Sales", value: userOverview.role_breakdown.sales_staff },
-        { name: "Content", value: userOverview.role_breakdown.content_staff },
-        { name: "Brand Partner", value: userOverview.role_breakdown.brand_partner },
-        { name: "Customer", value: userOverview.role_breakdown.customer },
-      ].filter((item) => item.value > 0)
-    : [];
+  const revenueTrendData = useMemo(
+    () =>
+      revenue?.revenue_trend?.map((item: any) => ({
+        month: new Date(item.date).toLocaleDateString("default", {
+          month: "short",
+          day: "numeric",
+        }),
+        value: Math.round(item.revenue),
+      })) || [],
+    [revenue?.revenue_trend],
+  );
 
-  const campaignsTableData = campaigns
-    ? [
-        { status: "Total Campaigns", count: campaigns.total_campaigns },
-        { status: "Running", count: campaigns.running },
-        { status: "Draft", count: campaigns.draft },
-        { status: "Completed", count: campaigns.completed },
-        { status: "Cancelled", count: campaigns.cancelled },
-        { status: "Content Created", count: campaigns.content_created },
-        { status: "Content Posted", count: campaigns.content_posted },
-      ]
-    : [];
+  const userGrowthData = useMemo(
+    () =>
+      userGrowth?.map((item: any) => ({
+        month: new Date(item.date).toLocaleDateString("default", {
+          month: "short",
+          day: "numeric",
+        }),
+        value: item.new_users,
+      })) || [],
+    [userGrowth],
+  );
 
-  const contractsTableData = contracts
-    ? [
-        {
-          status: "Total Contracts",
-          count: contracts.total_contracts,
-          value: contracts.total_value,
-        },
-        { status: "Active", count: contracts.active, value: null },
-        { status: "Draft", count: contracts.draft, value: null },
-        { status: "Pending", count: contracts.pending, value: null },
-        { status: "Completed", count: contracts.completed, value: null },
-        { status: "Cancelled", count: contracts.cancelled, value: null },
-        { status: "Collected Amount", count: null, value: contracts.collected_amount },
-        { status: "Pending Amount", count: null, value: contracts.pending_amount },
-      ]
-    : [];
+  const rawRoleData = useMemo(() => {
+    if (!userOverview?.role_breakdown) return [];
+    const rb = userOverview.role_breakdown;
+    const data = [
+      { type: "Admin", value: Number(rb.admin) },
+      { type: "Marketing", value: Number(rb.marketing_staff) },
+      { type: "Sales", value: Number(rb.sales_staff) },
+      { type: "Content", value: Number(rb.content_staff) },
+      { type: "Brand Partner", value: Number(rb.brand_partner) },
+      { type: "Customer", value: Number(rb.customer) },
+    ];
+    return data.filter((item) => item.value > 0);
+  }, [userOverview?.role_breakdown]);
 
-  const systemHealthData = health
-    ? [
-        { metric: "Database", status: health.database_status },
-        { metric: "Cache", status: health.cache_status },
-        { metric: "Queue", status: health.queue_status },
-        { metric: "Pending Jobs", status: health.pending_jobs },
-        { metric: "Failed Jobs (24h)", status: health.failed_jobs_24h },
-        { metric: "Avg Response (ms)", status: health.average_response_ms },
-        { metric: "Error Rate", status: `${(health.error_rate * 100).toFixed(2)}%` },
-        { metric: "Uptime", status: health.uptime },
-      ]
-    : [];
+  const roleBreakdownData = useMemo(() => {
+    if (!rawRoleData.length) return [];
+    if (roleChartMode === "count") return rawRoleData;
 
-  if (loading) {
-    return (
-      <div className="p-2 sm:p-6 w-full flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <Loader2 className="mx-auto mb-4 h-12 w-12 text-primary animate-spin" />
-          <p className="text-gray-600">Loading dashboard data...</p>
-        </div>
-      </div>
-    );
-  }
+    const total = rawRoleData.reduce((sum, item) => sum + item.value, 0);
+    return rawRoleData.map((item) => ({
+      type: item.type,
+      value: total ? Number(((item.value / total) * 100).toFixed(1)) : 0,
+    }));
+  }, [rawRoleData, roleChartMode]);
+
+  const campaignsTableData = useMemo(
+    () =>
+      campaigns
+        ? [
+            { status: "Total Campaigns", count: campaigns.total_campaigns },
+            { status: "Running", count: campaigns.running },
+            { status: "Draft", count: campaigns.draft },
+            { status: "Completed", count: campaigns.completed },
+            { status: "Cancelled", count: campaigns.cancelled },
+            { status: "Content Created", count: campaigns.content_created },
+            { status: "Content Posted", count: campaigns.content_posted },
+          ]
+        : [],
+    [campaigns],
+  );
+
+  const totalCampaigns = campaigns?.total_campaigns ?? 0;
+  const runningCampaigns = campaigns?.running ?? 0;
+  const completedCampaigns = campaigns?.completed ?? 0;
+  const contentCreated = campaigns?.content_created ?? 0;
+  const contentPosted = campaigns?.content_posted ?? 0;
+
+  const completionRate = totalCampaigns
+    ? Math.round((completedCampaigns / totalCampaigns) * 100)
+    : 0;
+
+  const contentPostRate = contentCreated ? Math.round((contentPosted / contentCreated) * 100) : 0;
+
+  const totalContracts = contracts?.total_contracts ?? 0;
+  const completedContracts = contracts?.completed ?? 0;
+  const contractCompletionRate = totalContracts
+    ? Math.round((completedContracts / totalContracts) * 100)
+    : 0;
+
+  const contractsStatusTableData = useMemo(
+    () =>
+      contracts
+        ? [
+            { status: "Total Contracts", count: contracts.total_contracts ?? 0 },
+            { status: "Active", count: contracts.active ?? 0 },
+            { status: "Draft", count: contracts.draft ?? 0 },
+            { status: "Pending", count: contracts.pending ?? 0 },
+            { status: "Completed", count: contracts.completed ?? 0 },
+            { status: "Cancelled", count: contracts.cancelled ?? 0 },
+          ]
+        : [],
+    [contracts],
+  );
+
+  const contractsFinanceTableData = useMemo(
+    () =>
+      contracts
+        ? [
+            {
+              metric: "Total Value",
+              amount: formatCurrency(contracts.total_value),
+            },
+            {
+              metric: "Collected Amount",
+              amount: formatCurrency(contracts.collected_amount),
+            },
+            {
+              metric: "Pending Amount",
+              amount: formatCurrency(contracts.pending_amount),
+            },
+          ]
+        : [],
+    [contracts],
+  );
+
+  const systemHealthData = useMemo(
+    () =>
+      health
+        ? [
+            { metric: "Database", status: health.database_status },
+            { metric: "Cache", status: health.cache_status },
+            { metric: "Queue", status: health.queue_status },
+            { metric: "Pending Jobs", status: health.pending_jobs },
+            { metric: "Failed Jobs (24h)", status: health.failed_jobs_24h },
+            { metric: "Avg Response (ms)", status: health.average_response_ms },
+            { metric: "Error Rate", status: `${(health.error_rate * 100).toFixed(2)}%` },
+            { metric: "Uptime", status: health.uptime },
+          ]
+        : [],
+    [health],
+  );
+
+  const isAnyLoading = loading || loadingRevenue || loadingUserGrowth || loadingUserOverview;
 
   return (
-    <div className="p-2 sm:p-6 w-full flex flex-col gap-6">
+    <div className="p-2 sm:p-6 w-full flex flex-col gap-6 relative">
+      {isAnyLoading && (
+        <div className="fixed inset-0 bg-white/70 flex items-center justify-center z-50">
+          <div className="text-center">
+            <Loader2 className="mx-auto mb-4 h-12 w-12 text-primary animate-spin" />
+            <p className="text-gray-600">Loading...</p>
+          </div>
+        </div>
+      )}
+
       <h1 className="text-xl sm:text-2xl font-semibold">Admin Dashboard</h1>
 
-      {/* KPI Section */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="relative">
-          {loading && (
-            <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-lg">
-              <Loader2 className="h-6 w-6 text-primary animate-spin" />
-            </div>
-          )}
           <KPIWidget
             title="Total Campaigns"
             data={campaignsKPIData}
@@ -305,11 +351,6 @@ const AdminDashboard: React.FC = () => {
           />
         </div>
         <div className="relative">
-          {loading && (
-            <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-lg">
-              <Loader2 className="h-6 w-6 text-primary animate-spin" />
-            </div>
-          )}
           <KPIWidget
             title="Total Contracts"
             data={contractsKPIData}
@@ -319,11 +360,6 @@ const AdminDashboard: React.FC = () => {
           />
         </div>
         <div className="relative">
-          {loadingUserOverview && (
-            <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-lg">
-              <Loader2 className="h-6 w-6 text-primary animate-spin" />
-            </div>
-          )}
           <KPIWidget
             title="Total Users"
             data={totalUsersData}
@@ -333,11 +369,6 @@ const AdminDashboard: React.FC = () => {
           />
         </div>
         <div className="relative">
-          {loadingRevenue && (
-            <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-lg">
-              <Loader2 className="h-6 w-6 text-primary animate-spin" />
-            </div>
-          )}
           <KPIWidget
             title="Total Revenue"
             data={totalRevenueData}
@@ -348,34 +379,40 @@ const AdminDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Revenue Section */}
-      <Card className="p-4 relative">
-        {loadingRevenue && (
-          <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-lg">
-            <Loader2 className="h-8 w-8 text-primary animate-spin" />
-          </div>
-        )}
+      <Card className="p-4">
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center flex-wrap gap-2">
             <h2 className="text-lg font-semibold">Revenue Trend</h2>
             <div className="flex gap-2 items-center flex-wrap">
-              <Input
-                type="date"
-                value={revenueFilter.start_date}
-                onChange={(e) => setRevenueFilter({ ...revenueFilter, start_date: e.target.value })}
-                className="w-[150px] h-8 text-xs"
+              <DatePicker
+                value={formatDateInput(revenueFilter.start_date)}
+                onChange={(value) =>
+                  setRevenueFilter((prev) => ({
+                    ...prev,
+                    start_date: value ? new Date(value).toISOString() : "",
+                  }))
+                }
+                dateFormat="dd/MM/yyyy"
+                className="w-[150px]"
+                placeholder="Start date"
               />
               <span className="text-sm">to</span>
-              <Input
-                type="date"
-                value={revenueFilter.end_date}
-                onChange={(e) => setRevenueFilter({ ...revenueFilter, end_date: e.target.value })}
-                className="w-[150px] h-8 text-xs"
+              <DatePicker
+                value={formatDateInput(revenueFilter.end_date)}
+                onChange={(value) =>
+                  setRevenueFilter((prev) => ({
+                    ...prev,
+                    end_date: value ? new Date(value).toISOString() : "",
+                  }))
+                }
+                dateFormat="dd/MM/yyyy"
+                className="w-[150px]"
+                placeholder="End date"
               />
               <Select
                 value={revenueFilter.granularity}
-                onValueChange={(value: any) =>
-                  setRevenueFilter({ ...revenueFilter, granularity: value })
+                onValueChange={(value: Granularity) =>
+                  setRevenueFilter((prev) => ({ ...prev, granularity: value }))
                 }
               >
                 <SelectTrigger className="w-[100px] h-8 text-xs">
@@ -387,71 +424,186 @@ const AdminDashboard: React.FC = () => {
                   <SelectItem value="MONTH">Monthly</SelectItem>
                 </SelectContent>
               </Select>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setRevenueFilter({ start_date: "", end_date: "", granularity: "MONTH" })
+                }
+                className="h-8 text-xs"
+              >
+                Reset
+              </Button>
             </div>
           </div>
           <LineChartWidget title="" data={revenueTrendData} />
         </div>
       </Card>
 
-      {/* Revenue Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="p-4 relative">
-          {loadingRevenue && (
-            <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-lg">
-              <Loader2 className="h-8 w-8 text-primary animate-spin" />
-            </div>
-          )}
+        <Card className="p-4">
           <div className="flex flex-col gap-4">
             <h2 className="text-lg font-semibold">Revenue Breakdown</h2>
             <BarChartWidget title="" data={revenueBreakdownData} />
           </div>
         </Card>
 
-        <Card className="p-4 relative">
-          {loadingRevenue && (
-            <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-lg">
-              <Loader2 className="h-8 w-8 text-primary animate-spin" />
-            </div>
-          )}
+        <Card className="p-4">
           <div className="flex flex-col gap-4">
-            <h2 className="text-lg font-semibold">Revenue Distribution</h2>
-            <PieChartWidget title="" data={revenueShareData} />
+            <div className="flex justify-between items-center flex-wrap gap-2">
+              <h2 className="text-lg font-semibold">Revenue Distribution</h2>
+              <Select
+                value={revenueChartMode}
+                onValueChange={(value: ChartMode) => setRevenueChartMode(value)}
+              >
+                <SelectTrigger className="w-[120px] h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="count">Amount</SelectItem>
+                  <SelectItem value="percent">Percentage</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <PieChartWidget title="" data={revenueShareData} mode={revenueChartMode} />
           </div>
         </Card>
       </div>
 
-      {/* User Growth */}
-      <Card className="p-4 relative">
-        {loadingUserGrowth && (
-          <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-lg">
-            <Loader2 className="h-8 w-8 text-primary animate-spin" />
+      <Card className="p-4">
+        <div className="flex flex-col gap-4">
+          <h2 className="text-lg font-semibold">Campaigns Summary</h2>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <KPIWidget
+              title="Total Campaigns"
+              data={{
+                value: totalCampaigns,
+                status: "up",
+                statusText: `${runningCampaigns} running`,
+              }}
+              icon={<FaBullhorn size={20} />}
+              iconColor="text-purple-600"
+              iconBg="bg-purple-100"
+            />
+
+            <KPIWidget
+              title="Completion Rate (%)"
+              data={{
+                value: completionRate,
+                status: "up",
+                statusText: `${completedCampaigns}/${totalCampaigns} completed`,
+              }}
+              icon={<FaBullhorn size={20} />}
+              iconColor="text-emerald-600"
+              iconBg="bg-emerald-100"
+            />
+
+            <KPIWidget
+              title="Content Posted"
+              data={{
+                value: contentPosted,
+                status: contentPostRate >= 50 ? "up" : "down",
+                statusText: `${contentPostRate}% of created`,
+              }}
+              icon={<FaBullhorn size={20} />}
+              iconColor="text-blue-600"
+              iconBg="bg-blue-100"
+            />
           </div>
-        )}
+
+          <TableWidget title="Details" data={campaignsTableData} />
+        </div>
+      </Card>
+
+      <Card className="p-4">
+        <div className="flex flex-col gap-4">
+          <h2 className="text-lg font-semibold">Contracts Summary</h2>
+
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <KPIWidget
+              title="Total Contracts"
+              data={{
+                value: contracts?.total_contracts ?? 0,
+              }}
+              icon={<FaFileContract size={20} />}
+              iconColor="text-blue-600"
+              iconBg="bg-blue-100"
+            />
+            <KPIWidget
+              title="Completion Rate (%)"
+              data={{
+                value: contractCompletionRate,
+                status: "up",
+                statusText: `${completedContracts}/${totalContracts} completed`,
+              }}
+              icon={<FaFileContract size={20} />}
+              iconColor="text-emerald-600"
+              iconBg="bg-emerald-100"
+            />
+            <KPIWidget
+              title="Total Value"
+              data={{
+                value: contracts?.total_value ?? 0,
+              }}
+              icon={<FaMoneyBillWave size={20} />}
+              iconColor="text-emerald-600"
+              iconBg="bg-emerald-100"
+            />
+            <KPIWidget
+              title="Collected / Pending"
+              data={{
+                value: contracts?.collected_amount ?? 0,
+                status: "up",
+                statusText: `Pending: ${formatCurrency(contracts?.pending_amount ?? 0)}`,
+              }}
+              icon={<FaMoneyBillWave size={20} />}
+              iconColor="text-amber-600"
+              iconBg="bg-amber-100"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <TableWidget title="By Status" data={contractsStatusTableData} />
+            <TableWidget title="By Value" data={contractsFinanceTableData} />
+          </div>
+        </div>
+      </Card>
+
+      <Card className="p-4 relative">
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center flex-wrap gap-2">
             <h2 className="text-lg font-semibold">User Growth</h2>
             <div className="flex gap-2 items-center flex-wrap">
-              <Input
-                type="date"
-                value={userGrowthFilter.start_date}
-                onChange={(e) =>
-                  setUserGrowthFilter({ ...userGrowthFilter, start_date: e.target.value })
+              <DatePicker
+                value={formatDateInput(userGrowthFilter.start_date)}
+                onChange={(value) =>
+                  setUserGrowthFilter((prev) => ({
+                    ...prev,
+                    start_date: value ? new Date(value).toISOString() : prev.start_date,
+                  }))
                 }
-                className="w-[150px] h-8 text-xs"
+                dateFormat="dd/MM/yyyy"
+                className="w-[150px]"
+                placeholder="Start date"
               />
               <span className="text-sm">to</span>
-              <Input
-                type="date"
-                value={userGrowthFilter.end_date}
-                onChange={(e) =>
-                  setUserGrowthFilter({ ...userGrowthFilter, end_date: e.target.value })
+              <DatePicker
+                value={formatDateInput(userGrowthFilter.end_date)}
+                onChange={(value) =>
+                  setUserGrowthFilter((prev) => ({
+                    ...prev,
+                    end_date: value ? new Date(value).toISOString() : prev.end_date,
+                  }))
                 }
-                className="w-[150px] h-8 text-xs"
+                dateFormat="dd/MM/yyyy"
+                className="w-[150px]"
+                placeholder="End date"
               />
               <Select
                 value={userGrowthFilter.granularity}
-                onValueChange={(value: any) =>
-                  setUserGrowthFilter({ ...userGrowthFilter, granularity: value })
+                onValueChange={(value: Granularity) =>
+                  setUserGrowthFilter((prev) => ({ ...prev, granularity: value }))
                 }
               >
                 <SelectTrigger className="w-[100px] h-8 text-xs">
@@ -465,8 +617,8 @@ const AdminDashboard: React.FC = () => {
               </Select>
               <Select
                 value={userGrowthFilter.role}
-                onValueChange={(value: any) =>
-                  setUserGrowthFilter({ ...userGrowthFilter, role: value })
+                onValueChange={(value: Role) =>
+                  setUserGrowthFilter((prev) => ({ ...prev, role: value }))
                 }
               >
                 <SelectTrigger className="w-[140px] h-8 text-xs">
@@ -482,83 +634,53 @@ const AdminDashboard: React.FC = () => {
                   <SelectItem value="CUSTOMER">Customer</SelectItem>
                 </SelectContent>
               </Select>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setUserGrowthFilter({
+                    start_date: "",
+                    end_date: "",
+                    granularity: "MONTH",
+                    role: "ALL",
+                  })
+                }
+                className="h-8 text-xs"
+              >
+                Reset
+              </Button>
             </div>
           </div>
           <LineChartWidget title="" data={userGrowthData} />
         </div>
       </Card>
 
-      {/* User Overview and System Health */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="p-4 relative">
-          {loadingUserOverview && (
-            <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-lg">
-              <Loader2 className="h-8 w-8 text-primary animate-spin" />
-            </div>
-          )}
           <div className="flex flex-col gap-4">
             <div className="flex justify-between items-center flex-wrap gap-2">
               <h2 className="text-lg font-semibold">User Roles</h2>
               <Select
-                value={userOverviewFilter.role}
-                onValueChange={(value: any) =>
-                  setUserOverviewFilter({ ...userOverviewFilter, role: value })
-                }
+                value={roleChartMode}
+                onValueChange={(value: ChartMode) => setRoleChartMode(value)}
               >
-                <SelectTrigger className="w-[140px] h-8 text-xs">
-                  <SelectValue placeholder="All Roles" />
+                <SelectTrigger className="w-[120px] h-8 text-xs">
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ALL">All Roles</SelectItem>
-                  <SelectItem value="ADMIN">Admin</SelectItem>
-                  <SelectItem value="MARKETING_STAFF">Marketing</SelectItem>
-                  <SelectItem value="SALES_STAFF">Sales</SelectItem>
-                  <SelectItem value="CONTENT_STAFF">Content</SelectItem>
-                  <SelectItem value="BRAND_PARTNER">Brand Partner</SelectItem>
-                  <SelectItem value="CUSTOMER">Customer</SelectItem>
+                  <SelectItem value="count">Quantity</SelectItem>
+                  <SelectItem value="percent">Percentage</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <BarChartWidget title="" data={roleBreakdownData} />
+            <PieChartWidget title="" data={roleBreakdownData} mode={roleChartMode} />
           </div>
         </Card>
 
         <Card className="p-4 relative">
-          {loading && (
-            <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-lg">
-              <Loader2 className="h-8 w-8 text-primary animate-spin" />
-            </div>
-          )}
           <div className="flex flex-col gap-4">
             <h2 className="text-lg font-semibold">System Health</h2>
             <TableWidget title="" data={systemHealthData} />
-          </div>
-        </Card>
-      </div>
-
-      {/* Campaigns and Contracts Tables */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="p-4 relative">
-          {loading && (
-            <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-lg">
-              <Loader2 className="h-8 w-8 text-primary animate-spin" />
-            </div>
-          )}
-          <div className="flex flex-col gap-4">
-            <h2 className="text-lg font-semibold">Campaigns Summary</h2>
-            <TableWidget title="" data={campaignsTableData} />
-          </div>
-        </Card>
-
-        <Card className="p-4 relative">
-          {loading && (
-            <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-lg">
-              <Loader2 className="h-8 w-8 text-primary animate-spin" />
-            </div>
-          )}
-          <div className="flex flex-col gap-4">
-            <h2 className="text-lg font-semibold">Contracts Summary</h2>
-            <TableWidget title="" data={contractsTableData} />
           </div>
         </Card>
       </div>

@@ -196,3 +196,64 @@ export interface ListContent {
     post_date?: string;
   }[];
 }
+
+// AI Content Generation Types
+export interface AIGenerateRequest {
+  json_mode: boolean;
+  model: string;
+  prompt: string;
+  stream: boolean;
+}
+
+export interface AIGenerateResponse {
+  success: boolean;
+  status: string;
+  status_code: number;
+  message: string;
+  data: {
+    content: string;
+    tokens_used?: number;
+    model_used?: string;
+  };
+}
+
+export interface AIStructuredContentRequest {
+  context: string;
+  model: string;
+  platform: string;
+  stream: boolean;
+  tone: string;
+}
+
+export interface AIStructuredContentResponse {
+  success: boolean;
+  status: string;
+  status_code: number;
+  message: string;
+  data: {
+    title: string;
+    content: string;
+    description?: string;
+    tags?: string[];
+    excerpt?: string;
+    tokens_used?: number;
+    model_used?: string;
+  };
+}
+
+export interface AIModel {
+  id: string;
+  name: string;
+  provider: string;
+  type: string;
+  max_tokens?: number;
+  description?: string;
+}
+
+export interface AIModelsResponse {
+  success: boolean;
+  status: string;
+  status_code: number;
+  message: string;
+  data: AIModel[];
+}

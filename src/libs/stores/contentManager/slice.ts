@@ -11,8 +11,11 @@ import {
   approveContent,
   rejectContent,
   getTikTokCreatorInfo,
+  generateAIContent,
+  generateStructuredContent,
+  getSupportedAIModels,
 } from "./thunk";
-import type { ContentResponse, Content, TikTokCreatorInfo } from "@/libs/types/content";
+import type { ContentResponse, Content, TikTokCreatorInfo, AIModel } from "@/libs/types/content";
 import { toast } from "sonner";
 
 interface stateType {
@@ -20,6 +23,15 @@ interface stateType {
   contents: Content[];
   content: Content | null;
   tikTokCreatorInfo: TikTokCreatorInfo | null;
+  aiModels: AIModel[];
+  generatedContent: string | null;
+  structuredContent: {
+    title: string;
+    content: string;
+    description?: string;
+    tags?: string[];
+    excerpt?: string;
+  } | null;
   pagination: {
     page: number;
     limit: number;
@@ -36,6 +48,9 @@ const initialState: stateType = {
   contents: [],
   content: null,
   tikTokCreatorInfo: null,
+  aiModels: [],
+  generatedContent: null,
+  structuredContent: null,
   pagination: null,
   error: null,
 };
@@ -52,6 +67,15 @@ export const manageContentSlice = createSlice({
     },
     clearTikTokCreatorInfo: (state) => {
       state.tikTokCreatorInfo = null;
+    },
+    clearGeneratedContent: (state) => {
+      state.generatedContent = null;
+    },
+    clearStructuredContent: (state) => {
+      state.structuredContent = null;
+    },
+    clearAIModels: (state) => {
+      state.aiModels = [];
     },
   },
   extraReducers: (builder) => {
@@ -308,9 +332,84 @@ export const manageContentSlice = createSlice({
           description: "Please check your connection and try again.",
           duration: 4000,
         });
+      })
+
+      // Generate AI Content
+      .addCase(generateAIContent.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.generatedContent = null;
+      })
+      .addCase(generateAIContent.fulfilled, (state, action) => {
+        state.loading = false;
+        state.generatedContent = action.payload.data.content;
+        toast.success("AI content generated!", {
+          description: "Your content has been successfully generated.",
+          duration: 4000,
+        });
+      })
+      .addCase(generateAIContent.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        toast.error("Failed to generate AI content", {
+          description: "Please check your connection and try again.",
+          duration: 4000,
+        });
+      })
+
+      // Generate Structured Content
+      .addCase(generateStructuredContent.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.structuredContent = null;
+      })
+      .addCase(generateStructuredContent.fulfilled, (state, action) => {
+        state.loading = false;
+        state.structuredContent = action.payload.data;
+        toast.success("Structured content generated!", {
+          description: "Your structured content has been successfully generated.",
+          duration: 4000,
+        });
+      })
+      .addCase(generateStructuredContent.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        toast.error("Failed to generate structured content", {
+          description: "Please check your connection and try again.",
+          duration: 4000,
+        });
+      })
+
+      // Get Supported AI Models
+      .addCase(getSupportedAIModels.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getSupportedAIModels.fulfilled, (state, action) => {
+        state.loading = false;
+        state.aiModels = action.payload.data;
+        toast.success("AI models loaded!", {
+          description: "Available AI models have been loaded.",
+          duration: 4000,
+        });
+      })
+      .addCase(getSupportedAIModels.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        toast.error("Failed to load AI models", {
+          description: "Please check your connection and try again.",
+          duration: 4000,
+        });
       });
   },
 });
 
-export const { clearError, clearContent, clearTikTokCreatorInfo } = manageContentSlice.actions;
+export const {
+  clearError,
+  clearContent,
+  clearTikTokCreatorInfo,
+  clearGeneratedContent,
+  clearStructuredContent,
+  clearAIModels,
+} = manageContentSlice.actions;
 export const { reducer: manageContentReducer, actions: manageContentActions } = manageContentSlice;

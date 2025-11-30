@@ -14,16 +14,24 @@ import {
   approveContent,
   rejectContent,
   getTikTokCreatorInfo,
+  generateAIContent,
+  generateStructuredContent,
+  getSupportedAIModels,
 } from "@/libs/stores/contentManager/thunk";
 import {
   clearError,
   clearContent,
   clearTikTokCreatorInfo,
+  clearGeneratedContent,
+  clearStructuredContent,
+  clearAIModels,
 } from "@/libs/stores/contentManager/slice";
 import type {
   ContentListParams,
   CreateContentRequest,
   UpdateContentRequest,
+  AIGenerateRequest,
+  AIStructuredContentRequest,
 } from "@/libs/types/content";
 
 export const useContentManager = () => {
@@ -33,6 +41,9 @@ export const useContentManager = () => {
     contents: contentList,
     content,
     tikTokCreatorInfo,
+    aiModels,
+    generatedContent,
+    structuredContent,
     pagination,
     error,
   } = useSelector((state: RootState) => state.manageContent);
@@ -123,12 +134,46 @@ export const useContentManager = () => {
     dispatch(clearTikTokCreatorInfo());
   }, [dispatch]);
 
+  // AI Content Generation Functions
+  const generateAIContentHook = useCallback(
+    (data: AIGenerateRequest) => {
+      return dispatch(generateAIContent(data));
+    },
+    [dispatch],
+  );
+
+  const generateStructuredContentHook = useCallback(
+    (data: AIStructuredContentRequest) => {
+      return dispatch(generateStructuredContent(data));
+    },
+    [dispatch],
+  );
+
+  const fetchSupportedAIModels = useCallback(() => {
+    return dispatch(getSupportedAIModels());
+  }, [dispatch]);
+
+  const clearAIGeneratedContent = useCallback(() => {
+    dispatch(clearGeneratedContent());
+  }, [dispatch]);
+
+  const clearAIStructuredContent = useCallback(() => {
+    dispatch(clearStructuredContent());
+  }, [dispatch]);
+
+  const clearAIModelsList = useCallback(() => {
+    dispatch(clearAIModels());
+  }, [dispatch]);
+
   return {
     // State
     loading,
     contentList,
     content,
     tikTokCreatorInfo,
+    aiModels,
+    generatedContent,
+    structuredContent,
     pagination,
     error,
 
@@ -147,5 +192,13 @@ export const useContentManager = () => {
     clearErrors,
     clearCurrentContent,
     clearTikTokCreator,
+
+    // AI Functions
+    generateAIContentHook,
+    generateStructuredContentHook,
+    fetchSupportedAIModels,
+    clearAIGeneratedContent,
+    clearAIStructuredContent,
+    clearAIModelsList,
   };
 };

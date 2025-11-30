@@ -196,3 +196,107 @@ export interface ListContent {
     post_date?: string;
   }[];
 }
+
+// AI Content Generation Types
+export interface AIGenerateRequest {
+  json_mode: boolean;
+  model: string;
+  prompt: string;
+  stream: boolean;
+}
+
+export interface AIGenerateResponse {
+  success: boolean;
+  status: string;
+  status_code: number;
+  message: string;
+  data: {
+    content: string;
+    tokens_used?: number;
+    model_used?: string;
+  };
+}
+
+export interface AIStructuredContentRequest {
+  context: string;
+  model: string;
+  platform: string;
+  stream: boolean;
+  tone: string;
+}
+
+export interface AIStructuredContentResponse {
+  success: boolean;
+  status: string;
+  status_code: number;
+  message: string;
+  data: {
+    title: string;
+    content: string;
+    description?: string;
+    tags?: string[];
+    excerpt?: string;
+    tokens_used?: number;
+    model_used?: string;
+  };
+}
+
+export interface AIModel {
+  provider: string;
+  base_url: string;
+  enable: boolean;
+  models: string[];
+  id?: string;
+  name?: string;
+  type?: string;
+  max_tokens?: number;
+  description?: string;
+}
+
+export interface AIModelsResponse {
+  success: boolean;
+  status: string;
+  status_code: number;
+  message: string;
+  data: AIModel[];
+}
+
+// TipTap JSON Content Types
+export interface TipTapMark {
+  type: string;
+  attrs?: Record<string, any>;
+}
+
+export interface TipTapNode {
+  type: string;
+  attrs?: Record<string, any>;
+  content?: TipTapNode[];
+  text?: string;
+  marks?: TipTapMark[];
+}
+
+export interface TipTapDocument {
+  type: "doc";
+  content: TipTapNode[];
+}
+
+// Streaming State Types
+export interface StreamingState {
+  isStreaming: boolean;
+  streamingContent: string;
+  streamingProgress: number;
+  tokensUsed: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  } | null;
+}
+
+export interface StreamedContentResult {
+  content: string | TipTapDocument;
+  isJSON: boolean;
+  title?: string;
+  description?: string;
+  tags?: string[];
+  excerpt?: string;
+}

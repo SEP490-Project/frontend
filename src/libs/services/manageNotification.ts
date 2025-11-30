@@ -7,6 +7,7 @@ export const manageNotification = {
     user_id?: string;
     type?: string;
     status?: string;
+    is_read?: boolean;
     start_date?: string;
     end_date?: string;
   }) => api.get("/notifications", { params }),

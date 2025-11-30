@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import FileList from "@/components/global/FileList";
 import {
   Calendar,
   MapPin,
@@ -15,7 +16,6 @@ import {
   Clock,
   Target,
   Users,
-  ExternalLink,
   Play,
 } from "lucide-react";
 
@@ -42,7 +42,6 @@ export const ScopeOfWork: React.FC<{ type: string; data: any }> = ({ type, data 
         <h2 className="text-3xl font-bold text-gray-900">Scope of Work & Deliverables</h2>
       </div>
 
-      {/* General Requirements với type color */}
       {general_requirements && general_requirements.length > 0 && (
         <Card className={`border-l-4 border-l-${typeColor}-500`}>
           <CardHeader>
@@ -71,7 +70,6 @@ export const ScopeOfWork: React.FC<{ type: string; data: any }> = ({ type, data 
         </Card>
       )}
 
-      {/* BRAND AMBASSADOR - Events */}
       {type === "BRAND_AMBASSADOR" &&
         deliverables?.events?.map((e: any, i: number) => (
           <Card key={i} className={`border-l-4 border-l-${typeColor}-500 overflow-hidden`}>
@@ -85,7 +83,6 @@ export const ScopeOfWork: React.FC<{ type: string; data: any }> = ({ type, data 
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
-              {/* Event Details Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card className={`border border-${typeColor}-200`}>
                   <CardContent className="p-4">
@@ -115,7 +112,6 @@ export const ScopeOfWork: React.FC<{ type: string; data: any }> = ({ type, data 
 
               <Separator />
 
-              {/* Activities */}
               <div className="space-y-3">
                 <h4 className="font-semibold text-gray-900 flex items-center gap-2">
                   <Play className={`w-4 h-4 text-${typeColor}-600`} />
@@ -134,7 +130,6 @@ export const ScopeOfWork: React.FC<{ type: string; data: any }> = ({ type, data 
                 </div>
               </div>
 
-              {/* Representation Rules */}
               <div className="space-y-3">
                 <h4 className="font-semibold text-gray-900 flex items-center gap-2">
                   <Users className={`w-4 h-4 text-${typeColor}-600`} />
@@ -155,7 +150,6 @@ export const ScopeOfWork: React.FC<{ type: string; data: any }> = ({ type, data 
                 </div>
               </div>
 
-              {/* KPIs */}
               {e.kpis && e.kpis.length > 0 && (
                 <Card className={`bg-${typeColor}-50 border-${typeColor}-200`}>
                   <CardHeader className="pb-3">
@@ -190,7 +184,6 @@ export const ScopeOfWork: React.FC<{ type: string; data: any }> = ({ type, data 
           </Card>
         ))}
 
-      {/* ADVERTISING - Advertised Items với type color được áp dụng tương tự */}
       {type === "ADVERTISING" &&
         deliverables?.advertised_items?.map((a: any, i: number) => (
           <Card key={i} className={`border-l-4 border-l-${typeColor}-500 overflow-hidden`}>
@@ -216,7 +209,6 @@ export const ScopeOfWork: React.FC<{ type: string; data: any }> = ({ type, data 
                 </Card>
               )}
 
-              {/* Description */}
               {a.description && (
                 <Card className="bg-blue-50 border-blue-200">
                   <CardContent className="p-4">
@@ -226,7 +218,6 @@ export const ScopeOfWork: React.FC<{ type: string; data: any }> = ({ type, data 
                 </Card>
               )}
 
-              {/* Hashtags */}
               {a.hash_tag && a.hash_tag.length > 0 && (
                 <div className="space-y-2">
                   <h4 className="font-semibold text-gray-900 flex items-center gap-2">
@@ -247,7 +238,6 @@ export const ScopeOfWork: React.FC<{ type: string; data: any }> = ({ type, data 
                 </div>
               )}
 
-              {/* Content Requirements */}
               {a.content_requirements && a.content_requirements.length > 0 && (
                 <Card className={`border border-${typeColor}-200`}>
                   <CardHeader className="pb-3">
@@ -268,7 +258,6 @@ export const ScopeOfWork: React.FC<{ type: string; data: any }> = ({ type, data 
                 </Card>
               )}
 
-              {/* Creative Notes */}
               {a.creative_notes && (
                 <Card className="bg-yellow-50 border-yellow-200">
                   <CardContent className="p-4">
@@ -281,38 +270,41 @@ export const ScopeOfWork: React.FC<{ type: string; data: any }> = ({ type, data 
                 </Card>
               )}
 
-              {/* Materials */}
               {a.material_url && a.material_url.length > 0 && (
                 <div className="space-y-2">
                   <h4 className="font-semibold text-gray-900 flex items-center gap-2">
                     <Image className="w-4 h-4 text-blue-600" />
                     Materials
                   </h4>
-                  <div className="flex flex-wrap gap-2">
-                    {a.material_url.map((url: string, j: number) => (
-                      <Button key={j} variant="outline" size="sm" asChild>
-                        <a
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2"
-                        >
-                          <ExternalLink className="w-3 h-3" />
-                          Material {j + 1}
-                        </a>
-                      </Button>
-                    ))}
-                  </div>
+                  <FileList
+                    files={a.material_url.map((url: string, j: number) => ({
+                      id: `material-${i}-${j}`,
+                      name: url.split("/").pop() || `Material ${j + 1}`,
+                      progress: 100,
+                      status: "completed" as const,
+                      url: url,
+                    }))}
+                    onDownload={(file) => {
+                      if (file.url) {
+                        const link = document.createElement("a");
+                        link.href = file.url;
+                        link.download = file.name;
+                        link.target = "_blank";
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }
+                    }}
+                    showStatus={false}
+                  />
                 </div>
               )}
             </CardContent>
           </Card>
         ))}
 
-      {/* CO_PRODUCING - Products & Concepts */}
       {type === "CO_PRODUCING" && (
         <>
-          {/* Products */}
           {deliverables?.products?.map((p: any, i: number) => (
             <Card key={i} className={"border-l-4 border-l-indigo-500 overflow-hidden"}>
               <CardHeader className={"bg-gradient-to-r from-indigo-50 to-indigo-100"}>
@@ -383,7 +375,6 @@ export const ScopeOfWork: React.FC<{ type: string; data: any }> = ({ type, data 
             </Card>
           ))}
 
-          {/* Concepts */}
           {deliverables?.concepts?.map((c: any, i: number) => (
             <Card key={i} className={"border-l-4 border-l-purple-500 overflow-hidden"}>
               <CardHeader className={"bg-gradient-to-r from-purple-50 to-purple-100"}>
@@ -466,19 +457,27 @@ export const ScopeOfWork: React.FC<{ type: string; data: any }> = ({ type, data 
                       <Image className="w-4 h-4 text-purple-600" />
                       Materials
                     </h4>
-                    <div className="flex flex-wrap gap-2">
-                      {c.material_url.map((url: string, j: number) => (
-                        <a
-                          key={j}
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded text-sm text-purple-600 hover:text-purple-800 transition-colors"
-                        >
-                          View Material {j + 1}
-                        </a>
-                      ))}
-                    </div>
+                    <FileList
+                      files={c.material_url.map((url: string, j: number) => ({
+                        id: `concept-material-${i}-${j}`,
+                        name: url.split("/").pop() || `Material ${j + 1}`,
+                        progress: 100,
+                        status: "completed" as const,
+                        url: url,
+                      }))}
+                      onDownload={(file) => {
+                        if (file.url) {
+                          const link = document.createElement("a");
+                          link.href = file.url;
+                          link.download = file.name;
+                          link.target = "_blank";
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }
+                      }}
+                      showStatus={false}
+                    />
                   </div>
                 )}
               </CardContent>
@@ -487,7 +486,6 @@ export const ScopeOfWork: React.FC<{ type: string; data: any }> = ({ type, data 
         </>
       )}
 
-      {/* AFFILIATE */}
       {type === "AFFILIATE" && (
         <>
           {deliverables?.tracking_link && (
@@ -522,7 +520,6 @@ export const ScopeOfWork: React.FC<{ type: string; data: any }> = ({ type, data 
             </Card>
           )}
 
-          {/* Affiliate Items - similar pattern as advertising items but with pink theme */}
           {deliverables?.advertised_items?.map((item: any, i: number) => (
             <Card key={i} className="border-l-4 border-l-pink-500 overflow-hidden">
               <CardHeader className="bg-gradient-to-r from-pink-50 to-pink-100">
@@ -530,6 +527,7 @@ export const ScopeOfWork: React.FC<{ type: string; data: any }> = ({ type, data 
                   <div className="flex items-center gap-2 text-pink-700">
                     <Package className="w-5 h-5" />
                     {item.name}
+                    <Badge className="bg-pink-100 text-pink-800">{item.platform}</Badge>
                   </div>
                   <Badge variant="outline" className="bg-white">
                     Item #{i + 1}
@@ -540,8 +538,105 @@ export const ScopeOfWork: React.FC<{ type: string; data: any }> = ({ type, data 
                 )}
               </CardHeader>
               <CardContent className="p-6 space-y-4">
-                {/* Similar content structure as advertising items but with pink theme */}
-                {/* ... rest of the content with pink styling */}
+                {item.tagline && (
+                  <Card className="border border-pink-200">
+                    <CardContent className="p-4">
+                      <h4 className="font-medium text-gray-900 mb-2">Tagline</h4>
+                      <p className="text-sm text-gray-700">{item.tagline}</p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {item.description && (
+                  <Card className="bg-pink-50 border-pink-200">
+                    <CardContent className="p-4">
+                      <h4 className="font-medium text-gray-900 mb-2">Description</h4>
+                      <p className="text-sm text-gray-700">{item.description}</p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {item.hash_tag && item.hash_tag.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+                      <Hash className="w-4 h-4 text-pink-600" />
+                      Hashtags
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {item.hash_tag.map((tag: string, j: number) => (
+                        <Badge
+                          key={j}
+                          variant="outline"
+                          className="text-pink-700 border-pink-300 hover:bg-pink-50"
+                        >
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {item.content_requirements && item.content_requirements.length > 0 && (
+                  <Card className="border border-pink-200">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">Content Requirements</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {item.content_requirements.map((req: string, j: number) => (
+                          <div key={j} className="flex items-start gap-2">
+                            <div className="w-4 h-4 rounded-full bg-pink-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <span className="text-xs font-bold text-pink-600">{j + 1}</span>
+                            </div>
+                            <span className="text-sm text-gray-700">{req}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {item.creative_notes && (
+                  <Card className="bg-yellow-50 border-yellow-200">
+                    <CardContent className="p-4">
+                      <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                        <Lightbulb className="w-4 h-4 text-yellow-600" />
+                        Creative Notes
+                      </h4>
+                      <p className="text-sm text-gray-700 italic">{item.creative_notes}</p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {item.material_url && item.material_url.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+                      <Image className="w-4 h-4 text-pink-600" />
+                      Materials
+                    </h4>
+                    <FileList
+                      files={item.material_url.map((url: string, j: number) => ({
+                        id: `affiliate-material-${i}-${j}`,
+                        name: url.split("/").pop() || `Material ${j + 1}`,
+                        progress: 100,
+                        status: "completed" as const,
+                        url: url,
+                      }))}
+                      onDownload={(file) => {
+                        if (file.url) {
+                          const link = document.createElement("a");
+                          link.href = file.url;
+                          link.download = file.name;
+                          link.target = "_blank";
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }
+                      }}
+                      showStatus={false}
+                    />
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}

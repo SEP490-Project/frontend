@@ -11,6 +11,7 @@ export const notifications = createAsyncThunk(
       user_id?: string;
       type?: string;
       status?: string;
+      is_read?: boolean;
       start_date?: string;
       end_date?: string;
     },

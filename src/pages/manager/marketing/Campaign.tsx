@@ -297,7 +297,7 @@ const CampaignPage: React.FC = () => {
                                 size="sm"
                                 className="h-8 w-8 p-0 hover:bg-yellow-50"
                                 onClick={() =>
-                                  navigate(`/manage/marketing/campaigns/${campaign.id}/edit`)
+                                  navigate(`/manage/marketing/campaigns/edit/${campaign.id}`)
                                 }
                               >
                                 <FaPenToSquare className="text-yellow-600" />

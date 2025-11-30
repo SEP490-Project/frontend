@@ -23,7 +23,9 @@ import {
   Contracts,
   CreateContract,
   ContractDetail,
+  EditContract,
   CreateCampaign,
+  EditCampaign,
   CreateBrand,
   ContentApproval,
   TaskSchedule,
@@ -135,8 +137,10 @@ const AppRoutes = () => (
           <Route path="contracts" element={<Contracts />} />
           <Route path="contracts/create" element={<CreateContract />} />
           <Route path="contracts/:id" element={<ContractDetail />} />
+          <Route path="contracts/edit/:id" element={<EditContract />} />
           <Route path="campaigns" element={<MarketingCampaign />} />
           <Route path="campaigns/create" element={<CreateCampaign />} />
+          <Route path="campaigns/edit/:id" element={<EditCampaign />} />
           <Route path="campaigns/:id" element={<CampaignDetail />} />
           <Route path="contents-approval" element={<ContentApproval />} />
           <Route path="contents-approval/preview/:id" element={<ContentPreviewPage />} />

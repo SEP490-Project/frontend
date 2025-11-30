@@ -22,24 +22,19 @@ const CoProducingScope: React.FC<CoProducingScopeProps> = ({ formData, onUpdate,
   const start_date = formData?.start_date;
   const end_date = formData?.end_date;
 
-  // Use ref to prevent infinite loops when schedule updates
   const previousScheduleRef = React.useRef<string>("");
 
   const handleScheduleGenerated = useCallback(
     (newSchedule: any[]) => {
-      // Only apply the schedule format for QUARTERLY cycle
       if (financial_terms.profit_distribution_cycle === "QUARTERLY") {
         const scheduleString = JSON.stringify(newSchedule);
 
-        // Only update if the schedule has actually changed
         if (previousScheduleRef.current !== scheduleString) {
           console.log("Quarterly schedule generated:", newSchedule);
           previousScheduleRef.current = scheduleString;
-          // Store the schedule as profit_distribution_date for backend submission (only for QUARTERLY)
           onUpdate({ profit_distribution_date: newSchedule });
         }
       }
-      // For MONTHLY and ANNUALLY, we don't use the schedule callback
     },
     [onUpdate, financial_terms.profit_distribution_cycle],
   );
@@ -59,7 +54,6 @@ const CoProducingScope: React.FC<CoProducingScopeProps> = ({ formData, onUpdate,
       </CardHeader>
 
       <CardContent className="pt-6 space-y-6">
-        {/* Contract Period */}
         {start_date && end_date && (
           <Card className="p-4 bg-blue-50 border-blue-200">
             <h4 className="font-medium text-blue-900 mb-2">Contract Period</h4>
@@ -76,7 +70,6 @@ const CoProducingScope: React.FC<CoProducingScopeProps> = ({ formData, onUpdate,
           </Card>
         )}
 
-        {/* Profit Split */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-1">
             <Label className="text-sm font-medium flex items-center gap-2">
@@ -119,7 +112,6 @@ const CoProducingScope: React.FC<CoProducingScopeProps> = ({ formData, onUpdate,
           </div>
         </div>
 
-        {/* Profit Distribution Cycle */}
         <SelectField
           label="Profit Distribution Cycle"
           value={financial_terms.profit_distribution_cycle || ""}
@@ -136,7 +128,6 @@ const CoProducingScope: React.FC<CoProducingScopeProps> = ({ formData, onUpdate,
           error={errors.profit_distribution_cycle}
         />
 
-        {/* Payment Date Selector - Only show when cycle is selected */}
         {financial_terms.profit_distribution_cycle && (
           <PaymentDateSelector
             cycle={financial_terms.profit_distribution_cycle}
@@ -149,7 +140,6 @@ const CoProducingScope: React.FC<CoProducingScopeProps> = ({ formData, onUpdate,
               if (financial_terms.profit_distribution_cycle === "QUARTERLY") {
                 onUpdate({ profit_distribution_date_selector: val });
               } else {
-                // For MONTHLY and ANNUALLY, store directly to profit_distribution_date
                 onUpdate({ profit_distribution_date: val });
               }
             }}
@@ -159,7 +149,6 @@ const CoProducingScope: React.FC<CoProducingScopeProps> = ({ formData, onUpdate,
           />
         )}
 
-        {/* Generated Distribution Schedule Display */}
         {financial_terms.schedule && financial_terms.schedule.length > 0 && (
           <Card className="p-4 bg-green-50 border-green-200">
             <h4 className="font-medium text-green-900 mb-3">

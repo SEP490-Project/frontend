@@ -27,25 +27,19 @@ const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, err
   const start_date = formData?.start_date;
   const end_date = formData?.end_date;
 
-  // Use ref to prevent infinite loops when schedule updates
   const previousScheduleRef = React.useRef<string>("");
 
-  // Handle schedule generation from PaymentDateSelector
   const handleScheduleGenerated = React.useCallback(
     (newSchedule: any[]) => {
-      // Only apply the schedule format for QUARTERLY cycle
       if (financial_terms.payment_cycle === "QUARTERLY") {
         const scheduleString = JSON.stringify(newSchedule);
 
-        // Only update if the schedule has actually changed
         if (previousScheduleRef.current !== scheduleString) {
           console.log("Quarterly schedule generated:", newSchedule);
           previousScheduleRef.current = scheduleString;
-          // Store the schedule as payment_date for backend submission (only for QUARTERLY)
           onUpdate({ payment_date: newSchedule });
         }
       }
-      // For MONTHLY and ANNUALLY, we don't use the schedule callback
     },
     [onUpdate, financial_terms.payment_cycle],
   );
@@ -65,7 +59,6 @@ const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, err
       </CardHeader>
 
       <CardContent className="pt-6 space-y-6">
-        {/* Contract Period Info */}
         {start_date && end_date && (
           <Card className="p-4 bg-blue-50 border-blue-200">
             <h4 className="font-medium text-blue-900 mb-2">Contract Period</h4>
@@ -82,7 +75,6 @@ const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, err
           </Card>
         )}
 
-        {/* Base Settings */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <CurrencyInput
             label="Base Per Click (VND)"
@@ -109,7 +101,6 @@ const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, err
           />
         </div>
 
-        {/* Payment Date Selector - Only show when cycle is selected */}
         {financial_terms.payment_cycle && (
           <PaymentDateSelector
             cycle={financial_terms.payment_cycle}
@@ -122,7 +113,6 @@ const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, err
               if (financial_terms.payment_cycle === "QUARTERLY") {
                 onUpdate({ payment_date_selector: val });
               } else {
-                // For MONTHLY and ANNUALLY, store directly to payment_date
                 onUpdate({ payment_date: val });
               }
             }}
@@ -132,7 +122,6 @@ const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, err
           />
         )}
 
-        {/* Tax Withholding */}
         <Card className="p-4 bg-yellow-50 border-yellow-200">
           <h4 className="font-medium text-yellow-900 mb-3">Tax Withholding</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -168,7 +157,6 @@ const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, err
           </div>
         </Card>
 
-        {/* Commission Levels */}
         <CommissionLevels
           levels={financial_terms.levels || []}
           onUpdate={(levels) => onUpdate({ levels })}

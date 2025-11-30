@@ -29,7 +29,7 @@ const AdvertisingScope: React.FC<AdvertisingScopeProps> = ({ formData, onUpdate 
   }, []);
 
   return (
-    <Card className="shadow-sm">
+    <Card className="shadow-sm overflow-hidden">
       <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100">
         <CardTitle className="flex items-center gap-3">
           <FaDollarSign className="w-6 h-6 text-orange-600" />

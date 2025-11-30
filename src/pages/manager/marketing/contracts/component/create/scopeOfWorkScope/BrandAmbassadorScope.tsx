@@ -1,9 +1,8 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { FaCrown, FaBullseye, FaScroll, FaTrash, FaPlus } from "react-icons/fa6";
+import { FaCrown, FaTrash, FaPlus, FaCalendar } from "react-icons/fa6";
 import {
   CollapsibleSection,
   DynamicListInput,
@@ -16,13 +15,13 @@ import AddressSelector from "@/components/global/AddressSelector";
 import { WarningDialog } from "@/components/global";
 
 const BrandAmbassadorScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfWork }) => {
-  const scope = formData?.scope_of_work || {}; // Changed from scopeOfWork to scope_of_work
+  const scope = formData?.scope_of_work || {};
   const deliverables = scope.deliverables || {};
   const ensureArray = (arr: any) => (Array.isArray(arr) ? arr : []);
   const eventsList = ensureArray(deliverables.events);
 
-  const contractStartDate = formData?.start_date; // snake_case
-  const contractEndDate = formData?.end_date; // snake_case
+  const contractStartDate = formData?.start_date;
+  const contractEndDate = formData?.end_date;
 
   const [deleteDialog, setDeleteDialog] = useState<{
     isOpen: boolean;
@@ -47,9 +46,9 @@ const BrandAmbassadorScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateSc
     name: "",
     date: "",
     location: "",
-    expected_duration: "", // snake_case
+    expected_duration: "",
     activities: [""],
-    representation_rules: [""], // snake_case
+    representation_rules: [""],
     kpis: [{ metric: "", target: "", description: "" }],
   });
 
@@ -81,203 +80,208 @@ const BrandAmbassadorScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateSc
   };
 
   return (
-    <div className="space-y-6">
-      <Card className="shadow-sm border border-pink-200">
-        <CardHeader className="bg-gradient-to-r from-pink-50 via-rose-50 to-pink-100">
-          <CardTitle className="flex items-center justify-between text-pink-900">
-            <div className="flex items-center gap-2">
-              <FaCrown className="w-5 h-5" style={{ color: "#ff9fb2" }} />
+    <div>
+      <div className="bg-gradient-to-r from-emerald-100 to-emerald-200 border border-gray-200 rounded-xl p-5 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="bg-emerald-50 p-2 rounded-lg">
+            <FaCrown className="w-5 h-5 text-emerald-800" />
+          </div>
+          <div>
+            <h2 className="text-xl font-semibold text-gray-800">
               Brand Ambassador Events & Appearances
-            </div>
-            <span className="text-sm font-semibold text-pink-700 bg-pink-100 px-3 py-1 rounded-full">
-              {eventsList.length} items
-            </span>
-          </CardTitle>
-        </CardHeader>
+            </h2>
+            <p className="text-sm text-gray-600 mt-1">Schedule and manage brand events</p>
+          </div>
+        </div>
+        <span className="text-sm font-semibold text-gray-700 bg-gray-100 px-3 py-1 rounded-full border">
+          {eventsList.length} events
+        </span>
+      </div>
 
-        <CardContent className="pt-6 space-y-6">
-          {contractStartDate && contractEndDate && (
-            <Card className="p-4 bg-blue-50 border-blue-200 mb-4">
-              <h4 className="font-medium text-blue-900 mb-2">Contract Period</h4>
-              <div className="grid grid-cols-2 gap-4 text-sm">
+      <div className="pt-6 space-y-6">
+        {contractStartDate && contractEndDate && (
+          <div className="p-5 bg-gradient-to-r from-emerald-50 to-green-50 border-green-200 mb-6 rounded-xl">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="bg-green-100 p-1 rounded">
+                <FaCalendar className="w-4 h-4 text-green-600" />
+              </div>
+              <h4 className="font-semibold text-green-900">Contract Period</h4>
+            </div>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="font-medium">Start Date:</span>{" "}
+                {new Date(contractStartDate).toLocaleDateString("vi-VN")}
+              </div>
+              <div>
+                <span className="font-medium">End Date:</span>{" "}
+                {new Date(contractEndDate).toLocaleDateString("vi-VN")}
+              </div>
+            </div>
+            <p className="text-xs text-green-700 mt-2">
+              Events can only be scheduled within this contract period
+            </p>
+          </div>
+        )}
+
+        {eventsList.map((event: EventItem, i: number) => {
+          const events = [...eventsList];
+          const isDefaultOpen = i === 0 || i === eventsList.length - 1;
+          const eventName = event.name || `Event #${i + 1}`;
+
+          const openDeleteDialog = (e: React.MouseEvent) => {
+            e.stopPropagation();
+            setDeleteDialog({
+              isOpen: true,
+              itemIdx: i,
+              itemName: eventName,
+            });
+          };
+
+          const DeleteActionComponent = (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-red-500 hover:bg-red-50"
+              onClick={openDeleteDialog}
+            >
+              <FaTrash className="w-4 h-4" />
+            </Button>
+          );
+
+          return (
+            <CollapsibleSection
+              key={i}
+              title={eventName}
+              defaultOpen={isDefaultOpen}
+              actionComponent={DeleteActionComponent}
+            >
+              <div className="space-y-4">
                 <div>
-                  <span className="font-medium">Start Date:</span>{" "}
-                  {new Date(contractStartDate).toLocaleDateString("vi-VN")}
+                  <Label htmlFor={`event-name-${i}`}>Event Name</Label>
+                  <Input
+                    id={`event-name-${i}`}
+                    placeholder="e.g., Brand talk show, Commercial photo shoot"
+                    value={event.name || ""}
+                    onChange={(e) => {
+                      const updated = [...events];
+                      updated[i] = {
+                        ...updated[i],
+                        name: e.target.value,
+                        id: i + 1,
+                      };
+                      updateDeliverables({ events: updated });
+                    }}
+                    className="bg-white border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 rounded-lg"
+                  />
                 </div>
-                <div>
-                  <span className="font-medium">End Date:</span>{" "}
-                  {new Date(contractEndDate).toLocaleDateString("vi-VN")}
+
+                <div className="mb-4">
+                  <AddressSelector
+                    label="Location"
+                    placeholder="Search for event address..."
+                    value={event.location || ""}
+                    onChange={(address) => {
+                      const updated = [...events];
+                      updated[i] = { ...updated[i], location: address };
+                      updateDeliverables({ events: updated });
+                    }}
+                  />
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <DateTimePicker
+                    label="Date & Time"
+                    value={event.date || ""}
+                    onChange={(dateTime) => {
+                      const updated = [...events];
+                      updated[i] = { ...updated[i], date: dateTime };
+                      updateDeliverables({ events: updated });
+                    }}
+                    placeholder="Select date and time"
+                    minDate={
+                      contractStartDate
+                        ? formatDateForInput(contractStartDate)
+                        : new Date().toLocaleDateString("en-CA")
+                    }
+                    maxDate={contractEndDate ? formatDateForInput(contractEndDate) : undefined}
+                    className="bg-white"
+                  />
+
+                  <DurationPicker
+                    label="Expected Duration"
+                    value={event.expected_duration || ""}
+                    onChange={(duration) => {
+                      const updated = [...events];
+                      updated[i] = { ...updated[i], expected_duration: duration };
+                      updateDeliverables({ events: updated });
+                    }}
+                    placeholder="Select duration"
+                    maxHours={3}
+                    className="bg-white"
+                  />
+                </div>
+
+                <DynamicListInput
+                  label="Event Activities"
+                  items={event.activities || []}
+                  placeholder="e.g., Interview with the show MC, Attends press photo"
+                  multiline
+                  onChange={(activities) => {
+                    const updated = [...events];
+                    updated[i] = { ...updated[i], activities };
+                    updateDeliverables({ events: updated });
+                  }}
+                  addLabel="Add Activity"
+                />
+
+                <DynamicListInput
+                  label="Representation Rules & Requirements"
+                  items={event.representation_rules || []}
+                  placeholder="e.g., Must wear formal attire with long leggings, Wear light makeup"
+                  multiline
+                  onChange={(representation_rules) => {
+                    const updated = [...events];
+                    updated[i] = { ...updated[i], representation_rules };
+                    updateDeliverables({ events: updated });
+                  }}
+                  addLabel="Add Rule"
+                />
+
+                <div className="border-t pt-4">
+                  <CompactKPISelector
+                    contractType="BRAND_AMBASSADOR"
+                    kpis={(event.kpis || []).map((kpi: any) => ({
+                      metric: kpi.type || kpi.metric || "",
+                      target: kpi.target_value || kpi.target || "",
+                      description: kpi.description || "",
+                    }))}
+                    onChange={(kpis) => {
+                      const updated = [...events];
+                      updated[i] = { ...updated[i], kpis };
+                      updateDeliverables({ events: updated });
+                    }}
+                  />
                 </div>
               </div>
-              <p className="text-xs text-blue-700 mt-2">
-                Events can only be scheduled within this contract period
-              </p>
-            </Card>
-          )}
+            </CollapsibleSection>
+          );
+        })}
 
-          {eventsList.map((event: EventItem, i: number) => {
-            const events = [...eventsList];
-            const isDefaultOpen = i === 0 || i === eventsList.length - 1;
-            const eventName = event.name || `Event #${i + 1}`;
-
-            const openDeleteDialog = (e: React.MouseEvent) => {
-              e.stopPropagation();
-              setDeleteDialog({
-                isOpen: true,
-                itemIdx: i,
-                itemName: eventName,
-              });
-            };
-
-            const DeleteActionComponent = (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-red-500 hover:bg-red-50"
-                onClick={openDeleteDialog}
-              >
-                <FaTrash className="w-4 h-4" />
-              </Button>
-            );
-
-            return (
-              <CollapsibleSection
-                key={i}
-                title={eventName}
-                defaultOpen={isDefaultOpen}
-                actionComponent={DeleteActionComponent}
-              >
-                <div className="p-4 space-y-4">
-                  <div>
-                    <Label htmlFor={`event-name-${i}`}>Event Name</Label>
-                    <Input
-                      id={`event-name-${i}`}
-                      placeholder="e.g., Brand talk show, Commercial photo shoot"
-                      value={event.name || ""}
-                      onChange={(e) => {
-                        const updated = [...events];
-                        updated[i] = {
-                          ...updated[i],
-                          name: e.target.value,
-                          id: i + 1,
-                        };
-                        updateDeliverables({ events: updated });
-                      }}
-                      className="bg-white border-pink-200 focus:border-pink-400"
-                    />
-                  </div>
-
-                  <div className="mb-4">
-                    <AddressSelector
-                      label="Location"
-                      placeholder="Search for event address..."
-                      value={event.location || ""}
-                      onChange={(address) => {
-                        const updated = [...events];
-                        updated[i] = { ...updated[i], location: address };
-                        updateDeliverables({ events: updated });
-                      }}
-                    />
-                  </div>
-
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <DateTimePicker
-                      label="Date & Time"
-                      value={event.date || ""}
-                      onChange={(dateTime) => {
-                        const updated = [...events];
-                        updated[i] = { ...updated[i], date: dateTime };
-                        updateDeliverables({ events: updated });
-                      }}
-                      placeholder="Select date and time"
-                      minDate={
-                        contractStartDate
-                          ? formatDateForInput(contractStartDate)
-                          : new Date().toLocaleDateString("en-CA")
-                      }
-                      maxDate={contractEndDate ? formatDateForInput(contractEndDate) : undefined}
-                      className="bg-white"
-                    />
-
-                    <DurationPicker
-                      label="Expected Duration"
-                      value={event.expected_duration || ""} // snake_case
-                      onChange={(duration) => {
-                        const updated = [...events];
-                        updated[i] = { ...updated[i], expected_duration: duration }; // snake_case
-                        updateDeliverables({ events: updated });
-                      }}
-                      placeholder="Select duration"
-                      maxHours={3}
-                      className="bg-white"
-                    />
-                  </div>
-
-                  <DynamicListInput
-                    label="Event Activities"
-                    icon={<FaBullseye className="w-4 h-4" />}
-                    items={event.activities || []}
-                    placeholder="e.g., Interview with the show MC, Attends press photo"
-                    helpText="Specific activities and tasks during the event"
-                    multiline
-                    onChange={(activities) => {
-                      const updated = [...events];
-                      updated[i] = { ...updated[i], activities };
-                      updateDeliverables({ events: updated });
-                    }}
-                    addLabel="Add Activity"
-                  />
-
-                  <DynamicListInput
-                    label="Representation Rules & Requirements"
-                    icon={<FaScroll className="w-4 h-4" />}
-                    items={event.representation_rules || []} // snake_case
-                    placeholder="e.g., Must wear formal attire with long leggings, Wear light makeup"
-                    helpText="Dress code, behavior guidelines, and specific requirements"
-                    multiline
-                    onChange={(representation_rules) => {
-                      // snake_case
-                      const updated = [...events];
-                      updated[i] = { ...updated[i], representation_rules }; // snake_case
-                      updateDeliverables({ events: updated });
-                    }}
-                    addLabel="Add Rule"
-                  />
-
-                  <div className="border-t pt-4">
-                    <CompactKPISelector
-                      contractType="BRAND_AMBASSADOR"
-                      kpis={(event.kpis || []).map((kpi: any) => ({
-                        metric: kpi.type || kpi.metric || "",
-                        target: kpi.target_value || kpi.target || "", // snake_case
-                        description: kpi.description || "",
-                      }))}
-                      onChange={(kpis) => {
-                        const updated = [...events];
-                        updated[i] = { ...updated[i], kpis };
-                        updateDeliverables({ events: updated });
-                      }}
-                    />
-                  </div>
-                </div>
-              </CollapsibleSection>
-            );
-          })}
-
-          <Button
-            variant="outline"
-            onClick={() =>
-              updateDeliverables({
-                events: [...eventsList, { ...newEvent(), id: eventsList.length + 1 }],
-              })
-            }
-            className="w-full py-6 border-2 border-dashed hover:bg-pink-50"
-            style={{ borderColor: "#ff9fb2" }}
-          >
-            <FaPlus className="w-5 h-5 mr-2" style={{ color: "#ff9fb2" }} /> Add New Event
-          </Button>
-        </CardContent>
-      </Card>
+        <Button
+          variant="outline"
+          onClick={() =>
+            updateDeliverables({
+              events: [...eventsList, { ...newEvent(), id: eventsList.length + 1 }],
+            })
+          }
+          className="w-full py-6 border-2 border-dashed bg-white border-emerald-200 hover:bg-emerald-50 hover:border-emerald-400 transition-all rounded-lg"
+        >
+          <div className="flex items-center gap-2">
+            <FaPlus className="w-5 h-5 text-emerald-600" />
+            <span className="font-medium text-emerald-700">Add New Event</span>
+          </div>
+        </Button>
+      </div>
 
       <WarningDialog
         isOpen={deleteDialog.isOpen}

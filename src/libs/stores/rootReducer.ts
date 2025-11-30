@@ -24,7 +24,11 @@ import { orderManagerReducer } from "./orderManager/slice";
 import { transactionManagerReducer } from "./transactionManager/slice";
 import { managePostedContentReducer } from "./contentPostedManager/slice";
 import { manageMarketingAnalyticReducer } from "./marketingAnalyticManager/slice";
+import { manageAdminAnalyticReducer } from "./adminAnalyticManager/slice";
 import { manageNotificationReducer } from "./notificationManager/slice";
+import { manageBrandAnalyticReducer } from "./brandAnalyticManager/slice";
+import { manageSalesAnalyticReducer } from "./salesAnalyticManager/slice";
+import { manageContentAnalyticReducer } from "./contentAnalyticManager/slice";
 
 export const rootReducer = combineReducers({
   manageAuthen: manageAuthenReducer,
@@ -54,4 +58,8 @@ export const rootReducer = combineReducers({
   managePostedContent: managePostedContentReducer,
   manageMarketingAnalytic: manageMarketingAnalyticReducer,
   manageNotification: manageNotificationReducer,
+  manageAdminAnalytic: manageAdminAnalyticReducer,
+  manageBrandAnalytic: manageBrandAnalyticReducer,
+  manageSalesAnalytic: manageSalesAnalyticReducer,
+  manageContentAnalytic: manageContentAnalyticReducer,
 });

@@ -12,6 +12,7 @@ import {
   FaMoneyBillWave,
   FaBullhorn,
   FaFileContract,
+  FaTriangleExclamation,
 } from "react-icons/fa6";
 import { useAppDispatch } from "@/libs/stores";
 import {
@@ -33,7 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, AlertTriangle } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import DatePicker from "@/components/date-picker";
 
 const formatCurrency = (value: number | null | undefined) =>
@@ -58,7 +59,7 @@ const NoDataMessage: React.FC<{ message?: string }> = ({
   message = "No data available to display",
 }) => (
   <div className="flex flex-col items-center justify-center py-8 text-gray-500">
-    <AlertTriangle className="h-12 w-12 mb-2 text-gray-400" />
+    <FaTriangleExclamation className="h-12 w-12 mb-2 text-gray-400" />
     <p className="text-sm">{message}</p>
   </div>
 );
@@ -262,7 +263,7 @@ const BrandDashboard: React.FC = () => {
   return (
     <div className="p-2 sm:p-6 w-full flex flex-col gap-6 relative">
       {isAnyLoading && (
-        <div className="fixed inset-0 bg-white/70 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-white/70 flex items-center justify-center">
           <div className="text-center">
             <Loader2 className="mx-auto mb-4 h-12 w-12 text-primary animate-spin" />
             <p className="text-gray-600">Loading...</p>

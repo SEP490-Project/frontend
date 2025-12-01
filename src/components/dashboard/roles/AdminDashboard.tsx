@@ -357,7 +357,7 @@ const AdminDashboard: React.FC = () => {
   return (
     <div className="p-2 sm:p-6 w-full flex flex-col gap-6 relative">
       {isAnyLoading && (
-        <div className="fixed inset-0 bg-white/70 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-white/70 flex items-center justify-center">
           <div className="text-center">
             <Loader2 className="mx-auto mb-4 h-12 w-12 text-primary animate-spin" />
             <p className="text-gray-600">Loading...</p>

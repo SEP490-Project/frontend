@@ -141,13 +141,18 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({ type, data, deposit }) 
                   key={i}
                   className="border rounded-xl p-4 flex justify-between items-center hover:bg-blue-50 transition"
                 >
-                  <div>
+                  <div className="flex-1">
                     <h4 className="font-semibold text-gray-900">{s.milestone}</h4>
                     <p className="text-sm text-gray-500">
                       Due: {new Date(s.due_date).toLocaleDateString()}
                     </p>
+                    {s.note && (
+                      <p className="text-sm text-gray-600 italic mt-1 bg-gray-50 px-2 py-1 rounded">
+                        Note: {s.note}
+                      </p>
+                    )}
                   </div>
-                  <div className="text-right">
+                  <div className="text-right ml-4">
                     <p className="text-lg font-bold text-blue-600">{formatCurrency(s.amount)}</p>
                     <Badge variant="outline" className="text-xs mt-1">
                       {s.percent}%

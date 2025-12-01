@@ -39,10 +39,8 @@ function KPIWidget({
   const isFirstRender = useRef(true);
 
   useEffect(() => {
-    // Chỉ set hasAnimated thành true sau khi CountUp hoàn thành
     if (isFirstRender.current && value !== 0) {
       isFirstRender.current = false;
-      // Set timeout để đợi CountUp hoàn thành (duration = 3s)
       setTimeout(() => {
         hasAnimated.current = true;
       }, 3000);

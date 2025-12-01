@@ -45,6 +45,8 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
     [deliverables, onUpdateScopeOfWork, scope],
   );
 
+  console.log("AdvertisingScope render:", { formData, deliverables });
+
   const newAdvertisingItem = (): AdvertisingItem => ({
     id: 0,
     name: "",
@@ -386,7 +388,7 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                     }))}
                     onChange={(kpis) => {
                       const updated = [...items];
-                      updated[i] = { ...updated[i], kpis };
+                      updated[i] = { ...updated[i], metrics: kpis, kpis };
                       updateDeliverables({ advertised_items: updated });
                     }}
                   />

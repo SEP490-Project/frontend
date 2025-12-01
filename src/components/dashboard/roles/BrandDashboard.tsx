@@ -5,7 +5,14 @@ import {
   BarChartWidget,
   LineChartWidget,
 } from "@/components/dashboard/chart";
-import { FaLink, FaFile, FaChartLine } from "react-icons/fa6";
+import {
+  FaLink,
+  FaFile,
+  FaChartLine,
+  FaMoneyBillWave,
+  FaBullhorn,
+  FaFileContract,
+} from "react-icons/fa6";
 import { useAppDispatch } from "@/libs/stores";
 import {
   brandAffiliates,
@@ -18,6 +25,7 @@ import {
 import { useBrandAnalytic } from "@/libs/hooks/useBrandAnalytic";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -25,8 +33,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
-import { DatePicker } from "@/components/date-picker";
+import { Loader2, AlertTriangle } from "lucide-react";
+import DatePicker from "@/components/date-picker";
+
+const formatCurrency = (value: number | null | undefined) =>
+  typeof value === "number" ? value.toLocaleString("vi-VN") : "-";
+
+const formatDateInput = (value?: string) => (value ? value.substring(0, 10) : "");
+
+const isEmptyData = (data: any[]) => {
+  return (
+    !data ||
+    data.length === 0 ||
+    data.every(
+      (item) =>
+        (typeof item.value === "number" && item.value === 0) ||
+        (typeof item.count === "number" && item.count === 0) ||
+        (typeof item.revenue === "number" && item.revenue === 0),
+    )
+  );
+};
+
+const NoDataMessage: React.FC<{ message?: string }> = ({
+  message = "No data available to display",
+}) => (
+  <div className="flex flex-col items-center justify-center py-8 text-gray-500">
+    <AlertTriangle className="h-12 w-12 mb-2 text-gray-400" />
+    <p className="text-sm">{message}</p>
+  </div>
+);
 
 const BrandDashboard: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -45,19 +80,11 @@ const BrandDashboard: React.FC = () => {
     topProducts,
   } = useBrandAnalytic();
 
-  // Affiliate filter
-  const [affiliateFilter, setAffiliateFilter] = useState({
+  const [affiliateContentFilter, setAffiliateContentFilter] = useState({
     start_date: "",
     end_date: "",
   });
 
-  // Content filter
-  const [contentFilter, setContentFilter] = useState({
-    start_date: "",
-    end_date: "",
-  });
-
-  // Campaign filter
   const [campaignFilter, setCampaignFilter] = useState({
     start_date: "",
     end_date: "",
@@ -72,44 +99,33 @@ const BrandDashboard: React.FC = () => {
     limit: 10,
   });
 
-  // Contract filter
   const [contractFilter, setContractFilter] = useState({
     status: "ALL" as "ALL" | "DRAFT" | "PENDING" | "ACTIVE" | "COMPLETED" | "CANCELLED",
     limit: 10,
   });
 
-  // Top Product filter
   const [topProductFilter, setTopProductFilter] = useState({
     start_date: "",
     end_date: "",
     limit: 10,
   });
 
-  // Revenue Trend filter
   const [revenueTrendFilter, setRevenueTrendFilter] = useState({
     start_date: "",
     end_date: "",
     granularity: "MONTH" as "DAY" | "WEEK" | "MONTH",
   });
 
-  const fetchAffiliates = () => {
+  const fetchAffiliatesAndContent = () => {
     const filter: any = {};
-    if (affiliateFilter.start_date) filter.start_date = affiliateFilter.start_date;
-    if (affiliateFilter.end_date) filter.end_date = affiliateFilter.end_date;
+    if (affiliateContentFilter.start_date) filter.start_date = affiliateContentFilter.start_date;
+    if (affiliateContentFilter.end_date) filter.end_date = affiliateContentFilter.end_date;
     dispatch(brandAffiliates(filter));
-  };
-
-  const fetchContent = () => {
-    const filter: any = {};
-    if (contentFilter.start_date) filter.start_date = contentFilter.start_date;
-    if (contentFilter.end_date) filter.end_date = contentFilter.end_date;
     dispatch(brandContent(filter));
   };
 
   const fetchCampaigns = () => {
-    const filter: any = {
-      limit: campaignFilter.limit,
-    };
+    const filter: any = { limit: campaignFilter.limit };
     if (campaignFilter.start_date) filter.start_date = campaignFilter.start_date;
     if (campaignFilter.end_date) filter.end_date = campaignFilter.end_date;
     if (campaignFilter.status && campaignFilter.status !== "ALL") {
@@ -119,9 +135,7 @@ const BrandDashboard: React.FC = () => {
   };
 
   const fetchContracts = () => {
-    const filter: any = {
-      limit: contractFilter.limit,
-    };
+    const filter: any = { limit: contractFilter.limit };
     if (contractFilter.status && contractFilter.status !== "ALL") {
       filter.status = contractFilter.status;
     }
@@ -129,51 +143,42 @@ const BrandDashboard: React.FC = () => {
   };
 
   const fetchTopProducts = () => {
-    const filter: any = {
-      limit: topProductFilter.limit,
-    };
+    const filter: any = { limit: topProductFilter.limit };
     if (topProductFilter.start_date) filter.start_date = topProductFilter.start_date;
     if (topProductFilter.end_date) filter.end_date = topProductFilter.end_date;
     dispatch(brandTopProduct(filter));
   };
 
   const fetchRevenueTrend = () => {
-    const filter: any = {
-      granularity: revenueTrendFilter.granularity,
-    };
+    const filter: any = { granularity: revenueTrendFilter.granularity };
     if (revenueTrendFilter.start_date) filter.start_date = revenueTrendFilter.start_date;
     if (revenueTrendFilter.end_date) filter.end_date = revenueTrendFilter.end_date;
     dispatch(brandRevenueTrend(filter));
   };
 
   useEffect(() => {
-    fetchAffiliates();
-  }, [affiliateFilter]);
-
-  useEffect(() => {
-    fetchContent();
-  }, [contentFilter]);
+    fetchAffiliatesAndContent();
+  }, [dispatch, affiliateContentFilter]);
 
   useEffect(() => {
     fetchCampaigns();
-  }, [campaignFilter]);
+  }, [dispatch, campaignFilter]);
 
   useEffect(() => {
     fetchContracts();
-  }, [contractFilter]);
+  }, [dispatch, contractFilter]);
 
   useEffect(() => {
     fetchTopProducts();
-  }, [topProductFilter]);
+  }, [dispatch, topProductFilter]);
 
   useEffect(() => {
     fetchRevenueTrend();
-  }, [revenueTrendFilter]);
+  }, [dispatch, revenueTrendFilter]);
 
-  // Data transformations
   const affiliatesKPIData = {
     value: affiliates?.total_links || 0,
-    statusText: `${affiliates?.active_links || 0} active`,
+    statusText: `${affiliates?.active_links || 0} active links`,
   };
 
   const clicksKPIData = {
@@ -197,10 +202,12 @@ const BrandDashboard: React.FC = () => {
         status: c.status,
         "start date": new Date(c.start_date).toLocaleDateString(),
         "end date": new Date(c.end_date).toLocaleDateString(),
+        milestones: c.milestone_count,
         tasks: `${c.completed_tasks}/${c.task_count}`,
+        completion: `${c.completion_rate}%`,
         content: c.content_count,
-        views: c.total_views,
-        engagements: c.total_engagements,
+        views: c.total_views.toLocaleString(),
+        engagements: c.total_engagements.toLocaleString(),
       }))
     : [];
 
@@ -209,9 +216,9 @@ const BrandDashboard: React.FC = () => {
         number: c.contract_number,
         type: c.type,
         status: c.status,
-        value: new Intl.NumberFormat("vi-VN").format(c.total_value),
-        paid: new Intl.NumberFormat("vi-VN").format(c.paid_amount),
-        pending: new Intl.NumberFormat("vi-VN").format(c.pending_amount),
+        value: formatCurrency(c.total_value),
+        paid: formatCurrency(c.paid_amount),
+        pending: formatCurrency(c.pending_amount),
         "start date": new Date(c.start_date).toLocaleDateString(),
         "end date": new Date(c.end_date).toLocaleDateString(),
         campaigns: c.campaign_count,
@@ -232,44 +239,122 @@ const BrandDashboard: React.FC = () => {
       }))
     : [];
 
-  return (
-    <div className="p-2 sm:p-6 w-full flex flex-col gap-6">
-      <h1 className="text-xl sm:text-2xl font-semibold">Brand Partner Dashboard</h1>
+  const totalCampaigns = Array.isArray(campaigns) ? campaigns.length : 0;
+  const runningCampaigns = Array.isArray(campaigns)
+    ? campaigns.filter((c: any) => c.status === "RUNNING").length
+    : 0;
+  const totalContracts = Array.isArray(contracts) ? contracts.length : 0;
+  const activeContracts = Array.isArray(contracts)
+    ? contracts.filter((c: any) => c.status === "ACTIVE").length
+    : 0;
+  const totalRevenue = Array.isArray(revenueTrend)
+    ? revenueTrend.reduce((sum: number, r: any) => sum + r.revenue, 0)
+    : 0;
 
-      {/* Affiliate & Content KPIs with Filter */}
-      <Card className="p-4 relative">
-        <div className="flex justify-between items-center flex-wrap gap-2 mb-4">
-          <h3 className="text-lg font-semibold">Affiliate & Content Metrics</h3>
-          <div className="flex gap-2 flex-wrap">
-            <DatePicker
-              placeholder="Start date"
-              value={affiliateFilter.start_date ? affiliateFilter.start_date.split("T")[0] : ""}
-              onChange={(date) => {
-                const newDate = date ? new Date(date).toISOString() : "";
-                setAffiliateFilter({ ...affiliateFilter, start_date: newDate });
-                setContentFilter({ ...contentFilter, start_date: newDate });
-              }}
-              className="w-40"
-            />
-            <DatePicker
-              placeholder="End date"
-              value={affiliateFilter.end_date ? affiliateFilter.end_date.split("T")[0] : ""}
-              onChange={(date) => {
-                const newDate = date ? new Date(date).toISOString() : "";
-                setAffiliateFilter({ ...affiliateFilter, end_date: newDate });
-                setContentFilter({ ...contentFilter, end_date: newDate });
-              }}
-              className="w-40"
-            />
+  const isAnyLoading =
+    loadingAffiliates ||
+    loadingCampaigns ||
+    loadingContent ||
+    loadingContracts ||
+    loadingRevenueTrend ||
+    loadingTopProducts;
+
+  return (
+    <div className="p-2 sm:p-6 w-full flex flex-col gap-6 relative">
+      {isAnyLoading && (
+        <div className="fixed inset-0 bg-white/70 flex items-center justify-center z-50">
+          <div className="text-center">
+            <Loader2 className="mx-auto mb-4 h-12 w-12 text-primary animate-spin" />
+            <p className="text-gray-600">Loading...</p>
           </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="relative">
-            {loadingAffiliates && (
-              <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-lg">
-                <Loader2 className="h-8 w-8 text-primary animate-spin" />
-              </div>
-            )}
+      )}
+
+      <h1 className="text-xl sm:text-2xl font-semibold">Brand Partner Dashboard</h1>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPIWidget
+          title="Total Campaigns"
+          data={{
+            value: totalCampaigns,
+            statusText: `${runningCampaigns} running`,
+          }}
+          icon={<FaBullhorn size={20} />}
+          iconColor="text-purple-600"
+          iconBg="bg-purple-100"
+        />
+        <KPIWidget
+          title="Total Contracts"
+          data={{
+            value: totalContracts,
+            statusText: `${activeContracts} active`,
+          }}
+          icon={<FaFileContract size={20} />}
+          iconColor="text-blue-600"
+          iconBg="bg-blue-100"
+        />
+        <KPIWidget
+          title="Total Content"
+          data={contentKPIData}
+          icon={<FaFile size={20} />}
+          iconColor="text-green-600"
+          iconBg="bg-green-100"
+        />
+        <KPIWidget
+          title="Total Revenue"
+          data={{
+            value: totalRevenue,
+            statusText: "Total earned",
+          }}
+          icon={<FaMoneyBillWave size={20} />}
+          iconColor="text-indigo-600"
+          iconBg="bg-indigo-100"
+        />
+      </div>
+
+      <Card className="p-4">
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-between items-center flex-wrap gap-2">
+            <h2 className="text-lg font-semibold">Affiliate & Content Metrics</h2>
+            <div className="flex gap-2 items-center flex-wrap">
+              <DatePicker
+                value={formatDateInput(affiliateContentFilter.start_date)}
+                onChange={(date) =>
+                  setAffiliateContentFilter((prev) => ({
+                    ...prev,
+                    start_date: date ? new Date(date).toISOString() : "",
+                  }))
+                }
+                dateFormat="dd/MM/yyyy"
+                className="w-[150px]"
+                placeholder="Start date"
+                maxDate={new Date().toISOString()}
+              />
+              <span className="text-sm">to</span>
+              <DatePicker
+                value={formatDateInput(affiliateContentFilter.end_date)}
+                onChange={(date) =>
+                  setAffiliateContentFilter((prev) => ({
+                    ...prev,
+                    end_date: date ? new Date(date).toISOString() : "",
+                  }))
+                }
+                dateFormat="dd/MM/yyyy"
+                className="w-[150px]"
+                placeholder="End date"
+                maxDate={new Date().toISOString()}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setAffiliateContentFilter({ start_date: "", end_date: "" })}
+                className="h-8 text-xs"
+              >
+                Reset
+              </Button>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <KPIWidget
               title="Affiliate Links"
               data={affiliatesKPIData}
@@ -277,13 +362,6 @@ const BrandDashboard: React.FC = () => {
               iconColor="text-blue-600"
               iconBg="bg-blue-100"
             />
-          </div>
-          <div className="relative">
-            {loadingAffiliates && (
-              <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-lg">
-                <Loader2 className="h-8 w-8 text-primary animate-spin" />
-              </div>
-            )}
             <KPIWidget
               title="Total Clicks"
               data={clicksKPIData}
@@ -291,13 +369,6 @@ const BrandDashboard: React.FC = () => {
               iconColor="text-green-600"
               iconBg="bg-green-100"
             />
-          </div>
-          <div className="relative">
-            {loadingContent && (
-              <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-lg">
-                <Loader2 className="h-8 w-8 text-primary animate-spin" />
-              </div>
-            )}
             <KPIWidget
               title="Content Created"
               data={contentKPIData}
@@ -305,13 +376,6 @@ const BrandDashboard: React.FC = () => {
               iconColor="text-purple-600"
               iconBg="bg-purple-100"
             />
-          </div>
-          <div className="relative">
-            {loadingContent && (
-              <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-lg">
-                <Loader2 className="h-8 w-8 text-primary animate-spin" />
-              </div>
-            )}
             <KPIWidget
               title="Engagement Rate"
               data={engagementKPIData}
@@ -323,219 +387,264 @@ const BrandDashboard: React.FC = () => {
         </div>
       </Card>
 
-      {/* Revenue Trend */}
-      <Card className="p-4 relative">
-        {loadingRevenueTrend && (
-          <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-lg">
-            <Loader2 className="h-8 w-8 text-primary animate-spin" />
-          </div>
-        )}
+      <Card className="p-4">
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center flex-wrap gap-2">
-            <h3 className="text-lg font-semibold">Revenue Trend</h3>
-            <div className="flex gap-2 flex-wrap">
+            <h2 className="text-lg font-semibold">Revenue Trend</h2>
+            <div className="flex gap-2 items-center flex-wrap">
               <DatePicker
-                placeholder="Start date"
-                value={
-                  revenueTrendFilter.start_date ? revenueTrendFilter.start_date.split("T")[0] : ""
-                }
+                value={formatDateInput(revenueTrendFilter.start_date)}
                 onChange={(date) =>
-                  setRevenueTrendFilter({
-                    ...revenueTrendFilter,
+                  setRevenueTrendFilter((prev) => ({
+                    ...prev,
                     start_date: date ? new Date(date).toISOString() : "",
-                  })
+                  }))
                 }
-                className="w-40"
+                dateFormat="dd/MM/yyyy"
+                className="w-[150px]"
+                placeholder="Start date"
+                maxDate={new Date().toISOString()}
               />
+              <span className="text-sm">to</span>
               <DatePicker
-                placeholder="End date"
-                value={revenueTrendFilter.end_date ? revenueTrendFilter.end_date.split("T")[0] : ""}
+                value={formatDateInput(revenueTrendFilter.end_date)}
                 onChange={(date) =>
-                  setRevenueTrendFilter({
-                    ...revenueTrendFilter,
+                  setRevenueTrendFilter((prev) => ({
+                    ...prev,
                     end_date: date ? new Date(date).toISOString() : "",
-                  })
+                  }))
                 }
-                className="w-40"
+                dateFormat="dd/MM/yyyy"
+                className="w-[150px]"
+                placeholder="End date"
+                maxDate={new Date().toISOString()}
               />
               <Select
                 value={revenueTrendFilter.granularity}
-                onValueChange={(value: any) =>
-                  setRevenueTrendFilter({ ...revenueTrendFilter, granularity: value })
+                onValueChange={(value: "DAY" | "WEEK" | "MONTH") =>
+                  setRevenueTrendFilter((prev) => ({ ...prev, granularity: value }))
                 }
               >
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-[100px] h-8 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="DAY">Day</SelectItem>
-                  <SelectItem value="WEEK">Week</SelectItem>
-                  <SelectItem value="MONTH">Month</SelectItem>
+                  <SelectItem value="DAY">Daily</SelectItem>
+                  <SelectItem value="WEEK">Weekly</SelectItem>
+                  <SelectItem value="MONTH">Monthly</SelectItem>
                 </SelectContent>
               </Select>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setRevenueTrendFilter({ start_date: "", end_date: "", granularity: "MONTH" })
+                }
+                className="h-8 text-xs"
+              >
+                Reset
+              </Button>
             </div>
           </div>
-          <LineChartWidget title="" data={revenueTrendData} />
+          {isEmptyData(revenueTrendData) ? (
+            <NoDataMessage message="No revenue data available for the selected time period" />
+          ) : (
+            <LineChartWidget title="" data={revenueTrendData} />
+          )}
         </div>
       </Card>
 
-      {/* Top Products */}
-      <Card className="p-4 relative">
-        {loadingTopProducts && (
-          <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-lg">
-            <Loader2 className="h-8 w-8 text-primary animate-spin" />
-          </div>
-        )}
+      <Card className="p-4">
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center flex-wrap gap-2">
-            <h3 className="text-lg font-semibold">Top Products</h3>
-            <div className="flex gap-2 flex-wrap">
+            <h2 className="text-lg font-semibold">Top Products by Revenue</h2>
+            <div className="flex gap-2 items-center flex-wrap">
               <DatePicker
-                placeholder="Start date"
-                value={topProductFilter.start_date ? topProductFilter.start_date.split("T")[0] : ""}
+                value={formatDateInput(topProductFilter.start_date)}
                 onChange={(date) =>
-                  setTopProductFilter({
-                    ...topProductFilter,
+                  setTopProductFilter((prev) => ({
+                    ...prev,
                     start_date: date ? new Date(date).toISOString() : "",
-                  })
+                  }))
                 }
-                className="w-40"
+                dateFormat="dd/MM/yyyy"
+                className="w-[150px]"
+                placeholder="Start date"
+                maxDate={new Date().toISOString()}
               />
+              <span className="text-sm">to</span>
               <DatePicker
-                placeholder="End date"
-                value={topProductFilter.end_date ? topProductFilter.end_date.split("T")[0] : ""}
+                value={formatDateInput(topProductFilter.end_date)}
                 onChange={(date) =>
-                  setTopProductFilter({
-                    ...topProductFilter,
+                  setTopProductFilter((prev) => ({
+                    ...prev,
                     end_date: date ? new Date(date).toISOString() : "",
-                  })
+                  }))
                 }
-                className="w-40"
+                dateFormat="dd/MM/yyyy"
+                className="w-[150px]"
+                placeholder="End date"
+                maxDate={new Date().toISOString()}
               />
               <Input
                 type="number"
                 value={topProductFilter.limit}
                 onChange={(e) =>
-                  setTopProductFilter({
-                    ...topProductFilter,
+                  setTopProductFilter((prev) => ({
+                    ...prev,
                     limit: parseInt(e.target.value) || 10,
-                  })
+                  }))
                 }
-                className="w-24"
+                className="w-20 h-8 text-xs"
                 min={1}
                 max={50}
-                placeholder="Limit"
+                placeholder="10"
               />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setTopProductFilter({ start_date: "", end_date: "", limit: 10 })}
+                className="h-8 text-xs"
+              >
+                Reset
+              </Button>
             </div>
           </div>
-          <BarChartWidget title="" data={topProductsData} />
+          {isEmptyData(topProductsData) ? (
+            <NoDataMessage message="No product revenue data available for the selected period" />
+          ) : (
+            <BarChartWidget title="" data={topProductsData} />
+          )}
         </div>
       </Card>
 
-      {/* Campaigns and Contracts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="p-4 relative">
-          {loadingCampaigns && (
-            <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-lg">
-              <Loader2 className="h-8 w-8 text-primary animate-spin" />
+      <Card className="p-4">
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-between items-center flex-wrap gap-2">
+            <h2 className="text-lg font-semibold">Campaigns</h2>
+            <div className="flex gap-2 items-center flex-wrap">
+              <DatePicker
+                value={formatDateInput(campaignFilter.start_date)}
+                onChange={(date) =>
+                  setCampaignFilter((prev) => ({
+                    ...prev,
+                    start_date: date ? new Date(date).toISOString() : "",
+                  }))
+                }
+                dateFormat="dd/MM/yyyy"
+                className="w-[120px]"
+                placeholder="Start date"
+                maxDate={new Date().toISOString()}
+              />
+              <DatePicker
+                value={formatDateInput(campaignFilter.end_date)}
+                onChange={(date) =>
+                  setCampaignFilter((prev) => ({
+                    ...prev,
+                    end_date: date ? new Date(date).toISOString() : "",
+                  }))
+                }
+                dateFormat="dd/MM/yyyy"
+                className="w-[120px]"
+                placeholder="End date"
+                maxDate={new Date().toISOString()}
+              />
+              <Select
+                value={campaignFilter.status}
+                onValueChange={(
+                  value:
+                    | "ALL"
+                    | "DRAFT"
+                    | "ACTIVE"
+                    | "IN_PROGRESS"
+                    | "PENDING"
+                    | "FINISHED"
+                    | "CANCELLED",
+                ) => setCampaignFilter((prev) => ({ ...prev, status: value }))}
+              >
+                <SelectTrigger className="w-[100px] h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All</SelectItem>
+                  <SelectItem value="DRAFT">Draft</SelectItem>
+                  <SelectItem value="ACTIVE">Active</SelectItem>
+                  <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                  <SelectItem value="PENDING">Pending</SelectItem>
+                  <SelectItem value="FINISHED">Finished</SelectItem>
+                  <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input
+                type="number"
+                value={campaignFilter.limit}
+                onChange={(e) =>
+                  setCampaignFilter((prev) => ({
+                    ...prev,
+                    limit: parseInt(e.target.value) || 10,
+                  }))
+                }
+                className="w-16 h-8 text-xs"
+                min={1}
+                max={50}
+                placeholder="10"
+              />
             </div>
-          )}
-          <div className="flex flex-col gap-4">
-            <div className="flex justify-between items-center flex-wrap gap-2">
-              <h3 className="text-lg font-semibold">Campaigns</h3>
-              <div className="flex gap-2 flex-wrap">
-                <DatePicker
-                  placeholder="Start date"
-                  value={campaignFilter.start_date ? campaignFilter.start_date.split("T")[0] : ""}
-                  onChange={(date) =>
-                    setCampaignFilter({
-                      ...campaignFilter,
-                      start_date: date ? new Date(date).toISOString() : "",
-                    })
-                  }
-                  className="w-40"
-                />
-                <DatePicker
-                  placeholder="End date"
-                  value={campaignFilter.end_date ? campaignFilter.end_date.split("T")[0] : ""}
-                  onChange={(date) =>
-                    setCampaignFilter({
-                      ...campaignFilter,
-                      end_date: date ? new Date(date).toISOString() : "",
-                    })
-                  }
-                  className="w-40"
-                />
-                <Select
-                  value={campaignFilter.status}
-                  onValueChange={(value: any) =>
-                    setCampaignFilter({ ...campaignFilter, status: value })
-                  }
-                >
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ALL">All</SelectItem>
-                    <SelectItem value="DRAFT">Draft</SelectItem>
-                    <SelectItem value="ACTIVE">Active</SelectItem>
-                    <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                    <SelectItem value="PENDING">Pending</SelectItem>
-                    <SelectItem value="FINISHED">Finished</SelectItem>
-                    <SelectItem value="CANCELLED">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+          </div>
+          {isEmptyData(campaignsTableData) ? (
+            <NoDataMessage message="No campaign data available" />
+          ) : (
             <TableWidget title="" data={campaignsTableData} />
-          </div>
-        </Card>
-
-        <Card className="p-4 relative">
-          {loadingContracts && (
-            <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-lg">
-              <Loader2 className="h-8 w-8 text-primary animate-spin" />
-            </div>
           )}
-          <div className="flex flex-col gap-4">
-            <div className="flex justify-between items-center flex-wrap gap-2">
-              <h3 className="text-lg font-semibold">Contracts</h3>
-              <div className="flex gap-2 flex-wrap">
-                <Select
-                  value={contractFilter.status}
-                  onValueChange={(value: any) =>
-                    setContractFilter({ ...contractFilter, status: value })
-                  }
-                >
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ALL">All</SelectItem>
-                    <SelectItem value="DRAFT">Draft</SelectItem>
-                    <SelectItem value="PENDING">Pending</SelectItem>
-                    <SelectItem value="ACTIVE">Active</SelectItem>
-                    <SelectItem value="COMPLETED">Completed</SelectItem>
-                    <SelectItem value="CANCELLED">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Input
-                  type="number"
-                  value={contractFilter.limit}
-                  onChange={(e) =>
-                    setContractFilter({ ...contractFilter, limit: parseInt(e.target.value) || 10 })
-                  }
-                  className="w-24"
-                  min={1}
-                  max={50}
-                  placeholder="Limit"
-                />
-              </div>
+        </div>
+      </Card>
+
+      <Card className="p-4">
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-between items-center flex-wrap gap-2">
+            <h2 className="text-lg font-semibold">Contracts</h2>
+            <div className="flex gap-2 items-center flex-wrap">
+              <Select
+                value={contractFilter.status}
+                onValueChange={(
+                  value: "ALL" | "DRAFT" | "PENDING" | "ACTIVE" | "COMPLETED" | "CANCELLED",
+                ) => setContractFilter((prev) => ({ ...prev, status: value }))}
+              >
+                <SelectTrigger className="w-[100px] h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All</SelectItem>
+                  <SelectItem value="DRAFT">Draft</SelectItem>
+                  <SelectItem value="PENDING">Pending</SelectItem>
+                  <SelectItem value="ACTIVE">Active</SelectItem>
+                  <SelectItem value="COMPLETED">Completed</SelectItem>
+                  <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input
+                type="number"
+                value={contractFilter.limit}
+                onChange={(e) =>
+                  setContractFilter((prev) => ({
+                    ...prev,
+                    limit: parseInt(e.target.value) || 10,
+                  }))
+                }
+                className="w-16 h-8 text-xs"
+                min={1}
+                max={50}
+                placeholder="10"
+              />
             </div>
-            <TableWidget title="" data={contractsTableData} />
           </div>
-        </Card>
-      </div>
+          {isEmptyData(contractsTableData) ? (
+            <NoDataMessage message="No contract data available" />
+          ) : (
+            <TableWidget title="" data={contractsTableData} />
+          )}
+        </div>
+      </Card>
     </div>
   );
 };

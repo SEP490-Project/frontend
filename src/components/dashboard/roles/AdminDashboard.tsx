@@ -6,8 +6,14 @@ import {
   BarChartWidget,
   PieChartWidget,
 } from "@/components/dashboard/chart";
-import { FaUser, FaMoneyBillWave, FaFileContract, FaBullhorn } from "react-icons/fa6";
-import { Loader2, AlertTriangle } from "lucide-react";
+import {
+  FaUser,
+  FaMoneyBillWave,
+  FaFileContract,
+  FaBullhorn,
+  FaTriangleExclamation,
+} from "react-icons/fa6";
+import { Loader2 } from "lucide-react";
 import { useAdminAnalytic } from "@/libs/hooks/useAdminAnalytic";
 import { useAppDispatch } from "@/libs/stores";
 import {
@@ -76,7 +82,7 @@ const NoDataMessage: React.FC<{ message?: string }> = ({
   message = "No data available to display",
 }) => (
   <div className="flex flex-col items-center justify-center py-8 text-gray-500">
-    <AlertTriangle className="h-12 w-12 mb-2 text-gray-400" />
+    <FaTriangleExclamation className="h-12 w-12 mb-2 text-gray-400" />
     <p className="text-sm">{message}</p>
   </div>
 );

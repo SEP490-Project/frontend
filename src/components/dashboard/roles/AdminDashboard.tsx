@@ -7,7 +7,7 @@ import {
   PieChartWidget,
 } from "@/components/dashboard/chart";
 import { FaUser, FaMoneyBillWave, FaFileContract, FaBullhorn } from "react-icons/fa6";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle } from "lucide-react";
 import { useAdminAnalytic } from "@/libs/hooks/useAdminAnalytic";
 import { useAppDispatch } from "@/libs/stores";
 import {
@@ -59,6 +59,27 @@ const formatCurrency = (value: number | null | undefined) =>
   typeof value === "number" ? value.toLocaleString("vi-VN") : "-";
 
 const formatDateInput = (value?: string) => (value ? value.substring(0, 10) : "");
+
+const isEmptyData = (data: any[]) => {
+  return (
+    !data ||
+    data.length === 0 ||
+    data.every(
+      (item) =>
+        (typeof item.value === "number" && item.value === 0) ||
+        (typeof item.count === "number" && item.count === 0),
+    )
+  );
+};
+
+const NoDataMessage: React.FC<{ message?: string }> = ({
+  message = "No data available to display",
+}) => (
+  <div className="flex flex-col items-center justify-center py-8 text-gray-500">
+    <AlertTriangle className="h-12 w-12 mb-2 text-gray-400" />
+    <p className="text-sm">{message}</p>
+  </div>
+);
 
 const AdminDashboard: React.FC = () => {
   const [revenueChartMode, setRevenueChartMode] = useState<ChartMode>("percent");
@@ -341,42 +362,34 @@ const AdminDashboard: React.FC = () => {
       <h1 className="text-xl sm:text-2xl font-semibold">Admin Dashboard</h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="relative">
-          <KPIWidget
-            title="Total Campaigns"
-            data={campaignsKPIData}
-            icon={<FaBullhorn size={20} />}
-            iconColor="text-purple-600"
-            iconBg="bg-purple-100"
-          />
-        </div>
-        <div className="relative">
-          <KPIWidget
-            title="Total Contracts"
-            data={contractsKPIData}
-            icon={<FaFileContract size={20} />}
-            iconColor="text-blue-600"
-            iconBg="bg-blue-100"
-          />
-        </div>
-        <div className="relative">
-          <KPIWidget
-            title="Total Users"
-            data={totalUsersData}
-            icon={<FaUser size={20} />}
-            iconColor="text-green-600"
-            iconBg="bg-green-100"
-          />
-        </div>
-        <div className="relative">
-          <KPIWidget
-            title="Total Revenue"
-            data={totalRevenueData}
-            icon={<FaMoneyBillWave size={20} />}
-            iconColor="text-indigo-600"
-            iconBg="bg-indigo-100"
-          />
-        </div>
+        <KPIWidget
+          title="Total Campaigns"
+          data={campaignsKPIData}
+          icon={<FaBullhorn size={20} />}
+          iconColor="text-purple-600"
+          iconBg="bg-purple-100"
+        />
+        <KPIWidget
+          title="Total Contracts"
+          data={contractsKPIData}
+          icon={<FaFileContract size={20} />}
+          iconColor="text-blue-600"
+          iconBg="bg-blue-100"
+        />
+        <KPIWidget
+          title="Total Users"
+          data={totalUsersData}
+          icon={<FaUser size={20} />}
+          iconColor="text-green-600"
+          iconBg="bg-green-100"
+        />
+        <KPIWidget
+          title="Total Revenue"
+          data={totalRevenueData}
+          icon={<FaMoneyBillWave size={20} />}
+          iconColor="text-indigo-600"
+          iconBg="bg-indigo-100"
+        />
       </div>
 
       <Card className="p-4">
@@ -395,6 +408,7 @@ const AdminDashboard: React.FC = () => {
                 dateFormat="dd/MM/yyyy"
                 className="w-[150px]"
                 placeholder="Start date"
+                maxDate={new Date().toISOString()}
               />
               <span className="text-sm">to</span>
               <DatePicker
@@ -408,6 +422,7 @@ const AdminDashboard: React.FC = () => {
                 dateFormat="dd/MM/yyyy"
                 className="w-[150px]"
                 placeholder="End date"
+                maxDate={new Date().toISOString()}
               />
               <Select
                 value={revenueFilter.granularity}
@@ -436,7 +451,11 @@ const AdminDashboard: React.FC = () => {
               </Button>
             </div>
           </div>
-          <LineChartWidget title="" data={revenueTrendData} />
+          {isEmptyData(revenueTrendData) ? (
+            <NoDataMessage message="No revenue data available for the selected time period" />
+          ) : (
+            <LineChartWidget title="" data={revenueTrendData} />
+          )}
         </div>
       </Card>
 
@@ -444,7 +463,11 @@ const AdminDashboard: React.FC = () => {
         <Card className="p-4">
           <div className="flex flex-col gap-4">
             <h2 className="text-lg font-semibold">Revenue Breakdown</h2>
-            <BarChartWidget title="" data={revenueBreakdownData} />
+            {isEmptyData(revenueBreakdownData) ? (
+              <NoDataMessage message="No revenue analytics data available" />
+            ) : (
+              <BarChartWidget title="" data={revenueBreakdownData} />
+            )}
           </div>
         </Card>
 
@@ -465,7 +488,11 @@ const AdminDashboard: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
-            <PieChartWidget title="" data={revenueShareData} mode={revenueChartMode} />
+            {isEmptyData(revenueShareData) ? (
+              <NoDataMessage message="No revenue distribution data available" />
+            ) : (
+              <PieChartWidget title="" data={revenueShareData} mode={revenueChartMode} />
+            )}
           </div>
         </Card>
       </div>
@@ -512,7 +539,11 @@ const AdminDashboard: React.FC = () => {
             />
           </div>
 
-          <TableWidget title="Details" data={campaignsTableData} />
+          {isEmptyData(campaignsTableData) ? (
+            <NoDataMessage message="No campaign data available" />
+          ) : (
+            <TableWidget title="Details" data={campaignsTableData} />
+          )}
         </div>
       </Card>
 
@@ -564,8 +595,16 @@ const AdminDashboard: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <TableWidget title="By Status" data={contractsStatusTableData} />
-            <TableWidget title="By Value" data={contractsFinanceTableData} />
+            {isEmptyData(contractsStatusTableData) ? (
+              <NoDataMessage message="No contract data available by status" />
+            ) : (
+              <TableWidget title="By Status" data={contractsStatusTableData} />
+            )}
+            {isEmptyData(contractsFinanceTableData) ? (
+              <NoDataMessage message="No contract financial data available" />
+            ) : (
+              <TableWidget title="By Value" data={contractsFinanceTableData} />
+            )}
           </div>
         </div>
       </Card>
@@ -586,6 +625,7 @@ const AdminDashboard: React.FC = () => {
                 dateFormat="dd/MM/yyyy"
                 className="w-[150px]"
                 placeholder="Start date"
+                maxDate={new Date().toISOString()}
               />
               <span className="text-sm">to</span>
               <DatePicker
@@ -599,6 +639,7 @@ const AdminDashboard: React.FC = () => {
                 dateFormat="dd/MM/yyyy"
                 className="w-[150px]"
                 placeholder="End date"
+                maxDate={new Date().toISOString()}
               />
               <Select
                 value={userGrowthFilter.granularity}
@@ -651,7 +692,11 @@ const AdminDashboard: React.FC = () => {
               </Button>
             </div>
           </div>
-          <LineChartWidget title="" data={userGrowthData} />
+          {isEmptyData(userGrowthData) ? (
+            <NoDataMessage message="No user growth data available for the selected time period" />
+          ) : (
+            <LineChartWidget title="" data={userGrowthData} />
+          )}
         </div>
       </Card>
 
@@ -673,14 +718,22 @@ const AdminDashboard: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
-            <PieChartWidget title="" data={roleBreakdownData} mode={roleChartMode} />
+            {isEmptyData(roleBreakdownData) ? (
+              <NoDataMessage message="No user role distribution data available" />
+            ) : (
+              <PieChartWidget title="" data={roleBreakdownData} mode={roleChartMode} />
+            )}
           </div>
         </Card>
 
         <Card className="p-4 relative">
           <div className="flex flex-col gap-4">
             <h2 className="text-lg font-semibold">System Health</h2>
-            <TableWidget title="" data={systemHealthData} />
+            {isEmptyData(systemHealthData) ? (
+              <NoDataMessage message="No system status data available" />
+            ) : (
+              <TableWidget title="" data={systemHealthData} />
+            )}
           </div>
         </Card>
       </div>

@@ -28,14 +28,21 @@ import {
   Search,
   Calendar,
   User,
-  ChevronLeft,
-  ChevronRight,
   FileText,
   Video,
   Settings,
   Globe,
+  Loader2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { Dialog } from "@/components/ui/dialog";
 import { DeleteContentModal } from "@/components/modal/content/DeleteContentModal";
 import { RequestApprovalModal } from "@/components/modal/content/RequestApprovalModal";
@@ -393,12 +400,12 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="await_staff">Awaiting Review</SelectItem>
-                <SelectItem value="await_brand">Awaiting Brand</SelectItem>
-                <SelectItem value="approved">Approved</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
-                <SelectItem value="posted">Posted</SelectItem>
+                <SelectItem value="DRAFT">Draft</SelectItem>
+                <SelectItem value="AWAIT_STAFF">Awaiting Review</SelectItem>
+                <SelectItem value="AWAIT_BRAND">Awaiting Brand</SelectItem>
+                <SelectItem value="APPROVED">Approved</SelectItem>
+                <SelectItem value="REJECTED">Rejected</SelectItem>
+                <SelectItem value="POSTED">Posted</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -432,8 +439,8 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
         <CardContent className="p-0">
           {loading ? (
             <div className="p-8 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500 mx-auto"></div>
-              <p className="mt-2 text-gray-500">Loading contents...</p>
+              <Loader2 className="mx-auto mb-4 h-12 w-12 text-primary animate-spin" />
+              <p className="text-gray-500">Loading contents</p>
             </div>
           ) : error ? (
             <div className="p-8 text-center text-red-500">
@@ -577,42 +584,46 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
               )}
             </>
           )}
+
+          {/* Pagination */}
+          {pagination && pagination.total_pages > 1 && (
+            <div className="flex justify-end p-4 border-t bg-gray-50">
+              <Pagination className="w-auto mx-0 justify-end">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() => handlePageChange(pagination.page - 1)}
+                      className={
+                        !pagination.has_prev ? "pointer-events-none opacity-50" : "cursor-pointer"
+                      }
+                    />
+                  </PaginationItem>
+                  {Array.from({ length: pagination.total_pages }, (_, i) => i + 1).map(
+                    (pageNum) => (
+                      <PaginationItem key={pageNum}>
+                        <PaginationLink
+                          onClick={() => handlePageChange(pageNum)}
+                          isActive={pagination.page === pageNum}
+                        >
+                          {pageNum}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ),
+                  )}
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() => handlePageChange(pagination.page + 1)}
+                      className={
+                        !pagination.has_next ? "pointer-events-none opacity-50" : "cursor-pointer"
+                      }
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </CardContent>
       </Card>
-
-      {/* Pagination */}
-      {pagination && pagination.total_pages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
-            {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}{" "}
-            results
-          </p>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(pagination.page - 1)}
-              disabled={!pagination.has_prev}
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Previous
-            </Button>
-            <span className="px-3 py-1 text-sm">
-              Page {pagination.page} of {pagination.total_pages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(pagination.page + 1)}
-              disabled={!pagination.has_next}
-            >
-              Next
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      )}
 
       {/* Content Detail Modal */}
       <ContentDetailModal

@@ -28,6 +28,9 @@ export interface OrderData {
   order_items: OrderItem[];
   confirmation_image?: string;
   payment_transaction: PaymentTransaction;
+  user_bank_account?: string;
+  user_bank_name?: string;
+  user_bank_account_holder?: string;
 }
 
 interface PaymentTransaction {

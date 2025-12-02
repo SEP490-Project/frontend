@@ -27,8 +27,10 @@ import {
 } from "@/components/ui/dialog";
 import { useAppDispatch, type RootState } from "@/libs/stores";
 import {
+  approvePreOrderThunk,
+  deliveredSelfDeliveryPreOrderThunk,
   getPreOrdersForSaleStaffThunk,
-  censorAnPreOrderThunk,
+  receivedSelfPickupPreOrderThunk,
 } from "@/libs/stores/orderManager/thunk";
 import { useSelector } from "react-redux";
 import type { OrderRequestQuery } from "@/libs/types/order";
@@ -37,7 +39,6 @@ import PreOrderDetail from "@/components/manage/sale/order/PreOrderDetail";
 import { SquarePen } from "lucide-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
-import { updatePreOrderStateThunk } from "@/libs/stores/stateManager/thunk";
 import type { PreOrderData } from "@/libs/types/pre-order";
 
 const PreOrder: React.FC = () => {
@@ -102,14 +103,12 @@ const PreOrder: React.FC = () => {
       pending: "bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200",
       paid: "bg-green-100 text-green-800 border border-green-200 hover:bg-green-200",
       pre_ordered: "bg-purple-100 text-purple-800 border border-purple-200 hover:bg-purple-200",
-      awaiting_release:
-        "bg-yellow-100 text-yellow-800 border border-yellow-200 hover:bg-yellow-200",
-      awaiting_pickup: "bg-indigo-100 text-indigo-800 border border-indigo-200 hover:bg-indigo-200",
+      awaiting_pickup: "bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200",
       confirmed: "bg-green-100 text-green-800 border border-green-200 hover:bg-green-200",
       cancelled: "bg-red-100 text-red-800 border border-red-200 hover:bg-red-200",
       in_transit: "bg-orange-100 text-orange-800 border border-orange-200 hover:bg-orange-200",
       delivered: "bg-green-200 text-green-900 border border-green-300 hover:bg-green-300",
-      received: "bg-teal-100 text-teal-800 border border-teal-200 hover:bg-teal-200",
+      received: "bg-green-100 text-green-800 border border-green-200 hover:bg-green-200",
     };
     return (
       statusMap[status.toLowerCase()] ||
@@ -119,11 +118,9 @@ const PreOrder: React.FC = () => {
 
   const getNextStates = (currentStatus: string): string[] => {
     const stateTransitions: Record<string, string[]> = {
-      PAID: ["AWAITING_RELEASE"],
       PENDING: ["CANCELLED, PAID"],
-      PRE_ORDERED: ["STOCK_READY", "STOCK_PREPARING"],
-      STOCK_READY: ["AWAITING_PICKUP"],
-      STOCK_PREPARING: ["IN_TRANSIT", "AWAITING_PICKUP"],
+      PAID: ["PRE_ORDERED"],
+      PRE_ORDERED: ["AWAITING_PICKUP", "IN_TRANSIT"],
       AWAITING_PICKUP: ["RECEIVED"],
       IN_TRANSIT: ["DELIVERED"],
       DELIVERED: ["RECEIVED"],
@@ -155,10 +152,8 @@ const PreOrder: React.FC = () => {
 
     try {
       await dispatch(
-        censorAnPreOrderThunk({
+        approvePreOrderThunk({
           id: selectedPreOrder.id,
-          action: censorAction,
-          reason: censorAction === "CANCEL" ? { reason: censorReason } : {},
         }),
       ).unwrap();
 
@@ -177,15 +172,6 @@ const PreOrder: React.FC = () => {
 
   const handleUpdateStatus = async () => {
     if (!selectedPreOrder || !selectedStatus) return;
-    if (
-      (selectedStatus === "RECEIVED" && selectedPreOrder?.is_self_picked_up === true) ||
-      (selectedStatus === "DELIVERED" && selectedPreOrder?.is_self_picked_up === false)
-    ) {
-      toast.error("Proof required", {
-        description: "Please upload a proof photo for this status change.",
-      });
-      return;
-    }
 
     const files = new FormData();
     files.append("state", selectedStatus);
@@ -193,17 +179,20 @@ const PreOrder: React.FC = () => {
     // Append proof files if available
     if (proofFiles.length > 0) {
       proofFiles.forEach((file) => {
-        files.append("files", file);
+        files.append("file", file);
       });
     }
 
     try {
-      await dispatch(
-        updatePreOrderStateThunk({
-          id: selectedPreOrder.id,
-          files,
-        }),
-      ).unwrap();
+      if (selectedStatus === "RECEIVED" && selectedPreOrder.is_self_picked_up) {
+        dispatch(
+          receivedSelfPickupPreOrderThunk({ id: selectedPreOrder.id, file: files }),
+        ).unwrap();
+      } else if (selectedStatus === "DELIVERED" && !selectedPreOrder.is_self_picked_up) {
+        dispatch(
+          deliveredSelfDeliveryPreOrderThunk({ id: selectedPreOrder.id, file: files }),
+        ).unwrap();
+      }
 
       toast.success("Pre-order status updated successfully!");
       dispatch(getPreOrdersForSaleStaffThunk(params));
@@ -388,30 +377,20 @@ const PreOrder: React.FC = () => {
                             >
                               <SquarePen className="text-green-600" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="hover:bg-red-100"
-                              title="Cancel Pre-Order"
-                              onClick={() => openCensorDialog(preOrder, "CANCEL")}
-                            >
-                              <SquarePen className="text-red-600" />
-                            </Button>
                           </>
                         )}
-                        {preOrder.status !== "PAID" &&
-                          preOrder.status !== "CANCELLED" &&
-                          preOrder.status !== "RECEIVED" && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="hover:bg-yellow-100"
-                              title="Change Status"
-                              onClick={() => openChangeStatusDialog(preOrder)}
-                            >
-                              <SquarePen className="text-yellow-600" />
-                            </Button>
-                          )}
+                        {(preOrder.status === "AWAITING_PICKUP" ||
+                          preOrder.status === "IN_TRANSIT") && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="hover:bg-yellow-100"
+                            title="Change Status"
+                            onClick={() => openChangeStatusDialog(preOrder)}
+                          >
+                            <SquarePen className="text-yellow-600" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -488,14 +467,6 @@ const PreOrder: React.FC = () => {
                         onClick={() => openCensorDialog(preOrder, "CONFIRM")}
                       >
                         Confirm
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="hover:bg-red-100"
-                        onClick={() => openCensorDialog(preOrder, "CANCEL")}
-                      >
-                        Cancel
                       </Button>
                     </>
                   )}

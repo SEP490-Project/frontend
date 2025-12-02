@@ -15,6 +15,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { SelfPickUpChangeStatusModal } from "./change-status-order/CustomerSelfPickUp";
 import { SelfDeliveryChangeStatusModal } from "./change-status-order/StaffSelfDelivery";
+import { RefundRequestModal } from "./change-status-order/RefundRequest";
+import { CompensateRequest } from "./change-status-order/CompensateRequest";
 
 interface ChangeStatusModalProps {
   order: OrderData | null;
@@ -24,7 +26,7 @@ interface ChangeStatusModalProps {
 const nextState = (currentState: string, nextState?: string) => {
   const validTransitions: Record<string, string[]> = {
     PENDING: ["CANCELLED", "PAID"],
-    PAID: ["CONFIRMED", "CANCELLED", "REFUNDED"],
+    PAID: ["CONFIRMED", "CANCELLED"],
     SHIPPED: ["IN_TRANSIT"],
     IN_TRANSIT: ["DELIVERED"],
     DELIVERED: ["RECEIVED"],
@@ -117,6 +119,10 @@ export const ChangeStatusModal = ({ order, onSuccess }: ChangeStatusModalProps) 
         </p>
       </div>
     );
+  } else if (order?.status === "REFUND_REQUEST") {
+    return <RefundRequestModal order={order} onSuccess={onSuccess} />;
+  } else if (order?.status === "COMPENSATE_REQUEST") {
+    return <CompensateRequest order={order} onSuccess={onSuccess} />;
   }
 
   if (order?.is_self_picked_up) {

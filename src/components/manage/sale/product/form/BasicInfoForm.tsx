@@ -254,7 +254,7 @@ export const BasicInfoForm = ({
               </SelectTrigger>
               <SelectContent>
                 {brands?.map((brand) => (
-                  <SelectItem key={brand.id} value={brand.id.toString()}>
+                  <SelectItem key={brand.id} value={brand?.id}>
                     {brand.name}
                   </SelectItem>
                 ))}

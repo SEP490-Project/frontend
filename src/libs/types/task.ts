@@ -24,6 +24,7 @@ export interface Task {
   updated_by_name?: string;
   content_ids?: string[];
   product_ids?: string[];
+  child_status?: string;
 }
 
 interface MilestoneDetails {

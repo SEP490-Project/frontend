@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { updateProductStateThunk, updateTaskStateThunk, updatePreOrderStateThunk } from "./thunk";
+import { updateProductStateThunk, updateTaskStateThunk } from "./thunk";
 
 const stateManagerSlice = createSlice({
   name: "stateManager",
@@ -29,17 +29,6 @@ const stateManagerSlice = createSlice({
         state.loading = false;
       })
       .addCase(updateProductStateThunk.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      })
-      .addCase(updatePreOrderStateThunk.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(updatePreOrderStateThunk.fulfilled, (state) => {
-        state.loading = false;
-      })
-      .addCase(updatePreOrderStateThunk.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });

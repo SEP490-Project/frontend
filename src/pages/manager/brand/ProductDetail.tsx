@@ -20,7 +20,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAppDispatch } from "@/libs/stores";
-import { getProductDetailThunk, updateProductStateThunk } from "@/libs/stores/productManager/thunk";
+import {
+  getProductDetailThunk,
+  updateProductStateThunk,
+  updateProductVisibilityThunk,
+} from "@/libs/stores/productManager/thunk";
 import { useProduct } from "@/libs/hooks/useProduct";
 
 const BrandProductDetail: React.FC = () => {
@@ -49,7 +53,12 @@ const BrandProductDetail: React.FC = () => {
 
   const handleUpdateStatus = async (status: "ACTIVED" | "REVISION") => {
     if (!product?.id) return;
-    await dispatch(updateProductStateThunk({ productId: product.id, status }));
+    const result = await dispatch(updateProductStateThunk({ productId: product.id, status }));
+    if (result.meta.requestStatus === "fulfilled") {
+      await dispatch(
+        updateProductVisibilityThunk({ productId: product.id, isActive: status === "ACTIVED" }),
+      );
+    }
     await dispatch(getProductDetailThunk(product.id));
   };
 

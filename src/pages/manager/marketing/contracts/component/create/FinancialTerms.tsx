@@ -117,7 +117,7 @@ const CostBreakdown: React.FC<{
 
 const FinancialOverview: React.FC<{
   formData: any;
-  financial_terms: any; // Changed from financialTerms to financial_terms
+  financial_terms: any;
   onUpdate: (updates: any) => void;
   errors?: any;
 }> = ({ formData, financial_terms, onUpdate, errors = {} }) => {
@@ -125,14 +125,11 @@ const FinancialOverview: React.FC<{
   const percent = formData.deposit_percent ?? 0;
   const paid = formData.is_deposit_paid ?? false;
 
-  // Tự tính tiền cọc
   const deposit = (total * percent) / 100;
   const remaining = total - deposit;
   const fmt = (n = 0) => new Intl.NumberFormat("vi-VN").format(n);
 
-  // Lấy cost breakdown - ưu tiên array format trước, sau đó mới convert từ object
   const getCostBreakdownArray = () => {
-    // Nếu có array format (từ UI), dùng luôn
     if (
       financial_terms.cost_breakdown_array &&
       Array.isArray(financial_terms.cost_breakdown_array)
@@ -140,7 +137,6 @@ const FinancialOverview: React.FC<{
       return financial_terms.cost_breakdown_array;
     }
 
-    // Nếu không có array format nhưng có object format, convert từ object sang array
     if (
       financial_terms.cost_breakdown &&
       typeof financial_terms.cost_breakdown === "object" &&
@@ -153,7 +149,6 @@ const FinancialOverview: React.FC<{
       }));
     }
 
-    // Trả về array rỗng nếu không có data
     return [];
   };
 
@@ -170,7 +165,6 @@ const FinancialOverview: React.FC<{
       </CardHeader>
 
       <CardContent className="space-y-6 pt-6">
-        {/* Total Contract */}
         <CurrencyInput
           label="Total Contract Cost (VND)"
           value={total}
@@ -187,7 +181,6 @@ const FinancialOverview: React.FC<{
 
         <Separator className="my-4" />
 
-        {/* Deposit Setup */}
         <div className="space-y-5">
           <div className="flex items-center gap-2">
             <FaMoneyBillWave className="w-5 h-5 text-amber-600" />
@@ -208,12 +201,10 @@ const FinancialOverview: React.FC<{
                 onChange={(e) => {
                   let newPercent = Number(e.target.value) || 0;
 
-                  // Ensure deposit percentage doesn't exceed 50%
                   if (newPercent > 50) {
                     newPercent = 50;
                   }
 
-                  // Calculate deposit_amount based on total_cost and deposit_percent
                   const newDepositAmount = Math.round((total * newPercent) / 100);
 
                   onUpdate({
@@ -230,7 +221,6 @@ const FinancialOverview: React.FC<{
               )}
             </div>
 
-            {/* Checkbox Paid */}
             <div className="flex items-center space-x-2 pt-6">
               <Checkbox
                 id="is-paid"
@@ -245,15 +235,12 @@ const FinancialOverview: React.FC<{
             </div>
           </div>
 
-          {/* Deposit Amount (read-only) */}
           <div>
             <Label className="text-sm font-medium">Deposit Amount (VND)</Label>
             <CurrencyInput value={deposit} placeholder="0" disabled />
           </div>
 
-          {/* Summary Cards */}
           <div className="grid md:grid-cols-3 gap-4 pt-3">
-            {/* Deposit */}
             <Card
               className={`transition border ${
                 deposit > 0
@@ -280,7 +267,6 @@ const FinancialOverview: React.FC<{
               </CardContent>
             </Card>
 
-            {/* Remaining */}
             <Card className="bg-blue-50 border-blue-200">
               <CardContent className="p-4">
                 <div className="flex justify-between items-start">
@@ -293,7 +279,6 @@ const FinancialOverview: React.FC<{
               </CardContent>
             </Card>
 
-            {/* Total */}
             <Card className="bg-indigo-50 border-indigo-200">
               <CardContent className="p-4">
                 <div className="flex justify-between items-start">
@@ -334,7 +319,6 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({
       onInputChange("is_deposit_paid", updates.is_deposit_paid);
     }
 
-    // Lọc ra các updates khác cho financial_terms
     const financialUpdates = Object.keys(updates).reduce((acc: any, key) => {
       if (key !== "deposit_percent" && key !== "deposit_amount" && key !== "is_deposit_paid") {
         if (key === "cost_breakdown" && Array.isArray(updates[key])) {
@@ -398,7 +382,7 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({
     <div className="space-y-8">
       <FinancialOverview
         formData={formData}
-        financial_terms={financial_terms} // Changed from financialTerms to financial_terms
+        financial_terms={financial_terms}
         onUpdate={handleUpdate}
         errors={errors}
       />

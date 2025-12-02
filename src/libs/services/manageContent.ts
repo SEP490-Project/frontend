@@ -3,6 +3,8 @@ import type {
   ContentListParams,
   CreateContentRequest,
   UpdateContentRequest,
+  AIGenerateRequest,
+  AIStructuredContentRequest,
 } from "@/libs/types/content";
 
 export const manageContent = {
@@ -56,5 +58,22 @@ export const manageContent = {
 
   contentPostedDetail: (id: string) => {
     return api.get(`/contents/public/${id}`);
+  },
+
+  getTikTokCreatorInfo: () => {
+    return api.get("/social/tiktok/creator-info");
+  },
+
+  // AI Content Generation APIs
+  generateAIContent: (data: AIGenerateRequest) => {
+    return api.post("/ai/generate", data);
+  },
+
+  generateStructuredContent: (data: AIStructuredContentRequest) => {
+    return api.post("/ai/generate-content", data);
+  },
+
+  getSupportedAIModels: () => {
+    return api.get("/ai/models");
   },
 };

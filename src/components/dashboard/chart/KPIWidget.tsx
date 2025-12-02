@@ -1,6 +1,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 import CountUp from "react-countup";
+import { useRef, useEffect } from "react";
 
 interface KPIData {
   value: string | number;
@@ -12,9 +13,9 @@ interface Props {
   title: string;
   data: KPIData;
   icon?: React.ReactNode;
-  iconColor?: string; // tailwind color (e.g. "text-blue-600")
-  iconBg?: string; // tailwind bg (e.g. "bg-blue-100")
-  id?: string; // thêm id để dùng với driver.js
+  iconColor?: string;
+  iconBg?: string;
+  id?: string;
 }
 
 function KPIWidget({
@@ -32,12 +33,23 @@ function KPIWidget({
     return val;
   };
 
-  // Kiểm tra xem data và data.value có tồn tại không
   const value = data?.value !== undefined ? data.value : 0;
+
+  const hasAnimated = useRef(false);
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    if (isFirstRender.current && value !== 0) {
+      isFirstRender.current = false;
+      setTimeout(() => {
+        hasAnimated.current = true;
+      }, 3000);
+    }
+  }, [value]);
 
   return (
     <Card className="rounded-2xl shadow-sm" id={id}>
-      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0 gap-2">
         <CardTitle className="text-base font-medium text-gray-500">{title}</CardTitle>
         {icon && (
           <div
@@ -49,11 +61,18 @@ function KPIWidget({
       </CardHeader>
       <CardContent>
         <div className="text-3xl font-bold text-gray-900">
-          <CountUp
-            end={typeof value === "number" ? value : 0}
-            duration={3}
-            formattingFn={formatValue}
-          />
+          {!hasAnimated.current ? (
+            <CountUp
+              end={typeof value === "number" ? value : 0}
+              duration={3}
+              formattingFn={formatValue}
+              onEnd={() => {
+                hasAnimated.current = true;
+              }}
+            />
+          ) : (
+            formatValue(value)
+          )}
         </div>
         {data?.status && data?.statusText && (
           <p

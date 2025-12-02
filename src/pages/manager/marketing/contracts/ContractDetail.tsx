@@ -9,10 +9,10 @@ import { useAppDispatch } from "@/libs/stores";
 import { ContractPreviewModal } from "@/components/manage/marketing/contract/ContractPreviewModal";
 import { ContractPDF } from "@/components/manage/marketing/contract/ContractPreview";
 import { PDFDownloadLink } from "@react-pdf/renderer";
-import { FaEye, FaFileArrowDown, FaArrowLeft, FaFileContract } from "react-icons/fa6";
+import { FaEye, FaFileArrowDown, FaArrowLeft, FaFileContract, FaPencil } from "react-icons/fa6";
 import { Loader2 } from "lucide-react";
 
-export default function ContractDetailPage() {
+const ContractDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { contractDetail, detailLoading } = useContract();
   const dispatch = useAppDispatch();
@@ -76,6 +76,15 @@ export default function ContractDetailPage() {
 
         <div className="flex gap-3">
           <Button
+            onClick={() => navigate(`/manage/marketing/contracts/edit/${id}`)}
+            variant="outline"
+            className="flex items-center"
+          >
+            <FaPencil className="h-4 w-4 mr-2" />
+            Edit Contract
+          </Button>
+
+          <Button
             onClick={() => setIsPreviewModalOpen(true)}
             variant="outline"
             className="border-blue-300 text-blue-700 bg-white hover:bg-blue-100 flex items-center"
@@ -123,4 +132,6 @@ export default function ContractDetailPage() {
       />
     </div>
   );
-}
+};
+
+export default ContractDetailPage;

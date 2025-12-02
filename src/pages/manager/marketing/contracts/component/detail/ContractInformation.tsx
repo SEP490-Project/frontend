@@ -2,6 +2,7 @@ import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import FileList from "@/components/global/FileList";
 import {
   FaLocationDot,
   FaUser,
@@ -11,8 +12,9 @@ import {
   FaCreditCard,
   FaHashtag,
   FaCalendarDay,
+  FaFileContract,
 } from "react-icons/fa6";
-import { formatDate } from "@/libs/helper/helper";
+import { formatDate, formatPhoneNumber } from "@/libs/helper/helper";
 
 const ContractInformation: React.FC<{ data: any }> = ({ data }) => {
   const getStatusColor = (status: string) => {
@@ -50,7 +52,6 @@ const ContractInformation: React.FC<{ data: any }> = ({ data }) => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Contract Details Card */}
         <Card className="border-l-4 border-l-blue-500">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-blue-700">
@@ -80,7 +81,6 @@ const ContractInformation: React.FC<{ data: any }> = ({ data }) => {
           </CardContent>
         </Card>
 
-        {/* Brand Information Card */}
         <Card className="border-l-4 border-l-purple-500">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-purple-700">
@@ -99,7 +99,9 @@ const ContractInformation: React.FC<{ data: any }> = ({ data }) => {
             <div className="grid grid-cols-1 gap-3">
               <div className="flex items-center gap-2 text-sm">
                 <FaPhone className="w-4 h-4 text-gray-400" />
-                <span className="text-gray-600">{data.brand?.contact_phone ?? "—"}</span>
+                <span className="text-gray-600">
+                  {formatPhoneNumber(data.brand?.contact_phone) ?? "—"}
+                </span>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <FaEnvelope className="w-4 h-4 text-gray-400" />
@@ -109,7 +111,6 @@ const ContractInformation: React.FC<{ data: any }> = ({ data }) => {
           </CardContent>
         </Card>
 
-        {/* Timeline Card */}
         <Card className="border-l-4 border-l-green-500">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-green-700">
@@ -149,7 +150,6 @@ const ContractInformation: React.FC<{ data: any }> = ({ data }) => {
           </CardContent>
         </Card>
 
-        {/* Representative Card */}
         <Card className="border-l-4 border-l-orange-500">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-orange-700">
@@ -166,7 +166,9 @@ const ContractInformation: React.FC<{ data: any }> = ({ data }) => {
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-sm">
                   <FaPhone className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-600">{data.representative_phone ?? "—"}</span>
+                  <span className="text-gray-600">
+                    {formatPhoneNumber(data.representative_phone) ?? "—"}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <FaEnvelope className="w-4 h-4 text-gray-400" />
@@ -188,6 +190,76 @@ const ContractInformation: React.FC<{ data: any }> = ({ data }) => {
           </CardContent>
         </Card>
       </div>
+
+      {(data.contract_file_url || data.proposal_file_url) && (
+        <Card className="border-l-4 border-l-indigo-500">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-indigo-700">
+              <FaFileContract className="w-5 h-5" />
+              Contract Documents
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {data.contract_file_url && (
+              <div>
+                <h4 className="font-medium text-gray-700 mb-2">Contract File</h4>
+                <FileList
+                  files={[
+                    {
+                      id: "contract-file",
+                      name: data.contract_file_url.split("/").pop() || "Contract Document",
+                      progress: 100,
+                      status: "completed" as const,
+                      url: data.contract_file_url,
+                    },
+                  ]}
+                  onDownload={(file) => {
+                    if (file.url) {
+                      const link = document.createElement("a");
+                      link.href = file.url;
+                      link.download = file.name;
+                      link.target = "_blank";
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }
+                  }}
+                  showStatus={false}
+                />
+              </div>
+            )}
+
+            {data.proposal_file_url && (
+              <div>
+                <h4 className="font-medium text-gray-700 mb-2">Proposal File</h4>
+                <FileList
+                  files={[
+                    {
+                      id: "proposal-file",
+                      name: data.proposal_file_url.split("/").pop() || "Proposal Document",
+                      progress: 100,
+                      status: "completed" as const,
+                      url: data.proposal_file_url,
+                    },
+                  ]}
+                  onDownload={(file) => {
+                    if (file.url) {
+                      const link = document.createElement("a");
+                      link.href = file.url;
+                      link.download = file.name;
+                      link.target = "_blank";
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }
+                  }}
+                  showStatus={false}
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

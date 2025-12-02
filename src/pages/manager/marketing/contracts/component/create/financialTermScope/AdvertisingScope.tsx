@@ -29,7 +29,7 @@ const AdvertisingScope: React.FC<AdvertisingScopeProps> = ({ formData, onUpdate 
   }, []);
 
   return (
-    <Card className="shadow-sm">
+    <Card className="shadow-sm overflow-hidden">
       <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100">
         <CardTitle className="flex items-center gap-3">
           <FaDollarSign className="w-6 h-6 text-orange-600" />
@@ -72,7 +72,10 @@ const AdvertisingScope: React.FC<AdvertisingScopeProps> = ({ formData, onUpdate 
         <PaymentSchedule
           schedules={financial_terms.schedule || []}
           totalCost={financial_terms.total_cost || 0}
-          onUpdate={(schedule) => onUpdate({ schedule })}
+          onUpdate={(schedule) => {
+            console.log("AdvertisingScope PaymentSchedule onUpdate:", schedule);
+            onUpdate({ schedule });
+          }}
           startDate={start_date}
           endDate={end_date}
           depositPercent={formData.deposit_percent || 0}

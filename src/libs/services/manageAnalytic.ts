@@ -41,6 +41,7 @@ export const manageSalesAnalytic = {
   getSalesProducts: (params: any) => api.get("/analytics/sales/products", { params }),
   getSalesRevenue: (params: any) => api.get("/analytics/sales/revenue", { params }),
   getSalesTrends: (params: any) => api.get("/analytics/sales/trend", { params }),
+  getSalesDashboard: (params: any) => api.get("/analytics/sales/dashboard", { params }),
 };
 
 export const manageContentAnalytic = {

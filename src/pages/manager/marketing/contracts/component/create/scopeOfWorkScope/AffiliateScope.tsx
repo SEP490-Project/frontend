@@ -617,7 +617,7 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
                         }))}
                         onChange={(kpis) => {
                           const updated = [...items];
-                          updated[i] = { ...updated[i], metrics: kpis, kpis };
+                          updated[i] = { ...updated[i], kpis };
                           updateDeliverables({ advertised_items: updated });
                         }}
                       />

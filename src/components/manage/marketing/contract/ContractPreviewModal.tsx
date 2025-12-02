@@ -727,12 +727,17 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
                   Payment Schedule Milestones:
                 </p>
                 {(financial.schedule ?? []).map((item: any, i: number) => (
-                  <p key={i} className="ml-5 text-xs text-gray-600">
-                    {i + 1}. <span className="font-semibold">{item.milestone}</span>:{" "}
-                    <span className="font-semibold">{formatMoney(item.amount)}</span> (
-                    {item.percent}%) due by{" "}
-                    <span className="font-semibold">{formatDate(item.due_date)}</span>{" "}
-                  </p>
+                  <div key={i} className="ml-5 text-xs text-gray-600 mb-2">
+                    <p>
+                      {i + 1}. <span className="font-semibold">{item.milestone}</span>:{" "}
+                      <span className="font-semibold">{formatMoney(item.amount)}</span> (
+                      {item.percent}%) due by{" "}
+                      <span className="font-semibold">{formatDate(item.due_date)}</span>{" "}
+                    </p>
+                    {item.note && (
+                      <p className="ml-3 italic text-gray-500 text-xs mt-1">Note: {item.note}</p>
+                    )}
+                  </div>
                 ))}
               </div>
             )}

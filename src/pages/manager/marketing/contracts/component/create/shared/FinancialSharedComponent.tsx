@@ -136,6 +136,7 @@ export const PaymentSchedule: React.FC<{
       updated[index].amount = totalCost ? Math.round((totalCost * newPercent) / 100) : 0;
     }
 
+    console.log("PaymentSchedule updateSchedule:", { index, field, value, updated });
     onUpdate(updated);
   };
 

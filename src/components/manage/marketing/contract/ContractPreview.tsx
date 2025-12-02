@@ -335,9 +335,9 @@ export const ContractPDF = ({ data }: { data: any }) => {
                       <Text key={kpiIdx} style={styles.listItem}>
                         •{" "}
                         <Text style={styles.bold}>
-                          {(kpi.metric || kpi.type || "").replace(/_/g, " ")}
+                          {(kpi.type || kpi.metric || "").replace(/_/g, " ")}
                         </Text>
-                        : {kpi.target || kpi.target_value || "N/A"}
+                        : {kpi.target_value || kpi.target || "N/A"}
                         {kpi.description && ` - ${kpi.description}`}
                       </Text>
                     ))}
@@ -410,9 +410,9 @@ export const ContractPDF = ({ data }: { data: any }) => {
                               <Text key={kpiIdx} style={styles.listItem}>
                                 •{" "}
                                 <Text style={styles.bold}>
-                                  {(kpi.metric || kpi.type || "").replace(/_/g, " ")}
+                                  {(kpi.type || kpi.metric || "").replace(/_/g, " ")}
                                 </Text>
-                                : {kpi.target || kpi.target_value || "N/A"}
+                                : {kpi.target_value || kpi.target || "N/A"}
                                 {kpi.description && ` - ${kpi.description}`}
                               </Text>
                             ))}
@@ -711,11 +711,23 @@ export const ContractPDF = ({ data }: { data: any }) => {
               <View>
                 <Text style={styles.subHeading}>Payment Schedule Milestones:</Text>
                 {(financial.schedule ?? []).map((item: any, i: number) => (
-                  <Text key={i} style={styles.listItem}>
-                    {i + 1}. <Text style={styles.bold}>{item.milestone}</Text>:{" "}
-                    <Text style={styles.bold}>{formatMoney(item.amount)}</Text> ({item.percent}%)
-                    due by <Text style={styles.bold}>{formatDate(item.due_date)}</Text>
-                  </Text>
+                  <View key={i} style={{ marginBottom: 4 }}>
+                    <Text style={styles.listItem}>
+                      {i + 1}. <Text style={styles.bold}>{item.milestone}</Text>:{" "}
+                      <Text style={styles.bold}>{formatMoney(item.amount)}</Text> ({item.percent}%)
+                      due by <Text style={styles.bold}>{formatDate(item.due_date)}</Text>
+                    </Text>
+                    {item.note && (
+                      <Text
+                        style={[
+                          styles.textBlock,
+                          { marginLeft: 20, fontStyle: "italic", color: "#666", fontSize: 9 },
+                        ]}
+                      >
+                        Note: {item.note}
+                      </Text>
+                    )}
+                  </View>
                 ))}
               </View>
             )}

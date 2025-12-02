@@ -65,13 +65,13 @@ export function TaskList({ currentDate, onViewTask, statusFilter = "ALL" }: Task
     return days;
   };
 
-  // Get tasks for a specific date
+  // Get tasks for a specific date (by created_at)
   const getTasksForDate = (date: Date): Task[] => {
     const targetDate = new Date(date);
     targetDate.setHours(0, 0, 0, 0);
 
     return filteredTasks.filter((task) => {
-      const taskDate = new Date(task.deadline);
+      const taskDate = new Date(task.created_at);
       taskDate.setHours(0, 0, 0, 0);
       return taskDate.getTime() === targetDate.getTime();
     });

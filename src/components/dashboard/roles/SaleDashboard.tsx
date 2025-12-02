@@ -1,22 +1,28 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   KPIWidget,
   LineChartWidget,
   PieChartWidget,
   TableWidget,
+  BarChartWidget,
 } from "@/components/dashboard/chart";
-import { useAppDispatch, type RootState } from "@/libs/stores";
+import { useAppDispatch } from "@/libs/stores";
 import {
   salesBrands,
-  salesDashboard,
   salesOrders,
   salesProducts,
   salesTrend,
+  salesRevenue,
+  salesPayment,
+  salesPreOrder,
 } from "@/libs/stores/salesAnalyticManager/thunk";
-import { useSelector } from "react-redux";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { convertNumberToCurrency } from "@/libs/helper/helper";
-import { FaBox, FaDollarSign } from "react-icons/fa6";
+import {
+  FaBox,
+  FaDollarSign,
+  FaMoneyBillWave,
+  FaTriangleExclamation,
+  FaCartShopping,
+} from "react-icons/fa6";
 import {
   Select,
   SelectContent,
@@ -24,386 +30,498 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, X } from "lucide-react";
-import { DatePicker } from "@/components/date-picker";
+import { Loader2 } from "lucide-react";
+import DatePicker from "@/components/date-picker";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { useSalesAnalytic } from "@/libs/hooks/useSalesAnalytic";
 
-const SaleDashboard: React.FC = () => {
-  const [startDate, setStartDate] = React.useState<string | undefined>(undefined);
-  const [endDate, setEndDate] = React.useState<string | undefined>(undefined);
+type Granularity = "DAY" | "WEEK" | "MONTH";
+type ProductType = "STANDARD" | "LIMITED";
 
-  const formatDateToRFC3339 = (dateString: string | undefined) => {
-    if (!dateString) return undefined;
-    try {
-      const date = new Date(dateString);
-      return date.toISOString();
-    } catch {
-      return undefined;
-    }
-  };
+const formatCurrency = (value: number | null | undefined) =>
+  typeof value === "number" ? value.toLocaleString("vi-VN") : "-";
 
-  const handleClearDates = () => {
-    setStartDate(undefined);
-    setEndDate(undefined);
-  };
+const formatDateInput = (value?: string) => (value ? value.substring(0, 10) : "");
 
+const isEmptyData = (data: any[]) => {
   return (
-    <Tabs defaultValue="overview">
-      <div className="p-2 sm:p-6 w-full flex flex-col gap-6">
-        <div className="flex flex-col sm:flex-row justify-between w-full gap-4">
-          <h1 className="text-xl sm:text-2xl font-semibold">Dashboard</h1>
-
-          <div className="flex flex-col sm:flex-row gap-4 sm:items-center justify-between w-full sm:w-auto">
-            <div className="flex items-center gap-2 bg-white shadow rounded-lg p-2">
-              <DatePicker value={startDate} onChange={setStartDate} placeholder="Start Date" />
-              <span className="text-gray-400">-</span>
-              <DatePicker value={endDate} onChange={setEndDate} placeholder="End Date" />
-              {(startDate || endDate) && (
-                <Button variant="ghost" size="sm" onClick={handleClearDates} className="h-8 px-2">
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <TabsList>
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="order">Order</TabsTrigger>
-              </TabsList>
-            </div>
-          </div>
-        </div>
-
-        <TabsContent value="overview">
-          <OverviewTab
-            startDate={formatDateToRFC3339(startDate)}
-            endDate={formatDateToRFC3339(endDate)}
-          />
-        </TabsContent>
-        <TabsContent value="order">
-          <OrderTab
-            startDate={formatDateToRFC3339(startDate)}
-            endDate={formatDateToRFC3339(endDate)}
-          />
-        </TabsContent>
-      </div>
-    </Tabs>
+    !data ||
+    data.length === 0 ||
+    data.every(
+      (item) =>
+        (typeof item.value === "number" && item.value === 0) ||
+        (typeof item.count === "number" && item.count === 0) ||
+        (typeof item.total_revenue === "number" && item.total_revenue === 0),
+    )
   );
 };
 
-interface TabProps {
-  startDate?: string;
-  endDate?: string;
-}
+const NoDataMessage: React.FC<{ message?: string }> = ({
+  message = "No data available to display",
+}) => (
+  <div className="flex flex-col items-center justify-center py-8 text-gray-500">
+    <FaTriangleExclamation className="h-12 w-12 mb-2 text-gray-400" />
+    <p className="text-sm">{message}</p>
+  </div>
+);
 
-const OverviewTab: React.FC<TabProps> = ({ startDate, endDate }) => {
+const SaleDashboard: React.FC = () => {
   const dispatch = useAppDispatch();
   const {
-    trend,
-    brands,
-    orders,
-    products,
     loadingTrend,
     loadingBrands,
     loadingOrders,
     loadingProducts,
-  } = useSelector((state: RootState) => state.manageSalesAnalytic);
+    loadingRevenue,
+    loadingPayments,
+    loadingPreOrders,
+    trend,
+    brands,
+    orders,
+    products,
+    revenue,
+    payments,
+    preOrders,
+  } = useSalesAnalytic();
 
-  const [granularity, setGranularity] = React.useState("DAY");
+  const [filter, setFilter] = useState({
+    start_date: "",
+    end_date: "",
+    granularity: "MONTH" as Granularity,
+    product_type: "ALL" as ProductType | "ALL",
+  });
+
+  const isAnyLoading =
+    loadingTrend ||
+    loadingBrands ||
+    loadingOrders ||
+    loadingProducts ||
+    loadingRevenue ||
+    loadingPayments ||
+    loadingPreOrders;
 
   const formatTrendData = () => {
     if (!trend || !Array.isArray(trend)) return [];
     return trend.map((item) => ({
-      month: new Date(item.date).toLocaleDateString(),
+      month: new Date(item.date).toLocaleDateString("default", {
+        month: "short",
+        day: "numeric",
+      }),
       value: item.revenue,
+    }));
+  };
+
+  const formatOrderTrendData = () => {
+    if (!trend || !Array.isArray(trend)) return [];
+    return trend.map((item) => ({
+      month: new Date(item.date).toLocaleDateString("default", {
+        month: "short",
+        day: "numeric",
+      }),
+      value: item.order_count,
     }));
   };
 
   const formatProductData = () => {
     if (!products || !Array.isArray(products)) return [];
     return products.map((item) => ({
-      top: item.rank,
+      rank: item.rank,
       product_name: item.product_name,
-      total_sold: item.units_sold,
-      total_revenue: convertNumberToCurrency(item.total_revenue),
+      brand_name: item.brand_name,
+      product_type: item.product_type,
+      units_sold: item.units_sold,
+      total_revenue: formatCurrency(item.total_revenue),
     }));
   };
 
   const formatBrandData = () => {
     if (!brands || !Array.isArray(brands)) return [];
     return brands.map((item) => ({
-      top: item.rank,
+      rank: item.rank,
       brand_name: item.brand_name,
-      total_sold: item.units_sold,
-      total_revenue: convertNumberToCurrency(item.total_revenue),
+      order_count: item.order_count,
+      product_count: item.product_count,
+      total_revenue: formatCurrency(item.total_revenue),
     }));
   };
 
-  const formatData = {
-    standard_orders: {
-      value: orders?.standard_orders.total_revenue || 0,
-    },
-    limited_orders: {
-      value: orders?.limited_orders.total_revenue || 0,
-    },
-    pre_orders: {
-      value: orders?.pre_orders.total_revenue || 0,
-    },
-    total_revenue: {
-      value:
-        orders?.standard_orders.total_revenue +
-          orders?.limited_orders.total_revenue +
-          orders?.pre_orders.total_revenue || 0,
-    },
-  };
+  const revenueBreakdownData = React.useMemo(() => {
+    if (!revenue) return [];
+    const data = [
+      { name: "Standard Products", value: Math.round(revenue.standard_product_revenue || 0) },
+      { name: "Limited Products", value: Math.round(revenue.limited_product_revenue || 0) },
+      { name: "Advertising", value: Math.round(revenue.advertising_revenue || 0) },
+      { name: "Affiliate", value: Math.round(revenue.affiliate_revenue || 0) },
+      { name: "Ambassador", value: Math.round(revenue.ambassador_revenue || 0) },
+      { name: "Co-Producing", value: Math.round(revenue.co_producing_revenue || 0) },
+    ];
+    return data.filter((item) => item.value > 0);
+  }, [revenue]);
+
+  const orderStatusData = React.useMemo(() => {
+    if (!orders) return [];
+    return [
+      {
+        type: "Completed",
+        value:
+          (orders.standard_orders?.completed_count || 0) +
+          (orders.limited_orders?.completed_count || 0) +
+          (orders.pre_orders?.received_count || 0),
+      },
+      {
+        type: "Pending",
+        value:
+          (orders.standard_orders?.pending_count || 0) +
+          (orders.limited_orders?.pending_count || 0) +
+          (orders.pre_orders?.pending_count || 0),
+      },
+      {
+        type: "Cancelled",
+        value:
+          (orders.standard_orders?.cancelled_count || 0) +
+          (orders.limited_orders?.cancelled_count || 0) +
+          (orders.pre_orders?.cancelled_count || 0),
+      },
+    ].filter((item) => item.value > 0);
+  }, [orders]);
 
   useEffect(() => {
-    dispatch(salesTrend({ granularity: granularity, start_date: startDate, end_date: endDate }));
+    const { start_date, end_date, granularity } = filter;
+    const payload: any = {};
+    if (start_date) payload.start_date = start_date;
+    if (end_date) payload.end_date = end_date;
+    if (granularity) payload.granularity = granularity;
 
-    dispatch(salesOrders({ start_date: startDate, end_date: endDate }));
+    dispatch(salesTrend(payload));
+    dispatch(salesRevenue(payload));
+    dispatch(salesOrders(payload));
+    dispatch(salesPayment(payload));
+    dispatch(salesPreOrder(payload));
+  }, [dispatch, filter]);
 
-    dispatch(salesProducts({ start_date: startDate, end_date: endDate }));
+  useEffect(() => {
+    const { start_date, end_date, product_type } = filter;
+    const payload: any = { limit: 10 };
+    if (start_date) payload.start_date = start_date;
+    if (end_date) payload.end_date = end_date;
+    if (product_type && product_type !== "ALL") payload.product_type = product_type;
 
-    dispatch(salesBrands({ limit: 3, start_date: startDate, end_date: endDate }));
-  }, [dispatch, granularity, startDate, endDate]);
+    dispatch(salesProducts(payload));
+  }, [dispatch, filter]);
 
-  if (loadingTrend || loadingBrands || loadingOrders || loadingProducts) {
-    return (
-      <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-lg">
-        <Loader2 className="h-12 w-12 text-primary animate-spin" />
-      </div>
-    );
-  }
+  useEffect(() => {
+    const { start_date, end_date } = filter;
+    const payload: any = { limit: 10 };
+    if (start_date) payload.start_date = start_date;
+    if (end_date) payload.end_date = end_date;
+
+    dispatch(salesBrands(payload));
+  }, [dispatch, filter]);
 
   return (
-    <div className="w-full flex flex-col gap-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+    <div className="p-2 sm:p-6 w-full flex flex-col gap-6 relative">
+      {isAnyLoading && (
+        <div className="fixed inset-0 bg-white/70 flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="mx-auto mb-4 h-12 w-12 text-primary animate-spin" />
+            <p className="text-gray-600">Loading...</p>
+          </div>
+        </div>
+      )}
+
+      <h1 className="text-xl sm:text-2xl font-semibold">Sales Dashboard</h1>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPIWidget
           title="Total Revenue"
-          data={formatData.total_revenue}
-          icon={<FaDollarSign size={20} />}
-          iconColor="text-teal-600"
-          iconBg="bg-teal-100"
+          data={{
+            value: revenue?.total_revenue || 0,
+            status: "up",
+            statusText: "Total",
+          }}
+          icon={<FaMoneyBillWave size={20} />}
+          iconColor="text-indigo-600"
+          iconBg="bg-indigo-100"
         />
         <KPIWidget
-          title="Total Standard Order Revenue"
-          data={formatData.standard_orders}
-          icon={<FaDollarSign size={20} />}
-          iconColor="text-green-700"
+          title="Total Orders"
+          data={{
+            value:
+              (orders?.standard_orders?.total_count || 0) +
+              (orders?.limited_orders?.total_count || 0) +
+              (orders?.pre_orders?.total_count || 0),
+            statusText: `${(orders?.standard_orders?.pending_count || 0) + (orders?.limited_orders?.pending_count || 0) + (orders?.pre_orders?.pending_count || 0)} pending`,
+          }}
+          icon={<FaCartShopping size={20} />}
+          iconColor="text-blue-600"
+          iconBg="bg-blue-100"
+        />
+        <KPIWidget
+          title="Standard Products"
+          data={{
+            value: revenue?.standard_product_revenue || 0,
+            statusText: `${orders?.standard_orders?.total_count || 0} orders`,
+          }}
+          icon={<FaBox size={20} />}
+          iconColor="text-green-600"
           iconBg="bg-green-100"
         />
         <KPIWidget
-          title="Total Limited Order Revenue"
-          data={formatData.limited_orders}
-          icon={<FaDollarSign size={20} />}
-          iconColor="text-yellow-700"
-          iconBg="bg-yellow-100"
-        />
-        <KPIWidget
-          title="Total Pre-Orders Revenue"
-          data={formatData.pre_orders}
-          icon={<FaDollarSign size={20} />}
-          iconColor="text-purple-700"
+          title="Limited Products"
+          data={{
+            value: revenue?.limited_product_revenue || 0,
+            statusText: `${orders?.limited_orders?.total_count || 0} orders`,
+          }}
+          icon={<FaBox size={20} />}
+          iconColor="text-purple-600"
           iconBg="bg-purple-100"
         />
       </div>
 
-      {/* Chart Section */}
-      <div className="flex flex-col gap-4 bg-white shadow rounded-xl p-4">
-        <div className="flex justify-between">
-          <h3 className="text-gray-700 text-base font-semibold">Revenue Trend</h3>
-          <div>
-            <Select value={granularity} onValueChange={setGranularity}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Select granularity" />
+      <Card className="p-4">
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-between items-center flex-wrap gap-2">
+            <h2 className="text-lg font-semibold">Revenue Trend</h2>
+            <div className="flex gap-2 items-center flex-wrap">
+              <DatePicker
+                value={formatDateInput(filter.start_date)}
+                onChange={(value) =>
+                  setFilter((prev) => ({
+                    ...prev,
+                    start_date: value ? new Date(value).toISOString() : "",
+                  }))
+                }
+                dateFormat="dd/MM/yyyy"
+                className="w-[150px]"
+                placeholder="Start date"
+                maxDate={new Date().toISOString()}
+              />
+              <span className="text-sm">to</span>
+              <DatePicker
+                value={formatDateInput(filter.end_date)}
+                onChange={(value) =>
+                  setFilter((prev) => ({
+                    ...prev,
+                    end_date: value ? new Date(value).toISOString() : "",
+                  }))
+                }
+                dateFormat="dd/MM/yyyy"
+                className="w-[150px]"
+                placeholder="End date"
+                maxDate={new Date().toISOString()}
+              />
+              <Select
+                value={filter.granularity}
+                onValueChange={(value: Granularity) =>
+                  setFilter((prev) => ({ ...prev, granularity: value }))
+                }
+              >
+                <SelectTrigger className="w-[100px] h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="DAY">Daily</SelectItem>
+                  <SelectItem value="WEEK">Weekly</SelectItem>
+                  <SelectItem value="MONTH">Monthly</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setFilter({
+                    start_date: "",
+                    end_date: "",
+                    granularity: "MONTH",
+                    product_type: "ALL",
+                  })
+                }
+                className="h-8 text-xs"
+              >
+                Reset
+              </Button>
+            </div>
+          </div>
+          {isEmptyData(formatTrendData()) ? (
+            <NoDataMessage message="No revenue data available for the selected time period" />
+          ) : (
+            <LineChartWidget title="" data={formatTrendData()} />
+          )}
+        </div>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card className="p-4">
+          <div className="flex flex-col gap-4">
+            <h2 className="text-lg font-semibold">Revenue Breakdown</h2>
+            {isEmptyData(revenueBreakdownData) ? (
+              <NoDataMessage message="No revenue breakdown data available" />
+            ) : (
+              <BarChartWidget title="" data={revenueBreakdownData} />
+            )}
+          </div>
+        </Card>
+
+        <Card className="p-4">
+          <div className="flex flex-col gap-4">
+            <h2 className="text-lg font-semibold">Order Status Distribution</h2>
+            {isEmptyData(orderStatusData) ? (
+              <NoDataMessage message="No order status data available" />
+            ) : (
+              <PieChartWidget title="" data={orderStatusData} />
+            )}
+          </div>
+        </Card>
+      </div>
+
+      <Card className="p-4">
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-between items-center flex-wrap gap-2">
+            <h2 className="text-lg font-semibold">Product Performance</h2>
+            <Select
+              value={filter.product_type}
+              onValueChange={(value: ProductType | "ALL") =>
+                setFilter((prev) => ({ ...prev, product_type: value }))
+              }
+            >
+              <SelectTrigger className="w-[140px] h-8 text-xs">
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="DAY">Daily</SelectItem>
-                <SelectItem value="WEEK">Weekly</SelectItem>
-                <SelectItem value="MONTH">Monthly</SelectItem>
+                <SelectItem value="ALL">All Products</SelectItem>
+                <SelectItem value="STANDARD">Standard</SelectItem>
+                <SelectItem value="LIMITED">Limited</SelectItem>
               </SelectContent>
             </Select>
           </div>
+          {isEmptyData(formatProductData()) ? (
+            <NoDataMessage message="No product performance data available" />
+          ) : (
+            <TableWidget title="" data={formatProductData()} />
+          )}
         </div>
-        {formatTrendData().length === 0 ? (
-          <div className="h-[340px] flex items-center justify-center text-gray-400 italic">
-            No data available
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card className="p-4">
+          <div className="flex flex-col gap-4">
+            <h2 className="text-lg font-semibold">Brand Performance</h2>
+            {isEmptyData(formatBrandData()) ? (
+              <NoDataMessage message="No brand performance data available" />
+            ) : (
+              <TableWidget title="" data={formatBrandData()} />
+            )}
           </div>
-        ) : (
-          <LineChartWidget title="" data={formatTrendData()} />
-        )}
-      </div>
+        </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-        <TableWidget title="Top Selling Products" data={formatProductData()} />
-        <TableWidget title="Top Brands" data={formatBrandData()} />
-      </div>
-    </div>
-  );
-};
-
-const OrderTab: React.FC<TabProps> = ({ startDate, endDate }) => {
-  const dispatch = useAppDispatch();
-  const { trend, orders, dashboard, loadingTrend, loadingOrders, loadingDashboard } = useSelector(
-    (state: RootState) => state.manageSalesAnalytic,
-  );
-  const [granularity, setGranularity] = React.useState("DAY");
-
-  useEffect(() => {
-    dispatch(salesTrend({ granularity: granularity, start_date: startDate, end_date: endDate }));
-
-    dispatch(salesOrders({ start_date: startDate, end_date: endDate }));
-
-    dispatch(salesProducts({ start_date: startDate, end_date: endDate }));
-
-    dispatch(salesBrands({ limit: 3, start_date: startDate, end_date: endDate }));
-
-    dispatch(salesDashboard({ start_date: startDate, end_date: endDate }));
-  }, [dispatch, granularity, startDate, endDate]);
-
-  const formatTrendData = () => {
-    if (!trend || !Array.isArray(trend)) return [];
-    return trend.map((item) => ({
-      month: new Date(item.date).toLocaleDateString(),
-      value: item.order_count,
-    }));
-  };
-
-  const formatRecentOrdersData = () => {
-    if (!dashboard?.recent_orders || !Array.isArray(dashboard.recent_orders)) return [];
-    return dashboard.recent_orders.map((item: any) => ({
-      order_id: item.order_id,
-      customer_name: item.customer_name,
-      order_type: item.order_type,
-      status: item.status,
-      total_amount: convertNumberToCurrency(item.total_amount),
-    }));
-  };
-
-  const formatData = {
-    standard_orders: {
-      value: orders?.standard_orders.total_count || 0,
-    },
-    limited_orders: {
-      value: orders?.limited_orders.total_count || 0,
-    },
-    pre_orders: {
-      value: orders?.pre_orders.total_count || 0,
-    },
-    total_active_orders: {
-      value:
-        orders?.standard_orders.pending_count +
-          orders?.limited_orders.pending_count +
-          orders?.pre_orders.pending_count || 0,
-    },
-    total_completed_orders: {
-      value:
-        orders?.standard_orders.completed_count +
-          orders?.limited_orders.completed_count +
-          orders?.pre_orders.received_count || 0,
-    },
-    total_canceled_orders: {
-      value:
-        orders?.standard_orders.cancelled_count +
-          orders?.limited_orders.cancelled_count +
-          orders?.pre_orders.cancelled_count || 0,
-    },
-    total_orders: {
-      value:
-        orders?.standard_orders.total_count +
-          orders?.limited_orders.total_count +
-          orders?.pre_orders.total_count || 0,
-    },
-  };
-
-  const standardOrderType = [
-    { type: "Active", value: orders?.standard_orders.pending_count || 0 },
-    { type: "Completed", value: orders?.standard_orders.completed_count || 0 },
-    { type: "Cancelled", value: orders?.standard_orders.cancelled_count || 0 },
-  ];
-
-  const limitedOrderType = [
-    {
-      type: "Active",
-      value: orders?.limited_orders.pending_count + orders?.pre_orders.pending_count || 0,
-    },
-    {
-      type: "Completed",
-      value: orders?.limited_orders.completed_count + orders?.pre_orders.received_count || 0,
-    },
-    {
-      type: "Cancelled",
-      value: orders?.limited_orders.cancelled_count + orders?.pre_orders.cancelled_count || 0,
-    },
-  ];
-
-  if (loadingTrend || loadingOrders || loadingDashboard) {
-    return (
-      <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-lg">
-        <Loader2 className="h-12 w-12 text-primary animate-spin" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="w-full flex flex-col gap-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-        <KPIWidget
-          title="Total Order"
-          data={formatData.total_orders}
-          icon={<FaBox size={20} />}
-          iconColor="text-teal-600"
-          iconBg="bg-teal-100"
-        />
-        <KPIWidget
-          title="Active Orders"
-          data={formatData.total_active_orders}
-          icon={<FaBox size={20} />}
-          iconColor="text-yellow-700"
-          iconBg="bg-yellow-100"
-        />
-        <KPIWidget
-          title="Canceled Orders"
-          data={formatData.total_canceled_orders}
-          icon={<FaBox size={20} />}
-          iconColor="text-red-700"
-          iconBg="bg-red-100"
-        />
-        <KPIWidget
-          title="Completed Orders"
-          data={formatData.total_completed_orders}
-          icon={<FaBox size={20} />}
-          iconColor="text-green-700"
-          iconBg="bg-green-100"
-        />
-      </div>
-
-      {/* Chart Section */}
-      <div className="flex flex-col gap-4 bg-white shadow rounded-xl p-4">
-        <div className="flex justify-between">
-          <h3 className="text-gray-700 text-base font-semibold">Revenue Trend</h3>
-          <div>
-            <Select value={granularity} onValueChange={setGranularity}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Select granularity" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="DAY">Daily</SelectItem>
-                <SelectItem value="WEEK">Weekly</SelectItem>
-                <SelectItem value="MONTH">Monthly</SelectItem>
-              </SelectContent>
-            </Select>
+        <Card className="p-4">
+          <div className="flex flex-col gap-4">
+            <h2 className="text-lg font-semibold">Order Trends</h2>
+            {isEmptyData(formatOrderTrendData()) ? (
+              <NoDataMessage message="No order trend data available" />
+            ) : (
+              <LineChartWidget title="" data={formatOrderTrendData()} />
+            )}
           </div>
-        </div>
-        <LineChartWidget title="" data={formatTrendData()} />
+        </Card>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-        <PieChartWidget title="Standard Orders" data={standardOrderType} />
-        <PieChartWidget title="Limited Orders" data={limitedOrderType} />
-      </div>
-      <div>
-        <TableWidget title="Recent Orders" data={formatRecentOrdersData()} />
-      </div>
+      {payments && (
+        <Card className="p-4">
+          <div className="flex flex-col gap-4">
+            <h2 className="text-lg font-semibold">Payment Summary</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <KPIWidget
+                title="Total Payments"
+                data={{
+                  value: payments.total_payments || 0,
+                  statusText: `${payments.paid_payments || 0} paid`,
+                }}
+                icon={<FaMoneyBillWave size={20} />}
+                iconColor="text-blue-600"
+                iconBg="bg-blue-100"
+              />
+              <KPIWidget
+                title="Paid Amount"
+                data={{
+                  value: payments.paid_amount || 0,
+                }}
+                icon={<FaDollarSign size={20} />}
+                iconColor="text-green-600"
+                iconBg="bg-green-100"
+              />
+              <KPIWidget
+                title="Pending Amount"
+                data={{
+                  value: payments.pending_amount || 0,
+                  statusText: `${payments.pending_payments || 0} pending`,
+                }}
+                icon={<FaDollarSign size={20} />}
+                iconColor="text-yellow-600"
+                iconBg="bg-yellow-100"
+              />
+              <KPIWidget
+                title="Overdue Amount"
+                data={{
+                  value: payments.overdue_amount || 0,
+                  statusText: `${payments.overdue_payments || 0} overdue`,
+                }}
+                icon={<FaDollarSign size={20} />}
+                iconColor="text-red-600"
+                iconBg="bg-red-100"
+              />
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {preOrders && (
+        <Card className="p-4">
+          <div className="flex flex-col gap-4">
+            <h2 className="text-lg font-semibold">Pre-Orders Summary</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <KPIWidget
+                title="Total Pre-Orders"
+                data={{
+                  value: preOrders.total_count || 0,
+                  statusText: `${preOrders.pending_count || 0} pending`,
+                }}
+                icon={<FaCartShopping size={20} />}
+                iconColor="text-purple-600"
+                iconBg="bg-purple-100"
+              />
+              <KPIWidget
+                title="Pre-Order Revenue"
+                data={{
+                  value: preOrders.total_revenue || 0,
+                }}
+                icon={<FaDollarSign size={20} />}
+                iconColor="text-indigo-600"
+                iconBg="bg-indigo-100"
+              />
+              <KPIWidget
+                title="Received Orders"
+                data={{
+                  value: preOrders.received_count || 0,
+                }}
+                icon={<FaBox size={20} />}
+                iconColor="text-green-600"
+                iconBg="bg-green-100"
+              />
+              <KPIWidget
+                title="Cancelled Orders"
+                data={{
+                  value: preOrders.cancelled_count || 0,
+                }}
+                icon={<FaBox size={20} />}
+                iconColor="text-red-600"
+                iconBg="bg-red-100"
+              />
+            </div>
+          </div>
+        </Card>
+      )}
     </div>
   );
 };

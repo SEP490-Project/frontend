@@ -49,7 +49,7 @@ function KPIWidget({
 
   return (
     <Card className="rounded-2xl shadow-sm" id={id}>
-      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0 gap-2">
         <CardTitle className="text-base font-medium text-gray-500">{title}</CardTitle>
         {icon && (
           <div

@@ -717,16 +717,6 @@ export const ContractPDF = ({ data }: { data: any }) => {
                       <Text style={styles.bold}>{formatMoney(item.amount)}</Text> ({item.percent}%)
                       due by <Text style={styles.bold}>{formatDate(item.due_date)}</Text>
                     </Text>
-                    {item.note && (
-                      <Text
-                        style={[
-                          styles.textBlock,
-                          { marginLeft: 20, fontStyle: "italic", color: "#666", fontSize: 9 },
-                        ]}
-                      >
-                        Note: {item.note}
-                      </Text>
-                    )}
                   </View>
                 ))}
               </View>

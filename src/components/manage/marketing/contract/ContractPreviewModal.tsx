@@ -734,9 +734,6 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
                       {item.percent}%) due by{" "}
                       <span className="font-semibold">{formatDate(item.due_date)}</span>{" "}
                     </p>
-                    {item.note && (
-                      <p className="ml-3 italic text-gray-500 text-xs mt-1">Note: {item.note}</p>
-                    )}
                   </div>
                 ))}
               </div>

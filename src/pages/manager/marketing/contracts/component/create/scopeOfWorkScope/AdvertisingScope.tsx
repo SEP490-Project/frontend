@@ -45,8 +45,6 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
     [deliverables, onUpdateScopeOfWork, scope],
   );
 
-  console.log("AdvertisingScope render:", { formData, deliverables });
-
   const newAdvertisingItem = (): AdvertisingItem => ({
     id: 0,
     name: "",
@@ -369,7 +367,6 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                       updated[i] = {
                         ...updated[i],
                         material_url: currentUrls.filter(
-                          // snake_case
                           (url: string) => !removedUrls.includes(url),
                         ),
                       };

@@ -25,11 +25,8 @@ import { useContract } from "@/libs/hooks/useContract";
 import { generateMilestonesFromContract } from "../../utils/milestoneGenerator";
 
 interface TaskDescriptionJson {
-  // Common fields
   kpi_goals?: { metric: string; target: string }[] | null;
   material_urls?: string[];
-
-  // Affiliate & Advertising specific
   advertised_item_id?: number;
   product_name?: string;
   platform?: string;
@@ -39,14 +36,12 @@ interface TaskDescriptionJson {
   is_affiliate_content?: boolean;
   tracking_link?: string;
 
-  // Co-Production specific
   is_product_creation_task?: boolean;
   product_id?: number;
   product_description?: string;
   subtasks?: string[];
   materials?: any;
 
-  // Brand Ambassador specific
   event_id?: number;
   event_name?: string;
   event_date?: string;
@@ -199,9 +194,6 @@ const CreateTask: React.FC<CreateTaskProps> = ({
     milestones.length,
     setMilestones,
   ]);
-
-  console.log("contract selected", selectedContract);
-  console.log("contract detail", contractDetail);
 
   const addMilestone = () => {
     setMilestones((prev) => [

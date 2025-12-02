@@ -146,11 +146,6 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({ type, data, deposit }) 
                     <p className="text-sm text-gray-500">
                       Due: {new Date(s.due_date).toLocaleDateString()}
                     </p>
-                    {s.note && (
-                      <p className="text-sm text-gray-600 italic mt-1 bg-gray-50 px-2 py-1 rounded">
-                        Note: {s.note}
-                      </p>
-                    )}
                   </div>
                   <div className="text-right ml-4">
                     <p className="text-lg font-bold text-blue-600">{formatCurrency(s.amount)}</p>

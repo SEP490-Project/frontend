@@ -77,3 +77,16 @@ export const salesTrend = createAsyncThunk("/trend", async (req: any, { rejectWi
     return rejectWithValue(err.response?.data?.message || "Thất bại");
   }
 });
+
+export const salesDashboard = createAsyncThunk(
+  "/dashboard",
+  async (req: any, { rejectWithValue }) => {
+    try {
+      const response = await manageSalesAnalytic.getSalesDashboard(req);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Thất bại");
+    }
+  },
+);

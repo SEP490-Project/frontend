@@ -47,7 +47,7 @@ function PieChartWidget({ title, data, mode = "count" }: Props) {
   if (!Array.isArray(data) || !data.length || !data[0]?.type || typeof data[0]?.value !== "number")
     return null;
   return (
-    <div className="p-6 h-[340px] flex flex-col">
+    <div className="p-6 h-[340px] flex flex-col bg-white rounded-lg shadow">
       <h3 className="text-gray-700 text-base font-semibold mb-3">{title}</h3>
       <div className="flex-1">
         <ResponsiveContainer debounce={250} width="100%" height="100%">

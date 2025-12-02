@@ -1,6 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 import {
   salesBrands,
+  salesDashboard,
   salesOrders,
   salesPayment,
   salesPreOrder,
@@ -17,6 +18,7 @@ interface stateType {
   loadingProducts: boolean;
   loadingRevenue: boolean;
   loadingTrend: boolean;
+  loadingDashboard: boolean;
   brands: any;
   orders: any;
   payments: any;
@@ -24,6 +26,7 @@ interface stateType {
   products: any;
   revenue: any;
   trend: any;
+  dashboard: any;
 }
 
 const initialState: stateType = {
@@ -34,6 +37,7 @@ const initialState: stateType = {
   loadingProducts: false,
   loadingRevenue: false,
   loadingTrend: false,
+  loadingDashboard: false,
   brands: null,
   orders: null,
   payments: null,
@@ -41,6 +45,7 @@ const initialState: stateType = {
   products: null,
   revenue: null,
   trend: null,
+  dashboard: null,
 };
 
 export const manageSalesAnalyticSlice = createSlice({
@@ -124,6 +129,16 @@ export const manageSalesAnalyticSlice = createSlice({
       })
       .addCase(salesTrend.rejected, (state) => {
         state.loadingTrend = false;
+      })
+      .addCase(salesDashboard.pending, (state) => {
+        state.loadingDashboard = true;
+      })
+      .addCase(salesDashboard.fulfilled, (state, action) => {
+        state.loadingDashboard = false;
+        state.dashboard = action.payload.data;
+      })
+      .addCase(salesDashboard.rejected, (state) => {
+        state.loadingDashboard = false;
       });
   },
 });

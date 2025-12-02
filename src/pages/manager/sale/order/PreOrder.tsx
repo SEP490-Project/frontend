@@ -40,6 +40,8 @@ import { SquarePen } from "lucide-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import type { PreOrderData } from "@/libs/types/pre-order";
+import { RefundRequestPreOrder } from "@/components/manage/sale/pre-order/RefundRequestPreOrder";
+import { CompensateRequestPreOrder } from "@/components/manage/sale/pre-order/CompensateRequestPreOrder";
 
 const PreOrder: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -59,6 +61,8 @@ const PreOrder: React.FC = () => {
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [isCensorDialogOpen, setIsCensorDialogOpen] = useState(false);
   const [isChangeStatusDialogOpen, setIsChangeStatusDialogOpen] = useState(false);
+  const [isRefundDialogOpen, setIsRefundDialogOpen] = useState(false);
+  const [isCompensateDialogOpen, setIsCompensateDialogOpen] = useState(false);
   const [censorAction, setCensorAction] = useState<"CONFIRM" | "CANCEL">("CONFIRM");
   const [censorReason, setCensorReason] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
@@ -109,6 +113,10 @@ const PreOrder: React.FC = () => {
       in_transit: "bg-orange-100 text-orange-800 border border-orange-200 hover:bg-orange-200",
       delivered: "bg-green-200 text-green-900 border border-green-300 hover:bg-green-300",
       received: "bg-green-100 text-green-800 border border-green-200 hover:bg-green-200",
+      refund_request: "bg-amber-100 text-amber-800 border border-amber-200 hover:bg-amber-200",
+      compensate_request: "bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200",
+      compensated: "bg-green-100 text-green-800 border border-green-200 hover:bg-green-200",
+      refunded: "bg-green-100 text-green-800 border border-green-200 hover:bg-green-200",
     };
     return (
       statusMap[status.toLowerCase()] ||
@@ -391,6 +399,34 @@ const PreOrder: React.FC = () => {
                             <SquarePen className="text-yellow-600" />
                           </Button>
                         )}
+                        {preOrder.status === "REFUND_REQUEST" && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="hover:bg-amber-100"
+                            title="Process Refund"
+                            onClick={() => {
+                              setSelectedPreOrder(preOrder);
+                              setIsRefundDialogOpen(true);
+                            }}
+                          >
+                            <SquarePen className="text-amber-600" />
+                          </Button>
+                        )}
+                        {preOrder.status === "COMPENSATE_REQUEST" && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="hover:bg-blue-100"
+                            title="Process Compensation"
+                            onClick={() => {
+                              setSelectedPreOrder(preOrder);
+                              setIsCompensateDialogOpen(true);
+                            }}
+                          >
+                            <SquarePen className="text-blue-600" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -473,7 +509,9 @@ const PreOrder: React.FC = () => {
 
                   {preOrder.status !== "PAID" &&
                     preOrder.status !== "CANCELLED" &&
-                    preOrder.status !== "RECEIVED" && (
+                    preOrder.status !== "RECEIVED" &&
+                    preOrder.status !== "REFUND_REQUEST" &&
+                    preOrder.status !== "COMPENSATE_REQUEST" && (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -484,6 +522,36 @@ const PreOrder: React.FC = () => {
                         Change Status
                       </Button>
                     )}
+
+                  {preOrder.status === "REFUND_REQUEST" && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="flex-1 hover:bg-amber-100"
+                      onClick={() => {
+                        setSelectedPreOrder(preOrder);
+                        setIsRefundDialogOpen(true);
+                      }}
+                    >
+                      <SquarePen className="text-amber-600 mr-2" />
+                      Process Refund
+                    </Button>
+                  )}
+
+                  {preOrder.status === "COMPENSATE_REQUEST" && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="flex-1 hover:bg-blue-100"
+                      onClick={() => {
+                        setSelectedPreOrder(preOrder);
+                        setIsCompensateDialogOpen(true);
+                      }}
+                    >
+                      <SquarePen className="text-blue-600 mr-2" />
+                      Process Compensation
+                    </Button>
+                  )}
                 </div>
               </div>
             ))
@@ -679,6 +747,48 @@ const PreOrder: React.FC = () => {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Refund Request Dialog */}
+      <Dialog open={isRefundDialogOpen} onOpenChange={setIsRefundDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Process Refund Request</DialogTitle>
+            <DialogDescription>
+              Review and approve the refund request for this pre-order.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedPreOrder && (
+            <RefundRequestPreOrder
+              preOrder={selectedPreOrder}
+              onSuccess={() => {
+                setIsRefundDialogOpen(false);
+                dispatch(getPreOrdersForSaleStaffThunk(params));
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Compensation Request Dialog */}
+      <Dialog open={isCompensateDialogOpen} onOpenChange={setIsCompensateDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Process Compensation Request</DialogTitle>
+            <DialogDescription>
+              Review and approve the compensation request for this pre-order.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedPreOrder && (
+            <CompensateRequestPreOrder
+              preOrder={selectedPreOrder}
+              onSuccess={() => {
+                setIsCompensateDialogOpen(false);
+                dispatch(getPreOrdersForSaleStaffThunk(params));
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>

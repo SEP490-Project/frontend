@@ -7,11 +7,14 @@ import {
   getSelfDeliveryOrdersThunk,
   markSelfDeliveryOrderAsDeliveredThunk,
   markSelfDeliveryOrderAsInTransitThunk,
-  censorAnPreOrderThunk,
+  approvePreOrderThunk,
   getPreOrdersForSaleStaffThunk,
   approveRefundAnOrderThunk,
   compensateAnOrderThunk,
-  compensateAnPreOrderThunk,
+  compensateAPreOrderThunk,
+  refundAPreOrderThunk,
+  deliveredSelfDeliveryPreOrderThunk,
+  receivedSelfPickupPreOrderThunk,
 } from "./thunk";
 import type { OrderResponse } from "@/libs/types/order";
 import type { PreOrderResponse } from "@/libs/types/pre-order";
@@ -118,14 +121,14 @@ const orderManagerSlice = createSlice({
         state.loading = false;
         state.errors = action.error;
       })
-      .addCase(censorAnPreOrderThunk.pending, (state) => {
+      .addCase(approvePreOrderThunk.pending, (state) => {
         state.loading = true;
         state.errors = null;
       })
-      .addCase(censorAnPreOrderThunk.fulfilled, (state) => {
+      .addCase(approvePreOrderThunk.fulfilled, (state) => {
         state.loading = false;
       })
-      .addCase(censorAnPreOrderThunk.rejected, (state, action) => {
+      .addCase(approvePreOrderThunk.rejected, (state, action) => {
         state.loading = false;
         state.errors = action.error;
       })
@@ -151,14 +154,47 @@ const orderManagerSlice = createSlice({
         state.loading = false;
         state.errors = action.error;
       })
-      .addCase(compensateAnPreOrderThunk.pending, (state) => {
+      .addCase(compensateAPreOrderThunk.pending, (state) => {
         state.loading = true;
         state.errors = null;
       })
-      .addCase(compensateAnPreOrderThunk.fulfilled, (state) => {
+      .addCase(compensateAPreOrderThunk.fulfilled, (state) => {
         state.loading = false;
       })
-      .addCase(compensateAnPreOrderThunk.rejected, (state, action) => {
+      .addCase(compensateAPreOrderThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.errors = action.error;
+      })
+      .addCase(refundAPreOrderThunk.pending, (state) => {
+        state.loading = true;
+        state.errors = null;
+      })
+      .addCase(refundAPreOrderThunk.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(refundAPreOrderThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.errors = action.error;
+      })
+      .addCase(receivedSelfPickupPreOrderThunk.pending, (state) => {
+        state.loading = true;
+        state.errors = null;
+      })
+      .addCase(receivedSelfPickupPreOrderThunk.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(receivedSelfPickupPreOrderThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.errors = action.error;
+      })
+      .addCase(deliveredSelfDeliveryPreOrderThunk.pending, (state) => {
+        state.loading = true;
+        state.errors = null;
+      })
+      .addCase(deliveredSelfDeliveryPreOrderThunk.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(deliveredSelfDeliveryPreOrderThunk.rejected, (state, action) => {
         state.loading = false;
         state.errors = action.error;
       });

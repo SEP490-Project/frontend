@@ -112,11 +112,26 @@ const PreOrderDetail: React.FC<PreOrderDetailProps> = ({ preOrder }) => {
               <span className="text-sm text-gray-500">Phone Number:</span>
               <p className="text-sm font-medium text-gray-900">{preOrder.phone_number}</p>
             </div>
-            <div>
-              <span className="text-sm text-gray-500">User ID:</span>
-              <p className="text-sm font-mono text-gray-900">{preOrder.user_id}</p>
-            </div>
           </div>
+          <Separator />
+          {preOrder.user_bank_name && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <span className="text-sm text-gray-500">Bank Name:</span>
+                <p className="text-sm font-medium text-gray-900">{preOrder.user_bank_name}</p>
+              </div>
+              <div>
+                <span className="text-sm text-gray-500">Account Holder:</span>
+                <p className="text-sm font-medium text-gray-900">
+                  {preOrder.user_bank_account_holder}
+                </p>
+              </div>
+              <div>
+                <span className="text-sm text-gray-500">Account Number:</span>
+                <p className="text-sm font-mono text-gray-900">{preOrder.user_bank_account}</p>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -162,6 +177,21 @@ const PreOrderDetail: React.FC<PreOrderDetailProps> = ({ preOrder }) => {
                   <span className="text-sm text-gray-500">Province:</span>
                   <p className="text-sm font-medium text-gray-900">{preOrder.province_name}</p>
                 </div>
+              </div>
+            </div>
+          )}
+          {preOrder.confirmation_image && (
+            <div>
+              <span className="text-sm text-gray-500">Proof:</span>
+              <div className="mt-2 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-2">
+                <img
+                  src={preOrder?.confirmation_image}
+                  alt="Customer pickup proof"
+                  className="w-full max-w-md rounded-md"
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  Photo taken when customer picked up the order
+                </p>
               </div>
             </div>
           )}

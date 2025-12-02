@@ -43,26 +43,4 @@ const updateProductStateThunk = createAsyncThunk(
   },
 );
 
-const updatePreOrderStateThunk = createAsyncThunk(
-  "preorders/updatePreOrderState",
-  async (
-    {
-      id,
-      files,
-    }: {
-      id: string;
-      files: FormData;
-    },
-    { rejectWithValue },
-  ) => {
-    try {
-      const response = await manageState.updatePreOrderState(id, files);
-      return response.data;
-    } catch (error) {
-      const err = error as AxiosError<{ message: string }>;
-      return rejectWithValue(err.response?.data.message || "Failed to update pre-order state");
-    }
-  },
-);
-
-export { updateTaskStateThunk, updateProductStateThunk, updatePreOrderStateThunk };
+export { updateTaskStateThunk, updateProductStateThunk };

@@ -52,10 +52,28 @@ export const manageOrder = {
   // Pre-Order Management
   getPreOrdersForSaleStaff: (query: OrderRequestQuery) =>
     api.get("/preorders/staff", { params: query }),
-  censorAPreOrder: (id: string, action: "CONFIRM" | "CANCEL", reason: any) =>
-    api.post(`/preorders/staff/${id}/censorship?action=${action}`, reason),
-  compensateAPreOrder: (id: string, file: FormData) =>
-    api.post(`/preorders/staff/${id}/compensate`, file, {
+  approvePreOrder: (preOrderId: string, action: "CONFIRM" | "CANCEL") =>
+    api.post(`/preorders/staff/${preOrderId}/approve?action=${action}`),
+  receivedSelfPickupPreOrder: (preOrderId: string, file: FormData) =>
+    api.post(`/preorders/staff/${preOrderId}/received`, file, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }),
+  deliveredSelfDeliveryPreOrder: (preOrderId: string, file: FormData) =>
+    api.post(`/preorders/staff/self-delivering/${preOrderId}/delivered`, file, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }),
+  compensateAPreOrder: (preOrderId: string, file: FormData) =>
+    api.post(`/preorders/staff/${preOrderId}/compensation`, file, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }),
+  refundAPreOrder: (preOrderId: string, file: FormData) =>
+    api.post(`/preorders/staff/refund/${preOrderId}/approve`, file, {
       headers: {
         "Content-Type": "multipart/form-data",
       },

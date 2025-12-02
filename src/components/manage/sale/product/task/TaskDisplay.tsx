@@ -113,7 +113,11 @@ export const TaskList = () => {
   const [onOpenTaskDetail, setOnOpenTaskDetail] = useState(false);
 
   const filterIncompleteTasks = (tasks: Task[]) => {
-    return tasks.filter((task) => ["todo", "in_progress"].includes(task.status.toLowerCase()));
+    return tasks.filter(
+      (task) =>
+        ["todo", "in_progress"].includes(task.status.toLowerCase()) &&
+        !["submitted", "actived"].includes(task.child_status?.toLowerCase() || ""),
+    );
   };
 
   useEffect(() => {
@@ -129,7 +133,7 @@ export const TaskList = () => {
     );
   }
 
-  if (!tasks || tasks.length === 0) {
+  if (!filterIncompleteTasks(tasks) || filterIncompleteTasks(tasks).length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <div className="rounded-full bg-muted p-3 mb-4">

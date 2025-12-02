@@ -110,29 +110,6 @@ const getPreOrdersForSaleStaffThunk = createAsyncThunk(
   },
 );
 
-const censorAnPreOrderThunk = createAsyncThunk(
-  "orderManager/censorAnPreOrder",
-  async (
-    {
-      id,
-      action,
-      reason,
-    }: {
-      id: string;
-      action: "CONFIRM" | "CANCEL";
-      reason: any;
-    },
-    { rejectWithValue },
-  ) => {
-    try {
-      const response = await manageOrder.censorAPreOrder(id, action, reason);
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error);
-    }
-  },
-);
-
 const approveRefundAnOrderThunk = createAsyncThunk(
   "orderManager/approveRefundAnOrder",
   async ({ orderId, file }: { orderId: string; file: FormData }, { rejectWithValue }) => {
@@ -157,11 +134,66 @@ const compensateAnOrderThunk = createAsyncThunk(
   },
 );
 
-const compensateAnPreOrderThunk = createAsyncThunk(
-  "orderManager/compensateAnPreOrder",
+const approvePreOrderThunk = createAsyncThunk(
+  "orderManager/approvePreOrder",
+  async (
+    {
+      id,
+    }: {
+      id: string;
+    },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await manageOrder.approvePreOrder(id, "CONFIRM");
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
+const receivedSelfPickupPreOrderThunk = createAsyncThunk(
+  "orderManager/receivedSelfPickupPreOrder",
+  async ({ id, file }: { id: string; file: FormData }, { rejectWithValue }) => {
+    try {
+      const response = await manageOrder.receivedSelfPickupPreOrder(id, file);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
+const deliveredSelfDeliveryPreOrderThunk = createAsyncThunk(
+  "orderManager/deliveredSelfDeliveryPreOrder",
+  async ({ id, file }: { id: string; file: FormData }, { rejectWithValue }) => {
+    try {
+      const response = await manageOrder.deliveredSelfDeliveryPreOrder(id, file);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
+const compensateAPreOrderThunk = createAsyncThunk(
+  "orderManager/compensateAPreOrder",
   async ({ id, file }: { id: string; file: FormData }, { rejectWithValue }) => {
     try {
       const response = await manageOrder.compensateAPreOrder(id, file);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
+const refundAPreOrderThunk = createAsyncThunk(
+  "orderManager/refundAPreOrder",
+  async ({ id, file }: { id: string; file: FormData }, { rejectWithValue }) => {
+    try {
+      const response = await manageOrder.refundAPreOrder(id, file);
       return response.data;
     } catch (error) {
       return rejectWithValue(error);
@@ -177,9 +209,14 @@ export {
   getSelfDeliveryOrdersThunk,
   markSelfDeliveryOrderAsDeliveredThunk,
   markSelfDeliveryOrderAsInTransitThunk,
-  getPreOrdersForSaleStaffThunk,
-  censorAnPreOrderThunk,
   approveRefundAnOrderThunk,
   compensateAnOrderThunk,
-  compensateAnPreOrderThunk,
+
+  // Pre-Order Thunks
+  getPreOrdersForSaleStaffThunk,
+  approvePreOrderThunk,
+  receivedSelfPickupPreOrderThunk,
+  deliveredSelfDeliveryPreOrderThunk,
+  refundAPreOrderThunk,
+  compensateAPreOrderThunk,
 };

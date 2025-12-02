@@ -41,10 +41,14 @@ export interface PreOrderData {
   width: number;
   is_self_picked_up: boolean;
   status: string;
+  user_bank_account?: string;
+  user_bank_name?: string;
+  user_bank_account_holder?: string;
   created_at: string;
   updated_at: string;
   action_notes?: ActionNote[];
   PaymentTx: PaymentTx;
+  confirmation_image: string;
 }
 
 export interface ActionNote {

@@ -186,16 +186,24 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
 
   // Memoized save button disabled state
   const isSaveDisabled = useMemo(() => {
-    return (
+    // Check if content is empty or just whitespace/empty HTML tags
+    const isContentEmpty =
       !content ||
+      !content.html ||
+      content.html.trim() === "" ||
+      content.html === "<p></p>" ||
+      content.html.replace(/<[^>]*>/g, "").trim() === "";
+
+    return (
+      isContentEmpty ||
       !localTitle.trim() ||
       localTitle.length < 3 ||
       localTitle.length > 200 ||
+      !selectedTags.length ||
       channelLoading ||
       !selectedChannel
     );
-  }, [content, localTitle, channelLoading, selectedChannel]);
-
+  }, [content, localTitle, selectedTags.length, channelLoading, selectedChannel]);
   // Memoized preview toggle handler
   const handlePreviewToggle = useCallback(() => {
     setShowPreview((prev) => !prev);
@@ -364,8 +372,6 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
     },
     [content],
   );
-
-  const defaultContent = "Edit your blog content here...";
 
   return (
     <div className="space-y-6">
@@ -564,8 +570,8 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
                         ? editingContent.body
                         : typeof editingContent.body === "object"
                           ? editingContent.body
-                          : defaultContent
-                      : defaultContent)
+                          : ""
+                      : "")
               }
               onChange={handleContentChange}
             />

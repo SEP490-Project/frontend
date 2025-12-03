@@ -1,7 +1,7 @@
 import React from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import * as yup from "yup";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -16,7 +16,7 @@ interface RegisterRequest {
 }
 
 interface RegisterFormProps {
-  onSubmit?: (data: Omit<RegisterRequest, "confirmPassword">) => void;
+  onSubmit?: (data: Omit<RegisterRequest, "confirmPassword">) => void | Promise<void>;
 }
 
 const RegisterSchema = yup.object().shape({
@@ -31,25 +31,28 @@ const RegisterSchema = yup.object().shape({
   confirmPassword: yup
     .string()
     .oneOf([yup.ref("password")], "Passwords must match")
-    .required("Confirm password is required")
-    .trim(),
+    .required("Confirm password is required"),
 });
 
 export const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit }) => {
   const navigate = useNavigate();
+
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    control,
+    formState: { errors, isSubmitting },
   } = useForm<RegisterRequest>({
     resolver: yupResolver(RegisterSchema),
+    mode: "onSubmit",
   });
 
-  const handleFormSubmit = (data: RegisterRequest) => {
-    if (onSubmit) {
-      const submitData: Omit<RegisterRequest, "confirmPassword"> = data;
-      onSubmit(submitData);
-    }
+  const handleFormSubmit = async (data: RegisterRequest) => {
+    if (!onSubmit) return;
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { confirmPassword: _confirmPassword, ...submitData } = data;
+    await onSubmit(submitData);
   };
 
   return (
@@ -60,6 +63,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit }) => {
           Create your account by filling in the details below.
         </p>
       </div>
+
       <form onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col gap-4 w-full">
         <div className="space-y-4">
           <div className="w-full">
@@ -90,10 +94,12 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit }) => {
 
           <div className="w-full">
             <h5 className="pb-1">Password</h5>
-            <PasswordInput
-              {...register("password")}
-              placeholder="Enter your password"
-              className="w-full"
+            <Controller
+              name="password"
+              control={control}
+              render={({ field }) => (
+                <PasswordInput {...field} placeholder="Enter your password" className="w-full" />
+              )}
             />
             {errors.password && (
               <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
@@ -102,10 +108,12 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit }) => {
 
           <div className="w-full">
             <h5 className="pb-1">Confirm Password</h5>
-            <PasswordInput
-              {...register("confirmPassword")}
-              placeholder="Confirm your password"
-              className="w-full"
+            <Controller
+              name="confirmPassword"
+              control={control}
+              render={({ field }) => (
+                <PasswordInput {...field} placeholder="Confirm your password" className="w-full" />
+              )}
             />
             {errors.confirmPassword && (
               <p className="text-red-500 text-sm mt-1">{errors.confirmPassword.message}</p>
@@ -113,8 +121,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit }) => {
           </div>
         </div>
 
-        <Button type="submit" className="mt-6 text-white" size="lg">
-          Sign Up
+        <Button type="submit" className="mt-6 text-white" size="lg" disabled={isSubmitting}>
+          {isSubmitting ? "Signing Up..." : "Sign Up"}
         </Button>
       </form>
 

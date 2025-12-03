@@ -225,28 +225,41 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
 
   const handlePublish = async (content: Content) => {
     try {
-      const publishResponse = await publishExistingContent(content.id);
+      await publishExistingContent(content.id).unwrap();
+      if (content.task_id) {
+        try {
+          const maxAttempts = 10;
+          const pollInterval = 1500;
+          let isPosted = false;
 
-      // Check if publishing was successful
-      if (publishResponse.meta.requestStatus === "fulfilled") {
-        // Update task state to DONE if content has a task_id
-        if (content.task_id) {
-          try {
+          for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            await new Promise((resolve) => setTimeout(resolve, pollInterval));
+            const response = await manageContent.contentDetail(content.id);
+            const latestContent = response.data.data;
+
+            if (latestContent?.status === "POSTED") {
+              isPosted = true;
+              break;
+            }
+          }
+
+          if (isPosted) {
             await dispatch(
               updateTaskState({
                 taskId: content.task_id,
                 state: "DONE",
               }),
             ).unwrap();
-          } catch (taskError) {
-            console.warn("Failed to update task state:", taskError);
-            // Don't fail the entire operation if task update fails
+          } else {
+            console.warn("Content was not confirmed as posted after polling, skipping task update");
           }
+        } catch (taskError) {
+          console.warn("Failed to update task state:", taskError);
         }
-
-        fetchContents(filters);
-        toast.success(`Content "${content.title}" has been published successfully.`);
       }
+
+      fetchContents(filters);
+      toast.success(`Content "${content.title}" has been published successfully.`);
     } catch (error) {
       console.error("Error publishing content:", error);
       toast.error(error instanceof Error ? error.message : "Failed to publish content");

@@ -11,7 +11,6 @@ import {
   FaArrowRightFromBracket,
   FaCamera,
 } from "react-icons/fa6";
-import PWANavigation from "@/components/pwa/PWANavigation";
 import { type RootState } from "@/libs/stores";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
@@ -20,7 +19,6 @@ const SalesProfile: React.FC = () => {
   const user = useSelector((state: RootState) => state?.manageAuthen?.user);
 
   const handleLogout = () => {
-    // TODO: Implement logout functionality
     toast.success("Logged out successfully");
   };
 
@@ -33,8 +31,7 @@ const SalesProfile: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
-      {/* Header */}
+    <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b sticky top-0 z-40">
         <div className="p-4">
           <h1 className="text-xl font-semibold text-gray-900">Profile</h1>
@@ -42,7 +39,6 @@ const SalesProfile: React.FC = () => {
       </div>
 
       <div className="p-4 space-y-4">
-        {/* Profile Card */}
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center space-x-4">
@@ -80,7 +76,6 @@ const SalesProfile: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Contact Information */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
@@ -104,7 +99,6 @@ const SalesProfile: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Quick Actions */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
@@ -138,7 +132,6 @@ const SalesProfile: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* App Information */}
         <Card>
           <CardContent className="p-4 text-center text-sm text-gray-500">
             <p>Sales PWA v1.0.0</p>
@@ -146,9 +139,6 @@ const SalesProfile: React.FC = () => {
           </CardContent>
         </Card>
       </div>
-
-      {/* PWA Navigation */}
-      <PWANavigation className="fixed bottom-0 left-0 right-0 z-50" />
     </div>
   );
 };

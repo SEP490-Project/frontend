@@ -63,7 +63,6 @@ const MobileRefundRequest: React.FC<MobileRefundRequestProps> = ({
     try {
       const formData = new FormData();
 
-      // Add proof files
       proofFiles.forEach((file) => {
         formData.append("file", file);
       });
@@ -83,7 +82,6 @@ const MobileRefundRequest: React.FC<MobileRefundRequestProps> = ({
       toast.success(`Refund request ${isApproved ? "approved" : "rejected"} successfully!`);
       onSuccess();
     } catch (error: any) {
-      console.error("Refund error:", error);
       toast.error("Failed to process refund request", {
         description: error?.message || "Please try again.",
       });
@@ -94,7 +92,6 @@ const MobileRefundRequest: React.FC<MobileRefundRequestProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Header */}
       <Card className="border-blue-200 bg-blue-50">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -109,7 +106,6 @@ const MobileRefundRequest: React.FC<MobileRefundRequestProps> = ({
         </CardContent>
       </Card>
 
-      {/* Order Details */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Order Information</CardTitle>
@@ -144,7 +140,6 @@ const MobileRefundRequest: React.FC<MobileRefundRequestProps> = ({
         </CardContent>
       </Card>
 
-      {/* Proof Upload */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -165,16 +160,14 @@ const MobileRefundRequest: React.FC<MobileRefundRequestProps> = ({
               multiple={true}
               maxFiles={3}
               maxSize={5}
-              allowedTypes={["jpg", "jpeg", "png", "webp", "mp4", "webm", "mov"]}
+              allowedTypes={["jpg", "jpeg", "png", "webp"]}
               title="Upload Proof"
               onFilesChange={handleFilesCapture}
-              showCamera={true}
             />
           </div>
         </CardContent>
       </Card>
 
-      {/* Reason/Notes */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">
@@ -195,7 +188,6 @@ const MobileRefundRequest: React.FC<MobileRefundRequestProps> = ({
         </CardContent>
       </Card>
 
-      {/* Action Buttons */}
       <div className="grid grid-cols-2 gap-3 pt-2">
         <Button
           type="button"

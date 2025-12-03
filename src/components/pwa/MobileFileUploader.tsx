@@ -14,7 +14,6 @@ import {
 } from "react-icons/fa6";
 import { useAppDispatch } from "@/libs/stores";
 import { uploadFilesThunk } from "@/libs/stores/fileManager/thunk";
-import PWACamera from "./PWACamera";
 
 interface FileItem {
   id: string;
@@ -38,7 +37,6 @@ interface MobileFileUploaderProps {
   disabled?: boolean;
   allowedTypes?: string[];
   title?: string;
-  showCamera?: boolean;
 }
 
 const MobileFileUploader: React.FC<MobileFileUploaderProps> = ({
@@ -53,7 +51,6 @@ const MobileFileUploader: React.FC<MobileFileUploaderProps> = ({
   disabled = false,
   allowedTypes = [],
   title = "Upload Files",
-  showCamera = true,
 }) => {
   const dispatch = useAppDispatch();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -135,7 +132,6 @@ const MobileFileUploader: React.FC<MobileFileUploaderProps> = ({
       setFiles((prev) => [...prev, ...validFiles]);
       onFilesChange?.([...files.map((f) => f.file), ...validFiles.map((f) => f.file)]);
 
-      // Start upload
       uploadFiles(validFiles);
     },
     [files, maxFiles, validateFile, onFilesChange],
@@ -150,7 +146,6 @@ const MobileFileUploader: React.FC<MobileFileUploaderProps> = ({
       const allFiles = filesToUpload.map((f) => f.file);
       const result = await dispatch(uploadFilesThunk({ userId, files: allFiles })).unwrap();
 
-      // Extract URLs
       const urls: string[] = [];
       if (Array.isArray(result)) {
         result.forEach((r) => {
@@ -165,7 +160,6 @@ const MobileFileUploader: React.FC<MobileFileUploaderProps> = ({
         });
       }
 
-      // Update file status
       setFiles((prev) =>
         prev.map((f) =>
           filesToUpload.some((ft) => ft.id === f.id)
@@ -175,11 +169,9 @@ const MobileFileUploader: React.FC<MobileFileUploaderProps> = ({
       );
 
       onUploadComplete?.(urls);
-    } catch (error: any) {
-      console.error("Upload error:", error);
+    } catch {
       setError("Upload failed. Please try again.");
 
-      // Mark files as error
       setFiles((prev) =>
         prev.map((f) =>
           filesToUpload.some((ft) => ft.id === f.id) ? { ...f, status: "error" as const } : f,
@@ -210,16 +202,11 @@ const MobileFileUploader: React.FC<MobileFileUploaderProps> = ({
     if (selectedFiles && selectedFiles.length > 0) {
       processFiles(Array.from(selectedFiles));
     }
-    event.target.value = ""; // Reset input
-  };
-
-  const handleCameraCapture = (capturedFiles: File[]) => {
-    processFiles(capturedFiles);
+    event.target.value = "";
   };
 
   return (
     <div className={`space-y-4 ${className}`}>
-      {/* Upload Controls */}
       <Card className="border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors">
         <CardContent className="p-4 text-center space-y-4">
           <div className="space-y-2">
@@ -230,34 +217,17 @@ const MobileFileUploader: React.FC<MobileFileUploaderProps> = ({
             </p>
           </div>
 
-          {/* Action Buttons */}
-          <div className="grid grid-cols-2 gap-2">
-            {/* Gallery Button */}
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={disabled || files.length >= maxFiles}
-            >
-              <FaImage className="w-4 h-4 mr-2" />
-              Gallery
-            </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={disabled || files.length >= maxFiles}
+          >
+            <FaImage className="w-4 h-4 mr-2" />
+            Choose Images
+          </Button>
 
-            {/* Camera Button */}
-            {showCamera && (
-              <PWACamera
-                userId={userId}
-                onFilesCapture={handleCameraCapture}
-                onUploadComplete={onUploadComplete}
-                maxFiles={maxFiles - files.length}
-                className="w-full"
-                disabled={disabled || files.length >= maxFiles}
-              />
-            )}
-          </div>
-
-          {/* Hidden file input */}
           <input
             ref={fileInputRef}
             type="file"
@@ -269,7 +239,6 @@ const MobileFileUploader: React.FC<MobileFileUploaderProps> = ({
         </CardContent>
       </Card>
 
-      {/* Error Message */}
       {error && (
         <Card className="border-red-200 bg-red-50">
           <CardContent className="p-3 flex items-center gap-2 text-sm text-red-600">
@@ -279,7 +248,6 @@ const MobileFileUploader: React.FC<MobileFileUploaderProps> = ({
         </Card>
       )}
 
-      {/* File List */}
       {files.length > 0 && (
         <div className="space-y-2">
           <h4 className="text-sm font-medium text-gray-700">
@@ -291,7 +259,6 @@ const MobileFileUploader: React.FC<MobileFileUploaderProps> = ({
               <Card key={file.id} className="border">
                 <CardContent className="p-3">
                   <div className="flex items-start gap-3">
-                    {/* File Preview/Icon */}
                     <div className="flex-shrink-0">
                       {file.preview ? (
                         <img
@@ -306,7 +273,6 @@ const MobileFileUploader: React.FC<MobileFileUploaderProps> = ({
                       )}
                     </div>
 
-                    {/* File Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
@@ -330,13 +296,11 @@ const MobileFileUploader: React.FC<MobileFileUploaderProps> = ({
 
                       <p className="text-xs text-gray-500 mt-1">{formatFileSize(file.size)}</p>
 
-                      {/* Progress Bar */}
                       {file.status === "uploading" && (
                         <Progress value={file.progress} className="h-1 mt-2" />
                       )}
                     </div>
 
-                    {/* Actions */}
                     <div className="flex items-center gap-1">
                       {file.status === "completed" && file.preview && (
                         <Button
@@ -345,7 +309,6 @@ const MobileFileUploader: React.FC<MobileFileUploaderProps> = ({
                           size="sm"
                           className="w-8 h-8 p-0"
                           onClick={() => {
-                            // Open preview in new tab
                             window.open(file.preview, "_blank");
                           }}
                         >
@@ -371,7 +334,6 @@ const MobileFileUploader: React.FC<MobileFileUploaderProps> = ({
         </div>
       )}
 
-      {/* Upload Status */}
       {uploading && (
         <Card className="border-blue-200 bg-blue-50">
           <CardContent className="p-3 flex items-center gap-2 text-sm text-blue-600">

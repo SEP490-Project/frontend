@@ -75,7 +75,6 @@ const MobileOrderDetail: React.FC<MobileOrderDetailProps> = ({ order }) => {
 
   return (
     <div className="space-y-4">
-      {/* Order Header */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center justify-between text-lg">
@@ -107,7 +106,6 @@ const MobileOrderDetail: React.FC<MobileOrderDetailProps> = ({ order }) => {
         </CardContent>
       </Card>
 
-      {/* Customer Info */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -170,7 +168,6 @@ const MobileOrderDetail: React.FC<MobileOrderDetailProps> = ({ order }) => {
         </CardContent>
       </Card>
 
-      {/* Payment Info */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -228,7 +225,6 @@ const MobileOrderDetail: React.FC<MobileOrderDetailProps> = ({ order }) => {
         </CardContent>
       </Card>
 
-      {/* Order Items */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -284,7 +280,6 @@ const MobileOrderDetail: React.FC<MobileOrderDetailProps> = ({ order }) => {
         </CardContent>
       </Card>
 
-      {/* Order Summary */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -314,7 +309,6 @@ const MobileOrderDetail: React.FC<MobileOrderDetailProps> = ({ order }) => {
         </CardContent>
       </Card>
 
-      {/* Confirmation Image */}
       {order.confirmation_image && (
         <Card>
           <CardHeader className="pb-3">
@@ -336,7 +330,6 @@ const MobileOrderDetail: React.FC<MobileOrderDetailProps> = ({ order }) => {
         </Card>
       )}
 
-      {/* Staff Resource */}
       {order.staff_resource && (
         <Card>
           <CardContent className="p-4 text-center">

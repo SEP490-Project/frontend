@@ -64,7 +64,6 @@ import {
   SalesOrderDetailPage,
   SalesOrderListPage,
   SalesPreOrderPage,
-  SalesNotificationsPage,
   SalesProfilePage,
 } from "@/pages/pwa";
 
@@ -79,7 +78,6 @@ const AppRoutes = () => (
           <Route path="orders/:id" element={<SalesOrderDetailPage />} />
           <Route path="pre-orders" element={<SalesPreOrderPage />} />
           <Route path="pre-orders/:id" element={<SalesOrderDetailPage />} />
-          <Route path="notifications" element={<SalesNotificationsPage />} />
           <Route path="profile" element={<SalesProfilePage />} />
         </Route>
       </Route>

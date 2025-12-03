@@ -69,7 +69,6 @@ const MobilePreOrderDetail: React.FC<MobilePreOrderDetailProps> = ({ preOrder })
 
   return (
     <div className="space-y-4">
-      {/* PreOrder Header */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center justify-between text-lg">
@@ -90,7 +89,6 @@ const MobilePreOrderDetail: React.FC<MobilePreOrderDetailProps> = ({ preOrder })
         </CardContent>
       </Card>
 
-      {/* Customer Info */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -137,7 +135,6 @@ const MobilePreOrderDetail: React.FC<MobilePreOrderDetailProps> = ({ preOrder })
         </CardContent>
       </Card>
 
-      {/* Payment Info */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -193,7 +190,6 @@ const MobilePreOrderDetail: React.FC<MobilePreOrderDetailProps> = ({ preOrder })
         </CardContent>
       </Card>
 
-      {/* Product Info */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -239,7 +235,6 @@ const MobilePreOrderDetail: React.FC<MobilePreOrderDetailProps> = ({ preOrder })
         </CardContent>
       </Card>
 
-      {/* Order Summary */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -264,7 +259,6 @@ const MobilePreOrderDetail: React.FC<MobilePreOrderDetailProps> = ({ preOrder })
         </CardContent>
       </Card>
 
-      {/* Action Notes */}
       {preOrder.action_notes && preOrder.action_notes.length > 0 && (
         <Card>
           <CardHeader className="pb-3">
@@ -304,7 +298,6 @@ const MobilePreOrderDetail: React.FC<MobilePreOrderDetailProps> = ({ preOrder })
         </Card>
       )}
 
-      {/* Confirmation Image */}
       {preOrder.confirmation_image && (
         <Card>
           <CardHeader className="pb-3">

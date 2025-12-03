@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import type { OrderData } from "@/libs/types/order";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useAppDispatch } from "@/libs/stores";
@@ -63,7 +62,6 @@ const MobileCompensateRequest: React.FC<MobileCompensateRequestProps> = ({
     try {
       const formData = new FormData();
 
-      // Add proof files
       proofFiles.forEach((file) => {
         formData.append("file", file);
       });
@@ -83,7 +81,6 @@ const MobileCompensateRequest: React.FC<MobileCompensateRequestProps> = ({
       toast.success(`Compensation request ${isApproved ? "approved" : "rejected"} successfully!`);
       onSuccess();
     } catch (error: any) {
-      console.error("Compensate error:", error);
       toast.error("Failed to process compensation request", {
         description: error?.message || "Please try again.",
       });
@@ -94,7 +91,6 @@ const MobileCompensateRequest: React.FC<MobileCompensateRequestProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Header */}
       <Card className="border-amber-200 bg-amber-50">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -109,7 +105,6 @@ const MobileCompensateRequest: React.FC<MobileCompensateRequestProps> = ({
         </CardContent>
       </Card>
 
-      {/* Order Details */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Order Information</CardTitle>
@@ -144,7 +139,6 @@ const MobileCompensateRequest: React.FC<MobileCompensateRequestProps> = ({
         </CardContent>
       </Card>
 
-      {/* Proof Upload */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -165,16 +159,14 @@ const MobileCompensateRequest: React.FC<MobileCompensateRequestProps> = ({
               multiple={true}
               maxFiles={3}
               maxSize={5}
-              allowedTypes={["jpg", "jpeg", "png", "webp", "mp4", "webm", "mov"]}
+              allowedTypes={["jpg", "jpeg", "png", "webp"]}
               title="Upload Proof"
               onFilesChange={handleFilesCapture}
-              showCamera={true}
             />
           </div>
         </CardContent>
       </Card>
 
-      {/* Reason/Notes */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">
@@ -195,7 +187,6 @@ const MobileCompensateRequest: React.FC<MobileCompensateRequestProps> = ({
         </CardContent>
       </Card>
 
-      {/* Action Buttons */}
       <div className="grid grid-cols-2 gap-3 pt-2">
         <Button
           type="button"

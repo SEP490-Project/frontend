@@ -30,14 +30,12 @@ const MobileChangeStatusModal: React.FC<MobileChangeStatusModalProps> = ({
   onSuccess,
   onCancel,
 }) => {
-  // Hooks phải luôn được gọi ở top-level, không sau return conditionally
   const [selectedStatus, setSelectedStatus] = useState("");
   const [notes, setNotes] = useState("");
   const [proofFiles, setProofFiles] = useState<File[]>([]);
   const [proofUrls, setProofUrls] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Handle special request statuses
   if (order.status === "REFUND_REQUEST") {
     return <MobileRefundRequest order={order} onSuccess={onSuccess} onCancel={onCancel} />;
   }
@@ -46,12 +44,10 @@ const MobileChangeStatusModal: React.FC<MobileChangeStatusModalProps> = ({
     return <MobileCompensateRequest order={order} onSuccess={onSuccess} onCancel={onCancel} />;
   }
 
-  // Get available next statuses based on current status and delivery type
   const getNextStatuses = () => {
     const currentStatus = order.status.toUpperCase();
 
     if (order.is_self_picked_up) {
-      // Self pickup flow
       switch (currentStatus) {
         case "PAID":
           return ["CONFIRMED"];
@@ -63,7 +59,6 @@ const MobileChangeStatusModal: React.FC<MobileChangeStatusModalProps> = ({
           return [];
       }
     } else {
-      // Delivery flow
       switch (currentStatus) {
         case "PAID":
           return ["CONFIRMED"];
@@ -108,7 +103,6 @@ const MobileChangeStatusModal: React.FC<MobileChangeStatusModalProps> = ({
     return statusMap[status] || "bg-gray-100 text-gray-800 border border-gray-200";
   };
 
-  // Check if proof is required for this status change
   const isProofRequired = () => {
     return ["DELIVERED", "RECEIVED"].includes(selectedStatus);
   };
@@ -128,14 +122,13 @@ const MobileChangeStatusModal: React.FC<MobileChangeStatusModalProps> = ({
     }
 
     if (isProofRequired() && proofUrls.length === 0) {
-      toast.error("Proof image/video is required for this status");
+      toast.error("Proof image is required for this status");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // Create form data for the API call
       const formData = new FormData();
       formData.append("state", selectedStatus);
 
@@ -143,32 +136,15 @@ const MobileChangeStatusModal: React.FC<MobileChangeStatusModalProps> = ({
         formData.append("notes", notes.trim());
       }
 
-      // Add proof files
       if (proofFiles.length > 0) {
         proofFiles.forEach((file) => {
           formData.append("file", file);
         });
       }
 
-      // Call appropriate thunk based on order type and status
-      if (selectedStatus === "RECEIVED" && order.is_self_picked_up) {
-        // Handle self pickup received
-        // await dispatch(receivedSelfPickupOrderThunk({ id: order.id, file: formData })).unwrap();
-        console.log("Self pickup received:", { orderId: order.id, formData });
-      } else if (selectedStatus === "DELIVERED" && !order.is_self_picked_up) {
-        // Handle delivery completed
-        // await dispatch(deliveredSelfDeliveryOrderThunk({ id: order.id, file: formData })).unwrap();
-        console.log("Delivery completed:", { orderId: order.id, formData });
-      } else {
-        // Handle other status changes
-        // await dispatch(updateOrderStatusThunk({ id: order.id, status: selectedStatus, notes })).unwrap();
-        console.log("Status change:", { orderId: order.id, status: selectedStatus, notes });
-      }
-
       toast.success("Order status updated successfully!");
       onSuccess();
     } catch (error: any) {
-      console.error("Status update error:", error);
       toast.error("Failed to update order status", {
         description: error?.message || "Please try again.",
       });
@@ -179,7 +155,6 @@ const MobileChangeStatusModal: React.FC<MobileChangeStatusModalProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Current Status */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Current Status</CardTitle>
@@ -196,7 +171,6 @@ const MobileChangeStatusModal: React.FC<MobileChangeStatusModalProps> = ({
         </CardContent>
       </Card>
 
-      {/* Status Selection */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Change Status</CardTitle>
@@ -260,7 +234,6 @@ const MobileChangeStatusModal: React.FC<MobileChangeStatusModalProps> = ({
         </CardContent>
       </Card>
 
-      {/* Notes */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Notes (Optional)</CardTitle>
@@ -275,7 +248,6 @@ const MobileChangeStatusModal: React.FC<MobileChangeStatusModalProps> = ({
         </CardContent>
       </Card>
 
-      {/* Proof Upload */}
       {selectedStatus && isProofRequired() && (
         <Card>
           <CardHeader className="pb-3">
@@ -287,28 +259,26 @@ const MobileChangeStatusModal: React.FC<MobileChangeStatusModalProps> = ({
           <CardContent className="pt-0">
             <div className="space-y-3">
               <div className="text-sm text-gray-600">
-                Please provide photo/video proof for {getStatusLabel(selectedStatus).toLowerCase()}{" "}
+                Please provide photo proof for {getStatusLabel(selectedStatus).toLowerCase()}{" "}
                 status.
               </div>
 
               <MobileFileUploader
                 userId={order.user_id}
-                accept="image/*,video/*"
+                accept="image/*"
                 multiple={true}
                 maxFiles={3}
                 maxSize={20}
-                allowedTypes={["jpg", "jpeg", "png", "webp", "mp4", "webm", "mov"]}
+                allowedTypes={["jpg", "jpeg", "png", "webp"]}
                 title="Upload Proof"
                 onFilesChange={handleFilesCapture}
                 onUploadComplete={handleUploadComplete}
-                showCamera={true}
               />
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Order Info */}
       <Card className="border-gray-200">
         <CardContent className="p-3">
           <div className="text-xs text-gray-600 space-y-1">
@@ -326,7 +296,6 @@ const MobileChangeStatusModal: React.FC<MobileChangeStatusModalProps> = ({
         </CardContent>
       </Card>
 
-      {/* Action Buttons */}
       <div className="grid grid-cols-2 gap-3 pt-2">
         <Button
           type="button"

@@ -1,10 +1,17 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { GlobalFooter, GlobalHeader } from "@/components/customer";
-import { Outlet } from "react-router-dom";
+import { Outlet, Navigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/libs/hooks/useAuth";
+import { useIsStandalone } from "@/libs/hooks/useIsStandalone";
 
 const CustomerLayout = () => {
   const [hidden, setHidden] = useState(false);
+
+  const { isAuthenticated, role } = useAuth();
+  const isStandalone = useIsStandalone();
+  const location = useLocation();
+
   useEffect(() => {
     let lastScrollY = window.scrollY;
     const updateScroll = () => {
@@ -20,9 +27,18 @@ const CustomerLayout = () => {
     return () => window.removeEventListener("scroll", updateScroll);
   }, []);
 
+  if (isStandalone && role === "SALES_STAFF") {
+    return (
+      <Navigate
+        to={isAuthenticated ? "/sales-app" : "/sales-app/login"}
+        replace
+        state={{ from: location }}
+      />
+    );
+  }
+
   return (
     <div className="flex min-h-screen flex-col">
-      {/* Header có animation */}
       <motion.div
         initial={false}
         animate={{ y: hidden ? "-100%" : "0%" }}

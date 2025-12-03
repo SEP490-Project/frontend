@@ -57,10 +57,31 @@ import AddProductStep from "@/components/manage/sale/product/AddProductStep";
 import ProductDetail from "@/pages/manager/sale/product/ProductDetail";
 import { Channel, User, VariantAttribute } from "@/pages/manager/admin";
 import { CreateConceptStep } from "@/pages/manager/sale/product/add-product-step/CreateConceptStep";
+import SalesPwaLayout from "@/layouts/SalesPWALayout";
+import SalesPwaRoute from "./sales-pwa-route";
+import {
+  SalesPwaLogin,
+  SalesOrderDetailPage,
+  SalesOrderListPage,
+  SalesPreOrderPage,
+  SalesProfilePage,
+} from "@/pages/pwa";
 
 const AppRoutes = () => (
   <BrowserRouter>
     <Routes>
+      <Route path="/sales-app/login" element={<SalesPwaLogin />} />
+      <Route element={<SalesPwaRoute />}>
+        <Route path="/sales-app" element={<SalesPwaLayout />}>
+          <Route index element={<SalesOrderListPage />} />
+          <Route path="orders" element={<SalesOrderListPage />} />
+          <Route path="orders/:id" element={<SalesOrderDetailPage />} />
+          <Route path="pre-orders" element={<SalesPreOrderPage />} />
+          <Route path="pre-orders/:id" element={<SalesOrderDetailPage />} />
+          <Route path="profile" element={<SalesProfilePage />} />
+        </Route>
+      </Route>
+
       <Route element={<CustomerLayout />}>
         <Route path="/" element={<Homepage />} />
         <Route path="/about-app" element={<AboutApp />} />

@@ -1,10 +1,10 @@
 import React from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { PasswordInput } from "@/components/password-input";
 import { useAuth } from "@/libs/hooks/useAuth";
 import { Loader2 } from "lucide-react";
@@ -15,7 +15,7 @@ interface LoginRequest {
 }
 
 interface LoginFormProps {
-  onSubmit: (data: LoginRequest) => void;
+  onSubmit: (data: LoginRequest) => void | Promise<void>;
 }
 
 const LoginSchema = yup.object().shape({
@@ -31,17 +31,24 @@ const LoginSchema = yup.object().shape({
     .trim(),
   password: yup
     .string()
-    .min(6, "Password must be at least 6 characters")
+    .min(8, "Password must be at least 8 characters")
     .required("Password is required")
     .trim(),
 });
 
 export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
   const navigate = useNavigate();
-  const { register, handleSubmit } = useForm<LoginRequest>({
-    resolver: yupResolver(LoginSchema),
-  });
   const { loading } = useAuth();
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginRequest>({
+    resolver: yupResolver(LoginSchema),
+    mode: "onSubmit",
+  });
 
   return (
     <div className="flex flex-col justify-center items-center gap-10 w-full">
@@ -49,6 +56,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
         <h2 className="text-2xl font-extrabold text-center">Sign In</h2>
         <p className="text-gray-600 mt-2 text-sm">Welcome back! Please enter your details.</p>
       </div>
+
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 w-full">
         <div className="w-full">
           <h5 className="pb-1">Username</h5>
@@ -57,11 +65,25 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
             placeholder="Email or Username"
             className="w-full"
           />
+          {errors.login_identifier && (
+            <p className="mt-1 text-xs text-red-500">{errors.login_identifier.message}</p>
+          )}
         </div>
+
         <div className="w-full">
           <h5 className="pb-1">Password</h5>
-          <PasswordInput {...register("password")} placeholder="Password" className="w-full" />
-          <div className="flex justify-end mt-2 text-sm ">
+          <Controller
+            name="password"
+            control={control}
+            render={({ field }) => (
+              <PasswordInput {...field} placeholder="Password" className="w-full" />
+            )}
+          />
+          {errors.password && (
+            <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>
+          )}
+
+          <div className="flex justify-end mt-2 text-sm">
             <p
               className="text-right cursor-pointer hover:underline text-primary"
               onClick={() => navigate("/forgot-password")}
@@ -70,15 +92,16 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
             </p>
           </div>
         </div>
+
         <Button
           type="submit"
           className={`mt-4 text-white flex items-center justify-center transition ${
-            loading ? "opacity-70 cursor-not-allowed" : ""
+            loading || isSubmitting ? "opacity-70 cursor-not-allowed" : ""
           }`}
           size="lg"
-          disabled={loading}
+          disabled={loading || isSubmitting}
         >
-          {loading ? (
+          {loading || isSubmitting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Signing in...
@@ -88,6 +111,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
           )}
         </Button>
       </form>
+
       <div className="text-sm text-center mt-4" onClick={() => navigate("/register")}>
         Don't have an account?{" "}
         <span className="text-primary hover:underline cursor-pointer">Sign Up</span>

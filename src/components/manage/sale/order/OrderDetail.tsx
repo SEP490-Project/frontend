@@ -134,6 +134,24 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order }) => {
               <span className="text-sm text-gray-500">Phone:</span>
               <span className="ml-2 text-sm">{order.phone_number}</span>
             </div>
+            {order.user_bank_name && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <span className="text-sm text-gray-500">Bank Name:</span>
+                  <p className="text-sm font-medium text-gray-900">{order.user_bank_name}</p>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-500">Account Holder:</span>
+                  <p className="text-sm font-medium text-gray-900">
+                    {order.user_bank_account_holder}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-500">Account Number:</span>
+                  <p className="text-sm font-mono text-gray-900">{order.user_bank_account}</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -180,18 +198,15 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order }) => {
               </div>
             </div>
           )}
-          {order.status === "RECEIVED" && order.confirmation_image && (
+          {(order.confirmation_image || order.staff_resource) && (
             <div>
               <span className="text-sm text-gray-500">Proof:</span>
               <div className="mt-2 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-2">
                 <img
-                  src={order.confirmation_image}
+                  src={order.confirmation_image || order.staff_resource}
                   alt="Customer pickup proof"
                   className="w-full max-w-md rounded-md"
                 />
-                <p className="text-xs text-gray-500 mt-2">
-                  Photo taken when customer picked up the order
-                </p>
               </div>
             </div>
           )}

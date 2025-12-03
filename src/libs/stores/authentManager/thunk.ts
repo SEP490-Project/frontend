@@ -64,3 +64,29 @@ export const logout = createAsyncThunk("auth/logout", async () => {
     removeItem("user");
   }
 });
+
+export const forgotPassword = createAsyncThunk(
+  "auth/forgotPassword",
+  async (req: { email: string; frontend_url: string }, { rejectWithValue }) => {
+    try {
+      const response = await manageAuthen.forgotPassword(req);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message?: string }>;
+      return rejectWithValue(err.response?.data?.message || "Yêu cầu đặt lại mật khẩu thất bại");
+    }
+  },
+);
+
+export const resetPassword = createAsyncThunk(
+  "auth/resetPassword",
+  async (req: { token: string; new_password: string; email: string }, { rejectWithValue }) => {
+    try {
+      const response = await manageAuthen.resetPassword(req);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message?: string }>;
+      return rejectWithValue(err.response?.data?.message || "Đặt lại mật khẩu thất bại");
+    }
+  },
+);

@@ -31,6 +31,7 @@ export interface OrderData {
   user_bank_account?: string;
   user_bank_name?: string;
   user_bank_account_holder?: string;
+  staff_resource?: string;
 }
 
 interface PaymentTransaction {

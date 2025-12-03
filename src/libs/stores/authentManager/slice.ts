@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { login, register, refresh, logout } from "./thunk";
+import { login, register, refresh, logout, forgotPassword, resetPassword } from "./thunk";
 import { getInitialAuthState } from "@/libs/helper/helper";
 import { setRaw, setItem, removeItem } from "@/libs/local-storage";
 import { toast } from "sonner";
@@ -80,6 +80,28 @@ export const manageAuthenSlice = createSlice({
         state.isAuthenticated = false;
         state.user = null;
         state.role = "";
+      })
+      .addCase(forgotPassword.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(forgotPassword.fulfilled, (state) => {
+        state.loading = false;
+        toast.success("Password reset link has been sent to your email.");
+      })
+      .addCase(forgotPassword.rejected, (state, action) => {
+        state.loading = false;
+        toast.error(String(action.payload || "Failed to send password reset link."));
+      })
+      .addCase(resetPassword.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(resetPassword.fulfilled, (state) => {
+        state.loading = false;
+        toast.success("Password has been reset successfully.");
+      })
+      .addCase(resetPassword.rejected, (state, action) => {
+        state.loading = false;
+        toast.error(String(action.payload || "Failed to reset password."));
       });
   },
 });

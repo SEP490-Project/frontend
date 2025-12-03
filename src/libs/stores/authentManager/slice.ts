@@ -1,5 +1,13 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { login, register, refresh, logout, forgotPassword, resetPassword } from "./thunk";
+import {
+  login,
+  register,
+  refresh,
+  logout,
+  forgotPassword,
+  resetPassword,
+  changePasswordThunk,
+} from "./thunk";
 import { getInitialAuthState } from "@/libs/helper/helper";
 import { setRaw, setItem, removeItem } from "@/libs/local-storage";
 import { toast } from "sonner";
@@ -102,6 +110,17 @@ export const manageAuthenSlice = createSlice({
       .addCase(resetPassword.rejected, (state, action) => {
         state.loading = false;
         toast.error(String(action.payload || "Failed to reset password."));
+      })
+      .addCase(changePasswordThunk.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(changePasswordThunk.fulfilled, (state) => {
+        state.loading = false;
+        toast.success("Password has been changed successfully.");
+      })
+      .addCase(changePasswordThunk.rejected, (state, action) => {
+        state.loading = false;
+        toast.error(String(action.payload || "Failed to change password."));
       });
   },
 });

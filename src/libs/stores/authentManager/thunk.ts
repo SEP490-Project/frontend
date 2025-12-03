@@ -90,3 +90,16 @@ export const resetPassword = createAsyncThunk(
     }
   },
 );
+
+export const changePasswordThunk = createAsyncThunk(
+  "auth/changePassword",
+  async (req: { current_password: string; new_password: string }, { rejectWithValue }) => {
+    try {
+      const response = await manageAuthen.changePassword(req);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message?: string }>;
+      return rejectWithValue(err.response?.data?.message || "Đổi mật khẩu thất bại");
+    }
+  },
+);

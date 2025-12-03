@@ -10,4 +10,6 @@ export const manageAuthen = {
     api.post("/auth/forgot-password", req),
   resetPassword: (req: { token: string; new_password: string; email: string }) =>
     api.post("/auth/reset-password", req),
+  changePassword: (req: { current_password: string; new_password: string }) =>
+    api.post("/auth/change-password", req),
 };

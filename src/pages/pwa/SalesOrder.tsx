@@ -32,6 +32,7 @@ import { getOrderForSaleStaffThunk } from "@/libs/stores/orderManager/thunk";
 import type { OrderData, OrderRequestQuery } from "@/libs/types/order";
 import MobileOrderDetail from "@/components/pwa/MobileOrderDetail";
 import MobileChangeStatusModal from "@/components/pwa/MobileChangeStatusModal";
+import PaginationTable from "@/components/global/PaginationTable";
 import { toast } from "sonner";
 
 const SalesOrder: React.FC = () => {
@@ -45,7 +46,7 @@ const SalesOrder: React.FC = () => {
 
   const [params, setParams] = useState<OrderRequestQuery>({
     page: 1,
-    limit: 20,
+    limit: 10,
     search: "",
     status: "",
   });
@@ -138,10 +139,8 @@ const SalesOrder: React.FC = () => {
     }
   };
 
-  const loadMore = () => {
-    if (pagination && pagination.has_next && !isLoading) {
-      setParams((prev) => ({ ...prev, page: prev.page! + 1 }));
-    }
+  const handlePageChange = (newPage: number) => {
+    setParams((prev) => ({ ...prev, page: newPage }));
   };
 
   const canChangeStatus = (order: OrderData) => {
@@ -205,11 +204,13 @@ const SalesOrder: React.FC = () => {
                     <SelectItem value="SHIPPED">Shipped</SelectItem>
                     <SelectItem value="IN_TRANSIT">In Transit</SelectItem>
                     <SelectItem value="DELIVERED">Delivered</SelectItem>
+                    <SelectItem value="AWAITING_PICKUP">Awaiting Pickup</SelectItem>
                     <SelectItem value="RECEIVED">Received</SelectItem>
                     <SelectItem value="CANCELLED">Cancelled</SelectItem>
                     <SelectItem value="REFUNDED">Refunded</SelectItem>
-                    <SelectItem value="REFUND_REQUEST">🔔 Refund Request</SelectItem>
-                    <SelectItem value="COMPENSATE_REQUEST">🔔 Compensate Request</SelectItem>
+                    <SelectItem value="COMPENSATED">Compensated</SelectItem>
+                    <SelectItem value="REFUND_REQUEST">Refund Request</SelectItem>
+                    <SelectItem value="COMPENSATE_REQUEST">Compensate Request</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -230,7 +231,7 @@ const SalesOrder: React.FC = () => {
       <div className="px-4 pt-3 space-y-3">
         {isLoading && orders.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-14">
-            <Loader2 className="mx-auto mb-4 h-10 w-10 text-slate-400 animate-spin" />
+            <Loader2 className="mx-auto mb-4 h-10 w-10 text-primary" />
             <p className="text-sm font-medium text-slate-700">Loading orders...</p>
             <p className="text-xs text-slate-500 mt-1">
               Please wait while we fetch the latest orders.
@@ -380,30 +381,14 @@ const SalesOrder: React.FC = () => {
               </Card>
             ))}
 
-            {pagination && pagination.has_next && (
-              <div className="text-center pt-2 pb-3">
-                <Button
-                  variant="outline"
-                  onClick={loadMore}
-                  disabled={isLoading}
-                  className="w-full h-9 rounded-xl border-slate-200 text-xs"
-                >
-                  {isLoading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin mr-2" />
-                      Loading...
-                    </>
-                  ) : (
-                    `Load More (${pagination.page} of ${pagination.total_pages})`
-                  )}
-                </Button>
-              </div>
-            )}
-
-            {pagination && (
-              <div className="text-center text-[11px] text-slate-500 pb-2">
-                Showing <span className="font-medium">{orders.length}</span> of{" "}
-                <span className="font-medium">{pagination.total}</span> orders
+            {pagination && pagination.total > 0 && (
+              <div className="mt-4">
+                <PaginationTable
+                  page={pagination.page}
+                  totalItems={pagination.total}
+                  pageSize={params.limit || 20}
+                  onPageChange={handlePageChange}
+                />
               </div>
             )}
           </>

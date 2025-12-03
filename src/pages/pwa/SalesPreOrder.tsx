@@ -46,6 +46,7 @@ import type { PreOrderData } from "@/libs/types/pre-order";
 import type { OrderRequestQuery } from "@/libs/types/order";
 import MobilePreOrderDetail from "@/components/pwa/MobilePreOrderDetail";
 import MobileFileUploader from "@/components/pwa/MobileFileUploader";
+import PaginationTable from "@/components/global/PaginationTable";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -62,7 +63,7 @@ const SalesPreOrder: React.FC = () => {
 
   const [params, setParams] = useState<OrderRequestQuery>({
     page: 1,
-    limit: 20,
+    limit: 10,
     search: "",
     status: "",
   });
@@ -118,7 +119,6 @@ const SalesPreOrder: React.FC = () => {
       paid: "bg-emerald-50 text-emerald-700 border border-emerald-200",
       pre_ordered: "bg-violet-50 text-violet-700 border border-violet-200",
       awaiting_pickup: "bg-sky-50 text-sky-700 border border-sky-200",
-      confirmed: "bg-emerald-50 text-emerald-700 border border-emerald-200",
       cancelled: "bg-rose-50 text-rose-700 border border-rose-200",
       in_transit: "bg-amber-50 text-amber-700 border border-amber-200",
       delivered: "bg-emerald-100 text-emerald-800 border border-emerald-300",
@@ -266,13 +266,8 @@ const SalesPreOrder: React.FC = () => {
     }
   };
 
-  const loadMore = () => {
-    if (pagination && pagination.has_next && !isLoading) {
-      setParams((prev: OrderRequestQuery) => ({
-        ...prev,
-        page: (prev.page || 1) + 1,
-      }));
-    }
+  const handlePageChange = (newPage: number) => {
+    setParams((prev) => ({ ...prev, page: newPage }));
   };
 
   const canApprove = (preOrder: PreOrderData) => {
@@ -342,8 +337,9 @@ const SalesPreOrder: React.FC = () => {
                     <SelectItem value="RECEIVED">Received</SelectItem>
                     <SelectItem value="CANCELLED">Cancelled</SelectItem>
                     <SelectItem value="REFUNDED">Refunded</SelectItem>
-                    <SelectItem value="REFUND_REQUEST">🔔 Refund Request</SelectItem>
-                    <SelectItem value="COMPENSATE_REQUEST">🔔 Compensate Request</SelectItem>
+                    <SelectItem value="COMPENSATED">Compensated</SelectItem>
+                    <SelectItem value="REFUND_REQUEST">Refund Request</SelectItem>
+                    <SelectItem value="COMPENSATE_REQUEST">Compensate Request</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -364,7 +360,7 @@ const SalesPreOrder: React.FC = () => {
       <div className="px-4 pt-3 space-y-3">
         {isLoading && preOrders.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-14">
-            <Loader2 className="mx-auto mb-4 h-10 w-10 text-slate-400 animate-spin" />
+            <Loader2 className="mx-auto mb-4 h-10 w-10 text-primary" />
             <p className="text-sm font-medium text-slate-700">Loading pre-orders...</p>
             <p className="text-xs text-slate-500 mt-1">
               Please wait while we fetch the latest pre-orders.
@@ -518,30 +514,14 @@ const SalesPreOrder: React.FC = () => {
               </Card>
             ))}
 
-            {pagination && pagination.has_next && (
-              <div className="text-center pt-2 pb-3">
-                <Button
-                  variant="outline"
-                  onClick={loadMore}
-                  disabled={isLoading}
-                  className="w-full h-9 rounded-xl border-slate-200 text-xs"
-                >
-                  {isLoading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin mr-2" />
-                      Loading...
-                    </>
-                  ) : (
-                    `Load More (${pagination.page} of ${pagination.total_pages})`
-                  )}
-                </Button>
-              </div>
-            )}
-
-            {pagination && (
-              <div className="text-center text-[11px] text-slate-500 pb-2">
-                Showing <span className="font-medium">{preOrders.length}</span> of{" "}
-                <span className="font-medium">{pagination.total}</span> pre-orders
+            {pagination && pagination.total > 0 && (
+              <div className="mt-4">
+                <PaginationTable
+                  page={pagination.page}
+                  totalItems={pagination.total}
+                  pageSize={params.limit || 20}
+                  onPageChange={handlePageChange}
+                />
               </div>
             )}
           </>

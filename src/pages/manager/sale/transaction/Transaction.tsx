@@ -179,9 +179,10 @@ const Transaction: React.FC<{ type: "ORDER" | "PREORDER" }> = ({ type }) => {
             <TableHeader className="px-4">
               <TableRow className="border-b bg-gray-50">
                 <TableHead className="font-semibold">Transaction ID</TableHead>
+                <TableHead className="font-semibold">Payer</TableHead>
                 <TableHead className="font-semibold">Amount</TableHead>
                 <TableHead className="font-semibold">Method</TableHead>
-                <TableHead className="font-semibold">Type</TableHead>
+                {/* <TableHead className="font-semibold">Type</TableHead> */}
                 <TableHead className="font-semibold">Status</TableHead>
                 <TableHead className="font-semibold">Date</TableHead>
                 <TableHead className="font-semibold">Actions</TableHead>
@@ -222,6 +223,10 @@ const Transaction: React.FC<{ type: "ORDER" | "PREORDER" }> = ({ type }) => {
                     </TableCell>
 
                     <TableCell className="py-4">
+                      {transaction.reference_info?.user_info?.full_name || "N/A"}
+                    </TableCell>
+
+                    <TableCell className="py-4">
                       <span className="font-semibold">
                         {convertNumberToCurrency(transaction.amount.toString())}
                       </span>
@@ -229,7 +234,7 @@ const Transaction: React.FC<{ type: "ORDER" | "PREORDER" }> = ({ type }) => {
 
                     <TableCell className="py-4">{getMethodBadge(transaction.method)}</TableCell>
 
-                    <TableCell className="py-4">
+                    {/* <TableCell className="py-4">
                       {transaction.reference_type === "ORDER" ? (
                         <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200 hover:bg-indigo-200">
                           ORDER
@@ -241,7 +246,7 @@ const Transaction: React.FC<{ type: "ORDER" | "PREORDER" }> = ({ type }) => {
                       ) : (
                         <Badge className="bg-gray-100 text-gray-800">Other</Badge>
                       )}
-                    </TableCell>
+                    </TableCell> */}
 
                     <TableCell className="py-4">{getStatusBadge(transaction.status)}</TableCell>
 

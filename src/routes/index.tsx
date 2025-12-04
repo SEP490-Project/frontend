@@ -145,7 +145,10 @@ const AppRoutes = () => (
           </Route>
 
           <Route path="review" element={<Review />} />
-          <Route path="transaction" element={<Transaction />} />
+          <Route path="transaction">
+            <Route index element={<Transaction type="ORDER" />} />
+            <Route path="pre-order" element={<Transaction type="PREORDER" />} />
+          </Route>
         </Route>
       </Route>
 

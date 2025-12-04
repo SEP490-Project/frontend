@@ -30,7 +30,7 @@ import TransactionDetails from "./TransactionDetails";
 import { format } from "date-fns";
 import { convertNumberToCurrency } from "@/libs/helper/helper";
 
-const Transaction: React.FC = () => {
+const Transaction: React.FC<{ type: "ORDER" | "PREORDER" }> = ({ type }) => {
   const dispatch = useAppDispatch();
   const transactionResponse = useSelector((state: any) => state?.manageTransaction?.transactions);
   const pagination = useSelector(
@@ -47,13 +47,14 @@ const Transaction: React.FC = () => {
   const [params, setParams] = useState<TransactionParams>({
     page: 1,
     limit: 10,
-  });
-
-  const filteredTransactions = transactions.filter((transaction) => {
-    return transaction.reference_type === "ORDER" || transaction.reference_type === "PREORDER";
+    reference_type: type,
   });
 
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+
+  useEffect(() => {
+    setParams((prev) => ({ ...prev, reference_type: type, page: 1 }));
+  }, [type]);
 
   useEffect(() => {
     dispatch(getOrderTransactionsForSaleStaffThunk(params));
@@ -209,7 +210,7 @@ const Transaction: React.FC = () => {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredTransactions.map((transaction, index) => (
+                transactions.map((transaction, index) => (
                   <TableRow
                     key={transaction.id}
                     className={`border-b hover:bg-gray-50 ${

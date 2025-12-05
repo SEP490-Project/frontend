@@ -2,6 +2,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 import CountUp from "react-countup";
 import { useRef, useEffect } from "react";
+import { convertNumberToCurrency } from "@/libs/helper/helper";
 
 interface KPIData {
   value: string | number;
@@ -12,6 +13,7 @@ interface KPIData {
 interface Props {
   title: string;
   data: KPIData;
+  mode?: "percent" | "currency";
   icon?: React.ReactNode;
   iconColor?: string;
   iconBg?: string;
@@ -21,6 +23,7 @@ interface Props {
 function KPIWidget({
   title,
   data,
+  mode,
   icon,
   iconColor = "text-gray-500",
   iconBg = "bg-gray-100",
@@ -70,6 +73,10 @@ function KPIWidget({
                 hasAnimated.current = true;
               }}
             />
+          ) : mode === "currency" ? (
+            `${convertNumberToCurrency(Number(value).toFixed(2))}`
+          ) : mode === "percent" ? (
+            `${Number(value).toFixed(3)}%`
           ) : (
             formatValue(value)
           )}

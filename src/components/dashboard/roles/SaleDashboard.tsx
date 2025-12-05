@@ -7,26 +7,27 @@ import {
 } from "@/components/dashboard/chart";
 import { useAppDispatch, type RootState } from "@/libs/stores";
 import {
-  salesBrands,
-  salesDashboard,
-  salesOrders,
-  salesProducts,
-  salesTrend,
+  salesFinancialsDashboard,
+  salesRevenueGrowth,
+  salesRevenueTrend,
+  salesOrderDashboard,
+  salesOrderTrend,
 } from "@/libs/stores/salesAnalyticManager/thunk";
 import { useSelector } from "react-redux";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { convertNumberToCurrency } from "@/libs/helper/helper";
+// import { convertNumberToCurrency } from "@/libs/helper/helper";
 import { FaBox, FaDollarSign } from "react-icons/fa6";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from "@/components/ui/select";
 import { Loader2, X } from "lucide-react";
 import { DatePicker } from "@/components/date-picker";
 import { Button } from "@/components/ui/button";
+import { convertNumberToCurrency } from "@/libs/helper/helper";
 
 const SaleDashboard: React.FC = () => {
   const [startDate, setStartDate] = React.useState<string | undefined>(undefined);
@@ -98,75 +99,134 @@ interface TabProps {
 const OverviewTab: React.FC<TabProps> = ({ startDate, endDate }) => {
   const dispatch = useAppDispatch();
   const {
-    trend,
-    brands,
-    orders,
-    products,
-    loadingTrend,
-    loadingBrands,
-    loadingOrders,
-    loadingProducts,
+    financialsDashboard,
+    // revenueGrowth,
+    revenueTrend,
+    loadingFinancialsDashboard,
+    loadingRevenueGrowth,
+    loadingRevenueTrend,
   } = useSelector((state: RootState) => state.manageSalesAnalytic);
 
-  const [granularity, setGranularity] = React.useState("DAY");
-
-  const formatTrendData = () => {
-    if (!trend || !Array.isArray(trend)) return [];
-    return trend.map((item) => ({
-      month: new Date(item.date).toLocaleDateString(),
-      value: item.revenue,
-    }));
-  };
-
-  const formatProductData = () => {
-    if (!products || !Array.isArray(products)) return [];
-    return products.map((item) => ({
-      top: item.rank,
-      product_name: item.product_name,
-      total_sold: item.units_sold,
-      total_revenue: convertNumberToCurrency(item.total_revenue),
-    }));
-  };
-
-  const formatBrandData = () => {
-    if (!brands || !Array.isArray(brands)) return [];
-    return brands.map((item) => ({
-      top: item.rank,
-      brand_name: item.brand_name,
-      total_sold: item.units_sold,
-      total_revenue: convertNumberToCurrency(item.total_revenue),
-    }));
-  };
-
-  const formatData = {
-    standard_orders: {
-      value: orders?.standard_orders.total_revenue || 0,
-    },
-    limited_orders: {
-      value: orders?.limited_orders.total_revenue || 0,
-    },
-    pre_orders: {
-      value: orders?.pre_orders.total_revenue || 0,
-    },
-    total_revenue: {
-      value:
-        orders?.standard_orders.total_revenue +
-          orders?.limited_orders.total_revenue +
-          orders?.pre_orders.total_revenue || 0,
-    },
-  };
+  const [periodGap] = React.useState<"day" | "week" | "month" | "quarter" | "year">("day");
 
   useEffect(() => {
-    dispatch(salesTrend({ granularity: granularity, start_date: startDate, end_date: endDate }));
+    dispatch(
+      salesFinancialsDashboard({
+        from_date: startDate,
+        to_date: endDate,
+        //   limit: 5,
+        period_gap: "week",
+        //   compare_with: "day",
+      }),
+    );
 
-    dispatch(salesOrders({ start_date: startDate, end_date: endDate }));
+    dispatch(salesRevenueGrowth({ compare_with: "day" }));
 
-    dispatch(salesProducts({ start_date: startDate, end_date: endDate }));
+    dispatch(salesRevenueTrend({ from_date: startDate, to_date: endDate, period_gap: "week" }));
+  }, [dispatch, startDate, endDate, periodGap]);
 
-    dispatch(salesBrands({ limit: 3, start_date: startDate, end_date: endDate }));
-  }, [dispatch, granularity, startDate, endDate]);
+  const formatCardData = {
+    total_sold_revenue: {
+      value: financialsDashboard?.summary.total_sold_revenue,
+    },
+    revenue_growth: {
+      value: financialsDashboard?.summary.revenue_growth,
+    },
+    average_order_value: {
+      value: financialsDashboard?.summary.average_order_value.combined,
+    },
+    limited_product_conversion_rate: {
+      value: financialsDashboard?.summary.limited_product_conversion_rate * 100,
+    },
+    returning_customer_count: {
+      value: financialsDashboard?.summary.returning_customer_count,
+    },
+  };
 
-  if (loadingTrend || loadingBrands || loadingOrders || loadingProducts) {
+  const formatPieChartData = {
+    revenue_by_product_type: financialsDashboard?.revenue_by_product_type.map(
+      (item: { product_type: string; revenue: number }) => ({
+        type: item.product_type,
+        value: item.revenue,
+      }),
+    ),
+    revenue_by_category: financialsDashboard?.revenue_by_category.map(
+      (item: { category_name: string; revenue: number }) => ({
+        type: item.category_name,
+        value: item.revenue,
+      }),
+    ),
+  };
+
+  const formatTableData = {
+    top_selling_products: financialsDashboard?.top_lists.top_products.map(
+      (item: { name: string; value: number }) => ({
+        name: item.name,
+        revenue: convertNumberToCurrency(item.value.toString()),
+      }),
+    ),
+    top_brands: financialsDashboard?.top_lists.top_brands.map(
+      (item: { name: string; value: number }) => ({
+        name: item.name,
+        revenue: convertNumberToCurrency(item.value.toString()),
+      }),
+    ),
+    top_categories: financialsDashboard?.top_lists.top_categories.map(
+      (item: { name: string; value: number }) => ({
+        name: item.name,
+        revenue: convertNumberToCurrency(item.value.toString()),
+      }),
+    ),
+  };
+  const formatProductTypeTrendData = () => {
+    if (!revenueTrend?.standard_vs_limited) return [];
+    const standard = revenueTrend.standard_vs_limited.STANDARD || [];
+    const limited = revenueTrend.standard_vs_limited.LIMITED || [];
+
+    const periods = new Set([
+      ...standard.map((item: any) => item.time),
+      ...limited.map((item: any) => item.time),
+    ]);
+
+    return Array.from(periods)
+      .sort()
+      .map((time) => {
+        const standardItem = standard.find((item: any) => item.time === time);
+        const limitedItem = limited.find((item: any) => item.time === time);
+
+        return {
+          month: new Date(time).toISOString().split("T")[0],
+          standard_revenue: standardItem?.value || 0,
+          limited_revenue: limitedItem?.value || 0,
+        };
+      });
+  };
+
+  const formatOrderTypeTrendData = () => {
+    if (!revenueTrend?.orders_vs_pre_orders) return [];
+    const orders = revenueTrend.orders_vs_pre_orders.ORDER || [];
+    const preOrders = revenueTrend.orders_vs_pre_orders.PRE_ORDER || [];
+
+    const periods = new Set([
+      ...orders.map((item: any) => item.time),
+      ...preOrders.map((item: any) => item.time),
+    ]);
+
+    return Array.from(periods)
+      .sort()
+      .map((time) => {
+        const orderItem = orders.find((item: any) => item.time === time);
+        const preOrderItem = preOrders.find((item: any) => item.time === time);
+
+        return {
+          month: new Date(time).toISOString().split("T")[0],
+          order_revenue: orderItem?.value || 0,
+          pre_order_revenue: preOrderItem?.value || 0,
+        };
+      });
+  };
+
+  if (loadingFinancialsDashboard || loadingRevenueGrowth || loadingRevenueTrend) {
     return (
       <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-lg">
         <Loader2 className="h-12 w-12 text-primary animate-spin" />
@@ -178,64 +238,90 @@ const OverviewTab: React.FC<TabProps> = ({ startDate, endDate }) => {
     <div className="w-full flex flex-col gap-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
         <KPIWidget
-          title="Total Revenue"
-          data={formatData.total_revenue}
+          title="Total Sold Revenue"
+          data={formatCardData.total_sold_revenue}
+          mode="currency"
           icon={<FaDollarSign size={20} />}
           iconColor="text-teal-600"
           iconBg="bg-teal-100"
         />
         <KPIWidget
-          title="Total Standard Order Revenue"
-          data={formatData.standard_orders}
-          icon={<FaDollarSign size={20} />}
-          iconColor="text-green-700"
-          iconBg="bg-green-100"
-        />
-        <KPIWidget
-          title="Total Limited Order Revenue"
-          data={formatData.limited_orders}
+          title="Average Order Value"
+          data={formatCardData.average_order_value}
+          mode="currency"
           icon={<FaDollarSign size={20} />}
           iconColor="text-yellow-700"
           iconBg="bg-yellow-100"
         />
         <KPIWidget
-          title="Total Pre-Orders Revenue"
-          data={formatData.pre_orders}
+          title="Limited Product Conversion Rate"
+          data={formatCardData.limited_product_conversion_rate}
+          mode="percent"
           icon={<FaDollarSign size={20} />}
           iconColor="text-purple-700"
           iconBg="bg-purple-100"
         />
+        <KPIWidget
+          title="Returning Customer Count"
+          data={formatCardData.returning_customer_count}
+          icon={<FaDollarSign size={20} />}
+          iconColor="text-purple-700"
+          iconBg="bg-purple-100"
+        />
+        <KPIWidget
+          title="Revenue Growth"
+          data={formatCardData.revenue_growth}
+          icon={<FaDollarSign size={20} />}
+          iconColor="text-green-700"
+          iconBg="bg-green-100"
+        />
       </div>
 
-      {/* Chart Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        <PieChartWidget
+          title="Revenue by Product Type"
+          mode="currency"
+          data={formatPieChartData.revenue_by_product_type}
+        />
+        <PieChartWidget
+          title="Revenue by Category"
+          mode="currency"
+          data={formatPieChartData.revenue_by_category}
+        />
+      </div>
+
+      {/* Product Type Trend Chart */}
       <div className="flex flex-col gap-4 bg-white shadow rounded-xl p-4">
-        <div className="flex justify-between">
-          <h3 className="text-gray-700 text-base font-semibold">Revenue Trend</h3>
-          <div>
-            <Select value={granularity} onValueChange={setGranularity}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Select granularity" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="DAY">Daily</SelectItem>
-                <SelectItem value="WEEK">Weekly</SelectItem>
-                <SelectItem value="MONTH">Monthly</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        {formatTrendData().length === 0 ? (
+        <h3 className="text-gray-700 text-base font-semibold">
+          Revenue by Product Type (Standard vs Limited)
+        </h3>
+        {formatProductTypeTrendData().length === 0 ? (
           <div className="h-[340px] flex items-center justify-center text-gray-400 italic">
             No data available
           </div>
         ) : (
-          <LineChartWidget title="" data={formatTrendData()} />
+          <LineChartWidget title="" data={formatProductTypeTrendData()} />
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-        <TableWidget title="Top Selling Products" data={formatProductData()} />
-        <TableWidget title="Top Brands" data={formatBrandData()} />
+      {/* Order Type Trend Chart */}
+      <div className="flex flex-col gap-4 bg-white shadow rounded-xl p-4">
+        <h3 className="text-gray-700 text-base font-semibold">
+          Revenue by Order Type (Order vs Pre-Order)
+        </h3>
+        {formatOrderTypeTrendData().length === 0 ? (
+          <div className="h-[340px] flex items-center justify-center text-gray-400 italic">
+            No data available
+          </div>
+        ) : (
+          <LineChartWidget title="" data={formatOrderTypeTrendData()} />
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+        <TableWidget title="Top Selling Products" data={formatTableData.top_selling_products} />
+        <TableWidget title="Top Brands" data={formatTableData.top_brands} />
+        <TableWidget title="Top Categories" data={formatTableData.top_categories} />
       </div>
     </div>
   );
@@ -243,100 +329,30 @@ const OverviewTab: React.FC<TabProps> = ({ startDate, endDate }) => {
 
 const OrderTab: React.FC<TabProps> = ({ startDate, endDate }) => {
   const dispatch = useAppDispatch();
-  const { trend, orders, dashboard, loadingTrend, loadingOrders, loadingDashboard } = useSelector(
+  const { orderDashboard, loadingOrderTrend, loadingOrderDashboard } = useSelector(
     (state: RootState) => state.manageSalesAnalytic,
   );
-  const [granularity, setGranularity] = React.useState("DAY");
 
   useEffect(() => {
-    dispatch(salesTrend({ granularity: granularity, start_date: startDate, end_date: endDate }));
+    dispatch(
+      salesOrderDashboard({
+        from_date: startDate,
+        to_date: endDate,
+        // limit: 5,
+        // period_gap: "day",
+      }),
+    );
 
-    dispatch(salesOrders({ start_date: startDate, end_date: endDate }));
+    dispatch(
+      salesOrderTrend({
+        from_date: startDate,
+        to_date: endDate,
+        period_gap: "day",
+      }),
+    );
+  }, [dispatch, startDate, endDate]);
 
-    dispatch(salesProducts({ start_date: startDate, end_date: endDate }));
-
-    dispatch(salesBrands({ limit: 3, start_date: startDate, end_date: endDate }));
-
-    dispatch(salesDashboard({ start_date: startDate, end_date: endDate }));
-  }, [dispatch, granularity, startDate, endDate]);
-
-  const formatTrendData = () => {
-    if (!trend || !Array.isArray(trend)) return [];
-    return trend.map((item) => ({
-      month: new Date(item.date).toLocaleDateString(),
-      value: item.order_count,
-    }));
-  };
-
-  const formatRecentOrdersData = () => {
-    if (!dashboard?.recent_orders || !Array.isArray(dashboard.recent_orders)) return [];
-    return dashboard.recent_orders.map((item: any) => ({
-      order_id: item.order_id,
-      customer_name: item.customer_name,
-      order_type: item.order_type,
-      status: item.status,
-      total_amount: convertNumberToCurrency(item.total_amount),
-    }));
-  };
-
-  const formatData = {
-    standard_orders: {
-      value: orders?.standard_orders.total_count || 0,
-    },
-    limited_orders: {
-      value: orders?.limited_orders.total_count || 0,
-    },
-    pre_orders: {
-      value: orders?.pre_orders.total_count || 0,
-    },
-    total_active_orders: {
-      value:
-        orders?.standard_orders.pending_count +
-          orders?.limited_orders.pending_count +
-          orders?.pre_orders.pending_count || 0,
-    },
-    total_completed_orders: {
-      value:
-        orders?.standard_orders.completed_count +
-          orders?.limited_orders.completed_count +
-          orders?.pre_orders.received_count || 0,
-    },
-    total_canceled_orders: {
-      value:
-        orders?.standard_orders.cancelled_count +
-          orders?.limited_orders.cancelled_count +
-          orders?.pre_orders.cancelled_count || 0,
-    },
-    total_orders: {
-      value:
-        orders?.standard_orders.total_count +
-          orders?.limited_orders.total_count +
-          orders?.pre_orders.total_count || 0,
-    },
-  };
-
-  const standardOrderType = [
-    { type: "Active", value: orders?.standard_orders.pending_count || 0 },
-    { type: "Completed", value: orders?.standard_orders.completed_count || 0 },
-    { type: "Cancelled", value: orders?.standard_orders.cancelled_count || 0 },
-  ];
-
-  const limitedOrderType = [
-    {
-      type: "Active",
-      value: orders?.limited_orders.pending_count + orders?.pre_orders.pending_count || 0,
-    },
-    {
-      type: "Completed",
-      value: orders?.limited_orders.completed_count + orders?.pre_orders.received_count || 0,
-    },
-    {
-      type: "Cancelled",
-      value: orders?.limited_orders.cancelled_count + orders?.pre_orders.cancelled_count || 0,
-    },
-  ];
-
-  if (loadingTrend || loadingOrders || loadingDashboard) {
+  if (loadingOrderDashboard || loadingOrderTrend) {
     return (
       <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-lg">
         <Loader2 className="h-12 w-12 text-primary animate-spin" />
@@ -344,33 +360,82 @@ const OrderTab: React.FC<TabProps> = ({ startDate, endDate }) => {
     );
   }
 
+  const formatCardData = {
+    total_orders: {
+      value: orderDashboard?.summary.total_orders,
+    },
+    total_pre_orders: {
+      value: orderDashboard?.summary.total_pre_orders,
+    },
+    cancellation_rate: {
+      value: orderDashboard?.summary.cancellation_rate,
+    },
+    refund_rate: {
+      value: orderDashboard?.summary.refund_rate,
+    },
+  };
+
+  const formatPieChartData = {
+    orders: Object.keys(orderDashboard?.orders_pie_chart || {}).map((key) => ({
+      type: key,
+      value: orderDashboard.orders_pie_chart[key],
+    })),
+    pre_orders: Object.keys(orderDashboard?.pre_orders_pie_chart || {}).map((key) => ({
+      type: key,
+      value: orderDashboard.pre_orders_pie_chart[key],
+    })),
+  };
+
+  const formatTableData = {
+    top_products: orderDashboard?.top_lists.top_products.map((item: any) => ({
+      name: item.name,
+      amount: item.value,
+    })),
+    top_categories: orderDashboard?.top_lists.top_categories.map((item: any) => ({
+      name: item.name,
+      amount: item.value,
+    })),
+    top_brands: orderDashboard?.top_lists.top_brands.map((item: any) => ({
+      name: item.name,
+      amount: item.value,
+    })),
+    latest_orders: orderDashboard?.latest_orders.map((item: any) => ({
+      order_id: item.id.slice(0, 8).toUpperCase(),
+      customer_name: item.customer_name,
+      status: item.status,
+      type: item.type,
+      // total_amount: convertNumberToCurrency(item.total_amount.toString()),
+      order_date: new Date(item.created_at).toLocaleDateString(),
+    })),
+  };
+
   return (
     <div className="w-full flex flex-col gap-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
         <KPIWidget
           title="Total Order"
-          data={formatData.total_orders}
+          data={formatCardData.total_orders}
           icon={<FaBox size={20} />}
           iconColor="text-teal-600"
           iconBg="bg-teal-100"
         />
         <KPIWidget
-          title="Active Orders"
-          data={formatData.total_active_orders}
+          title="Total Pre-Order"
+          data={formatCardData.total_pre_orders}
           icon={<FaBox size={20} />}
           iconColor="text-yellow-700"
           iconBg="bg-yellow-100"
         />
         <KPIWidget
-          title="Canceled Orders"
-          data={formatData.total_canceled_orders}
+          title="Cancellation Orders Rate"
+          data={formatCardData.cancellation_rate}
           icon={<FaBox size={20} />}
           iconColor="text-red-700"
           iconBg="bg-red-100"
         />
         <KPIWidget
-          title="Completed Orders"
-          data={formatData.total_completed_orders}
+          title="Refund Orders Rate"
+          data={formatCardData.refund_rate}
           icon={<FaBox size={20} />}
           iconColor="text-green-700"
           iconBg="bg-green-100"
@@ -378,7 +443,7 @@ const OrderTab: React.FC<TabProps> = ({ startDate, endDate }) => {
       </div>
 
       {/* Chart Section */}
-      <div className="flex flex-col gap-4 bg-white shadow rounded-xl p-4">
+      {/* <div className="flex flex-col gap-4 bg-white shadow rounded-xl p-4">
         <div className="flex justify-between">
           <h3 className="text-gray-700 text-base font-semibold">Revenue Trend</h3>
           <div>
@@ -395,14 +460,19 @@ const OrderTab: React.FC<TabProps> = ({ startDate, endDate }) => {
           </div>
         </div>
         <LineChartWidget title="" data={formatTrendData()} />
-      </div>
+      </div> */}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-        <PieChartWidget title="Standard Orders" data={standardOrderType} />
-        <PieChartWidget title="Limited Orders" data={limitedOrderType} />
+        <PieChartWidget title="Standard Orders" data={formatPieChartData.orders} />
+        <PieChartWidget title="Limited Orders" data={formatPieChartData.pre_orders} />
       </div>
-      <div>
-        <TableWidget title="Recent Orders" data={formatRecentOrdersData()} />
+      <div className="flex flex-col gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+          <TableWidget title="Top Products" data={formatTableData.top_products} />
+          <TableWidget title="Top Categories" data={formatTableData.top_categories} />
+          <TableWidget title="Top Brands" data={formatTableData.top_brands} />
+        </div>
+        <TableWidget title="Recent Orders" data={formatTableData.latest_orders} />
       </div>
     </div>
   );

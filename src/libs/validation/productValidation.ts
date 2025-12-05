@@ -25,6 +25,10 @@ export const createLimitedProductSchema: yup.ObjectSchema<CreateLimitedProductPa
     task_id: yup.string().optional(),
     limited_attribute: yup
       .object({
+        achievable_quantity: yup
+          .number()
+          .min(1, "Achievable quantity must be at least 1")
+          .optional(),
         premiere_date: yup.string().required("Premiere date is required"),
         availability_start_date: yup.string().required("Start sale date is required"),
         availability_end_date: yup.string().required("End sale date is required"),

@@ -4,6 +4,7 @@ import { default as Order } from "./order/Order";
 import { default as PreOrder } from "./order/PreOrder";
 import { default as Review } from "./review/Review";
 import { default as Transaction } from "./transaction/Transaction";
+import { default as AssignedTask } from "./task/AssignedTask";
 
 import { default as BasicInfoStep } from "@/pages/manager/sale/product/add-product-step/BasicInfoStep";
 import { default as VariantsStep } from "@/pages/manager/sale/product/add-product-step/VariantsStep";
@@ -19,4 +20,5 @@ export {
   BasicInfoStep,
   DoneStep,
   PreOrder,
+  AssignedTask,
 };

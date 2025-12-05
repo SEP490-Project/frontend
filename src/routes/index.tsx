@@ -51,6 +51,7 @@ import {
   VariantsStep,
   DoneStep,
   PreOrder,
+  AssignedTask,
 } from "@/pages/manager/sale";
 import ContentPreviewPage from "@/pages/manager/marketing/content-approval/ContentPreviewPage";
 import AddProductStep from "@/components/manage/sale/product/AddProductStep";
@@ -129,6 +130,7 @@ const AppRoutes = () => (
 
       <Route element={<PrivateRoute allowedRoles={["SALES_STAFF"]} />}>
         <Route path="/manage/sale" element={<ManageLayout />}>
+          <Route path="task" element={<AssignedTask />} />
           <Route path="product" element={<Product />} />
           <Route path="product/create" element={<AddProductStep />}>
             <Route index element={<BasicInfoStep />} />

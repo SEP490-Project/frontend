@@ -258,3 +258,9 @@ input[type="password"]::-ms-clear {
   font-family: "Courier New", monospace;
   font-size: 0.875rem;
 }
+
+.sales-pwa-layout {
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  height: 100vh;
+}

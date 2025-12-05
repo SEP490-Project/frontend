@@ -12,23 +12,34 @@ import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
+import { useAppDispatch } from "@/libs/stores";
+import { getProfileThunk, updateProfileThunk } from "@/libs/stores/userManager/thunk";
+import { toast } from "sonner";
 import { PasswordInput } from "../password-input";
+import { changePasswordThunk } from "@/libs/stores/authentManager/thunk";
 
 const updateProfileSchema = yup.object({
-  full_name: yup.string().required("Full name is required"),
-  phone: yup.string().required("Phone number is required"),
+  full_name: yup.string(),
+  phone: yup.string(),
   email: yup.string(),
-  username: yup.string().required("Username is required"),
-  date_of_birth: yup.date().nullable().required("Date of birth is required"),
-  password: yup.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: yup.string().oneOf([yup.ref("password"), ""], "Passwords must match"),
+  username: yup.string(),
+  date_of_birth: yup.date().nullable(),
+});
+
+const updatePasswordSchema = yup.object({
+  current_password: yup.string().required("Old password is required"),
+  new_password: yup.string().min(6, "Password must be at least 6 characters"),
+  confirm_password: yup.string().oneOf([yup.ref("new_password"), ""], "Passwords must match"),
 });
 
 export const InformationForm = ({ userProfile }: { userProfile: UserData }) => {
+  const dispatch = useAppDispatch();
   const [isEditing, setIsEditing] = React.useState(false);
   const [dateOfBirth, setDateOfBirth] = React.useState<Date | undefined>(
-    userProfile?.date_of_birth ? new Date(userProfile.date_of_birth) : undefined,
+    userProfile.date_of_birth ? new Date(userProfile.date_of_birth) : undefined,
   );
+
+  const currentDate = new Date();
 
   const { register, handleSubmit } = useForm({
     resolver: yupResolver(updateProfileSchema),
@@ -37,16 +48,45 @@ export const InformationForm = ({ userProfile }: { userProfile: UserData }) => {
       phone: userProfile?.phone || "",
       email: userProfile?.email || "",
       username: userProfile?.username || "",
-      date_of_birth: dateOfBirth ? dateOfBirth : undefined,
-      password: "",
-      confirmPassword: "",
+      date_of_birth: userProfile.date_of_birth ? new Date(userProfile.date_of_birth) : undefined,
     },
   });
 
-  const onSubmit = (data: any) => {
-    data.date_of_birth = dateOfBirth;
-    console.log(data);
-    // Handle form submission, e.g., send data to the server
+  const { register: registerPassword, handleSubmit: handleSubmitPassword } = useForm({
+    resolver: yupResolver(updatePasswordSchema),
+    defaultValues: {
+      current_password: "",
+      new_password: "",
+      confirm_password: "",
+    },
+  });
+
+  const onSubmit = async (data: any) => {
+    if (dateOfBirth) {
+      const dob = new Date(dateOfBirth);
+      const years = currentDate.getFullYear() - dob.getFullYear();
+      if (years < 18) {
+        toast.error("You must be at least 18 years old.");
+        return;
+      }
+      data.date_of_birth = dob.toISOString();
+    }
+    const result = await dispatch(updateProfileThunk(data));
+    if (result.meta.requestStatus === "fulfilled") {
+      toast.success("Profile updated successfully");
+      setIsEditing(false);
+      dispatch(getProfileThunk());
+    } else {
+      toast.error("Failed to update profile");
+    }
+  };
+
+  const onSubmitPassword = async (data: any) => {
+    const result = await dispatch(changePasswordThunk(data));
+    if (result.meta.requestStatus === "fulfilled") {
+      dispatch(getProfileThunk());
+    }
+    setIsEditing(false);
   };
 
   return (
@@ -126,8 +166,10 @@ export const InformationForm = ({ userProfile }: { userProfile: UserData }) => {
                     mode="single"
                     selected={dateOfBirth}
                     onSelect={setDateOfBirth}
+                    {...register("date_of_birth")}
                     disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                     autoFocus
+                    captionLayout="dropdown"
                   />
                 </PopoverContent>
               </Popover>
@@ -158,28 +200,34 @@ export const InformationForm = ({ userProfile }: { userProfile: UserData }) => {
                   id="username"
                 />
               </div>
-              {isEditing && (
-                <>
-                  <div className="mb-4">
-                    <Label htmlFor="password" className="block text-sm font-medium mb-2">
-                      New Password
-                    </Label>
-                    <PasswordInput {...register("password")} id="password" />
-                  </div>
-                  <div className="mb-4">
-                    <Label htmlFor="confirmPassword" className="block text-sm font-medium mb-2">
-                      Confirm Password
-                    </Label>
-                    <PasswordInput {...register("confirmPassword")} id="confirmPassword" />
-                  </div>
-                  <div className="mt-6 flex justify-end">
-                    <Button type="submit">Save Changes</Button>
-                  </div>
-                </>
-              )}
             </div>
           </div>
         </form>
+        {isEditing && (
+          <form onSubmit={handleSubmitPassword(onSubmitPassword)}>
+            <div className="mb-4">
+              <Label htmlFor="current_password" className="block text-sm font-medium mb-2">
+                Current Password
+              </Label>
+              <PasswordInput {...registerPassword("current_password")} id="current_password" />
+            </div>
+            <div className="mb-4">
+              <Label htmlFor="new_password" className="block text-sm font-medium mb-2">
+                New Password
+              </Label>
+              <PasswordInput {...registerPassword("new_password")} id="new_password" />
+            </div>
+            <div className="mb-4">
+              <Label htmlFor="confirm_password" className="block text-sm font-medium mb-2">
+                Confirm Password
+              </Label>
+              <PasswordInput {...registerPassword("confirm_password")} id="confirm_password" />
+            </div>
+            <div className="mt-6 flex justify-end">
+              <Button type="submit">Save Changes</Button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );

@@ -30,7 +30,7 @@ import TransactionDetails from "./TransactionDetails";
 import { format } from "date-fns";
 import { convertNumberToCurrency } from "@/libs/helper/helper";
 
-const Transaction: React.FC = () => {
+const Transaction: React.FC<{ type: "ORDER" | "PREORDER" }> = ({ type }) => {
   const dispatch = useAppDispatch();
   const transactionResponse = useSelector((state: any) => state?.manageTransaction?.transactions);
   const pagination = useSelector(
@@ -47,13 +47,14 @@ const Transaction: React.FC = () => {
   const [params, setParams] = useState<TransactionParams>({
     page: 1,
     limit: 10,
-  });
-
-  const filteredTransactions = transactions.filter((transaction) => {
-    return transaction.reference_type === "ORDER" || transaction.reference_type === "PREORDER";
+    reference_type: type,
   });
 
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+
+  useEffect(() => {
+    setParams((prev) => ({ ...prev, reference_type: type, page: 1 }));
+  }, [type]);
 
   useEffect(() => {
     dispatch(getOrderTransactionsForSaleStaffThunk(params));
@@ -178,9 +179,10 @@ const Transaction: React.FC = () => {
             <TableHeader className="px-4">
               <TableRow className="border-b bg-gray-50">
                 <TableHead className="font-semibold">Transaction ID</TableHead>
+                <TableHead className="font-semibold">Payer</TableHead>
                 <TableHead className="font-semibold">Amount</TableHead>
                 <TableHead className="font-semibold">Method</TableHead>
-                <TableHead className="font-semibold">Type</TableHead>
+                {/* <TableHead className="font-semibold">Type</TableHead> */}
                 <TableHead className="font-semibold">Status</TableHead>
                 <TableHead className="font-semibold">Date</TableHead>
                 <TableHead className="font-semibold">Actions</TableHead>
@@ -209,7 +211,7 @@ const Transaction: React.FC = () => {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredTransactions.map((transaction, index) => (
+                transactions.map((transaction, index) => (
                   <TableRow
                     key={transaction.id}
                     className={`border-b hover:bg-gray-50 ${
@@ -221,6 +223,10 @@ const Transaction: React.FC = () => {
                     </TableCell>
 
                     <TableCell className="py-4">
+                      {transaction.reference_info?.user_info?.full_name || "N/A"}
+                    </TableCell>
+
+                    <TableCell className="py-4">
                       <span className="font-semibold">
                         {convertNumberToCurrency(transaction.amount.toString())}
                       </span>
@@ -228,7 +234,7 @@ const Transaction: React.FC = () => {
 
                     <TableCell className="py-4">{getMethodBadge(transaction.method)}</TableCell>
 
-                    <TableCell className="py-4">
+                    {/* <TableCell className="py-4">
                       {transaction.reference_type === "ORDER" ? (
                         <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200 hover:bg-indigo-200">
                           ORDER
@@ -240,7 +246,7 @@ const Transaction: React.FC = () => {
                       ) : (
                         <Badge className="bg-gray-100 text-gray-800">Other</Badge>
                       )}
-                    </TableCell>
+                    </TableCell> */}
 
                     <TableCell className="py-4">{getStatusBadge(transaction.status)}</TableCell>
 

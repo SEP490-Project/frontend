@@ -27,7 +27,7 @@ const PaginationTable: React.FC<ListPaginationProps> = ({
 
   const renderPaginationItems = () => {
     const items = [];
-    const maxVisiblePages = 5;
+    const maxVisiblePages = window.innerWidth < 640 ? 3 : 5;
     let startPage = Math.max(1, page - Math.floor(maxVisiblePages / 2));
     const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
 
@@ -38,13 +38,18 @@ const PaginationTable: React.FC<ListPaginationProps> = ({
     if (startPage > 1) {
       items.push(
         <PaginationItem key="1">
-          <PaginationLink onClick={() => onPageChange(1)}>1</PaginationLink>
+          <PaginationLink
+            onClick={() => onPageChange(1)}
+            className="h-8 sm:h-10 w-8 sm:w-10 text-xs sm:text-sm cursor-pointer hover:bg-gray-200"
+          >
+            1
+          </PaginationLink>
         </PaginationItem>,
       );
       if (startPage > 2) {
         items.push(
           <PaginationItem key="ellipsis-start">
-            <PaginationEllipsis />
+            <PaginationEllipsis className="h-8 sm:h-10 w-8 sm:w-10" />
           </PaginationItem>,
         );
       }
@@ -53,7 +58,13 @@ const PaginationTable: React.FC<ListPaginationProps> = ({
     for (let i = startPage; i <= endPage; i++) {
       items.push(
         <PaginationItem key={i}>
-          <PaginationLink onClick={() => onPageChange(i)} isActive={page === i}>
+          <PaginationLink
+            onClick={() => onPageChange(i)}
+            isActive={page === i}
+            className={`h-8 sm:h-10 w-8 sm:w-10 text-xs sm:text-sm cursor-pointer ${
+              page === i ? "bg-primary text-primary-foreground" : "hover:bg-gray-200"
+            }`}
+          >
             {i}
           </PaginationLink>
         </PaginationItem>,
@@ -64,13 +75,18 @@ const PaginationTable: React.FC<ListPaginationProps> = ({
       if (endPage < totalPages - 1) {
         items.push(
           <PaginationItem key="ellipsis-end">
-            <PaginationEllipsis />
+            <PaginationEllipsis className="h-8 sm:h-10 w-8 sm:w-10" />
           </PaginationItem>,
         );
       }
       items.push(
         <PaginationItem key={totalPages}>
-          <PaginationLink onClick={() => onPageChange(totalPages)}>{totalPages}</PaginationLink>
+          <PaginationLink
+            onClick={() => onPageChange(totalPages)}
+            className="h-8 sm:h-10 w-8 sm:w-10 text-xs sm:text-sm cursor-pointer hover:bg-gray-200"
+          >
+            {totalPages}
+          </PaginationLink>
         </PaginationItem>,
       );
     }
@@ -81,27 +97,41 @@ const PaginationTable: React.FC<ListPaginationProps> = ({
   if (totalItems === 0) return null;
 
   return (
-    <div className="flex justify-between items-center p-4 border-t bg-gray-50">
-      <div className="text-sm text-gray-500 md:text-nowrap">
-        Showing {startIndex}-{endIndex} of {totalItems}
+    <div className="flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-4 p-3 sm:p-4 border-t bg-gray-50 rounded-b-2xl">
+      <div className="text-xs sm:text-sm text-gray-500 order-2 sm:order-1">
+        <span className="hidden sm:inline">
+          Showing {startIndex}-{endIndex} of {totalItems}
+        </span>
+        <span className="sm:hidden">
+          {startIndex}-{endIndex} of {totalItems}
+        </span>
       </div>
-      <Pagination>
-        <PaginationContent>
-          <PaginationItem>
-            <PaginationPrevious
-              onClick={() => onPageChange(page - 1)}
-              className={page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-            />
-          </PaginationItem>
-          {renderPaginationItems()}
-          <PaginationItem>
-            <PaginationNext
-              onClick={() => onPageChange(page + 1)}
-              className={page === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-            />
-          </PaginationItem>
-        </PaginationContent>
-      </Pagination>
+
+      <div className="order-1 sm:order-2">
+        <Pagination>
+          <PaginationContent className="gap-1">
+            <PaginationItem>
+              <PaginationPrevious
+                onClick={() => onPageChange(page - 1)}
+                className={`h-8 sm:h-10 px-2 sm:px-3 text-xs sm:text-sm ${
+                  page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer hover:bg-gray-200"
+                }`}
+              />
+            </PaginationItem>
+            {renderPaginationItems()}
+            <PaginationItem>
+              <PaginationNext
+                onClick={() => onPageChange(page + 1)}
+                className={`h-8 sm:h-10 px-2 sm:px-3 text-xs sm:text-sm ${
+                  page === totalPages
+                    ? "pointer-events-none opacity-50"
+                    : "cursor-pointer hover:bg-gray-200"
+                }`}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      </div>
     </div>
   );
 };

@@ -250,6 +250,18 @@ const Sidebar: React.FC<SidebarProps> = ({
         href: "/manage/sale/transaction",
         label: "Transaction",
         icon: <FaMoneyCheckDollar size={18} />,
+        subTabs: [
+          {
+            href: "/manage/sale/transaction",
+            label: "Order",
+            icon: <FaMoneyCheckDollar size={14} />,
+          },
+          {
+            href: "/manage/sale/transaction/pre-order",
+            label: "Pre-Order",
+            icon: <FaMoneyCheckDollar size={14} />,
+          },
+        ],
       },
     ],
     CONTENT_STAFF: [

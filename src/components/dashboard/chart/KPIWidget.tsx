@@ -1,6 +1,5 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ArrowUpRight, ArrowDownRight } from "lucide-react";
-import CountUp from "react-countup";
 import { useRef, useEffect } from "react";
 import { convertNumberToCurrency } from "@/libs/helper/helper";
 
@@ -48,7 +47,7 @@ function KPIWidget({
         hasAnimated.current = true;
       }, 3000);
     }
-  }, [value]);
+  }, [value, mode]);
 
   return (
     <Card className="rounded-2xl shadow-sm" id={id}>
@@ -64,22 +63,23 @@ function KPIWidget({
       </CardHeader>
       <CardContent>
         <div className="text-3xl font-bold text-gray-900">
-          {!hasAnimated.current ? (
-            <CountUp
-              end={typeof value === "number" ? value : 0}
-              duration={3}
-              formattingFn={formatValue}
-              onEnd={() => {
-                hasAnimated.current = true;
-              }}
-            />
-          ) : mode === "currency" ? (
-            `${convertNumberToCurrency(Number(value).toFixed(2))}`
-          ) : mode === "percent" ? (
-            `${Number(value).toFixed(3)}%`
-          ) : (
-            formatValue(value)
-          )}
+          {
+            // !hasAnimated.current ? (
+            //   <CountUp
+            //     end={typeof value === "number" ? value : 0}
+            //     duration={3}
+            //     formattingFn={formatValue}
+            //     onEnd={() => {
+            //       hasAnimated.current = true;
+            //     }}
+            //   />
+            // ) :
+            mode === "currency"
+              ? `${convertNumberToCurrency(Number(value).toFixed(2))}`
+              : mode === "percent"
+                ? `${Number(value).toFixed(3)}%`
+                : formatValue(value)
+          }
         </div>
         {data?.status && data?.statusText && (
           <p

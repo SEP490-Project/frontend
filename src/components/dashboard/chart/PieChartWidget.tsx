@@ -1,9 +1,10 @@
+import { convertNumberToCurrency } from "@/libs/helper/helper";
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 interface Props {
   title: string;
   data: { type: string; value: number }[];
-  mode?: "count" | "percent";
+  mode?: "count" | "percent" | "currency";
 }
 
 const COLORS = [
@@ -22,7 +23,7 @@ const COLORS = [
 ];
 
 const renderCustomizedLabel =
-  (mode: "count" | "percent") =>
+  (mode: "count" | "percent" | "currency") =>
   ({ cx, cy, midAngle, innerRadius, outerRadius, value }: any) => {
     const RADIAN = Math.PI / 180;
     const radius = innerRadius + (outerRadius - innerRadius) * 1.15;
@@ -38,7 +39,11 @@ const renderCustomizedLabel =
         fontSize={13}
         fontWeight={500}
       >
-        {mode === "percent" ? `${value}%` : value}
+        {mode === "percent"
+          ? `${value}%`
+          : mode === "currency"
+            ? `${convertNumberToCurrency(value.toFixed(2))}`
+            : value}
       </text>
     );
   };
@@ -67,7 +72,11 @@ function PieChartWidget({ title, data, mode = "count" }: Props) {
             </Pie>
             <Tooltip
               formatter={(value: number, name: string) => [
-                mode === "percent" ? `${value}%` : value,
+                mode === "percent"
+                  ? `${value}%`
+                  : mode === "currency"
+                    ? convertNumberToCurrency(Number(value).toFixed(2))
+                    : value,
                 name,
               ]}
             />

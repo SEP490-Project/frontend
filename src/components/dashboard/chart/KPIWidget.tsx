@@ -1,7 +1,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ArrowUpRight, ArrowDownRight } from "lucide-react";
-import CountUp from "react-countup";
 import { useRef, useEffect } from "react";
+import { convertNumberToCurrency } from "@/libs/helper/helper";
 
 interface KPIData {
   value: string | number;
@@ -12,6 +12,7 @@ interface KPIData {
 interface Props {
   title: string;
   data: KPIData;
+  mode?: "percent" | "currency";
   icon?: React.ReactNode;
   iconColor?: string;
   iconBg?: string;
@@ -21,6 +22,7 @@ interface Props {
 function KPIWidget({
   title,
   data,
+  mode,
   icon,
   iconColor = "text-gray-500",
   iconBg = "bg-gray-100",
@@ -45,7 +47,7 @@ function KPIWidget({
         hasAnimated.current = true;
       }, 3000);
     }
-  }, [value]);
+  }, [value, mode]);
 
   return (
     <Card className="rounded-2xl shadow-sm" id={id}>
@@ -61,18 +63,23 @@ function KPIWidget({
       </CardHeader>
       <CardContent>
         <div className="text-3xl font-bold text-gray-900">
-          {!hasAnimated.current ? (
-            <CountUp
-              end={typeof value === "number" ? value : 0}
-              duration={3}
-              formattingFn={formatValue}
-              onEnd={() => {
-                hasAnimated.current = true;
-              }}
-            />
-          ) : (
-            formatValue(value)
-          )}
+          {
+            // !hasAnimated.current ? (
+            //   <CountUp
+            //     end={typeof value === "number" ? value : 0}
+            //     duration={3}
+            //     formattingFn={formatValue}
+            //     onEnd={() => {
+            //       hasAnimated.current = true;
+            //     }}
+            //   />
+            // ) :
+            mode === "currency"
+              ? `${convertNumberToCurrency(Number(value).toFixed(2))}`
+              : mode === "percent"
+                ? `${Number(value).toFixed(3)}%`
+                : formatValue(value)
+          }
         </div>
         {data?.status && data?.statusText && (
           <p

@@ -99,6 +99,10 @@ const AddProductStep = () => {
     } catch (error) {
       console.error("Failed to submit product for review:", error);
     } finally {
+      removeItem("currentProduct");
+      removeItem("currentProductVariants");
+      removeItem("currentConcept");
+
       handleNext();
     }
   };

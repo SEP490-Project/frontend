@@ -1,7 +1,8 @@
 import { Input } from "@/components/ui/input";
 import { Controller, type UseFormReturn } from "react-hook-form";
-import type { CreateLimitedProductPayload } from "@/libs/types/product";
+import type { CreateLimitedProductPayload, LimitedProductData } from "@/libs/types/product";
 import { useEffect } from "react";
+import { getItem } from "@/libs/local-storage";
 
 interface AdditionalInfoFormProps {
   form: UseFormReturn<CreateLimitedProductPayload>;
@@ -14,6 +15,22 @@ export const AdditionalInfoForm = ({ form }: AdditionalInfoFormProps) => {
   const endSaleDate = watch("limited_attribute.availability_end_date");
 
   const today = new Date(Date.now() + 86400000).toISOString().split("T")[0];
+
+  // Load existing product data once on mount
+  useEffect(() => {
+    const existingProduct = getItem<LimitedProductData>("currentProduct");
+    if (existingProduct && existingProduct.id) {
+      form.reset({
+        limited_attribute: {
+          achievable_quantity: existingProduct.limited_product?.achievable_quantity || 1,
+          premiere_date: existingProduct.limited_product?.premiere_date || "",
+          availability_start_date: existingProduct.limited_product?.availability_start_date || "",
+          availability_end_date: existingProduct.limited_product?.availability_end_date || "",
+        },
+      } as any);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (premiereDate && startSaleDate) {

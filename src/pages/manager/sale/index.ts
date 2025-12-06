@@ -1,4 +1,6 @@
 import { default as Product } from "./product/Product";
+import { default as ProductDetail } from "./product/ProductDetail";
+import { default as EditProduct } from "./product/EditProduct";
 import { default as Category } from "./category/Category";
 import { default as Order } from "./order/Order";
 import { default as PreOrder } from "./order/PreOrder";
@@ -12,6 +14,8 @@ import { default as DoneStep } from "@/pages/manager/sale/product/add-product-st
 
 export {
   Product,
+  ProductDetail,
+  EditProduct,
   Category,
   Order,
   Review,

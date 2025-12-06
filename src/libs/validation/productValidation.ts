@@ -45,6 +45,17 @@ export const productVariantSchema: yup.ObjectSchema<ProductVariant> = yup.object
   input_stock: yup
     .number()
     .min(1, "Max stock must be at least 1")
+    .test(
+      "larger-than-pre-order",
+      "Max stock must be larger than or equal to preorder limit",
+      function (value) {
+        const { pre_order_limit } = this.parent;
+        if (pre_order_limit !== undefined && value !== undefined) {
+          return value >= pre_order_limit;
+        }
+        return true;
+      },
+    )
     .required("Max stock is required"),
   pre_order_limit: yup.number().min(1, "Preorder limit must be at least 1").nullable().optional(),
   price: yup

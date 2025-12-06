@@ -57,6 +57,7 @@ export interface ProductData {
 
 export interface LimitedProductData extends ProductData {
   limited_product?: {
+    achievable_quantity?: number;
     is_free_shipping: boolean;
     premiere_date: string;
     availability_start_date: string;

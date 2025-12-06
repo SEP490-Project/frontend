@@ -3,7 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   Package,
   Calendar,
-  DollarSign,
   FileText,
   Info,
   Clock,
@@ -30,6 +29,7 @@ import type {
 } from "@/libs/types/product";
 import { MdHeight, MdWidthNormal } from "react-icons/md";
 import { convertNumberToCurrency, formatDate } from "@/libs/helper/helper";
+import { FaMoneyBill } from "react-icons/fa6";
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -316,10 +316,18 @@ const ProductDetail: React.FC = () => {
                 <Info className="h-5 w-5" />
                 Additional Information
               </h2>
-
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-500 mb-2">Stock</p>
-                <p className="font-semibold text-gray-900">{calculateTotalStock()} items</p>
+              <div className="grid md:grid-cols-2 grid-cols-1 gap-4">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-500 mb-2">Stock</p>
+                  <p className="font-semibold text-gray-900">{calculateTotalStock()} items</p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-500 mb-2">Achivable Limit</p>
+                  <p className="font-semibold text-gray-900">
+                    {(product as LimitedProductData).limited_product?.achievable_quantity || "N/A"}{" "}
+                    items per user
+                  </p>
+                </div>
               </div>
               <div className="grid md:grid-cols-3 grid-cols-1 gap-2">
                 <div className="bg-gray-50 p-4 rounded-lg mt-4">
@@ -432,7 +440,7 @@ const ProductDetail: React.FC = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                           <div className="p-4 rounded-lg border border-gray-200">
                             <p className="text-sm text-gray-600 mb-1 flex items-center gap-1">
-                              <DollarSign className="h-4 w-4" />
+                              <FaMoneyBill className="h-4 w-4" />
                               Price
                             </p>
                             <p className="font-semibold">

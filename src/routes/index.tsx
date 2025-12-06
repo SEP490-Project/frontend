@@ -51,10 +51,12 @@ import {
   VariantsStep,
   DoneStep,
   PreOrder,
+  AssignedTask,
+  EditProduct,
+  ProductDetail,
 } from "@/pages/manager/sale";
 import ContentPreviewPage from "@/pages/manager/marketing/content-approval/ContentPreviewPage";
 import AddProductStep from "@/components/manage/sale/product/AddProductStep";
-import ProductDetail from "@/pages/manager/sale/product/ProductDetail";
 import { Channel, User, VariantAttribute } from "@/pages/manager/admin";
 import { CreateConceptStep } from "@/pages/manager/sale/product/add-product-step/CreateConceptStep";
 import SalesPwaLayout from "@/layouts/SalesPWALayout";
@@ -129,6 +131,7 @@ const AppRoutes = () => (
 
       <Route element={<PrivateRoute allowedRoles={["SALES_STAFF"]} />}>
         <Route path="/manage/sale" element={<ManageLayout />}>
+          <Route path="task" element={<AssignedTask />} />
           <Route path="product" element={<Product />} />
           <Route path="product/create" element={<AddProductStep />}>
             <Route index element={<BasicInfoStep />} />
@@ -136,7 +139,7 @@ const AppRoutes = () => (
             <Route path="variants" element={<VariantsStep />} />
             <Route path="done" element={<DoneStep />} />
           </Route>
-          {/* <Route path="product/:id/edit" element={<ProductDetail />} /> */}
+          <Route path="product/:id/edit" element={<EditProduct />} />
           <Route path="product/:id" element={<ProductDetail />} />
           <Route path="category" element={<Category />} />
           <Route path="order">

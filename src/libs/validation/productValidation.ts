@@ -25,6 +25,10 @@ export const createLimitedProductSchema: yup.ObjectSchema<CreateLimitedProductPa
     task_id: yup.string().optional(),
     limited_attribute: yup
       .object({
+        achievable_quantity: yup
+          .number()
+          .min(1, "Achievable quantity must be at least 1")
+          .optional(),
         premiere_date: yup.string().required("Premiere date is required"),
         availability_start_date: yup.string().required("Start sale date is required"),
         availability_end_date: yup.string().required("End sale date is required"),
@@ -41,6 +45,17 @@ export const productVariantSchema: yup.ObjectSchema<ProductVariant> = yup.object
   input_stock: yup
     .number()
     .min(1, "Max stock must be at least 1")
+    .test(
+      "larger-than-pre-order",
+      "Max stock must be larger than or equal to preorder limit",
+      function (value) {
+        const { pre_order_limit } = this.parent;
+        if (pre_order_limit !== undefined && value !== undefined) {
+          return value >= pre_order_limit;
+        }
+        return true;
+      },
+    )
     .required("Max stock is required"),
   pre_order_limit: yup.number().min(1, "Preorder limit must be at least 1").nullable().optional(),
   price: yup

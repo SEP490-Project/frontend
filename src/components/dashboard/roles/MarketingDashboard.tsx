@@ -338,7 +338,7 @@ const MarketingDashboard: React.FC = () => {
       <Card className="p-4">
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center flex-wrap gap-2">
-            <h2 className="text-lg font-semibold">Monthly Revenue</h2>
+            <h2 className="text-lg font-semibold">Contract Monthly Revenue</h2>
             <div className="flex gap-2 items-center flex-wrap">
               <Select
                 value={monthlyRevenueFilter.year.toString()}
@@ -401,7 +401,7 @@ const MarketingDashboard: React.FC = () => {
       <Card className="p-4">
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center flex-wrap gap-2">
-            <h2 className="text-lg font-semibold">Top Brands by Revenue</h2>
+            <h2 className="text-lg font-semibold">Top Brands by Contract Revenue</h2>
             <div className="flex gap-2 items-center flex-wrap">
               <Select
                 value={topBrandsFilter.filter_type}
@@ -507,7 +507,7 @@ const MarketingDashboard: React.FC = () => {
         <Card className="p-4">
           <div className="flex flex-col gap-4">
             <div className="flex justify-between items-center flex-wrap gap-2">
-              <h2 className="text-lg font-semibold">Revenue by Type</h2>
+              <h2 className="text-lg font-semibold">Contract Revenue by Type</h2>
               <div className="flex gap-2 items-center flex-wrap">
                 <Select
                   value={revenueFilter.filter_type}
@@ -595,7 +595,7 @@ const MarketingDashboard: React.FC = () => {
 
         <Card className="p-4">
           <div className="flex flex-col gap-4">
-            <h2 className="text-lg font-semibold">Revenue Distribution</h2>
+            <h2 className="text-lg font-semibold">Contract Revenue Distribution</h2>
             {isEmptyData(revenueShareData) ? (
               <NoDataMessage message="No revenue distribution data available" />
             ) : (

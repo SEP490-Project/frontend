@@ -185,11 +185,10 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
 
             const hasMaterial = Array.isArray(item.material_url) && item.material_url.length > 0;
 
-            const kpis = item.kpis || item.metrics || [];
             const hasKPIs =
-              Array.isArray(kpis) &&
-              kpis.length > 0 &&
-              kpis.every((k: any) => k.metric?.trim() && k.target?.trim());
+              Array.isArray(item.kpis) &&
+              item.kpis.length > 0 &&
+              item.kpis.every((k: any) => k.metric?.trim() && k.target?.trim());
 
             return hasBasicInfo && hasHashtags && hasKPIs && hasMaterial;
           });

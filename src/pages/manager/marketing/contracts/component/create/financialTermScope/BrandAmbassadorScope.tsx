@@ -73,7 +73,6 @@ const BrandAmbassadorScope: React.FC<BrandAmbassadorScopeProps> = ({ formData, o
           schedules={financial_terms.schedule || []}
           totalCost={financial_terms.total_cost || 0}
           onUpdate={(schedule) => {
-            console.log("BrandAmbassadorScope PaymentSchedule onUpdate:", schedule);
             onUpdate({ schedule });
           }}
           startDate={start_date}

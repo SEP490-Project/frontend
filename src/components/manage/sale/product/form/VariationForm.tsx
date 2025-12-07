@@ -378,7 +378,7 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
             <Input
               id="manufacturing_date"
               type="date"
-              max={expiryDateStr || undefined}
+              max={state.productType === "LIMITED" ? expiryDateStr || undefined : today}
               {...register("manufacturing_date")}
             />
           </div>

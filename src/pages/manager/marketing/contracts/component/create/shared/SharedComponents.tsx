@@ -75,7 +75,7 @@ export const CompactKPISelector: React.FC<{
     { value: "comments", label: "Total Comments" },
     { value: "shares", label: "Total Shares" },
     { value: "reach", label: "Reach" },
-    { value: "click_through", label: "Click-through Rate (%)" },
+    { value: "click_through", label: "Click-through Total" },
     { value: "sales", label: "Sales (VND)" },
     { value: "event_participation", label: "Event Participation Count" },
     { value: "custom", label: "Custom Metric" },
@@ -96,7 +96,7 @@ export const CompactKPISelector: React.FC<{
           { value: "likes", label: "Total Likes" },
           { value: "comments", label: "Total Comments" },
           { value: "shares", label: "Total Shares" },
-          { value: "click_through", label: "Click-through Rate (%)" },
+          { value: "click_through", label: "Click-through Total" },
         ];
       case "CO_PRODUCING":
         return [

@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import type { TransactionData } from "@/libs/types/transaction";
 import { format } from "date-fns";
+import { convertNumberToCurrency } from "@/libs/helper/helper";
 
 interface TransactionDetailsProps {
   transaction: TransactionData | null;
@@ -44,13 +45,6 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({
     );
   };
 
-  const formatCurrency = (amount: string) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(parseFloat(amount));
-  };
-
   const formatDate = (dateString: string) => {
     try {
       return format(new Date(dateString), "dd/MM/yyyy HH:mm:ss");
@@ -76,9 +70,11 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({
     return null;
   }
 
+  const referenceInfo = transaction.reference_info;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl">Transaction Details</DialogTitle>
         </DialogHeader>
@@ -105,7 +101,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({
               <div>
                 <label className="text-sm font-medium text-gray-500">Amount</label>
                 <p className="text-xl font-bold text-primary mt-1">
-                  {formatCurrency(transaction.amount)}
+                  {convertNumberToCurrency(transaction.amount)}
                 </p>
               </div>
               <div>
@@ -117,10 +113,167 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({
 
           <Separator />
 
+          {/* Reference Information */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3">Reference Information</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-500">Reference ID</label>
+                <p className="text-base font-mono mt-1">{transaction.reference_id}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Reference Type</label>
+                <div className="mt-1">
+                  {transaction.reference_type === "ORDER" ? (
+                    <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200 hover:bg-indigo-200">
+                      ORDER
+                    </Badge>
+                  ) : transaction.reference_type === "PREORDER" ? (
+                    <Badge className="bg-teal-100 text-teal-800 border-teal-200 hover:bg-teal-200">
+                      PREORDER
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-gray-100 text-gray-800">
+                      {transaction.reference_type}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Customer Information */}
+          {referenceInfo?.user_info && (
+            <>
+              <Separator />
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Customer Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Full Name</label>
+                    <p className="text-base mt-1">{referenceInfo.user_info.full_name}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Phone Number</label>
+                    <p className="text-base mt-1">{referenceInfo.user_info.phone_number}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-sm font-medium text-gray-500">Email</label>
+                    <p className="text-base mt-1">{referenceInfo.user_info.email}</p>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Bank Information */}
+          {referenceInfo?.bank_info && (
+            <>
+              <Separator />
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Bank Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Bank Name</label>
+                    <p className="text-base mt-1">{referenceInfo.bank_info.bank_name}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Account Holder</label>
+                    <p className="text-base mt-1">{referenceInfo.bank_info.bank_account_holder}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-sm font-medium text-gray-500">Account Number</label>
+                    <p className="text-base font-mono mt-1">
+                      {referenceInfo.bank_info.bank_account}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Order Items */}
+          {referenceInfo?.order_items && referenceInfo.order_items.length > 0 && (
+            <>
+              <Separator />
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Order Items</h3>
+                <div className="space-y-3">
+                  {referenceInfo.order_items.map((item) => (
+                    <div key={item.id} className="border rounded-lg p-3 bg-gray-50">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex-1">
+                          <p className="font-medium">{item.product_name}</p>
+                          <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm text-gray-500">
+                            Unit Price: {convertNumberToCurrency(item.unit_price.toString())}
+                          </p>
+                          <p className="font-semibold text-primary">
+                            {convertNumberToCurrency(item.subtotal.toString())}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Product Variant Info (for Preorders) */}
+          {referenceInfo?.product_variant_info && (
+            <>
+              <Separator />
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Product Information</h3>
+                <div className="border rounded-lg p-4 bg-gray-50">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="col-span-2">
+                      <label className="text-sm font-medium text-gray-500">Product Name</label>
+                      <p className="text-base mt-1 font-medium">
+                        {referenceInfo.product_variant_info.product_name}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Quantity</label>
+                      <p className="text-base mt-1">
+                        {referenceInfo.product_variant_info.quantity}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Unit Price</label>
+                      <p className="text-base mt-1">
+                        {convertNumberToCurrency(
+                          referenceInfo.product_variant_info.unit_price.toString(),
+                        )}
+                      </p>
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-sm font-medium text-gray-500">Total Amount</label>
+                      <p className="text-xl font-bold text-primary mt-1">
+                        {convertNumberToCurrency(
+                          referenceInfo.product_variant_info.total_amount.toString(),
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          <Separator />
+
           {/* Gateway Information */}
           <div>
             <h3 className="text-lg font-semibold mb-3">Gateway Information</h3>
-            <div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-500">Gateway ID</label>
+                <p className="text-base font-mono mt-1">{transaction.gateway_id || "N/A"}</p>
+              </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">Gateway Reference</label>
                 <p className="text-base font-mono mt-1 break-all">

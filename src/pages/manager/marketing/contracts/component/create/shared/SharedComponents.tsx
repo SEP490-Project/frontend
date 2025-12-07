@@ -73,6 +73,7 @@ export const CompactKPISelector: React.FC<{
   const KPI_METRICS_GENERAL = [
     { value: "likes", label: "Total Likes" },
     { value: "comments", label: "Total Comments" },
+    { value: "shares", label: "Total Shares" },
     { value: "reach", label: "Reach" },
     { value: "click_through", label: "Click-through Rate (%)" },
     { value: "sales", label: "Sales (VND)" },
@@ -87,12 +88,14 @@ export const CompactKPISelector: React.FC<{
           { value: "reach", label: "Reach" },
           { value: "likes", label: "Total Likes" },
           { value: "comments", label: "Total Comments" },
+          { value: "shares", label: "Total Shares" },
         ];
       case "AFFILIATE":
         return [
           { value: "reach", label: "Reach" },
           { value: "likes", label: "Total Likes" },
           { value: "comments", label: "Total Comments" },
+          { value: "shares", label: "Total Shares" },
           { value: "click_through", label: "Click-through Rate (%)" },
         ];
       case "CO_PRODUCING":

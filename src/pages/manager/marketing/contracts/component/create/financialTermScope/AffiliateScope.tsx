@@ -35,7 +35,6 @@ const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, err
         const scheduleString = JSON.stringify(newSchedule);
 
         if (previousScheduleRef.current !== scheduleString) {
-          console.log("Quarterly schedule generated:", newSchedule);
           previousScheduleRef.current = scheduleString;
           onUpdate({ payment_date: newSchedule });
         }

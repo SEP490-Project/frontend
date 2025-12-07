@@ -592,7 +592,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                                 onChange={(kpis) => {
                                   const updated = [...products];
                                   const concepts = [...updated[i].concepts];
-                                  concepts[j] = { ...concepts[j], metrics: kpis, kpis };
+                                  concepts[j] = { ...concepts[j], kpis };
                                   updated[i].concepts = concepts;
                                   updateDeliverables({ products: updated });
                                 }}

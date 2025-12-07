@@ -25,11 +25,8 @@ import { useContract } from "@/libs/hooks/useContract";
 import { generateMilestonesFromContract } from "../../utils/milestoneGenerator";
 
 interface TaskDescriptionJson {
-  // Common fields
   kpi_goals?: { metric: string; target: string }[] | null;
   material_urls?: string[];
-
-  // Affiliate & Advertising specific
   advertised_item_id?: number;
   product_name?: string;
   platform?: string;
@@ -39,14 +36,12 @@ interface TaskDescriptionJson {
   is_affiliate_content?: boolean;
   tracking_link?: string;
 
-  // Co-Production specific
   is_product_creation_task?: boolean;
   product_id?: number;
   product_description?: string;
   subtasks?: string[];
   materials?: any;
 
-  // Brand Ambassador specific
   event_id?: number;
   event_name?: string;
   event_date?: string;
@@ -200,9 +195,6 @@ const CreateTask: React.FC<CreateTaskProps> = ({
     setMilestones,
   ]);
 
-  console.log("contract selected", selectedContract);
-  console.log("contract detail", contractDetail);
-
   const addMilestone = () => {
     setMilestones((prev) => [
       ...prev,
@@ -335,6 +327,7 @@ const CreateTask: React.FC<CreateTaskProps> = ({
       }
     }
   }, [suggestCampaign, campaignMode, setMilestones]);
+
   const handleTaskMaterialUpload = (milestoneId: string, taskId: string, urls: string[]) => {
     const material_url = urls[0] || "";
     const task = milestones.find((m) => m.id === milestoneId)?.tasks.find((t) => t.id === taskId);
@@ -362,6 +355,19 @@ const CreateTask: React.FC<CreateTaskProps> = ({
       });
     }
   };
+
+  // UX: yêu cầu mỗi milestone phải có ít nhất 1 task đầy đủ thông tin
+  const isReviewDisabled = React.useMemo(() => {
+    if (milestones.length === 0) return true;
+
+    return milestones.some(
+      (m) =>
+        !m.description?.trim() ||
+        !m.due_date ||
+        m.tasks.length === 0 ||
+        m.tasks.some((t) => !t.name?.trim() || !t.type || !t.deadline),
+    );
+  }, [milestones]);
 
   return (
     <div className="pt-6 space-y-6">
@@ -526,15 +532,12 @@ const CreateTask: React.FC<CreateTaskProps> = ({
 
               <div className="mt-4 space-y-3">
                 <div className="flex justify-between items-center">
-                  <Label className="text-sm font-medium">Tasks</Label>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => addTask(m.id)}
-                    className="text-blue-600"
-                  >
-                    <Plus size={12} /> Add Task
-                  </Button>
+                  <Label className="text-sm font-medium">
+                    Tasks{" "}
+                    <span className="ml-1 text-xs font-normal text-muted-foreground">
+                      (at least 1 per milestone)
+                    </span>
+                  </Label>
                 </div>
 
                 {m.tasks.map((t, ti) => {
@@ -855,30 +858,45 @@ const CreateTask: React.FC<CreateTaskProps> = ({
                     </Card>
                   );
                 })}
+
+                <div className="pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addTask(m.id)}
+                    className="w-full flex items-center justify-center gap-1"
+                  >
+                    <Plus size={12} /> Add Task
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
         );
       })}
 
-      <div className="flex justify-between pt-4">
-        <Button variant="outline" onClick={onBack}>
+      {/* ACTIONS */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t">
+        <Button
+          variant="outline"
+          onClick={onBack}
+          type="button"
+          className="w-full sm:w-auto order-2 sm:order-1"
+        >
           Back
         </Button>
-        <Button
-          onClick={onNext}
-          disabled={
-            milestones.length === 0 ||
-            milestones.some(
-              (m) =>
-                !m.description ||
-                !m.due_date ||
-                m.tasks.some((t) => !t.name || !t.type || !t.deadline),
-            )
-          }
-        >
-          Review & Submit
-        </Button>
+
+        <div className="flex flex-col items-stretch sm:items-end gap-1 order-1 sm:order-2 w-full sm:w-auto">
+          <Button
+            onClick={onNext}
+            type="button"
+            disabled={isReviewDisabled}
+            className="w-full sm:w-auto"
+          >
+            Review & Submit
+          </Button>
+        </div>
       </div>
     </div>
   );

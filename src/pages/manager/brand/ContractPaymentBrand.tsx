@@ -276,6 +276,31 @@ const ContractPaymentBrandPage: React.FC = () => {
     }).format(amount);
   };
 
+  const isWithinTenDaysBeforeDue = (dueDate: string) => {
+    if (!dueDate) return false;
+
+    const now = new Date();
+    const due = new Date(dueDate);
+
+    if (isNaN(due.getTime())) return false;
+
+    const diffMs = due.getTime() - now.getTime();
+    const tenDaysMs = 10 * 24 * 60 * 60 * 1000;
+
+    return diffMs >= 0 && diffMs <= tenDaysMs;
+  };
+
+  const isOverdue = (dueDate: string) => {
+    if (!dueDate) return false;
+
+    const now = new Date();
+    const due = new Date(dueDate);
+
+    if (isNaN(due.getTime())) return false;
+
+    return due.getTime() < now.getTime();
+  };
+
   const handleViewPayment = (paymentId: string) => {
     setSelectedPaymentId(paymentId);
     setIsModalOpen(true);
@@ -552,33 +577,45 @@ const ContractPaymentBrandPage: React.FC = () => {
                               <p>View Details</p>
                             </TooltipContent>
                           </Tooltip>
-                          {payment.status === "PENDING" && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="default"
-                                  size="sm"
-                                  className="h-8 px-3 text-xs font-semibold bg-primary text-white"
-                                  onClick={() =>
-                                    handlePayNow(
-                                      payment.id,
-                                      payment.amount,
-                                      payment.contract_number,
-                                    )
-                                  }
-                                >
-                                  {loadingPaymentId === payment.id ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    "Pay Now"
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Pay this contract payment</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          )}
+                          {payment.status === "PENDING" &&
+                            (isWithinTenDaysBeforeDue(payment.due_date) ||
+                              isOverdue(payment.due_date)) && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="default"
+                                    size="sm"
+                                    className={`h-8 px-3 text-xs font-semibold text-white ${
+                                      isOverdue(payment.due_date)
+                                        ? "bg-red-600 hover:bg-red-700"
+                                        : "bg-primary"
+                                    }`}
+                                    onClick={() =>
+                                      handlePayNow(
+                                        payment.id,
+                                        payment.amount,
+                                        payment.contract_number,
+                                      )
+                                    }
+                                  >
+                                    {loadingPaymentId === payment.id ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : isOverdue(payment.due_date) ? (
+                                      "Pay Overdue"
+                                    ) : (
+                                      "Pay Now"
+                                    )}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>
+                                    {isOverdue(payment.due_date)
+                                      ? "This payment is overdue"
+                                      : "Pay this contract payment"}
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
                         </div>
                       </TableCell>
                     </motion.tr>
@@ -660,29 +697,41 @@ const ContractPaymentBrandPage: React.FC = () => {
                           <p>View Details</p>
                         </TooltipContent>
                       </Tooltip>
-                      {payment.status === "PENDING" && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="default"
-                              size="sm"
-                              className="h-8 px-3 text-xs font-semibold bg-primary text-white"
-                              onClick={() =>
-                                handlePayNow(payment.id, payment.amount, payment.contract_number)
-                              }
-                            >
-                              {loadingPaymentId === payment.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                "Pay Now"
-                              )}
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Pay this contract payment</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
+                      {payment.status === "PENDING" &&
+                        (isWithinTenDaysBeforeDue(payment.due_date) ||
+                          isOverdue(payment.due_date)) && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className={`h-8 px-3 text-xs font-semibold text-white ${
+                                  isOverdue(payment.due_date)
+                                    ? "bg-red-600 hover:bg-red-700"
+                                    : "bg-primary"
+                                }`}
+                                onClick={() =>
+                                  handlePayNow(payment.id, payment.amount, payment.contract_number)
+                                }
+                              >
+                                {loadingPaymentId === payment.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : isOverdue(payment.due_date) ? (
+                                  "Pay Overdue"
+                                ) : (
+                                  "Pay Now"
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>
+                                {isOverdue(payment.due_date)
+                                  ? "This payment is overdue"
+                                  : "Pay this contract payment"}
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
                     </div>
                   </motion.div>
                 ))}

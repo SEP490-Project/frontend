@@ -50,6 +50,7 @@ const BasicInfoStep = () => {
       name: "",
       task_id: state.task?.id || "",
       limited_attribute: {
+        achievable_quantity: 1,
         premiere_date: "",
         availability_start_date: "",
         availability_end_date: "",

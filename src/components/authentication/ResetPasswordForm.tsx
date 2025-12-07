@@ -1,9 +1,9 @@
 import React from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { Button } from "../ui/button";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { PasswordInput } from "../password-input";
 
 interface ResetPasswordRequest {
@@ -12,30 +12,30 @@ interface ResetPasswordRequest {
 }
 
 interface ResetPasswordFormProps {
-  onSubmit: (data: ResetPasswordRequest) => void;
+  onSubmit: (data: ResetPasswordRequest) => void | Promise<void>;
 }
 
 const ResetPasswordSchema = yup.object().shape({
   password: yup
     .string()
     .min(8, "Password must be at least 8 characters")
-    .required("Password is required")
-    .trim(),
+    .required("Password is required"),
   confirmPassword: yup
     .string()
     .oneOf([yup.ref("password")], "Passwords must match")
-    .required("Confirm password is required")
-    .trim(),
+    .required("Confirm password is required"),
 });
 
 export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({ onSubmit }) => {
   const navigate = useNavigate();
+
   const {
-    register,
     handleSubmit,
-    formState: { errors },
+    control,
+    formState: { errors, isSubmitting },
   } = useForm<ResetPasswordRequest>({
     resolver: yupResolver(ResetPasswordSchema),
+    mode: "onSubmit",
   });
 
   return (
@@ -50,10 +50,12 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({ onSubmit }
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 w-full">
         <div className="w-full">
           <h5 className="pb-1">New Password</h5>
-          <PasswordInput
-            {...register("password")}
-            placeholder="Enter your new password"
-            className="w-full"
+          <Controller
+            name="password"
+            control={control}
+            render={({ field }) => (
+              <PasswordInput {...field} placeholder="Enter your new password" className="w-full" />
+            )}
           />
           {errors.password && (
             <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
@@ -62,18 +64,24 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({ onSubmit }
 
         <div className="w-full">
           <h5 className="pb-1">Confirm New Password</h5>
-          <PasswordInput
-            {...register("confirmPassword")}
-            placeholder="Confirm your new password"
-            className="w-full"
+          <Controller
+            name="confirmPassword"
+            control={control}
+            render={({ field }) => (
+              <PasswordInput
+                {...field}
+                placeholder="Confirm your new password"
+                className="w-full"
+              />
+            )}
           />
           {errors.confirmPassword && (
             <p className="text-red-500 text-sm mt-1">{errors.confirmPassword.message}</p>
           )}
         </div>
 
-        <Button type="submit" className="mt-4 text-white" size={"lg"}>
-          Reset Password
+        <Button type="submit" className="mt-4 text-white" size="lg" disabled={isSubmitting}>
+          {isSubmitting ? "Resetting..." : "Reset Password"}
         </Button>
       </form>
 

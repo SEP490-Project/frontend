@@ -51,16 +51,39 @@ import {
   VariantsStep,
   DoneStep,
   PreOrder,
+  AssignedTask,
+  EditProduct,
+  ProductDetail,
 } from "@/pages/manager/sale";
 import ContentPreviewPage from "@/pages/manager/marketing/content-approval/ContentPreviewPage";
 import AddProductStep from "@/components/manage/sale/product/AddProductStep";
-import ProductDetail from "@/pages/manager/sale/product/ProductDetail";
 import { Channel, User, VariantAttribute } from "@/pages/manager/admin";
 import { CreateConceptStep } from "@/pages/manager/sale/product/add-product-step/CreateConceptStep";
+import SalesPwaLayout from "@/layouts/SalesPWALayout";
+import SalesPwaRoute from "./sales-pwa-route";
+import {
+  SalesPwaLogin,
+  SalesOrderDetailPage,
+  SalesOrderListPage,
+  SalesPreOrderPage,
+  SalesProfilePage,
+} from "@/pages/pwa";
 
 const AppRoutes = () => (
   <BrowserRouter>
     <Routes>
+      <Route path="/sales-app/login" element={<SalesPwaLogin />} />
+      <Route element={<SalesPwaRoute />}>
+        <Route path="/sales-app" element={<SalesPwaLayout />}>
+          <Route index element={<SalesOrderListPage />} />
+          <Route path="orders" element={<SalesOrderListPage />} />
+          <Route path="orders/:id" element={<SalesOrderDetailPage />} />
+          <Route path="pre-orders" element={<SalesPreOrderPage />} />
+          <Route path="pre-orders/:id" element={<SalesOrderDetailPage />} />
+          <Route path="profile" element={<SalesProfilePage />} />
+        </Route>
+      </Route>
+
       <Route element={<CustomerLayout />}>
         <Route path="/" element={<Homepage />} />
         <Route path="/about-app" element={<AboutApp />} />
@@ -108,6 +131,7 @@ const AppRoutes = () => (
 
       <Route element={<PrivateRoute allowedRoles={["SALES_STAFF"]} />}>
         <Route path="/manage/sale" element={<ManageLayout />}>
+          <Route path="task" element={<AssignedTask />} />
           <Route path="product" element={<Product />} />
           <Route path="product/create" element={<AddProductStep />}>
             <Route index element={<BasicInfoStep />} />
@@ -115,7 +139,7 @@ const AppRoutes = () => (
             <Route path="variants" element={<VariantsStep />} />
             <Route path="done" element={<DoneStep />} />
           </Route>
-          {/* <Route path="product/:id/edit" element={<ProductDetail />} /> */}
+          <Route path="product/:id/edit" element={<EditProduct />} />
           <Route path="product/:id" element={<ProductDetail />} />
           <Route path="category" element={<Category />} />
           <Route path="order">
@@ -124,7 +148,10 @@ const AppRoutes = () => (
           </Route>
 
           <Route path="review" element={<Review />} />
-          <Route path="transaction" element={<Transaction />} />
+          <Route path="transaction">
+            <Route index element={<Transaction type="ORDER" />} />
+            <Route path="pre-order" element={<Transaction type="PREORDER" />} />
+          </Route>
         </Route>
       </Route>
 

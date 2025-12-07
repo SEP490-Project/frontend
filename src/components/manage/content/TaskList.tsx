@@ -81,7 +81,7 @@ export function TaskList({ currentDate, onViewTask, statusFilter = "ALL" }: Task
   const dayNames = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 
   return (
-    <div className="h-full">
+    <div className="h-[80vh]">
       {/* Calendar Grid */}
       <div className="flex flex-col h-full bg-white rounded-lg shadow-sm border border-border/20 p-4 space-y-4 overflow-y-auto">
         {weekDays.map((day, index) => {

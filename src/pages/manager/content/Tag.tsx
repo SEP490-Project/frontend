@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FaPenToSquare, FaFilter } from "react-icons/fa6";
-import { Trash } from "lucide-react";
+import { Trash, Loader2 } from "lucide-react";
 import { DeleteModal } from "@/components/modal/DeleteModal";
 import { Dialog } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -146,7 +146,8 @@ const ManageTags: React.FC = () => {
               {loading ? (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-8">
-                    Loading tags...
+                    <Loader2 className="mx-auto mb-4 h-12 w-12 text-primary animate-spin" />
+                    <p className="text-gray-500">Loading tags</p>
                   </TableCell>
                 </TableRow>
               ) : tagList.length === 0 ? (
@@ -226,7 +227,10 @@ const ManageTags: React.FC = () => {
 
         <div className="md:hidden divide-y">
           {loading ? (
-            <div className="p-4 text-center text-gray-500">Loading tags...</div>
+            <div className="p-4 text-center">
+              <Loader2 className="mx-auto mb-4 h-12 w-12 text-primary animate-spin" />
+              <p className="text-gray-500">Loading tags...</p>
+            </div>
           ) : tagList.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               No tags found matching your criteria.
@@ -295,12 +299,14 @@ const ManageTags: React.FC = () => {
         </div>
 
         {pagination && pagination.total > 0 && (
-          <PaginationTable
-            page={page}
-            totalItems={pagination.total}
-            pageSize={PAGE_SIZE}
-            onPageChange={handlePageChange}
-          />
+          <div className="flex justify-end p-4 border-t bg-gray-50 [&>div]:p-0 [&>div]:border-0 [&>div]:bg-transparent">
+            <PaginationTable
+              page={page}
+              totalItems={pagination.total}
+              pageSize={PAGE_SIZE}
+              onPageChange={handlePageChange}
+            />
+          </div>
         )}
       </div>
 

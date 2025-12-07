@@ -25,10 +25,10 @@ export function Calendar({ currentDate, setCurrentDate }: CalendarProps) {
   const lastDayOfPrevMonth = new Date(year, month, 0);
   const daysInPrevMonth = lastDayOfPrevMonth.getDate();
 
-  // Function to check if a date has tasks
+  // Function to check if a date has tasks (by created_at)
   const hasTasksOnDate = (date: Date): boolean => {
     return tasks.some((task) => {
-      const taskDate = new Date(task.deadline);
+      const taskDate = new Date(task.created_at);
       return (
         taskDate.getFullYear() === date.getFullYear() &&
         taskDate.getMonth() === date.getMonth() &&

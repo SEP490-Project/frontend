@@ -49,6 +49,8 @@ export interface PreOrderData {
   action_notes?: ActionNote[];
   PaymentTx: PaymentTx;
   confirmation_image: string;
+  staff_resource?: string;
+  user_resource?: string;
 }
 
 export interface ActionNote {

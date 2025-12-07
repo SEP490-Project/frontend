@@ -26,22 +26,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useAppDispatch, type RootState } from "@/libs/stores";
-import {
-  approvePreOrderThunk,
-  deliveredSelfDeliveryPreOrderThunk,
-  getPreOrdersForSaleStaffThunk,
-  receivedSelfPickupPreOrderThunk,
-} from "@/libs/stores/orderManager/thunk";
+import { getPreOrdersForSaleStaffThunk } from "@/libs/stores/orderManager/thunk";
 import { useSelector } from "react-redux";
 import type { OrderRequestQuery } from "@/libs/types/order";
 import { PaginationTable } from "@/components/global";
-import PreOrderDetail from "@/components/manage/sale/order/PreOrderDetail";
+import PreOrderDetail from "@/components/manage/sale/pre-order/PreOrderDetail";
 import { SquarePen } from "lucide-react";
-import { toast } from "sonner";
-import { Label } from "@/components/ui/label";
 import type { PreOrderData } from "@/libs/types/pre-order";
-import { RefundRequestPreOrder } from "@/components/manage/sale/pre-order/RefundRequestPreOrder";
-import { CompensateRequestPreOrder } from "@/components/manage/sale/pre-order/CompensateRequestPreOrder";
+import ChangePreOrderStatusModal from "@/components/manage/sale/pre-order/ChangePreOrderStatusModal";
 
 const PreOrder: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -59,14 +51,7 @@ const PreOrder: React.FC = () => {
   });
   const [selectedPreOrder, setSelectedPreOrder] = useState<PreOrderData | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
-  const [isCensorDialogOpen, setIsCensorDialogOpen] = useState(false);
-  const [isChangeStatusDialogOpen, setIsChangeStatusDialogOpen] = useState(false);
-  const [isRefundDialogOpen, setIsRefundDialogOpen] = useState(false);
-  const [isCompensateDialogOpen, setIsCompensateDialogOpen] = useState(false);
-  const [censorAction, setCensorAction] = useState<"CONFIRM" | "CANCEL">("CONFIRM");
-  const [censorReason, setCensorReason] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState("");
-  const [proofFiles, setProofFiles] = useState<File[]>([]);
+  const [showStatusModal, setShowStatusModal] = useState(false);
 
   useEffect(() => {
     const queryParams: OrderRequestQuery = {
@@ -124,20 +109,6 @@ const PreOrder: React.FC = () => {
     );
   };
 
-  const getNextStates = (currentStatus: string): string[] => {
-    const stateTransitions: Record<string, string[]> = {
-      PENDING: ["CANCELLED, PAID"],
-      PAID: ["PRE_ORDERED"],
-      PRE_ORDERED: ["AWAITING_PICKUP", "IN_TRANSIT"],
-      AWAITING_PICKUP: ["RECEIVED"],
-      IN_TRANSIT: ["DELIVERED"],
-      DELIVERED: ["RECEIVED"],
-      CANCELLED: [],
-      RECEIVED: [],
-    };
-    return stateTransitions[currentStatus] || [];
-  };
-
   const handleViewPreOrder = (preOrder: PreOrderData) => {
     setSelectedPreOrder(preOrder);
     setIsDetailDialogOpen(true);
@@ -153,85 +124,6 @@ const PreOrder: React.FC = () => {
 
   const handlePageChange = (page: number) => {
     setParams({ ...params, page });
-  };
-
-  const handleCensorPreOrder = async () => {
-    if (!selectedPreOrder) return;
-
-    try {
-      await dispatch(
-        approvePreOrderThunk({
-          id: selectedPreOrder.id,
-        }),
-      ).unwrap();
-
-      toast.success(
-        `Pre-order ${censorAction === "CONFIRM" ? "confirmed" : "cancelled"} successfully!`,
-      );
-      dispatch(getPreOrdersForSaleStaffThunk(params));
-      setIsCensorDialogOpen(false);
-      setCensorReason("");
-    } catch (error: any) {
-      toast.error("Failed to censor pre-order", {
-        description: error?.message || "Please try again.",
-      });
-    }
-  };
-
-  const handleUpdateStatus = async () => {
-    if (!selectedPreOrder || !selectedStatus) return;
-
-    const files = new FormData();
-    files.append("state", selectedStatus);
-
-    // Append proof files if available
-    if (proofFiles.length > 0) {
-      proofFiles.forEach((file) => {
-        files.append("file", file);
-      });
-    }
-
-    try {
-      if (selectedStatus === "RECEIVED" && selectedPreOrder.is_self_picked_up) {
-        dispatch(
-          receivedSelfPickupPreOrderThunk({ id: selectedPreOrder.id, file: files }),
-        ).unwrap();
-      } else if (selectedStatus === "DELIVERED" && !selectedPreOrder.is_self_picked_up) {
-        dispatch(
-          deliveredSelfDeliveryPreOrderThunk({ id: selectedPreOrder.id, file: files }),
-        ).unwrap();
-      }
-
-      toast.success("Pre-order status updated successfully!");
-      dispatch(getPreOrdersForSaleStaffThunk(params));
-      setIsChangeStatusDialogOpen(false);
-      setSelectedStatus("");
-      setProofFiles([]);
-    } catch (error: any) {
-      toast.error("Failed to update pre-order status", {
-        description: error?.message || "Please try again.",
-      });
-    }
-  };
-
-  const openCensorDialog = (preOrder: PreOrderData, action: "CONFIRM" | "CANCEL") => {
-    setSelectedPreOrder(preOrder);
-    setCensorAction(action);
-    setIsCensorDialogOpen(true);
-  };
-
-  const openChangeStatusDialog = (preOrder: PreOrderData) => {
-    setSelectedPreOrder(preOrder);
-    setSelectedStatus("");
-    setProofFiles([]);
-    setIsChangeStatusDialogOpen(true);
-  };
-
-  const handleProofFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      setProofFiles(Array.from(files));
-    }
   };
 
   return (
@@ -374,59 +266,25 @@ const PreOrder: React.FC = () => {
                         >
                           <FaEye className="text-blue-600" />
                         </Button>
-                        {preOrder.status === "PAID" && (
-                          <>
+                        {preOrder.status !== "CANCELLED" &&
+                          preOrder.status !== "RECEIVED" &&
+                          preOrder.status !== "REFUNDED" &&
+                          preOrder.status !== "COMPENSATED" &&
+                          preOrder.status !== "PRE_ORDERED" &&
+                          preOrder.status !== "DELIVERED" && (
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="hover:bg-green-100"
-                              title="Confirm Pre-Order"
-                              onClick={() => openCensorDialog(preOrder, "CONFIRM")}
+                              className="hover:bg-yellow-100"
+                              title="Change Status"
+                              onClick={() => {
+                                setSelectedPreOrder(preOrder);
+                                setShowStatusModal(true);
+                              }}
                             >
-                              <SquarePen className="text-green-600" />
+                              <SquarePen className="text-yellow-600" />
                             </Button>
-                          </>
-                        )}
-                        {(preOrder.status === "AWAITING_PICKUP" ||
-                          preOrder.status === "IN_TRANSIT") && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="hover:bg-yellow-100"
-                            title="Change Status"
-                            onClick={() => openChangeStatusDialog(preOrder)}
-                          >
-                            <SquarePen className="text-yellow-600" />
-                          </Button>
-                        )}
-                        {preOrder.status === "REFUND_REQUEST" && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="hover:bg-amber-100"
-                            title="Process Refund"
-                            onClick={() => {
-                              setSelectedPreOrder(preOrder);
-                              setIsRefundDialogOpen(true);
-                            }}
-                          >
-                            <SquarePen className="text-amber-600" />
-                          </Button>
-                        )}
-                        {preOrder.status === "COMPENSATE_REQUEST" && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="hover:bg-blue-100"
-                            title="Process Compensation"
-                            onClick={() => {
-                              setSelectedPreOrder(preOrder);
-                              setIsCompensateDialogOpen(true);
-                            }}
-                          >
-                            <SquarePen className="text-blue-600" />
-                          </Button>
-                        )}
+                          )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -493,65 +351,26 @@ const PreOrder: React.FC = () => {
                     <FaEye className="text-blue-600 mr-2" />
                     View Details
                   </Button>
-
-                  {preOrder.status === "PRE_ORDERED" && (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="hover:bg-green-100"
-                        onClick={() => openCensorDialog(preOrder, "CONFIRM")}
-                      >
-                        Confirm
-                      </Button>
-                    </>
-                  )}
-
-                  {preOrder.status !== "PAID" &&
-                    preOrder.status !== "CANCELLED" &&
-                    preOrder.status !== "RECEIVED" &&
-                    preOrder.status !== "REFUND_REQUEST" &&
-                    preOrder.status !== "COMPENSATE_REQUEST" && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="flex-1 hover:bg-yellow-100"
-                        onClick={() => openChangeStatusDialog(preOrder)}
-                      >
-                        <SquarePen className="text-yellow-600 mr-2" />
-                        Change Status
-                      </Button>
-                    )}
-
-                  {preOrder.status === "REFUND_REQUEST" && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="flex-1 hover:bg-amber-100"
-                      onClick={() => {
-                        setSelectedPreOrder(preOrder);
-                        setIsRefundDialogOpen(true);
-                      }}
-                    >
-                      <SquarePen className="text-amber-600 mr-2" />
-                      Process Refund
-                    </Button>
-                  )}
-
-                  {preOrder.status === "COMPENSATE_REQUEST" && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="flex-1 hover:bg-blue-100"
-                      onClick={() => {
-                        setSelectedPreOrder(preOrder);
-                        setIsCompensateDialogOpen(true);
-                      }}
-                    >
-                      <SquarePen className="text-blue-600 mr-2" />
-                      Process Compensation
-                    </Button>
-                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex-1 hover:bg-yellow-100"
+                    onClick={() => {
+                      setSelectedPreOrder(preOrder);
+                      setShowStatusModal(true);
+                    }}
+                    disabled={
+                      preOrder.status === "CANCELLED" ||
+                      preOrder.status === "RECEIVED" ||
+                      preOrder.status === "REFUNDED" ||
+                      preOrder.status === "COMPENSATED" ||
+                      preOrder.status === "PRE_ORDERED" ||
+                      preOrder.status === "DELIVERED"
+                    }
+                  >
+                    <SquarePen className="text-yellow-600 mr-2" />
+                    Change Status
+                  </Button>
                 </div>
               </div>
             ))
@@ -569,228 +388,27 @@ const PreOrder: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Censor Pre-Order Dialog */}
-      <Dialog open={isCensorDialogOpen} onOpenChange={setIsCensorDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {censorAction === "CONFIRM" ? "Confirm Pre-Order" : "Cancel Pre-Order"}
-            </DialogTitle>
-            <DialogDescription>
-              {censorAction === "CONFIRM"
-                ? "Are you sure you want to confirm this pre-order?"
-                : "Are you sure you want to cancel this pre-order? Please provide a reason."}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            {censorAction === "CANCEL" && (
-              <div>
-                <Label htmlFor="reason">Cancellation Reason</Label>
-                <Input
-                  id="reason"
-                  placeholder="Enter reason for cancellation"
-                  value={censorReason}
-                  onChange={(e) => setCensorReason(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
+      {/* Change Status Modal */}
+      {showStatusModal && selectedPreOrder && (
+        <Dialog open={showStatusModal} onOpenChange={setShowStatusModal}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {selectedPreOrder?.is_self_picked_up ? "Self Picked Up Order" : "Shipping Order"}
+              </DialogTitle>
+              <DialogDescription>
+                Change the status of the order and manage its progress.
+              </DialogDescription>
+            </DialogHeader>
+            {selectedPreOrder && (
+              <ChangePreOrderStatusModal
+                preOrder={selectedPreOrder}
+                onSuccess={() => setShowStatusModal(false)}
+              />
             )}
-
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsCensorDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={handleCensorPreOrder}
-                disabled={censorAction === "CANCEL" && !censorReason.trim()}
-                variant={censorAction === "CONFIRM" ? "default" : "destructive"}
-              >
-                {censorAction === "CONFIRM" ? "Confirm" : "Cancel Pre-Order"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Change Status Dialog */}
-      <Dialog open={isChangeStatusDialogOpen} onOpenChange={setIsChangeStatusDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Change Pre-Order Status</DialogTitle>
-            <DialogDescription>
-              Update the status of this pre-order to the next available state.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="status">New Status</Label>
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Select new status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {getNextStates(selectedPreOrder?.status || "").map((state) => (
-                    <SelectItem key={state} value={state}>
-                      {state.replace(/_/g, " ")}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {((selectedStatus === "RECEIVED" && selectedPreOrder?.is_self_picked_up === true) ||
-              (selectedStatus === "DELIVERED" &&
-                selectedPreOrder?.is_self_picked_up === false)) && (
-              <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
-                <div className="flex items-start gap-3 mb-3">
-                  <div className="bg-blue-100 p-2 rounded-full">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5 text-blue-600"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                    </svg>
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-blue-900 text-sm mb-1">
-                      Proof Photo Required
-                    </h4>
-                    <p className="text-xs text-blue-700">
-                      {selectedStatus === "RECEIVED"
-                        ? "Please upload a photo showing the order is ready for customer pickup."
-                        : "Please upload a photo as proof that the order has been delivered to the customer."}
-                    </p>
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="proof-photo" className="text-sm font-medium text-blue-900">
-                    Upload Proof Photo *
-                  </Label>
-                  <div className="mt-2 relative">
-                    <input
-                      id="proof-photo"
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      multiple
-                      onChange={handleProofFileChange}
-                      className="flex h-10 w-full rounded-md border border-blue-300 bg-white px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-blue-700 placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:border-blue-400 transition-colors"
-                    />
-                  </div>
-
-                  {proofFiles.length > 0 ? (
-                    <div className="mt-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4 text-green-600"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
-                        <p className="text-sm font-medium text-green-700">
-                          {proofFiles.length} photo(s) selected
-                        </p>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        {proofFiles.map((file, index) => (
-                          <div key={index} className="relative group">
-                            <img
-                              src={URL.createObjectURL(file)}
-                              alt={`Preview ${index + 1}`}
-                              className="w-full h-32 object-cover rounded-lg border-2 border-green-200 shadow-sm"
-                            />
-                            <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-10 transition-opacity rounded-lg" />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-xs text-blue-600 mt-2 italic">
-                      No photo selected yet. Please upload at least one photo.
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsChangeStatusDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleUpdateStatus} disabled={!selectedStatus}>
-                Update Status
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Refund Request Dialog */}
-      <Dialog open={isRefundDialogOpen} onOpenChange={setIsRefundDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Process Refund Request</DialogTitle>
-            <DialogDescription>
-              Review and approve the refund request for this pre-order.
-            </DialogDescription>
-          </DialogHeader>
-          {selectedPreOrder && (
-            <RefundRequestPreOrder
-              preOrder={selectedPreOrder}
-              onSuccess={() => {
-                setIsRefundDialogOpen(false);
-                dispatch(getPreOrdersForSaleStaffThunk(params));
-              }}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Compensation Request Dialog */}
-      <Dialog open={isCompensateDialogOpen} onOpenChange={setIsCompensateDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Process Compensation Request</DialogTitle>
-            <DialogDescription>
-              Review and approve the compensation request for this pre-order.
-            </DialogDescription>
-          </DialogHeader>
-          {selectedPreOrder && (
-            <CompensateRequestPreOrder
-              preOrder={selectedPreOrder}
-              onSuccess={() => {
-                setIsCompensateDialogOpen(false);
-                dispatch(getPreOrdersForSaleStaffThunk(params));
-              }}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

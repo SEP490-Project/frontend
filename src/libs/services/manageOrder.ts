@@ -37,7 +37,7 @@ export const manageOrder = {
       },
     }),
   obligateRefundAnOrder: (orderId: string, file: FormData) =>
-    api.post(`/orders/staff/${orderId}/refund/obligate`, file, {
+    api.post(`/orders/staff/${orderId}/obligate-refund`, file, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -74,6 +74,12 @@ export const manageOrder = {
     }),
   refundAPreOrder: (preOrderId: string, file: FormData) =>
     api.post(`/preorders/staff/refund/${preOrderId}/approve`, file, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }),
+  obligateRefundAPreOrder: (preOrderId: string, file: FormData) =>
+    api.post(`/preorders/staff/${preOrderId}/obligate-refund`, file, {
       headers: {
         "Content-Type": "multipart/form-data",
       },

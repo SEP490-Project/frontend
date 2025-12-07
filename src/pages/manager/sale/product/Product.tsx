@@ -70,6 +70,10 @@ const Product: React.FC = () => {
   };
 
   useEffect(() => {
+    if (params?.type === " ") {
+      dispatch(getAllProductsThunk({ ...params, type: undefined }));
+      return;
+    }
     dispatch(getAllProductsThunk(params));
   }, [dispatch, params]);
 

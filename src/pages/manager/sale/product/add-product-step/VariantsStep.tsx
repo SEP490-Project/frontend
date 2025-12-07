@@ -161,6 +161,11 @@ const VariantsStep = () => {
       return;
     }
 
+    if (productDetail?.data.variants && productDetail?.data?.variants?.length > 2) {
+      toast.error("You can only add up to 3 variants per product.");
+      return;
+    }
+
     setIsLoading(true);
     try {
       await dispatch(

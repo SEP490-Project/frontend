@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Campaign, Task, Review } from "./component/create";
-import { parse } from "date-fns";
+import { parse, format, parseISO } from "date-fns";
 import type { CampaignRequest } from "@/libs/types/campaign";
 import { useAppDispatch } from "@/libs/stores";
 import { createCampaign, createInternalCampaign } from "@/libs/stores/campaignManager/thunk";
@@ -28,9 +28,46 @@ function formatToISO(dateStr?: string | null) {
   }
 }
 
+function formatDateForInput(dateString?: string | null) {
+  if (!dateString) return "";
+  try {
+    return format(parseISO(dateString), "yyyy-MM-dd");
+  } catch {
+    return "";
+  }
+}
+
+interface TaskDescriptionJson {
+  kpi_goals?: { metric: string; target: string }[] | null;
+  material_urls?: string[];
+  advertised_item_id?: number;
+  product_name?: string;
+  platform?: string;
+  tagline?: string;
+  creative_notes?: string;
+  hashtags?: string[];
+  is_affiliate_content?: boolean;
+  tracking_link?: string;
+
+  is_product_creation_task?: boolean;
+  product_id?: number;
+  product_description?: string;
+  subtasks?: string[];
+  materials?: any;
+
+  event_id?: number;
+  event_name?: string;
+  event_date?: string;
+  event_duration?: string;
+  location?: string;
+  activities?: string[];
+  representation_rules?: string[];
+}
+
 interface TaskDescription {
   description: string;
   material_url?: string;
+  description_json?: TaskDescriptionJson;
 }
 
 interface Task {
@@ -89,6 +126,57 @@ const AddCampaignPage: React.FC = () => {
     setSelectedContract(null);
   }, [campaignMode]);
 
+  // Handle suggestion data from Campaign component
+  const handleSuggestedDataReceived = (suggestionData: any) => {
+    if (suggestionData?.suggested_campaign) {
+      const suggested = suggestionData.suggested_campaign;
+
+      // Update campaign data
+      setCampaignData((prev) => ({
+        ...prev,
+        name: suggested.name || prev.name,
+        description: suggested.description || prev.description,
+        start_date: suggested.start_date
+          ? formatDateForInput(suggested.start_date)
+          : prev.start_date,
+        end_date: suggested.end_date ? formatDateForInput(suggested.end_date) : prev.end_date,
+        type: suggested.type || prev.type,
+      }));
+
+      // Update milestones with tasks
+      if (suggested.milestones) {
+        const newMilestones = suggested.milestones.map((milestone: any) => ({
+          id: crypto.randomUUID(),
+          description: milestone.description,
+          due_date: formatDateForInput(milestone.due_date),
+          tasks: milestone.tasks.map((task: any) => {
+            const descriptionJson = task.description_json || {};
+            const materialUrls = descriptionJson.materials || descriptionJson.material_urls || [];
+
+            return {
+              id: crypto.randomUUID(),
+              name: task.name,
+              type: task.type,
+              deadline: formatDateForInput(task.deadline),
+              description: {
+                description:
+                  descriptionJson.product_description ||
+                  descriptionJson.creative_notes ||
+                  descriptionJson.concept_description ||
+                  descriptionJson.event_name ||
+                  "",
+                material_url: materialUrls[0] || "",
+                description_json: descriptionJson,
+              },
+              materialFiles: [],
+            };
+          }),
+        }));
+        setMilestones(newMilestones);
+      }
+    }
+  };
+
   const isCampaignValid = useMemo(() => {
     const baseValid = !!campaignData.name && !!campaignData.start_date && !!campaignData.end_date;
 
@@ -113,14 +201,7 @@ const AddCampaignPage: React.FC = () => {
         name: t.name,
         type: t.type,
         deadline: formatToISO(t.deadline),
-        description: {
-          description: t.description?.description || "",
-          material_url: Array.isArray(t.description?.material_url)
-            ? t.description.material_url
-            : typeof t.description?.material_url === "string" && t.description.material_url
-              ? [t.description.material_url]
-              : [],
-        },
+        description_json: t.description?.description_json || {},
       })),
     })),
   });
@@ -335,6 +416,8 @@ const AddCampaignPage: React.FC = () => {
                     onNext={() => setActiveTab("milestone")}
                     onReset={handleReset}
                     onContractSelect={setSelectedContract}
+                    onSuggestedDataReceived={handleSuggestedDataReceived}
+                    selectedContract={selectedContract}
                   />
                 </TabsContent>
 

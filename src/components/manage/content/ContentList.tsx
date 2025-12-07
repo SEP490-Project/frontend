@@ -92,6 +92,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
   const [showRequestApprovalModal, setShowRequestApprovalModal] = useState(false);
   const [contentToSubmit, setContentToSubmit] = useState<Content | null>(null);
   const [isSubmittingApproval, setIsSubmittingApproval] = useState(false);
+  const [isLoadingEdit, setIsLoadingEdit] = useState(false);
 
   useEffect(() => {
     fetchContents(filters);
@@ -180,6 +181,30 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
   const handleCloseDetailModal = () => {
     setIsDetailModalOpen(false);
     setSelectedContent(null);
+  };
+
+  const handleEditContent = async (content: Content) => {
+    setIsLoadingEdit(true);
+
+    try {
+      // Fetch detailed content from API to get the full body
+      const response = await manageContent.contentDetail(content.id);
+      const apiData = response.data.data;
+
+      if (apiData) {
+        // Pass the detailed content to the editor
+        onEdit?.(apiData);
+      } else {
+        // Fallback: use the content from the list
+        onEdit?.(content);
+      }
+    } catch (error) {
+      console.error("Error fetching content detail for edit:", error);
+      // Fallback: use the content from the list
+      onEdit?.(content);
+    } finally {
+      setIsLoadingEdit(false);
+    }
   };
 
   const handleRequestApproval = (contentId: string) => {
@@ -560,9 +585,12 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                           </DropdownMenuItem>
                           {/* Only show Edit for draft and rejected content */}
                           {(content.status === "DRAFT" || content.status === "REJECTED") && (
-                            <DropdownMenuItem onClick={() => onEdit?.(content)}>
+                            <DropdownMenuItem
+                              onClick={() => handleEditContent(content)}
+                              disabled={isLoadingEdit}
+                            >
                               <Edit className="w-4 h-4 mr-2" />
-                              Edit
+                              {isLoadingEdit ? "Loading..." : "Edit"}
                             </DropdownMenuItem>
                           )}
 

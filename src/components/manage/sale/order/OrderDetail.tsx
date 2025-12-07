@@ -198,20 +198,63 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order }) => {
               </div>
             </div>
           )}
-          {(order.confirmation_image || order.staff_resource) && (
-            <div>
-              <span className="text-sm text-gray-500">Proof:</span>
-              <div className="mt-2 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-2">
-                <img
-                  src={order.confirmation_image || order.staff_resource}
-                  alt="Customer pickup proof"
-                  className="w-full max-w-md rounded-md"
-                />
-              </div>
-            </div>
-          )}
         </div>
       </div>
+      {(order.confirmation_image || order.staff_resource || order.user_resource) && (
+        <>
+          <Separator />
+          <h3 className="text-sm font-medium text-gray-500 mb-3">Proof Images</h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {order.confirmation_image && (
+              <div className="col-span-1">
+                <span className="text-sm text-gray-500">Delivery Proofs:</span>
+                <a href={order.user_resource} target="_blank" rel="noopener noreferrer">
+                  <div className="mt-2 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-2">
+                    <img
+                      src={order.confirmation_image}
+                      alt="Delivery proof"
+                      className="w-full max-w-md rounded-md"
+                    />
+                  </div>
+                </a>
+              </div>
+            )}
+            {order.staff_resource && (
+              <div className="col-span-1">
+                <span className="text-sm text-gray-500">
+                  Staff Proofs (refund, compensate bills or other reasons):
+                </span>
+                <a href={order.staff_resource} target="_blank" rel="noopener noreferrer">
+                  <div className="mt-2 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-2">
+                    <img
+                      src={order.staff_resource}
+                      alt="Staff proof"
+                      className="w-full max-w-md rounded-md"
+                    />
+                  </div>
+                </a>
+              </div>
+            )}
+            {order.user_resource && (
+              <div className="col-span-1">
+                <span className="text-sm text-gray-500">
+                  Customer Proofs (refund, compensate bills or other reasons):
+                </span>
+                <a href={order.user_resource} target="_blank" rel="noopener noreferrer">
+                  <div className="mt-2 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-2">
+                    <img
+                      src={order.user_resource}
+                      alt="Customer proof"
+                      className="w-full max-w-md rounded-md"
+                    />
+                  </div>
+                </a>
+              </div>
+            )}
+          </div>
+        </>
+      )}
 
       <Separator />
 

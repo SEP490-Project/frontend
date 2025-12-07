@@ -31,9 +31,9 @@ import { useSelector } from "react-redux";
 import type { OrderData, OrderRequestQuery } from "@/libs/types/order";
 import { PaginationTable } from "@/components/global";
 import OrderDetail from "@/components/manage/sale/order/OrderDetail";
-import { ChangeStatusModal } from "@/components/manage/sale/order/ChangeStatusModal";
 import { SquarePen } from "lucide-react";
 import { convertNumberToCurrency } from "@/libs/helper/helper";
+import ChangeOrderStatusModal from "@/components/manage/sale/order/ChangeOrderStatusModal";
 
 const Order: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -278,29 +278,23 @@ const Order: React.FC = () => {
                         >
                           <FaEye className="text-blue-600" />
                         </Button>
-                        {order.status === "CANCELLED" ||
-                        order.status === "REFUNDED" ||
-                        order.status === "RECEIVED" ||
-                        order.status === "COMPENSATED" ? null : (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="hover:bg-yellow-100"
-                            title="Change Status"
-                            onClick={() => {
-                              setSelectedOrder(order);
-                              setIsChangeStatusModalOpen(true);
-                            }}
-                            disabled={
-                              order.status === "CANCELLED" ||
-                              order.status === "REFUNDED" ||
-                              order.status === "RECEIVED" ||
-                              order.status === "COMPENSATED"
-                            }
-                          >
-                            <SquarePen className="text-yellow-600" />
-                          </Button>
-                        )}
+                        {order.status !== "CANCELLED" &&
+                          order.status !== "RECEIVED" &&
+                          order.status !== "COMPENSATED" &&
+                          order.status !== "REFUNDED" && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="hover:bg-yellow-100"
+                              title="Change Status"
+                              onClick={() => {
+                                setSelectedOrder(order);
+                                setIsChangeStatusModalOpen(true);
+                              }}
+                            >
+                              <SquarePen className="text-yellow-600" />
+                            </Button>
+                          )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -378,10 +372,10 @@ const Order: React.FC = () => {
                       setIsChangeStatusModalOpen(true);
                     }}
                     disabled={
-                      order.status === "CANCELLED" ||
-                      order.status === "REFUNDED" ||
                       order.status === "RECEIVED" ||
-                      order.status === "COMPENSATED"
+                      order.status === "CANCELLED" ||
+                      order.status === "COMPENSATED" ||
+                      order.status === "REFUNDED"
                     }
                   >
                     <SquarePen className="text-yellow-600 mr-2" />
@@ -415,7 +409,7 @@ const Order: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
           {selectedOrder && (
-            <ChangeStatusModal
+            <ChangeOrderStatusModal
               order={selectedOrder}
               onSuccess={() => setIsChangeStatusModalOpen(false)}
             />

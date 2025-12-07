@@ -98,6 +98,18 @@ const markSelfDeliveryOrderAsInTransitThunk = createAsyncThunk(
   },
 );
 
+const obligateRefundAnOrderThunk = createAsyncThunk(
+  "orderManager/obligateRefundAnOrder",
+  async ({ orderId, file }: { orderId: string; file: FormData }, { rejectWithValue }) => {
+    try {
+      const response = await manageOrder.obligateRefundAnOrder(orderId, file);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
 const getPreOrdersForSaleStaffThunk = createAsyncThunk(
   "orderManager/getPreOrdersForSaleStaff",
   async (query: OrderRequestQuery, { rejectWithValue }) => {
@@ -201,6 +213,18 @@ const refundAPreOrderThunk = createAsyncThunk(
   },
 );
 
+const obligateRefundAPreOrderThunk = createAsyncThunk(
+  "orderManager/obligateRefundAPreOrder",
+  async ({ id, file }: { id: string; file: FormData }, { rejectWithValue }) => {
+    try {
+      const response = await manageOrder.obligateRefundAPreOrder(id, file);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
 export {
   getOrderForSaleStaffThunk,
   markOrderIsReadyToPickedUpThunk,
@@ -211,6 +235,7 @@ export {
   markSelfDeliveryOrderAsInTransitThunk,
   approveRefundAnOrderThunk,
   compensateAnOrderThunk,
+  obligateRefundAnOrderThunk,
 
   // Pre-Order Thunks
   getPreOrdersForSaleStaffThunk,
@@ -219,4 +244,5 @@ export {
   deliveredSelfDeliveryPreOrderThunk,
   refundAPreOrderThunk,
   compensateAPreOrderThunk,
+  obligateRefundAPreOrderThunk,
 };

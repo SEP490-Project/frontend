@@ -225,6 +225,30 @@ const obligateRefundAPreOrderThunk = createAsyncThunk(
   },
 );
 
+const markLimitedOrderAsDeliveredThunk = createAsyncThunk(
+  "orderManager/markLimitedOrderAsDelivered",
+  async ({ orderId, files }: { orderId: string; files: FormData }, { rejectWithValue }) => {
+    try {
+      const response = await manageOrder.markLimitedOrderAsDelivered({ orderId, files });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
+const markLimitedOrderAsInTransitThunk = createAsyncThunk(
+  "orderManager/markLimitedOrderAsInTransit",
+  async (orderId: string, { rejectWithValue }) => {
+    try {
+      const response = await manageOrder.markLimitedOrderAsInTransit(orderId);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
 export {
   getOrderForSaleStaffThunk,
   markOrderIsReadyToPickedUpThunk,
@@ -236,6 +260,10 @@ export {
   approveRefundAnOrderThunk,
   compensateAnOrderThunk,
   obligateRefundAnOrderThunk,
+
+  // Limited Order Thunks
+  markLimitedOrderAsDeliveredThunk,
+  markLimitedOrderAsInTransitThunk,
 
   // Pre-Order Thunks
   getPreOrdersForSaleStaffThunk,

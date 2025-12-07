@@ -17,6 +17,8 @@ import {
   receivedSelfPickupPreOrderThunk,
   obligateRefundAnOrderThunk,
   obligateRefundAPreOrderThunk,
+  markLimitedOrderAsDeliveredThunk,
+  markLimitedOrderAsInTransitThunk,
 } from "./thunk";
 import type { OrderResponse } from "@/libs/types/order";
 import type { PreOrderResponse } from "@/libs/types/pre-order";
@@ -219,6 +221,28 @@ const orderManagerSlice = createSlice({
         state.loading = false;
       })
       .addCase(obligateRefundAPreOrderThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.errors = action.error;
+      })
+      .addCase(markLimitedOrderAsInTransitThunk.pending, (state) => {
+        state.loading = true;
+        state.errors = null;
+      })
+      .addCase(markLimitedOrderAsInTransitThunk.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(markLimitedOrderAsInTransitThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.errors = action.error;
+      })
+      .addCase(markLimitedOrderAsDeliveredThunk.pending, (state) => {
+        state.loading = true;
+        state.errors = null;
+      })
+      .addCase(markLimitedOrderAsDeliveredThunk.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(markLimitedOrderAsDeliveredThunk.rejected, (state, action) => {
         state.loading = false;
         state.errors = action.error;
       });

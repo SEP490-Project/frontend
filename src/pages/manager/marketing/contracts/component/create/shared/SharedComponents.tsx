@@ -61,9 +61,16 @@ export const CompactKPISelector: React.FC<{
   kpis?: KPI[];
   onChange: (v: KPI[]) => void;
   contractType?: string;
-}> = memo(({ kpis = [], onChange, contractType }) => {
+  requiredMetrics?: string[];
+}> = memo(({ kpis = [], onChange, contractType, requiredMetrics = [] }) => {
   const handleAdd = () => onChange([...kpis, { metric: "", target: "", description: "" }]);
-  const handleRemove = (i: number) => onChange(kpis.filter((_, idx) => idx !== i));
+  const handleRemove = (i: number) => {
+    const kpiToRemove = kpis[i];
+    if (requiredMetrics.includes(kpiToRemove.metric)) {
+      return;
+    }
+    onChange(kpis.filter((_, idx) => idx !== i));
+  };
   const handleChange = (i: number, field: keyof KPI, value: string) => {
     const updated = [...kpis];
     updated[i] = { ...updated[i], [field]: value };
@@ -191,15 +198,26 @@ export const CompactKPISelector: React.FC<{
                 </div>
               </div>
 
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-red-500 hover:bg-red-50 h-9 w-9 flex-shrink-0 mt-4"
-                onClick={() => handleRemove(i)}
-                title="Remove KPI"
-              >
-                <FaTrash className="w-4 h-4" />
-              </Button>
+              {!requiredMetrics.includes(kpi.metric) ? (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-red-500 hover:bg-red-50 h-9 w-9 flex-shrink-0 mt-4"
+                  onClick={() => handleRemove(i)}
+                  title="Remove KPI"
+                >
+                  <FaTrash className="w-4 h-4" />
+                </Button>
+              ) : (
+                <div className="h-9 w-9 flex-shrink-0 mt-4 flex items-center justify-center">
+                  <div
+                    className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded text-center"
+                    title="Required KPI - Cannot be removed"
+                  >
+                    Required
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}

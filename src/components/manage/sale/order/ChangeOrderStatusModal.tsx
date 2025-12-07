@@ -11,12 +11,16 @@ import {
   censorAnOrderThunk,
   compensateAnOrderThunk,
   getOrderForSaleStaffThunk,
+  markLimitedOrderAsDeliveredThunk,
+  markLimitedOrderAsInTransitThunk,
   markOrderIsReadyToPickedUpThunk,
   markOrderIsReceivedAfterPickedUpThunk,
   obligateRefundAnOrderThunk,
 } from "@/libs/stores/orderManager/thunk";
 import { toast } from "sonner";
 import { useState } from "react";
+import ShipLimitedOrder from "./change-status-order/ShipLimitedOrder";
+import CompleteShipLimitedOrder from "./change-status-order/CompleteShipLimitedOrder";
 
 interface ChangeStatusModalProps {
   order: OrderData | null;
@@ -138,6 +142,33 @@ const ChangeOrderStatusModal = ({ order, onSuccess }: ChangeStatusModalProps) =>
     }
   };
 
+  const handleLimitedOrderAsDelivered = async (file: File) => {
+    const formData = new FormData();
+    formData.append("files", file);
+
+    const result = await dispatch(
+      markLimitedOrderAsDeliveredThunk({ orderId: order?.id as string, files: formData }),
+    );
+    if (result.meta.requestStatus === "fulfilled") {
+      toast.success("Order marked as delivered successfully");
+      onSuccess?.();
+      dispatch(getOrderForSaleStaffThunk(params));
+    } else {
+      toast.error("Failed to mark order as delivered");
+    }
+  };
+
+  const handleLimitedOrderAsInTransit = async () => {
+    const result = await dispatch(markLimitedOrderAsInTransitThunk(order?.id as string));
+    if (result.meta.requestStatus === "fulfilled") {
+      toast.success("Order marked as in transit successfully");
+      onSuccess?.();
+      dispatch(getOrderForSaleStaffThunk(params));
+    } else {
+      toast.error("Failed to mark order as in transit");
+    }
+  };
+
   switch (order?.status) {
     case "PAID":
       return (
@@ -151,9 +182,17 @@ const ChangeOrderStatusModal = ({ order, onSuccess }: ChangeStatusModalProps) =>
       if (order.is_self_picked_up) {
         return <AwaitingPickupOrder order={order} onHandle={handleAwaitingPickupOrder} />;
       }
+      if (order.order_type === "LIMITED" && order.is_self_picked_up === false) {
+        return <ShipLimitedOrder order={order} onHandle={handleLimitedOrderAsInTransit} />;
+      }
+
+      return <ShipOrder order={order} />;
+    case "IN_TRANSIT":
+      if (order.order_type === "LIMITED") {
+        return <CompleteShipLimitedOrder order={order} onHandle={handleLimitedOrderAsDelivered} />;
+      }
       return <ShipOrder order={order} />;
     case "SHIPPED":
-    case "IN_TRANSIT":
     case "DELIVERED":
       return <ShipOrder order={order} />;
     case "AWAITING_PICKUP":

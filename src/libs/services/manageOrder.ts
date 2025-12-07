@@ -49,6 +49,16 @@ export const manageOrder = {
       },
     }),
 
+  // Limited Order Management
+  markLimitedOrderAsDelivered: ({ orderId, files }: { orderId: string; files: FormData }) =>
+    api.patch(`/orders/staff/self-delivered/delivered/${orderId}`, files, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }),
+  markLimitedOrderAsInTransit: (orderId: string) =>
+    api.patch(`/orders/staff/self-delivered/in-transit/${orderId}`),
+
   // Pre-Order Management
   getPreOrdersForSaleStaff: (query: OrderRequestQuery) =>
     api.get("/preorders/staff", { params: query }),

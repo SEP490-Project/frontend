@@ -11,11 +11,12 @@ import {
   createLimitedProductSchema,
 } from "@/libs/validation/productValidation";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useOutletContext, type NavigateFunction } from "react-router";
 import { getItem } from "@/libs/local-storage";
 import TaskDisplayForm from "@/components/manage/sale/product/form/TaskDisplayForm";
+import { Loader2 } from "lucide-react";
 
 const BasicInfoStep = () => {
   const { setOnSubmitStep, steps, currentStep, navigate, state, setIsDisabled, isDisabled } =
@@ -29,6 +30,7 @@ const BasicInfoStep = () => {
       setIsDisabled: React.Dispatch<React.SetStateAction<boolean>>;
     }>();
 
+  const [isCreating, setIsCreating] = useState(false);
   const isLimitedProduct = state?.productType === "LIMITED";
 
   const standardForm = useForm<CreateProductPayload>({
@@ -98,6 +100,15 @@ const BasicInfoStep = () => {
 
   return (
     <>
+      {isCreating && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 flex flex-col items-center gap-4">
+            <Loader2 className="w-12 h-12 animate-spin text-primary" />
+            <p className="text-lg font-semibold">Creating product...</p>
+            <p className="text-sm text-gray-500">Please wait while we process your request</p>
+          </div>
+        </div>
+      )}
       {state?.productType === "LIMITED" && <TaskDisplayForm />}
       <BasicInfoForm
         form={form as any}
@@ -108,6 +119,8 @@ const BasicInfoStep = () => {
         state={state}
         setIsDisabled={setIsDisabled}
         isDisabled={isDisabled}
+        isCreating={isCreating}
+        setIsCreating={setIsCreating}
       />
       {isLimitedProduct && <AdditionalInfoForm form={limitedForm} />}
     </>

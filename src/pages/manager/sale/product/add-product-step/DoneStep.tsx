@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useOutletContext, type NavigateFunction } from "react-router";
 import { getItem, removeItem } from "@/libs/local-storage";
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/accordion";
 import { useAppDispatch } from "@/libs/stores";
 import { updateProductVisibilityThunk } from "@/libs/stores/productManager/thunk";
+import { clearProductDetail } from "@/libs/stores/productManager/slice";
 import { toast } from "sonner";
 
 const DoneStep = () => {
@@ -28,6 +29,7 @@ const DoneStep = () => {
 
   const [product, setProduct] = useState<ProductData | null>(null);
   const [variants, setVariants] = useState<VariantWithImage[]>([]);
+  const [isPublishing, setIsPublishing] = useState(false);
 
   useEffect(() => {
     const savedProduct = getItem<ProductResponse<ProductData>>("currentProduct")?.data;
@@ -47,6 +49,8 @@ const DoneStep = () => {
     setOnSubmitStep(() => async () => {
       removeItem("currentProduct");
       removeItem("currentProductVariants");
+      removeItem("currentConcept");
+      dispatch(clearProductDetail());
 
       navigate("/manage/sale/product");
     });
@@ -56,27 +60,45 @@ const DoneStep = () => {
       if (!currentPath.includes("/manage/sale/product/create")) {
         removeItem("currentProduct");
         removeItem("currentProductVariants");
+        removeItem("currentConcept");
+        dispatch(clearProductDetail());
       }
     };
-  }, [navigate, setIsDisabled, setOnSubmitStep]);
+  }, [navigate, setIsDisabled, setOnSubmitStep, dispatch]);
 
   const handlePublishProduct = async () => {
     if (!product) return;
-    const result = await dispatch(
-      updateProductVisibilityThunk({ productId: product.id as string, isActive: true }),
-    );
+    setIsPublishing(true);
+    try {
+      const result = await dispatch(
+        updateProductVisibilityThunk({ productId: product.id as string, isActive: true }),
+      );
 
-    if (updateProductVisibilityThunk.fulfilled.match(result)) {
-      removeItem("currentProduct");
-      removeItem("currentProductVariants");
+      if (updateProductVisibilityThunk.fulfilled.match(result)) {
+        removeItem("currentProduct");
+        removeItem("currentProductVariants");
+        removeItem("currentConcept");
+        dispatch(clearProductDetail());
 
-      navigate("/manage/sale/product");
-      toast.success("Product published successfully");
+        navigate("/manage/sale/product");
+        toast.success("Product published successfully");
+      }
+    } finally {
+      setIsPublishing(false);
     }
   };
 
   return (
     <div className="bg-white p-6 rounded-lg mt-6 mb-12 shadow-md">
+      {isPublishing && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 flex flex-col items-center gap-4">
+            <Loader2 className="w-12 h-12 animate-spin text-primary" />
+            <p className="text-lg font-semibold">Publishing product...</p>
+            <p className="text-sm text-gray-500">Please wait while we publish your product</p>
+          </div>
+        </div>
+      )}
       <Card className="border-none shadow-none">
         <CardContent className="py-8">
           {/* Success Header */}
@@ -197,7 +219,16 @@ const DoneStep = () => {
           {/* Action Buttons */}
           {state?.productType === "STANDARD" && (
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button onClick={handlePublishProduct}>Publish Product</Button>
+              <Button onClick={handlePublishProduct} disabled={isPublishing}>
+                {isPublishing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Publishing...
+                  </>
+                ) : (
+                  "Publish Product"
+                )}
+              </Button>
             </div>
           )}
         </CardContent>

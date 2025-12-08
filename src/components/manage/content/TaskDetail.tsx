@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { X, User, Clock, AlertTriangle, FileText, Briefcase, Check } from "lucide-react";
+import { X, Clock, AlertTriangle, FileText, Briefcase, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTaskManager } from "@/libs/hooks/useTask";
 import { useAppDispatch } from "@/libs/stores";
@@ -114,10 +114,6 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
     switch (type) {
       case "CONTENT":
         return "#f7c06d";
-      case "MARKETING":
-        return "#ff88fa";
-      case "PRODUCT":
-        return "#9976ff";
       default:
         return "#9976ff";
     }
@@ -255,10 +251,6 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
           </motion.div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{selectedTask.name}</h1>
-            <p className="text-sm text-gray-500 flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              {selectedTask.type} Content
-            </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -338,15 +330,7 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
               </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white p-4 rounded-lg border border-gray-100">
-                <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
-                  <User className="h-4 w-4" />
-                  Assignee
-                </div>
-                <p className="font-semibold text-gray-900">{selectedTask.assigned_to_name}</p>
-              </div>
-
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div
                 className={`bg-white p-4 rounded-lg border ${
                   isTaskOverdue() ? "border-red-200 bg-red-50" : "border-gray-100"

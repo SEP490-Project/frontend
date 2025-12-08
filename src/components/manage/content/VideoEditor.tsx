@@ -97,13 +97,25 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
     dispatch(channelList());
   }, [dispatch]);
 
-  // Debug log to see what content we're working with
+  // Sync state when editingContent changes (e.g., when detail API returns full content)
   useEffect(() => {
     if (editingContent) {
-      console.log("Editing content:", editingContent);
-      console.log("Extracted video URL:", videoContent.body);
+      const extractedVideoUrl =
+        editingContent.video_url ||
+        (typeof editingContent.body === "string"
+          ? editingContent.body
+          : (editingContent.body as any)?.video_url || (editingContent.body as any)?.body || "") ||
+        "";
+
+      setVideoContent({
+        channel: editingContent.content_channels?.[0]?.channel_id || "",
+        title: editingContent.title || "",
+        description: editingContent.description || "",
+        body: extractedVideoUrl,
+      });
     }
-  }, [editingContent, videoContent.body]); // Filter channels for video content (only Facebook and TikTok allowed)
+  }, [editingContent]);
+
   const allowedVideoChannels = React.useMemo(() => {
     return channels.filter(
       (channel) =>

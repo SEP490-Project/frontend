@@ -67,9 +67,36 @@ export interface CampaignRequest {
       deadline: string;
       name: string;
       type: string;
-      description: {
-        description: string;
-        material_url: string[];
+      description_json: {
+        // Common fields
+        kpi_goals?: { metric: string; target: string }[] | null;
+        material_urls?: string[];
+
+        // Advertising/Affiliate fields
+        advertised_item_id?: number;
+        product_name?: string;
+        platform?: string;
+        tagline?: string;
+        creative_notes?: string;
+        hashtags?: string[];
+        is_affiliate_content?: boolean;
+        tracking_link?: string;
+
+        // Brand Ambassador (Event) fields
+        event_id?: number;
+        event_name?: string;
+        event_date?: string;
+        event_duration?: string;
+        location?: string;
+        activities?: string[];
+        representation_rules?: string[];
+
+        // Co-Producing (Product) fields
+        is_product_creation_task?: boolean;
+        product_id?: number;
+        product_description?: string;
+        subtasks?: string[];
+        materials?: string[];
       };
     }[];
   }[];

@@ -11,18 +11,17 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { useAuth } from "@/libs/hooks/useAuth";
 import { DatePicker } from "@/components/date-picker";
 import { ContractUploader } from "@/components/global";
 import FileList from "@/components/global/FileList";
-import { Plus, Trash2, Sparkles } from "lucide-react";
-import { toast } from "sonner";
+import { Plus, Trash2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { useAppDispatch } from "@/libs/stores";
 import { getContractById } from "@/libs/stores/contractManager/thunk";
-import { suggestCampaign as suggestCampaignThunk } from "@/libs/stores/campaignManager/thunk";
-import { useCampaign } from "@/libs/hooks/useCampaign";
 import { useContract } from "@/libs/hooks/useContract";
 import { generateMilestonesFromContract } from "../../utils/milestoneGenerator";
+import AddTaskModal from "./AddTaskModal";
 
 interface TaskDescriptionJson {
   kpi_goals?: { metric: string; target: string }[] | null;
@@ -134,9 +133,13 @@ const CreateTask: React.FC<CreateTaskProps> = ({
   const taskTypeOptions = getTaskTypeOptions(campaignType);
   const contractStart = formatDateForInput(selectedContract?.start_date);
   const contractEnd = formatDateForInput(selectedContract?.end_date);
+  const { user } = useAuth();
+  const [addTaskModal, setAddTaskModal] = React.useState<{
+    open: boolean;
+    milestoneId: string | null;
+  }>({ open: false, milestoneId: null });
   const dispatch = useAppDispatch();
   const { contractDetail, detailLoading } = useContract();
-  const { suggestCampaign, suggestLoading } = useCampaign();
   const [hasLoadedContract, setHasLoadedContract] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -208,28 +211,18 @@ const CreateTask: React.FC<CreateTaskProps> = ({
     setMilestones((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)));
 
   const addTask = (milestoneId: string) => {
-    const defaultType = taskTypeOptions[0]?.value || "OTHER";
-    setMilestones((prev) =>
-      prev.map((m) =>
-        m.id === milestoneId
-          ? {
-              ...m,
-              tasks: [
-                ...m.tasks,
-                {
-                  id: crypto.randomUUID(),
-                  name: "",
-                  type: defaultType,
-                  description: { description: "", material_url: "" },
-                  deadline: "",
-                  materialFiles: [],
-                  material_urls: [],
-                },
-              ],
-            }
-          : m,
-      ),
-    );
+    setAddTaskModal({ open: true, milestoneId });
+  };
+
+  const handleAddTask = (task: Task) => {
+    if (addTaskModal.milestoneId) {
+      setMilestones((prev) =>
+        prev.map((m) =>
+          m.id === addTaskModal.milestoneId ? { ...m, tasks: [...m.tasks, task] } : m,
+        ),
+      );
+    }
+    setAddTaskModal({ open: false, milestoneId: null });
   };
 
   const removeTask = (milestoneId: string, taskId: string) =>
@@ -280,53 +273,6 @@ const CreateTask: React.FC<CreateTaskProps> = ({
   //     }
   //   }
   // };
-
-  const handleSuggestCampaign = async () => {
-    if (campaignMode === "contract" && selectedContract?.id) {
-      try {
-        await dispatch(suggestCampaignThunk(selectedContract.id)).unwrap();
-        toast.success("Campaign suggestion generated successfully!");
-      } catch (error: any) {
-        toast.error(error || "Failed to generate campaign suggestion");
-      }
-    }
-  };
-
-  React.useEffect(() => {
-    if (suggestCampaign && campaignMode === "contract") {
-      const suggested = suggestCampaign.suggested_campaign;
-      if (suggested && suggested.milestones) {
-        const newMilestones = suggested.milestones.map((milestone: any) => ({
-          id: crypto.randomUUID(),
-          description: milestone.description,
-          due_date: formatDateForInput(milestone.due_date),
-          tasks: milestone.tasks.map((task: any) => {
-            const descriptionJson = task.description_json || {};
-            const materialUrls = descriptionJson.material_urls || [];
-
-            return {
-              id: crypto.randomUUID(),
-              name: task.name,
-              type: task.type,
-              deadline: formatDateForInput(task.deadline),
-              description: {
-                description:
-                  task.description_json?.product_description ||
-                  task.description_json?.creative_notes ||
-                  task.description_json?.event_name ||
-                  "",
-                material_url: materialUrls[0] || "",
-                description_json: descriptionJson,
-              },
-              materialFiles: [],
-              material_urls: materialUrls,
-            };
-          }),
-        }));
-        setMilestones(newMilestones);
-      }
-    }
-  }, [suggestCampaign, campaignMode, setMilestones]);
 
   const handleTaskMaterialUpload = (milestoneId: string, taskId: string, urls: string[]) => {
     const material_url = urls[0] || "";
@@ -418,27 +364,6 @@ const CreateTask: React.FC<CreateTaskProps> = ({
           )}
         </div>
         <div className="flex gap-2">
-          {campaignMode === "contract" && contractDetail && (
-            <Button
-              onClick={handleSuggestCampaign}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-1 border-dashed"
-              disabled={suggestLoading}
-            >
-              {suggestLoading ? (
-                <>
-                  <div className="animate-spin rounded-full h-3 w-3 border-2 border-blue-500 border-t-transparent" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Sparkles size={14} />
-                  Suggest Campaign from Contract
-                </>
-              )}
-            </Button>
-          )}
           {campaignMode === "internal" && (
             <Button
               onClick={addMilestone}
@@ -538,6 +463,14 @@ const CreateTask: React.FC<CreateTaskProps> = ({
                       (at least 1 per milestone)
                     </span>
                   </Label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addTask(m.id)}
+                    className="flex items-center gap-1"
+                  >
+                    <Plus size={14} /> Add Task
+                  </Button>
                 </div>
 
                 {m.tasks.map((t, ti) => {
@@ -812,7 +745,7 @@ const CreateTask: React.FC<CreateTaskProps> = ({
                         <div>
                           <Label>Task Material (Optional)</Label>
                           <ContractUploader
-                            userId="demo"
+                            userId={user?.id || ""}
                             accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.webp,.mp4,.avi,.mov,.zip,.rar"
                             multiple={false}
                             maxSize={10}
@@ -858,18 +791,6 @@ const CreateTask: React.FC<CreateTaskProps> = ({
                     </Card>
                   );
                 })}
-
-                <div className="pt-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => addTask(m.id)}
-                    className="w-full flex items-center justify-center gap-1"
-                  >
-                    <Plus size={12} /> Add Task
-                  </Button>
-                </div>
               </div>
             </CardContent>
           </Card>
@@ -898,6 +819,20 @@ const CreateTask: React.FC<CreateTaskProps> = ({
           </Button>
         </div>
       </div>
+
+      {/* Add Task Modal */}
+      <AddTaskModal
+        open={addTaskModal.open}
+        onClose={() => setAddTaskModal({ open: false, milestoneId: null })}
+        onAdd={handleAddTask}
+        campaignType={campaignType}
+        taskTypeOptions={taskTypeOptions}
+        milestoneDueDate={
+          addTaskModal.milestoneId
+            ? milestones.find((m) => m.id === addTaskModal.milestoneId)?.due_date
+            : undefined
+        }
+      />
     </div>
   );
 };

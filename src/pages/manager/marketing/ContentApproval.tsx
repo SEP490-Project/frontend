@@ -306,7 +306,11 @@ const ContentApprovalPage: React.FC = () => {
                         </Badge>
                       </TableCell>
                       <TableCell className="py-4">
-                        <div className="text-sm">{content.channel?.name || "Website"}</div>
+                        <div className="text-sm">
+                          {content.content_channels?.length
+                            ? content.content_channels.map((c: any) => c.channel_name).join(", ")
+                            : "Website"}
+                        </div>
                       </TableCell>
                       <TableCell className="py-4">
                         <div className="text-sm text-gray-600">
@@ -380,7 +384,7 @@ const ContentApprovalPage: React.FC = () => {
                     <div className="space-y-2 text-sm text-gray-600">
                       <div>
                         <span className="font-medium">Channel:</span>{" "}
-                        {content.channel?.name || "Website"}
+                        {content.content_channels?.[0]?.channel_name || "Website"}
                       </div>
                       <div>
                         <span className="font-medium">Author:</span>{" "}

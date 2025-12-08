@@ -18,6 +18,15 @@ import MobileFileUploader from "./MobileFileUploader";
 import MobileCompensateRequest from "./MobileCompensateRequest";
 import MobileRefundRequest from "./MobileRefundRequest";
 import { toast } from "sonner";
+import { useAppDispatch } from "@/libs/stores";
+import {
+  markOrderIsReadyToPickedUpThunk,
+  markSelfDeliveryOrderAsDeliveredThunk,
+  markSelfDeliveryOrderAsInTransitThunk,
+  markLimitedOrderAsDeliveredThunk,
+  markLimitedOrderAsInTransitThunk,
+  deliveredSelfDeliveryPreOrderThunk,
+} from "@/libs/stores/orderManager/thunk";
 
 interface MobileChangeStatusModalProps {
   order: OrderData;
@@ -30,6 +39,7 @@ const MobileChangeStatusModal: React.FC<MobileChangeStatusModalProps> = ({
   onSuccess,
   onCancel,
 }) => {
+  const dispatch = useAppDispatch();
   const [selectedStatus, setSelectedStatus] = useState("");
   const [notes, setNotes] = useState("");
   const [proofFiles, setProofFiles] = useState<File[]>([]);
@@ -115,13 +125,21 @@ const MobileChangeStatusModal: React.FC<MobileChangeStatusModalProps> = ({
     setProofUrls(urls);
   };
 
+  const isPreOrder = () => {
+    return order.order_type === "PRE_ORDER";
+  };
+
+  const isLimitedOrder = () => {
+    return order.order_type === "LIMITED_PRODUCT";
+  };
+
   const handleSubmit = async () => {
     if (!selectedStatus) {
       toast.error("Please select a status");
       return;
     }
 
-    if (isProofRequired() && proofUrls.length === 0) {
+    if (isProofRequired() && proofFiles.length === 0) {
       toast.error("Proof image is required for this status");
       return;
     }
@@ -129,17 +147,65 @@ const MobileChangeStatusModal: React.FC<MobileChangeStatusModalProps> = ({
     setIsSubmitting(true);
 
     try {
-      const formData = new FormData();
-      formData.append("state", selectedStatus);
+      const isPreOrderType = isPreOrder();
+      const isLimitedOrderType = isLimitedOrder();
 
-      if (notes.trim()) {
-        formData.append("notes", notes.trim());
-      }
-
-      if (proofFiles.length > 0) {
+      if (selectedStatus === "CONFIRMED") {
+        // For CONFIRMED status, use the ready to pickup API
+        await dispatch(markOrderIsReadyToPickedUpThunk(order.id)).unwrap();
+      } else if (selectedStatus === "AWAITING_PICKUP") {
+        // Mark as ready for pickup
+        await dispatch(markOrderIsReadyToPickedUpThunk(order.id)).unwrap();
+      } else if (selectedStatus === "RECEIVED") {
+        // Skip API call for RECEIVED status - just show success message
+        // This transition is handled automatically or by other means
+        toast.success("Order marked as received!");
+        onSuccess();
+        return;
+      } else if (selectedStatus === "IN_TRANSIT") {
+        // Mark as in transit
+        if (isLimitedOrderType) {
+          // For limited orders, use limited order API
+          await dispatch(markLimitedOrderAsInTransitThunk(order.id)).unwrap();
+        } else {
+          // For regular orders, use regular API
+          await dispatch(markSelfDeliveryOrderAsInTransitThunk(order.id)).unwrap();
+        }
+      } else if (selectedStatus === "DELIVERED") {
+        // Mark as delivered with proof
+        const formData = new FormData();
         proofFiles.forEach((file) => {
           formData.append("file", file);
         });
+        if (notes.trim()) {
+          formData.append("notes", notes.trim());
+        }
+
+        if (isPreOrderType) {
+          // For pre-orders, use pre-order API
+          await dispatch(
+            deliveredSelfDeliveryPreOrderThunk({ id: order.id, file: formData }),
+          ).unwrap();
+        } else if (isLimitedOrderType) {
+          // For limited orders, use limited order API
+          await dispatch(
+            markLimitedOrderAsDeliveredThunk({ orderId: order.id, files: formData }),
+          ).unwrap();
+        } else {
+          // For regular orders, use regular API
+          await dispatch(
+            markSelfDeliveryOrderAsDeliveredThunk({ orderId: order.id, files: formData }),
+          ).unwrap();
+        }
+      } else if (selectedStatus === "SHIPPED") {
+        // For shipped status, use in transit API
+        if (isLimitedOrderType) {
+          // For limited orders, use limited order API
+          await dispatch(markLimitedOrderAsInTransitThunk(order.id)).unwrap();
+        } else {
+          // For regular orders, use regular API
+          await dispatch(markSelfDeliveryOrderAsInTransitThunk(order.id)).unwrap();
+        }
       }
 
       toast.success("Order status updated successfully!");
@@ -308,26 +374,28 @@ const MobileChangeStatusModal: React.FC<MobileChangeStatusModalProps> = ({
           Cancel
         </Button>
 
-        <Button
-          type="button"
-          onClick={handleSubmit}
-          disabled={
-            !selectedStatus || isSubmitting || (isProofRequired() && proofUrls.length === 0)
-          }
-          className="w-full"
-        >
-          {isSubmitting ? (
-            <>
-              <FaSpinner className="w-4 h-4 mr-2 animate-spin" />
-              Updating...
-            </>
-          ) : (
-            <>
-              <FaCheck className="w-4 h-4 mr-2" />
-              Update Status
-            </>
-          )}
-        </Button>
+        {availableStatuses.length > 0 && (
+          <Button
+            type="button"
+            onClick={handleSubmit}
+            disabled={
+              !selectedStatus || isSubmitting || (isProofRequired() && proofUrls.length === 0)
+            }
+            className="w-full"
+          >
+            {isSubmitting ? (
+              <>
+                <FaSpinner className="w-4 h-4 mr-2 animate-spin" />
+                Updating...
+              </>
+            ) : (
+              <>
+                <FaCheck className="w-4 h-4 mr-2" />
+                Update Status
+              </>
+            )}
+          </Button>
+        )}
       </div>
     </div>
   );

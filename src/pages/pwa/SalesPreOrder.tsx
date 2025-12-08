@@ -31,7 +31,6 @@ import {
   FaBox,
   FaCheck,
   FaXmark as FaTimes,
-  FaTriangleExclamation as FaExclamationTriangle,
 } from "react-icons/fa6";
 import { Loader2 } from "lucide-react";
 import { useAppDispatch, type RootState } from "@/libs/stores";
@@ -39,17 +38,13 @@ import { useSelector } from "react-redux";
 import {
   getPreOrdersForSaleStaffThunk,
   approvePreOrderThunk,
-  receivedSelfPickupPreOrderThunk,
-  deliveredSelfDeliveryPreOrderThunk,
 } from "@/libs/stores/orderManager/thunk";
 import type { PreOrderData } from "@/libs/types/pre-order";
 import type { OrderRequestQuery } from "@/libs/types/order";
 import MobilePreOrderDetail from "@/components/pwa/MobilePreOrderDetail";
-import MobileFileUploader from "@/components/pwa/MobileFileUploader";
+import MobileChangePreOrderStatusModal from "@/components/pwa/MobileChangePreOrderStatusModal";
 import PaginationTable from "@/components/global/PaginationTable";
 import { toast } from "sonner";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 
 const SalesPreOrder: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -72,11 +67,6 @@ const SalesPreOrder: React.FC = () => {
   const [isApproveOpen, setIsApproveOpen] = useState(false);
   const [isStatusUpdateOpen, setIsStatusUpdateOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-
-  const [selectedStatus, setSelectedStatus] = useState("");
-  const [statusNotes, setStatusNotes] = useState("");
-  const [proofFiles, setProofFiles] = useState<File[]>([]);
-  const [proofUrls, setProofUrls] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -117,7 +107,7 @@ const SalesPreOrder: React.FC = () => {
     const statusMap: Record<string, string> = {
       pending: "bg-sky-50 text-sky-700 border border-sky-200",
       paid: "bg-emerald-50 text-emerald-700 border border-emerald-200",
-      pre_ordered: "bg-violet-50 text-violet-700 border border-violet-200",
+      confirmed: "bg-emerald-50 text-emerald-700 border border-emerald-200",
       awaiting_pickup: "bg-sky-50 text-sky-700 border border-sky-200",
       cancelled: "bg-rose-50 text-rose-700 border border-rose-200",
       in_transit: "bg-amber-50 text-amber-700 border border-amber-200",
@@ -129,36 +119,6 @@ const SalesPreOrder: React.FC = () => {
       refunded: "bg-emerald-50 text-emerald-700 border border-emerald-200",
     };
     return statusMap[status.toLowerCase()] || "bg-slate-50 text-slate-700 border border-slate-200";
-  };
-
-  const getNextStates = (currentStatus: string, iselfPickup: boolean): string[] => {
-    const status = currentStatus.toUpperCase();
-
-    if (iselfPickup) {
-      switch (status) {
-        case "PAID":
-          return ["PRE_ORDERED"];
-        case "PRE_ORDERED":
-          return ["AWAITING_PICKUP"];
-        case "AWAITING_PICKUP":
-          return ["RECEIVED"];
-        default:
-          return [];
-      }
-    } else {
-      switch (status) {
-        case "PAID":
-          return ["PRE_ORDERED"];
-        case "PRE_ORDERED":
-          return ["IN_TRANSIT"];
-        case "IN_TRANSIT":
-          return ["DELIVERED"];
-        case "DELIVERED":
-          return ["RECEIVED"];
-        default:
-          return [];
-      }
-    }
   };
 
   const handleViewPreOrder = (preOrder: PreOrderData) => {
@@ -173,10 +133,6 @@ const SalesPreOrder: React.FC = () => {
 
   const handleStatusUpdate = (preOrder: PreOrderData) => {
     setSelectedPreOrder(preOrder);
-    setSelectedStatus("");
-    setStatusNotes("");
-    setProofFiles([]);
-    setProofUrls([]);
     setIsStatusUpdateOpen(true);
   };
 
@@ -215,50 +171,6 @@ const SalesPreOrder: React.FC = () => {
       handleRefresh();
     } catch (error: any) {
       toast.error("Failed to approve pre-order", {
-        description: error?.message || "Please try again.",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleStatusUpdateSubmit = async () => {
-    if (!selectedPreOrder || !selectedStatus) return;
-
-    const isProofRequired = ["RECEIVED", "DELIVERED"].includes(selectedStatus);
-    if (isProofRequired && proofUrls.length === 0) {
-      toast.error("Proof image is required for this status");
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const formData = new FormData();
-      formData.append("state", selectedStatus);
-
-      if (statusNotes.trim()) {
-        formData.append("notes", statusNotes.trim());
-      }
-
-      proofFiles.forEach((file) => {
-        formData.append("file", file);
-      });
-
-      if (selectedStatus === "RECEIVED" && selectedPreOrder.is_self_picked_up) {
-        await dispatch(
-          receivedSelfPickupPreOrderThunk({ id: selectedPreOrder.id, file: formData }),
-        ).unwrap();
-      } else if (selectedStatus === "DELIVERED" && !selectedPreOrder.is_self_picked_up) {
-        await dispatch(
-          deliveredSelfDeliveryPreOrderThunk({ id: selectedPreOrder.id, file: formData }),
-        ).unwrap();
-      }
-
-      toast.success("Pre-order status updated successfully!");
-      setIsStatusUpdateOpen(false);
-      handleRefresh();
-    } catch (error: any) {
-      toast.error("Failed to update pre-order status", {
         description: error?.message || "Please try again.",
       });
     } finally {
@@ -330,7 +242,7 @@ const SalesPreOrder: React.FC = () => {
                     <SelectItem value=" ">All Status</SelectItem>
                     <SelectItem value="PENDING">Pending</SelectItem>
                     <SelectItem value="PAID">Paid</SelectItem>
-                    <SelectItem value="PRE_ORDERED">Pre-Ordered</SelectItem>
+                    <SelectItem value="CONFIRMED">Confirmed</SelectItem>
                     <SelectItem value="AWAITING_PICKUP">Awaiting Pickup</SelectItem>
                     <SelectItem value="IN_TRANSIT">In Transit</SelectItem>
                     <SelectItem value="DELIVERED">Delivered</SelectItem>
@@ -625,122 +537,16 @@ const SalesPreOrder: React.FC = () => {
         <DialogContent className="w-[95vw] max-w-md max-h-[90vh] overflow-y-auto rounded-3xl">
           <DialogHeader>
             <DialogTitle className="text-base">Update Pre-Order Status</DialogTitle>
-            <DialogDescription className="text-xs">
-              Change the status of this pre-order to the next available state.
-            </DialogDescription>
           </DialogHeader>
-
           {selectedPreOrder && (
-            <div className="space-y-4">
-              <Card>
-                <CardContent className="p-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-slate-600">Current Status:</span>
-                    <Badge
-                      className={
-                        getStatusBadgeClass(selectedPreOrder.status) +
-                        " text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full"
-                      }
-                    >
-                      {selectedPreOrder.status.toUpperCase()}
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <div>
-                <Label className="text-sm font-medium mb-2 block">Select New Status</Label>
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                  <SelectTrigger className="rounded-xl">
-                    <SelectValue placeholder="Choose next status..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {getNextStates(selectedPreOrder.status, selectedPreOrder.is_self_picked_up).map(
-                      (status) => (
-                        <SelectItem key={status} value={status}>
-                          {status.replace("_", " ").toUpperCase()}
-                        </SelectItem>
-                      ),
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium mb-2 block">Notes (Optional)</Label>
-                <Textarea
-                  placeholder="Add notes about this status change..."
-                  value={statusNotes}
-                  onChange={(e) => setStatusNotes(e.target.value)}
-                  className="min-h-[60px] resize-none rounded-xl"
-                />
-              </div>
-
-              {selectedStatus && ["RECEIVED", "DELIVERED"].includes(selectedStatus) && (
-                <div>
-                  <Label className="text-sm font-medium mb-2 flex items-center gap-2">
-                    <FaExclamationTriangle className="w-4 h-4 text-amber-500" />
-                    Proof Required
-                  </Label>
-                  <MobileFileUploader
-                    userId={selectedPreOrder.user_id}
-                    accept="image/*,video/*"
-                    multiple={true}
-                    maxFiles={3}
-                    maxSize={20}
-                    allowedTypes={["jpg", "jpeg", "png", "webp"]}
-                    title="Upload Proof"
-                    onFilesChange={(files) => setProofFiles(files)}
-                    onUploadComplete={(urls) => setProofUrls(urls)}
-                  />
-                </div>
-              )}
-
-              <Card className="border-slate-200">
-                <CardContent className="p-3">
-                  <div className="text-xs text-slate-600 space-y-1">
-                    <div>
-                      Pre-Order ID:{" "}
-                      <span className="font-mono">#{selectedPreOrder.id.slice(0, 8)}</span>
-                    </div>
-                    <div>Customer: {selectedPreOrder.full_name}</div>
-                    <div>Phone: {selectedPreOrder.phone_number}</div>
-                    <div className="text-sky-600 font-medium">
-                      {selectedPreOrder.is_self_picked_up ? "Self Pickup Order" : "Delivery Order"}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <div className="flex gap-3 pt-2">
-                <Button
-                  variant="outline"
-                  className="flex-1 h-9 rounded-xl"
-                  onClick={() => setIsStatusUpdateOpen(false)}
-                  disabled={isSubmitting}
-                >
-                  <FaTimes className="w-4 h-4 mr-2" />
-                  Cancel
-                </Button>
-                <Button
-                  className="flex-1 h-9 rounded-xl"
-                  onClick={handleStatusUpdateSubmit}
-                  disabled={!selectedStatus || isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                      Updating...
-                    </>
-                  ) : (
-                    <>
-                      <FaCheck className="w-4 h-4 mr-2" />
-                      Update Status
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
+            <MobileChangePreOrderStatusModal
+              preOrder={selectedPreOrder}
+              onSuccess={() => {
+                setIsStatusUpdateOpen(false);
+                handleRefresh();
+              }}
+              onCancel={() => setIsStatusUpdateOpen(false)}
+            />
           )}
         </DialogContent>
       </Dialog>

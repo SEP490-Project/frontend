@@ -144,9 +144,17 @@ const SalesOrder: React.FC = () => {
   };
 
   const canChangeStatus = (order: OrderData) => {
-    return !["CANCELLED", "REFUNDED", "RECEIVED", "COMPENSATED", "DELIVERED"].includes(
-      order.status.toUpperCase(),
-    );
+    const status = order.status.toUpperCase();
+
+    if (["CANCELLED", "REFUNDED", "RECEIVED", "COMPENSATED", "DELIVERED"].includes(status)) {
+      return false;
+    }
+
+    if (["SHIPPED", "IN_TRANSIT"].includes(status) && order.order_type === "STANDARD") {
+      return order.is_self_picked_up;
+    }
+
+    return true;
   };
 
   return (

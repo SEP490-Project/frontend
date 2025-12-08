@@ -379,11 +379,11 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                     {content.blog?.author?.username || content.actor || "System"}
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span>
-                    {getReadTimeEstimate(content.body)} min to {isVideoContent ? "watch" : "read"}
-                  </span>
-                </div>
+                {!isVideoContent && (
+                  <div className="flex items-center gap-2">
+                    <span>{getReadTimeEstimate(content.body)} min to read</span>
+                  </div>
+                )}
                 <div>{getStatusBadge(content.status)}</div>
               </div>
 

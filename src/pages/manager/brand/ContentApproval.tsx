@@ -1,15 +1,9 @@
 import React, { useEffect, useState } from "react";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableHead,
-} from "@/components/ui/table";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -17,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FaEye, FaListCheck } from "react-icons/fa6";
+import { FaEye } from "react-icons/fa6";
 import { Loader2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import PaginationTable from "@/components/global/PaginationTable";
@@ -262,138 +256,73 @@ const ContentApprovalPage: React.FC = () => {
         </div>
       </motion.div>
 
-      <div className="bg-white rounded-lg overflow-hidden shadow">
-        {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="ml-2">Loading contents...</span>
-          </div>
-        ) : (
-          <>
-            {/* Desktop Table */}
-            <div className="hidden lg:block">
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-b bg-gray-50">
-                    <TableHead className="font-semibold">Content</TableHead>
-                    <TableHead className="font-semibold">Type</TableHead>
-                    <TableHead className="font-semibold">Channel</TableHead>
-                    <TableHead className="font-semibold">Author</TableHead>
-                    <TableHead className="font-semibold">Created</TableHead>
-                    <TableHead className="font-semibold">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {contents.map((content: any, index) => (
-                    <motion.tr
-                      key={content.id}
-                      layout="position"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="border-b hover:bg-gray-50"
-                    >
-                      <TableCell className="py-4">
-                        <div>
-                          <div className="font-semibold text-gray-900">{content.title}</div>
-                          {content.description && (
-                            <div className="text-sm text-gray-500 mt-1 max-w-xs truncate">
-                              {content.description}
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <Badge
-                          className={`border text-xs font-medium px-2 py-1 ${CONTENT_TYPE_COLORS[content.type] || ""}`}
-                        >
-                          {CONTENT_TYPE_LABELS[content.type] || content.type}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <div className="text-sm">{content.channel?.name || "Website"}</div>
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <div className="text-sm text-gray-600">
-                          {content.blog?.author?.username || content.author?.username || "-"}
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-4 text-sm">
-                        {formatDate(content.created_at)}
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 hover:bg-blue-50"
-                              onClick={() => handleViewContent(content)}
-                            >
-                              <FaEye className="text-blue-600" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>View content</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TableCell>
-                    </motion.tr>
-                  ))}
-                </TableBody>
-              </Table>
+      {/* Content Table */}
+      <Card>
+        <CardContent className="p-0">
+          {loading ? (
+            <div className="p-8 text-center">
+              <Loader2 className="mx-auto mb-4 h-12 w-12 text-primary animate-spin" />
+              <p className="text-gray-500">Loading contents...</p>
             </div>
+          ) : (
+            <>
+              {/* Desktop Grid Layout */}
+              <div className="hidden lg:block">
+                {/* Table Header */}
+                <div className="grid grid-cols-12 gap-4 p-4 bg-gray-50 border-b font-medium text-sm text-gray-600">
+                  <div className="col-span-4">Content</div>
+                  <div className="col-span-2">Type</div>
+                  <div className="col-span-2">Channel</div>
+                  <div className="col-span-2">Author</div>
+                  <div className="col-span-1">Created</div>
+                  <div className="col-span-1">Actions</div>
+                </div>
 
-            {/* Mobile Card List */}
-            <div className="lg:hidden divide-y">
-              <motion.div
-                initial="hidden"
-                animate="visible"
-                variants={{
-                  visible: {
-                    transition: { staggerChildren: 0.05 },
-                  },
-                }}
-              >
-                {contents.map((content: any) => (
+                {/* Table Body */}
+                {contents.map((content: any, index) => (
                   <motion.div
                     key={content.id}
-                    className="p-4 flex flex-col gap-3 bg-white"
-                    variants={itemVariants}
+                    layout="position"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="grid grid-cols-12 gap-4 p-4 border-b hover:bg-gray-50 transition-colors"
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="font-semibold text-gray-900">{content.title}</div>
-                        <div className="flex gap-2 mt-2">
-                          <Badge
-                            className={`border text-xs font-medium px-2 py-1 ${CONTENT_TYPE_COLORS[content.type] || ""}`}
-                          >
-                            {CONTENT_TYPE_LABELS[content.type] || content.type}
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm text-gray-500">Created</div>
-                        <div className="text-sm font-medium">{formatDate(content.created_at)}</div>
+                    <div className="col-span-4">
+                      <div>
+                        <div className="font-medium text-gray-900 truncate">{content.title}</div>
+                        {content.description && (
+                          <div className="text-sm text-gray-500 mt-1 max-w-xs truncate">
+                            {content.description}
+                          </div>
+                        )}
                       </div>
                     </div>
-
-                    {content.description && (
-                      <div className="text-sm text-gray-600">{content.description}</div>
-                    )}
-
-                    <div className="space-y-2 text-sm text-gray-600">
-                      <div>
-                        <span className="font-medium">Channel:</span>{" "}
-                        {content.channel?.name || "Website"}
-                      </div>
-                      <div>
-                        <span className="font-medium">Author:</span>{" "}
+                    <div className="col-span-2 flex items-center">
+                      <Badge
+                        className={`border text-xs font-medium px-2 py-1 ${CONTENT_TYPE_COLORS[content.type] || ""}`}
+                      >
+                        {CONTENT_TYPE_LABELS[content.type] || content.type}
+                      </Badge>
+                    </div>
+                    <div className="col-span-2 flex items-center">
+                      <span className="text-sm text-gray-600">
+                        {content.content_channels?.length
+                          ? content.content_channels.map((c: any) => c.channel_name).join(", ")
+                          : "Website"}
+                      </span>
+                    </div>
+                    <div className="col-span-2 flex items-center">
+                      <span className="text-sm text-gray-600">
                         {content.blog?.author?.username || content.author?.username || "-"}
-                      </div>
+                      </span>
                     </div>
-
-                    <div className="flex gap-1 pt-2">
+                    <div className="col-span-1 flex items-center">
+                      <span className="text-sm text-gray-600">
+                        {formatDate(content.created_at)}
+                      </span>
+                    </div>
+                    <div className="col-span-1 flex items-center">
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
@@ -412,45 +341,116 @@ const ContentApprovalPage: React.FC = () => {
                     </div>
                   </motion.div>
                 ))}
-              </motion.div>
-            </div>
+              </div>
 
-            {/* No results message */}
-            {(!contents || contents.length === 0) && (
-              <motion.div
-                className="text-center py-16"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.2 }}
-              >
-                <FaListCheck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No content found</h3>
-                <p className="text-gray-500 mb-4">
-                  {searchTerm || typeFilter !== "ALL" || channelFilter !== "ALL"
-                    ? "No content matches your current filters."
-                    : "No content submissions found for brand approval."}
-                </p>
-              </motion.div>
-            )}
+              {/* Mobile Card List */}
+              <div className="lg:hidden divide-y">
+                <motion.div
+                  initial="hidden"
+                  animate="visible"
+                  variants={{
+                    visible: {
+                      transition: { staggerChildren: 0.05 },
+                    },
+                  }}
+                >
+                  {contents.map((content: any) => (
+                    <motion.div
+                      key={content.id}
+                      className="p-4 flex flex-col gap-3 bg-white"
+                      variants={itemVariants}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="font-semibold text-gray-900">{content.title}</div>
+                          <div className="flex gap-2 mt-2">
+                            <Badge
+                              className={`border text-xs font-medium px-2 py-1 ${CONTENT_TYPE_COLORS[content.type] || ""}`}
+                            >
+                              {CONTENT_TYPE_LABELS[content.type] || content.type}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm text-gray-500">Created</div>
+                          <div className="text-sm font-medium">
+                            {formatDate(content.created_at)}
+                          </div>
+                        </div>
+                      </div>
 
-            {/* Pagination */}
-            {pagination && pagination.total > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: contents.length * 0.05 + 0.2 }}
-              >
-                <PaginationTable
-                  page={pagination.page}
-                  totalItems={pagination.total}
-                  pageSize={PAGE_SIZE}
-                  onPageChange={setPage}
-                />
-              </motion.div>
-            )}
-          </>
-        )}
-      </div>
+                      {content.description && (
+                        <div className="text-sm text-gray-600">{content.description}</div>
+                      )}
+
+                      <div className="space-y-2 text-sm text-gray-600">
+                        <div>
+                          <span className="font-medium">Channel:</span>{" "}
+                          {content.content_channels?.[0]?.channel_name || "Website"}
+                        </div>
+
+                        <div>
+                          <span className="font-medium">Author:</span>{" "}
+                          {content.blog?.author?.username || content.author?.username || "-"}
+                        </div>
+                      </div>
+                      <div className="flex gap-1 pt-2">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 hover:bg-blue-50"
+                              onClick={() => handleViewContent(content)}
+                            >
+                              <FaEye className="text-blue-600" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>View content</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              </div>
+
+              {/* No results message */}
+              {(!contents || contents.length === 0) && (
+                <motion.div
+                  className="p-8 text-center text-gray-500"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <p>
+                    {searchTerm || typeFilter !== "ALL" || channelFilter !== "ALL"
+                      ? "No content matches your current filters."
+                      : "No content submissions found for brand approval."}
+                  </p>
+                </motion.div>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Pagination */}
+      {pagination && pagination.total > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: contents.length * 0.05 + 0.2 }}
+        >
+          <PaginationTable
+            page={pagination.page}
+            totalItems={pagination.total}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPage}
+          />
+        </motion.div>
+      )}
 
       <ContentPreview
         contentId={selectedContentId}

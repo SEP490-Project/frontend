@@ -144,7 +144,7 @@ const SalesOrder: React.FC = () => {
   };
 
   const canChangeStatus = (order: OrderData) => {
-    return !["CANCELLED", "REFUNDED", "RECEIVED", "COMPENSATED"].includes(
+    return !["CANCELLED", "REFUNDED", "RECEIVED", "COMPENSATED", "DELIVERED"].includes(
       order.status.toUpperCase(),
     );
   };

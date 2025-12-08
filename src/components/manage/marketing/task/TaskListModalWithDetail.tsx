@@ -93,8 +93,8 @@ function TaskListModalWithDetail({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleModalClose}>
-      <DialogContent className="max-w-4xl h-[90vh] p-0 overflow-hidden">
-        <div className="relative h-full">
+      <DialogContent className="max-w-4xl h-[90vh] p-0">
+        <div className="relative h-full overflow-hidden flex flex-col">
           {/* Task List Content */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}

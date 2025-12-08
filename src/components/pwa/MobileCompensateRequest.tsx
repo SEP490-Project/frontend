@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useAppDispatch } from "@/libs/stores";
-import { compensateAnOrderThunk } from "@/libs/stores/orderManager/thunk";
+import { compensateAnOrderThunk, compensateAPreOrderThunk } from "@/libs/stores/orderManager/thunk";
 import MobileFileUploader from "./MobileFileUploader";
 import { toast } from "sonner";
 import {
@@ -44,6 +44,10 @@ const MobileCompensateRequest: React.FC<MobileCompensateRequestProps> = ({
     setProofFiles(files);
   };
 
+  const isPreOrder = () => {
+    return order.order_type === "PRE_ORDER";
+  };
+
   const handleCompensateOrder = async (isApproved: boolean) => {
     if (!order) return;
 
@@ -71,12 +75,25 @@ const MobileCompensateRequest: React.FC<MobileCompensateRequestProps> = ({
         formData.append("reason", reason.trim());
       }
 
-      await dispatch(
-        compensateAnOrderThunk({
-          orderId: order.id,
-          file: formData,
-        }),
-      ).unwrap();
+      const isPreOrderType = isPreOrder();
+
+      if (isPreOrderType) {
+        // For pre-orders, use pre-order compensation thunk
+        await dispatch(
+          compensateAPreOrderThunk({
+            id: order.id,
+            file: formData,
+          }),
+        ).unwrap();
+      } else {
+        // For regular orders and limited orders, use regular compensation thunk
+        await dispatch(
+          compensateAnOrderThunk({
+            orderId: order.id,
+            file: formData,
+          }),
+        ).unwrap();
+      }
 
       toast.success(`Compensation request ${isApproved ? "approved" : "rejected"} successfully!`);
       onSuccess();

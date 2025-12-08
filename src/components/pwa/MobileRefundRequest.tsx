@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useAppDispatch } from "@/libs/stores";
-import { approveRefundAnOrderThunk } from "@/libs/stores/orderManager/thunk";
+import { approveRefundAnOrderThunk, refundAPreOrderThunk } from "@/libs/stores/orderManager/thunk";
 import MobileFileUploader from "./MobileFileUploader";
 import { toast } from "sonner";
 import {
@@ -45,6 +45,10 @@ const MobileRefundRequest: React.FC<MobileRefundRequestProps> = ({
     setProofFiles(files);
   };
 
+  const isPreOrder = () => {
+    return order.order_type === "PRE_ORDER";
+  };
+
   const handleRefundOrder = async (isApproved: boolean) => {
     if (!order) return;
 
@@ -72,12 +76,25 @@ const MobileRefundRequest: React.FC<MobileRefundRequestProps> = ({
         formData.append("reason", reason.trim());
       }
 
-      await dispatch(
-        approveRefundAnOrderThunk({
-          orderId: order.id,
-          file: formData,
-        }),
-      ).unwrap();
+      const isPreOrderType = isPreOrder();
+
+      if (isPreOrderType) {
+        // For pre-orders, use pre-order refund thunk
+        await dispatch(
+          refundAPreOrderThunk({
+            id: order.id,
+            file: formData,
+          }),
+        ).unwrap();
+      } else {
+        // For regular orders and limited orders, use regular refund thunk
+        await dispatch(
+          approveRefundAnOrderThunk({
+            orderId: order.id,
+            file: formData,
+          }),
+        ).unwrap();
+      }
 
       toast.success(`Refund request ${isApproved ? "approved" : "rejected"} successfully!`);
       onSuccess();

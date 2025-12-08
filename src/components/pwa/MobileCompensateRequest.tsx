@@ -52,7 +52,7 @@ const MobileCompensateRequest: React.FC<MobileCompensateRequestProps> = ({
     if (!order) return;
 
     if (proofFiles.length === 0) {
-      toast.error("Please upload proof image/video");
+      toast.error("Please upload proof image");
       return;
     }
 
@@ -78,7 +78,6 @@ const MobileCompensateRequest: React.FC<MobileCompensateRequestProps> = ({
       const isPreOrderType = isPreOrder();
 
       if (isPreOrderType) {
-        // For pre-orders, use pre-order compensation thunk
         await dispatch(
           compensateAPreOrderThunk({
             id: order.id,
@@ -86,7 +85,6 @@ const MobileCompensateRequest: React.FC<MobileCompensateRequestProps> = ({
           }),
         ).unwrap();
       } else {
-        // For regular orders and limited orders, use regular compensation thunk
         await dispatch(
           compensateAnOrderThunk({
             orderId: order.id,
@@ -167,15 +165,14 @@ const MobileCompensateRequest: React.FC<MobileCompensateRequestProps> = ({
         <CardContent className="pt-0">
           <div className="space-y-3">
             <div className="text-sm text-gray-600">
-              Please provide photo/video proof for the compensation decision (Max 5MB per file).
+              Please provide photo proof for the compensation decision (Max 10MB).
             </div>
 
             <MobileFileUploader
-              userId={order.user_id}
-              accept="image/*,video/*"
+              accept="image/*"
               multiple={true}
-              maxFiles={3}
-              maxSize={5}
+              maxFiles={1}
+              maxSize={10}
               allowedTypes={["jpg", "jpeg", "png", "webp"]}
               title="Upload Proof"
               onFilesChange={handleFilesCapture}

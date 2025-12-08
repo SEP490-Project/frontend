@@ -367,22 +367,9 @@ const OverviewTab: React.FC<TabProps> = ({ startDate, endDate, periodGap = "day"
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-">
-        <PieChartWidget
-          title="Revenue by Product Type"
-          mode="currency"
-          data={formatPieChartData.revenue_by_product_type}
-        />
-        <PieChartWidget
-          title="Revenue by Category"
-          mode="currency"
-          data={formatPieChartData.revenue_by_category}
-        />
-      </div>
-
       {/* Product Type Trend Chart */}
       <div className="flex flex-col gap-4 bg-white shadow rounded-xl p-4">
-        <h3 className="text-gray-700 text-base font-semibold">revenue by Product</h3>
+        <h3 className="text-gray-700 text-base font-semibold">Revenue by Product</h3>
         {formatProductTypeTrendData().length === 0 ? (
           <div className="h-[340px] flex items-center justify-center text-gray-400 italic">
             No data available
@@ -401,6 +388,35 @@ const OverviewTab: React.FC<TabProps> = ({ startDate, endDate, periodGap = "day"
           </div>
         ) : (
           <BarChartWidget title="" data={formatBarChartData?.revenue_by_category} />
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+        {formatPieChartData.revenue_by_product_type ? (
+          <PieChartWidget
+            title="Revenue by Product Type"
+            mode="currency"
+            data={formatPieChartData.revenue_by_product_type}
+          />
+        ) : (
+          <PieChartWidget
+            title="Revenue by Product Type"
+            mode="currency"
+            data={[{ type: "No data", value: 0 }]}
+          />
+        )}
+        {formatPieChartData.revenue_by_category ? (
+          <PieChartWidget
+            title="Revenue by Category"
+            mode="currency"
+            data={formatPieChartData.revenue_by_category}
+          />
+        ) : (
+          <PieChartWidget
+            title="Revenue by Category"
+            mode="currency"
+            data={[{ type: "No data", value: 0 }]}
+          />
         )}
       </div>
 
@@ -530,7 +546,7 @@ const OrderTab: React.FC<TabProps> = ({ startDate, endDate, periodGap }) => {
   };
 
   const formatTableData = {
-    latest_orders: orderDashboard?.latest_orders.map((item: any) => ({
+    latest_orders: orderDashboard?.latest_orders?.map((item: any) => ({
       order_id: `#${item.id.slice(0, 8).toUpperCase()}`,
       customer_name: item.customer_name,
       status: item.status,

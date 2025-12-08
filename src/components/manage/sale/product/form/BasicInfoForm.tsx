@@ -37,7 +37,11 @@ export const BasicInfoForm = ({
   navigate,
   state,
   setIsDisabled,
-}: ProductFormProps<CreateProductPayload | CreateLimitedProductPayload>) => {
+  setIsCreating,
+}: ProductFormProps<CreateProductPayload | CreateLimitedProductPayload> & {
+  isCreating?: boolean;
+  setIsCreating?: (value: boolean) => void;
+}) => {
   const dispatch = useAppDispatch();
   const categories = useSelector((state: any) => state?.manageCategory?.categories?.data);
   const { brands } = useBrand();
@@ -66,6 +70,7 @@ export const BasicInfoForm = ({
           navigate(steps[currentStep]?.path, { state });
           return;
         }
+        setIsCreating?.(true);
         const result = await dispatch(
           state.productType === "STANDARD"
             ? createStandardProductThunk(payload as CreateProductPayload)
@@ -79,9 +84,11 @@ export const BasicInfoForm = ({
         }
       } catch (error) {
         toast.error((error as string) || "Failed to create product");
+      } finally {
+        setIsCreating?.(false);
       }
     },
-    [dispatch, state, navigate, steps, currentStep],
+    [dispatch, state, navigate, steps, currentStep, setIsCreating, productBasicInfos?.id],
   );
 
   const onError = useCallback((errors: any) => {
@@ -219,7 +226,7 @@ export const BasicInfoForm = ({
               <SelectTrigger className="col-span-3">
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-70">
                 {categories?.map((category: ProductCategory) => (
                   <SelectItem key={category.id} value={category.id.toString()}>
                     {category.name}
@@ -247,7 +254,7 @@ export const BasicInfoForm = ({
               <SelectTrigger className="col-span-3">
                 <SelectValue placeholder="Select a brand" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-70">
                 {brands?.map((brand) => (
                   <SelectItem key={brand.id} value={brand?.id}>
                     {brand.name}
@@ -264,6 +271,7 @@ export const BasicInfoForm = ({
           htmlFor="productDescription"
           className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end"
         >
+          <span className="text-red-600">*</span>
           Description
         </label>
         <Textarea

@@ -64,16 +64,22 @@ const SaleDashboard: React.FC = () => {
 
   // Handle scroll to hide filter
   useEffect(() => {
-    const handleScroll = () => {
-      if (showFilter) {
+    const handleScroll = (e: Event) => {
+      const target = e.target as HTMLElement;
+      const scrollY = target.scrollTop;
+      if (showFilter === true && scrollY > 0) {
         setShowFilter(false);
       }
     };
 
-    window.addEventListener("scroll", handleScroll, true);
-    return () => {
-      window.removeEventListener("scroll", handleScroll, true);
-    };
+    // Find the scrolling container (the main element in ManageLayout)
+    const scrollContainer = document.querySelector("main");
+    if (scrollContainer) {
+      scrollContainer.addEventListener("scroll", handleScroll);
+      return () => {
+        scrollContainer.removeEventListener("scroll", handleScroll);
+      };
+    }
   }, [showFilter]);
 
   return (
@@ -115,10 +121,16 @@ const SaleDashboard: React.FC = () => {
                     <DatePicker
                       value={startDate}
                       onChange={setStartDate}
+                      maxDate={endDate}
                       placeholder="Start Date"
                     />
                     <span className="text-gray-400">-</span>
-                    <DatePicker value={endDate} onChange={setEndDate} placeholder="End Date" />
+                    <DatePicker
+                      value={endDate}
+                      onChange={setEndDate}
+                      minDate={startDate}
+                      placeholder="End Date"
+                    />
                     {(startDate || endDate) && (
                       <Button
                         variant="ghost"

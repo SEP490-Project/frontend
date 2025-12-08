@@ -108,6 +108,10 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               mode="single"
               selected={selectedDate}
               onSelect={handleSelect}
+              captionLayout="dropdown"
+              startMonth={new Date(1900, 0, 1)}
+              endMonth={new Date(2099, 11, 31)}
+              weekStartsOn={0}
               autoFocus
               disabled={(date) => {
                 if (minDate && date < parseDate(minDate)!) return true;

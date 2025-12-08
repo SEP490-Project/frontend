@@ -2,9 +2,19 @@ import { FaBars } from "react-icons/fa6";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/libs/hooks/useAuth";
 
 const GlobalHeader = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
+
+  const getInitials = (name: any) => {
+    if (!name) return "?";
+    return name
+      .split(" ")
+      .map((part: any) => part[0].toUpperCase())
+      .join("");
+  };
 
   return (
     <header className="bg-white px-4 py-4 shadow-sm sticky top-0 z-50">
@@ -45,6 +55,27 @@ const GlobalHeader = () => {
         </nav>
 
         <div className="flex items-center space-x-6">
+          {isAuthenticated ? (
+            <div className="flex items-center space-x-4">
+              {user?.avatar ? (
+                <img src={user.avatar} alt="User Avatar" className="w-10 h-10 rounded-full" />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-[#b1b1b1] flex items-center justify-center text-white font-medium">
+                  {getInitials(user?.username)}
+                </div>
+              )}
+              <span className="text-[#383838] font-medium">{user?.username}</span>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => navigate("/login")}
+              className="text-[#383838] hover:text-[#fec6d4] transition-colors font-medium"
+            >
+              LOGIN
+            </button>
+          )}
+
           <Sheet>
             <SheetTrigger asChild className="md:hidden">
               <Button variant="ghost" size="icon">
@@ -81,6 +112,15 @@ const GlobalHeader = () => {
                 >
                   Blog
                 </button>
+                {!isAuthenticated && (
+                  <button
+                    type="button"
+                    onClick={() => navigate("/login")}
+                    className="text-[#383838] hover:text-[#fec6d4] transition-colors font-medium text-lg"
+                  >
+                    Login
+                  </button>
+                )}
               </nav>
             </SheetContent>
           </Sheet>

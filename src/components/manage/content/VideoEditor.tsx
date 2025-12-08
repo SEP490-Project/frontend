@@ -366,11 +366,19 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
               </div>
             ) : (
               <div className="relative">
-                <div className="mb-2 text-xs text-gray-500">Video URL: {videoContent.body}</div>
                 <video
+                  key={videoContent.body}
                   src={videoContent.body}
                   controls
+                  preload="metadata"
                   className="w-full max-h-[300px] rounded-lg"
+                  onLoadedData={(e) => {
+                    // Seek to first frame to show thumbnail
+                    const video = e.currentTarget;
+                    if (video.currentTime === 0) {
+                      video.currentTime = 0.1;
+                    }
+                  }}
                   onError={(e) => {
                     console.error("Video load error:", e);
                     console.log("Video URL that failed:", videoContent.body);

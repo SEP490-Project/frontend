@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Controller, useFieldArray } from "react-hook-form";
+import { DatePicker } from "@/components/date-picker";
 import { useEffect } from "react";
 import {
   Select,
@@ -375,11 +376,21 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
             <Label htmlFor="manufacturing_date" className="text-sm font-medium">
               Manufactured Date
             </Label>
-            <Input
-              id="manufacturing_date"
-              type="date"
-              max={state.productType === "LIMITED" ? expiryDateStr || undefined : today}
-              {...register("manufacturing_date")}
+            <Controller
+              name="manufacturing_date"
+              control={control}
+              render={({ field }) => (
+                <DatePicker
+                  value={
+                    field.value instanceof Date
+                      ? field.value.toISOString().split("T")[0]
+                      : field.value || ""
+                  }
+                  onChange={field.onChange}
+                  maxDate={state.productType === "LIMITED" ? expiryDateStr || undefined : today}
+                  placeholder="Select manufacturing date"
+                />
+              )}
             />
           </div>
 
@@ -387,11 +398,23 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
             <Label htmlFor="expiry_date" className="text-sm font-medium">
               Expiry Date
             </Label>
-            <Input
-              id="expiry_date"
-              type="date"
-              min={manufactureDateStr && manufactureDateStr >= today ? manufactureDateStr : today}
-              {...register("expiry_date")}
+            <Controller
+              name="expiry_date"
+              control={control}
+              render={({ field }) => (
+                <DatePicker
+                  value={
+                    field.value instanceof Date
+                      ? field.value.toISOString().split("T")[0]
+                      : field.value || ""
+                  }
+                  onChange={field.onChange}
+                  minDate={
+                    manufactureDateStr && manufactureDateStr >= today ? manufactureDateStr : today
+                  }
+                  placeholder="Select expiry date"
+                />
+              )}
             />
           </div>
         </div>

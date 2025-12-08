@@ -254,21 +254,30 @@ const Product: React.FC = () => {
                     </TableCell>
 
                     <TableCell className="py-4">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <span>
-                            <Switch
-                              checked={product.is_active}
-                              disabled={product.type === "LIMITED"}
-                            />
-                          </span>
-                        </DialogTrigger>
-                        <StatusModal
-                          name={product.name}
-                          status={product.is_active ? "Inactive" : "Active"}
-                          onConfirm={() => handleToggleVisibility(product, !product.is_active)}
-                        />
-                      </Dialog>
+                      {product.type === "LIMITED" ? (
+                        <Badge
+                          className={
+                            product.is_active
+                              ? "bg-green-100 text-green-800 border border-green-200 hover:bg-green-200 "
+                              : "bg-red-100 text-red-800 border border-red-200 hover:bg-red-200"
+                          }
+                        >
+                          {product.status}
+                        </Badge>
+                      ) : (
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <span>
+                              <Switch checked={product.is_active} />
+                            </span>
+                          </DialogTrigger>
+                          <StatusModal
+                            name={product.name}
+                            status={product.is_active ? "Inactive" : "Active"}
+                            onConfirm={() => handleToggleVisibility(product, !product.is_active)}
+                          />
+                        </Dialog>
+                      )}
                     </TableCell>
 
                     <TableCell className="py-4">

@@ -412,7 +412,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
                 size="sm"
                 onClick={() => {
                   const input = document.querySelector(
-                    'input[placeholder="Add hashtag..."]',
+                    "input[placeholder='Add hashtag...']",
                   ) as HTMLInputElement;
                   if (input?.value.trim()) {
                     addStringItem(hashtags, setHashtags, input.value);
@@ -511,7 +511,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
                 size="sm"
                 onClick={() => {
                   const input = document.querySelector(
-                    'input[placeholder="Add activity..."]',
+                    "input[placeholder='Add activity...']",
                   ) as HTMLInputElement;
                   if (input?.value.trim()) {
                     addStringItem(activities, setActivities, input.value);
@@ -556,7 +556,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
                 size="sm"
                 onClick={() => {
                   const input = document.querySelector(
-                    'input[placeholder="Add representation rule..."]',
+                    "input[placeholder='Add representation rule...']",
                   ) as HTMLInputElement;
                   if (input?.value.trim()) {
                     addStringItem(representationRules, setRepresentationRules, input.value);
@@ -638,7 +638,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
                 size="sm"
                 onClick={() => {
                   const input = document.querySelector(
-                    'input[placeholder="Add subtask..."]',
+                    "input[placeholder='Add subtask...']",
                   ) as HTMLInputElement;
                   if (input?.value.trim()) {
                     addStringItem(subtasks, setSubtasks, input.value);
@@ -683,7 +683,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
                 size="sm"
                 onClick={() => {
                   const input = document.querySelector(
-                    'input[placeholder="Add material..."]',
+                    "input[placeholder='Add material...']",
                   ) as HTMLInputElement;
                   if (input?.value.trim()) {
                     addStringItem(materials, setMaterials, input.value);

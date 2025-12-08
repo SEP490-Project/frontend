@@ -1,4 +1,4 @@
-import { Eye, FileText, Video } from "lucide-react";
+import { Eye, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,9 +22,6 @@ export function TaskList({ currentDate, onViewTask, statusFilter = "ALL" }: Task
   // Utility functions
   const getTaskIcon = (type: string) => {
     switch (type) {
-      case "MARKETING":
-      case "PRODUCT":
-        return <Video className="h-4 w-4 text-white" />;
       case "CONTENT":
         return <FileText className="h-4 w-4 text-white" />;
       default:
@@ -36,10 +33,6 @@ export function TaskList({ currentDate, onViewTask, statusFilter = "ALL" }: Task
     switch (type) {
       case "CONTENT":
         return "#f7c06d";
-      case "MARKETING":
-        return "#ff88fa";
-      case "PRODUCT":
-        return "#9976ff";
       default:
         return "#9976ff";
     }
@@ -122,7 +115,7 @@ export function TaskList({ currentDate, onViewTask, statusFilter = "ALL" }: Task
                     </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-3 gap-3 auto-rows-min">
+                  <div className="grid grid-cols-2 gap-4 auto-rows-min">
                     {dayTasks.map((task: Task, taskIndex: number) => (
                       <motion.div
                         key={task.id}
@@ -161,14 +154,14 @@ export function TaskList({ currentDate, onViewTask, statusFilter = "ALL" }: Task
                                     </Badge>
                                     <Badge
                                       variant={
-                                        task.status === "COMPLETED"
+                                        task.status === "DONE"
                                           ? "default"
                                           : task.status === "IN_PROGRESS"
                                             ? "outline"
                                             : "secondary"
                                       }
                                       className={`text-xs px-2 py-0.5 h-auto ${
-                                        task.status === "COMPLETED"
+                                        task.status === "DONE"
                                           ? "bg-green-100 text-green-800 hover:bg-green-100"
                                           : task.status === "IN_PROGRESS"
                                             ? "bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-100"

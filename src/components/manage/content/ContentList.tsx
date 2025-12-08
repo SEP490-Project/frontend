@@ -187,20 +187,15 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     setIsLoadingEdit(true);
 
     try {
-      // Fetch detailed content from API to get the full body
       const response = await manageContent.contentDetail(content.id);
       const apiData = response.data.data;
-
       if (apiData) {
-        // Pass the detailed content to the editor
         onEdit?.(apiData);
       } else {
-        // Fallback: use the content from the list
         onEdit?.(content);
       }
     } catch (error) {
       console.error("Error fetching content detail for edit:", error);
-      // Fallback: use the content from the list
       onEdit?.(content);
     } finally {
       setIsLoadingEdit(false);

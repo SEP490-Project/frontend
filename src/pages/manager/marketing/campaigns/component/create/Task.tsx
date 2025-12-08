@@ -11,6 +11,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { useAuth } from "@/libs/hooks/useAuth";
 import { DatePicker } from "@/components/date-picker";
 import { ContractUploader } from "@/components/global";
 import FileList from "@/components/global/FileList";
@@ -132,6 +133,7 @@ const CreateTask: React.FC<CreateTaskProps> = ({
   const taskTypeOptions = getTaskTypeOptions(campaignType);
   const contractStart = formatDateForInput(selectedContract?.start_date);
   const contractEnd = formatDateForInput(selectedContract?.end_date);
+  const { user } = useAuth();
   const [addTaskModal, setAddTaskModal] = React.useState<{
     open: boolean;
     milestoneId: string | null;
@@ -743,7 +745,7 @@ const CreateTask: React.FC<CreateTaskProps> = ({
                         <div>
                           <Label>Task Material (Optional)</Label>
                           <ContractUploader
-                            userId="demo"
+                            userId={user?.id || ""}
                             accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.webp,.mp4,.avi,.mov,.zip,.rar"
                             multiple={false}
                             maxSize={10}

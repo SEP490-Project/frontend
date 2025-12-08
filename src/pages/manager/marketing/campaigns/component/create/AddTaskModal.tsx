@@ -20,6 +20,7 @@ import {
 import { DatePicker } from "@/components/date-picker";
 import { ContractUploader } from "@/components/global";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/libs/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, X } from "lucide-react";
 import { format, parseISO } from "date-fns";
@@ -103,6 +104,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
   milestoneDueDate,
 }) => {
   const defaultType = taskTypeOptions[0]?.value || "OTHER";
+  const { user } = useAuth();
   const [taskData, setTaskData] = useState<Task>({
     id: crypto.randomUUID(),
     name: "",
@@ -834,7 +836,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
           <div>
             <Label>Materials</Label>
             <ContractUploader
-              userId="demo"
+              userId={user?.id || ""}
               accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.webp,.mp4,.avi,.mov,.zip,.rar"
               multiple={true}
               maxSize={10}

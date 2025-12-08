@@ -3,6 +3,7 @@ import { Controller, type UseFormReturn } from "react-hook-form";
 import type { CreateLimitedProductPayload, LimitedProductData } from "@/libs/types/product";
 import { useEffect } from "react";
 import { getItem } from "@/libs/local-storage";
+import { DatePicker } from "@/components/date-picker";
 
 interface AdditionalInfoFormProps {
   form: UseFormReturn<CreateLimitedProductPayload>;
@@ -14,7 +15,7 @@ export const AdditionalInfoForm = ({ form }: AdditionalInfoFormProps) => {
   const startSaleDate = watch("limited_attribute.availability_start_date");
   const endSaleDate = watch("limited_attribute.availability_end_date");
 
-  const today = new Date(Date.now() + 86400000).toISOString().split("T")[0];
+  const today = new Date(Date.now()).toISOString().split("T")[0];
 
   // Load existing product data once on mount
   useEffect(() => {
@@ -104,15 +105,12 @@ export const AdditionalInfoForm = ({ form }: AdditionalInfoFormProps) => {
           name="limited_attribute.premiere_date"
           control={control}
           render={({ field }) => (
-            <Input
-              id="premiereDate"
-              type="date"
-              min={today}
-              className="col-span-3"
-              autoComplete="off"
+            <DatePicker
               value={field.value || ""}
               onChange={field.onChange}
-              onBlur={field.onBlur}
+              minDate={today}
+              placeholder="Select premiere date"
+              className="col-span-3"
             />
           )}
         />
@@ -130,16 +128,13 @@ export const AdditionalInfoForm = ({ form }: AdditionalInfoFormProps) => {
           name="limited_attribute.availability_start_date"
           control={control}
           render={({ field }) => (
-            <Input
-              id="startSaleDate"
-              type="date"
-              min={premiereDate || today}
-              className="col-span-3"
-              autoComplete="off"
-              disabled={!premiereDate}
+            <DatePicker
               value={field.value || ""}
               onChange={field.onChange}
-              onBlur={field.onBlur}
+              minDate={premiereDate || today}
+              placeholder="Select start sale date"
+              disabled={!premiereDate}
+              className="col-span-3"
             />
           )}
         />
@@ -157,16 +152,13 @@ export const AdditionalInfoForm = ({ form }: AdditionalInfoFormProps) => {
           name="limited_attribute.availability_end_date"
           control={control}
           render={({ field }) => (
-            <Input
-              id="endSaleDate"
-              type="date"
-              min={startSaleDate || today}
-              className="col-span-3"
-              autoComplete="off"
-              disabled={!startSaleDate}
+            <DatePicker
               value={field.value || ""}
               onChange={field.onChange}
-              onBlur={field.onBlur}
+              minDate={startSaleDate || today}
+              placeholder="Select end sale date"
+              disabled={!startSaleDate}
+              className="col-span-3"
             />
           )}
         />

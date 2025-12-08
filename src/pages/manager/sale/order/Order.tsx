@@ -281,7 +281,8 @@ const Order: React.FC = () => {
                         {order.status !== "CANCELLED" &&
                           order.status !== "RECEIVED" &&
                           order.status !== "COMPENSATED" &&
-                          order.status !== "REFUNDED" && (
+                          order.status !== "REFUNDED" &&
+                          (order.status !== "DELIVERED" || order.order_type !== "LIMITED") && (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -375,7 +376,8 @@ const Order: React.FC = () => {
                       order.status === "RECEIVED" ||
                       order.status === "CANCELLED" ||
                       order.status === "COMPENSATED" ||
-                      order.status === "REFUNDED"
+                      order.status === "REFUNDED" ||
+                      (order.status === "DELIVERED" && order.order_type === "LIMITED")
                     }
                   >
                     <SquarePen className="text-yellow-600 mr-2" />

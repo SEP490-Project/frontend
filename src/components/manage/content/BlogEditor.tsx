@@ -88,14 +88,19 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
 
         setAvailableChannels(blogChannels);
 
-        // Set default selection to Website if available
-        const websiteChannel = blogChannels.find(
-          (channel: Channel) => channel.name.toLowerCase() === "website",
-        );
-        if (websiteChannel) {
-          setSelectedChannel(websiteChannel.id);
-        } else if (blogChannels.length > 0) {
-          setSelectedChannel(blogChannels[0].id);
+        // If editing, use the channel from editingContent
+        if (editingContent?.content_channels?.[0]?.channel_id) {
+          setSelectedChannel(editingContent.content_channels[0].channel_id);
+        } else {
+          // Set default selection to Website if available (for new content)
+          const websiteChannel = blogChannels.find(
+            (channel: Channel) => channel.name.toLowerCase() === "website",
+          );
+          if (websiteChannel) {
+            setSelectedChannel(websiteChannel.id);
+          } else if (blogChannels.length > 0) {
+            setSelectedChannel(blogChannels[0].id);
+          }
         }
       } catch (error) {
         console.error("Error fetching channels:", error);
@@ -105,7 +110,7 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
     };
 
     fetchChannels();
-  }, []);
+  }, [editingContent]);
 
   // Initialize selected tags from editing content - memoized to avoid recalculation
   const [selectedTags, setSelectedTags] = useState<Tag[]>(() => {
@@ -126,7 +131,6 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
     return readTime > 0 ? readTime : 1;
   }, []);
 
-  // Update selected tags when availableTags loads and we have editing content
   React.useEffect(() => {
     if (editingContent?.blog?.tags && availableTags.length > 0 && selectedTags.length === 0) {
       const tags = editingContent.blog.tags
@@ -136,7 +140,6 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
     }
   }, [availableTags, editingContent?.blog?.tags, selectedTags.length]);
 
-  // State for content tracking - memoized initialization
   const initialContentState = useMemo(() => {
     if (!editingContent) return null;
     return {
@@ -147,19 +150,12 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
   }, [editingContent]);
 
   const [content, setContent] = useState<{ html: string; json: any } | null>(initialContentState);
-
-  // Key to force TiptapEditor re-render when AI content is added
   const [editorKey, setEditorKey] = useState(0);
-
-  // Track AI-generated text for API submission
   const [aiGeneratedText, setAiGeneratedText] = useState<string | null>(
     editingContent?.ai_generated_text || null,
   );
 
-  // Local state for title to avoid watch() performance issues
   const [localTitle, setLocalTitle] = React.useState(editingContent?.title || "");
-
-  // Memoized content update handler to prevent unnecessary re-renders
   const handleContentChange = useCallback((data: any) => {
     setContent(data);
   }, []);

@@ -7,6 +7,7 @@ import { getItem, removeItem } from "@/libs/local-storage";
 import { useAppDispatch } from "@/libs/stores";
 import { updateProductStateThunk } from "@/libs/stores/stateManager/thunk";
 import type { ProductData, ProductResponse } from "@/libs/types/product";
+import { toast } from "sonner";
 
 const AddProductStep = () => {
   const dispatch = useAppDispatch();
@@ -95,7 +96,14 @@ const AddProductStep = () => {
     try {
       const productId = getItem<ProductResponse<ProductData>>("currentProduct")?.data?.id;
       if (!productId) return;
-      dispatch(updateProductStateThunk({ productId: productId, newState: "SUBMITTED" }));
+      const result = await dispatch(
+        updateProductStateThunk({ productId: productId, newState: "SUBMITTED" }),
+      );
+      if (result.meta.requestStatus === "fulfilled") {
+        toast.success("Product submitted for review successfully");
+      } else {
+        toast.error("Failed to submit product for review");
+      }
     } catch (error) {
       console.error("Failed to submit product for review:", error);
     } finally {

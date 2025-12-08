@@ -23,7 +23,12 @@ const productManagerSlice = createSlice({
     isLoading: false,
     error: null as string | null,
   },
-  reducers: {},
+  reducers: {
+    clearProductDetail: (state) => {
+      state.productDetail = null;
+      state.createdProduct = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(getAllProductsThunk.pending, (state) => {
@@ -138,5 +143,6 @@ const productManagerSlice = createSlice({
   },
 });
 
+export const { clearProductDetail } = productManagerSlice.actions;
 export const { actions: productManagerActions, reducer: productManagerReducer } =
   productManagerSlice;

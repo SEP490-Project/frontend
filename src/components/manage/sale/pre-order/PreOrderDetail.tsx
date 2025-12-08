@@ -3,7 +3,7 @@ import type { PreOrderData } from "@/libs/types/pre-order";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Package, User, MapPin, CreditCard } from "lucide-react";
+import { Calendar, Package, User, MapPin, CreditCard, Image } from "lucide-react";
 
 interface PreOrderDetailProps {
   preOrder: PreOrderData;
@@ -180,23 +180,68 @@ const PreOrderDetail: React.FC<PreOrderDetailProps> = ({ preOrder }) => {
               </div>
             </div>
           )}
-          {preOrder.confirmation_image && (
-            <div>
-              <span className="text-sm text-gray-500">Proof:</span>
-              <div className="mt-2 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-2">
-                <img
-                  src={preOrder?.confirmation_image}
-                  alt="Customer pickup proof"
-                  className="w-full max-w-md rounded-md"
-                />
-                <p className="text-xs text-gray-500 mt-2">
-                  Photo taken when customer picked up the order
-                </p>
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
+      {(preOrder.confirmation_image || preOrder.staff_resource || preOrder.user_resource) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Image className="h-5 w-5" />
+              Proof Images
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {preOrder.confirmation_image && (
+                <div className="col-span-1">
+                  <span className="text-sm text-gray-500">Delivery Proofs:</span>
+                  <a href={preOrder.user_resource} target="_blank" rel="noopener noreferrer">
+                    <div className="mt-2 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-2">
+                      <img
+                        src={preOrder.confirmation_image}
+                        alt="Delivery proof"
+                        className="w-full max-w-md rounded-md"
+                      />
+                    </div>
+                  </a>
+                </div>
+              )}
+              {preOrder.staff_resource && (
+                <div className="col-span-1">
+                  <span className="text-sm text-gray-500">
+                    Staff Proofs (refund, compensate bills or other reasons):
+                  </span>
+                  <a href={preOrder.staff_resource} target="_blank" rel="noopener noreferrer">
+                    <div className="mt-2 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-2">
+                      <img
+                        src={preOrder.staff_resource}
+                        alt="Staff proof"
+                        className="w-full max-w-md rounded-md"
+                      />
+                    </div>
+                  </a>
+                </div>
+              )}
+              {preOrder.user_resource && (
+                <div className="col-span-1">
+                  <span className="text-sm text-gray-500">
+                    Customer Proofs (refund, compensate bills or other reasons):
+                  </span>
+                  <a href={preOrder.user_resource} target="_blank" rel="noopener noreferrer">
+                    <div className="mt-2 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-2">
+                      <img
+                        src={preOrder.user_resource}
+                        alt="Customer proof"
+                        className="w-full max-w-md rounded-md"
+                      />
+                    </div>
+                  </a>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Product Information Card */}
       <Card>

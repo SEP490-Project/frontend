@@ -116,6 +116,7 @@ export const TaskList = () => {
     return tasks.filter(
       (task) =>
         ["todo", "in_progress"].includes(task.status.toLowerCase()) &&
+        // Check if child_status === draft || revision then navigate to edit to complete the task
         !["submitted", "actived"].includes(task.child_status?.toLowerCase() || ""),
     );
   };

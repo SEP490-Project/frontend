@@ -84,7 +84,7 @@ export const productVariantSchema: yup.ObjectSchema<ProductVariant> = yup.object
           .number()
           .typeError("Value must be a number")
           .required("Value is required")
-          .min(0, "Value must be positive")
+          .min(0.1, "Value must be larger than or equal to 0.1")
           .test("if-is-percentage", "Percentage value must be between 0 and 100", function (value) {
             const { unit } = this.parent;
             if (unit === "%" && (value < 0 || value > 100)) {

@@ -210,6 +210,7 @@ export const CreateConceptStep = () => {
           return;
         }
 
+        setIsDisabled(true);
         const result = await dispatch(createConceptThunk(payload)).unwrap();
         if (result) {
           setItem("currentConcept", payload);
@@ -231,9 +232,11 @@ export const CreateConceptStep = () => {
         }
       } catch (error: any) {
         toast.error(error || "Failed to create  concept");
+      } finally {
+        setIsDisabled(false);
       }
     },
-    [dispatch, navigate, steps, currentStep, state],
+    [dispatch, navigate, steps, currentStep, state, setIsDisabled],
   );
 
   const onError = useCallback((errors: any) => {
@@ -260,6 +263,25 @@ export const CreateConceptStep = () => {
 
   return (
     <div className="space-y-6 mb-12 mt-6">
+      {(isUploading || isUploadingBanner) && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 flex flex-col items-center gap-4 max-w-md">
+            <Upload className="w-12 h-12 animate-pulse text-primary" />
+            <p className="text-lg font-semibold">
+              {isUploading ? "Uploading video..." : "Uploading images..."}
+            </p>
+            <p className="text-sm text-gray-500 text-center">
+              Please wait while we upload your files
+            </p>
+            {isUploading && progress > 0 && (
+              <div className="w-full">
+                <Progress value={progress} className="h-2" />
+                <p className="text-sm text-gray-600 text-center mt-2">{progress}%</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       <Card>
         <CardHeader>
           <h2 className="text-lg font-semibold">Concept Information</h2>

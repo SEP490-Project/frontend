@@ -1,12 +1,21 @@
-import { FaBars } from "react-icons/fa6";
+import { FaBars, FaAngleDown, FaPowerOff } from "react-icons/fa6";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/libs/hooks/useAuth";
+import { logout } from "@/libs/stores/authentManager/thunk";
+import { useAppDispatch } from "@/libs/stores";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 const GlobalHeader = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
+  const dispatch = useAppDispatch();
 
   const getInitials = (name: any) => {
     if (!name) return "?";
@@ -14,6 +23,11 @@ const GlobalHeader = () => {
       .split(" ")
       .map((part: any) => part[0].toUpperCase())
       .join("");
+  };
+
+  const handleLogout = async () => {
+    await dispatch(logout());
+    window.location.href = "/";
   };
 
   return (
@@ -56,16 +70,41 @@ const GlobalHeader = () => {
 
         <div className="flex items-center space-x-6">
           {isAuthenticated ? (
-            <div className="flex items-center space-x-4">
-              {user?.avatar ? (
-                <img src={user.avatar} alt="User Avatar" className="w-10 h-10 rounded-full" />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-[#b1b1b1] flex items-center justify-center text-white font-medium">
-                  {getInitials(user?.username)}
-                </div>
-              )}
-              <span className="text-[#383838] font-medium">{user?.username}</span>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2 px-2 md:px-3 py-1 rounded hover:bg-gray-100 transition">
+                  {user?.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt="User Avatar"
+                      className="w-10 h-10 rounded-full border-2 border-primary shadow-sm"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full border-2 border-primary bg-gray-200 text-gray-600 flex items-center justify-center font-semibold shadow-sm">
+                      {getInitials(user?.username)}
+                    </div>
+                  )}
+                  <span className="hidden md:inline text-gray-800 font-semibold text-base">
+                    {user?.username}
+                  </span>
+                  <FaAngleDown size={16} className="text-gray-500" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-56 animate-in slide-in-from-top-2 fade-in-0 duration-200 rounded-xl shadow-lg border border-gray-100 bg-white"
+              >
+                <DropdownMenuItem asChild>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 w-full px-4 py-2 text-red-500 hover:bg-red-50"
+                  >
+                    <FaPowerOff size={18} />
+                    <span>Logout</span>
+                  </button>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <button
               type="button"

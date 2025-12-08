@@ -264,3 +264,11 @@ input[type="password"]::-ms-clear {
   touch-action: pan-y;
   height: 100vh;
 }
+
+.rdp [aria-hidden="true"] {
+  @apply hidden;
+}
+
+.rdp-vhidden {
+  @apply hidden;
+}

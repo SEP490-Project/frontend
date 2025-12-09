@@ -9,6 +9,10 @@ import {
   getProductDetailThunk,
   updateProductStateThunk,
   updateProductVisibilityThunk,
+  updateProductBasicInfoThunk,
+  updateLimitedProductBasicInfoThunk,
+  updateProductVariantThunk,
+  updateLimitedProductVariantThunk,
 } from "./thunk";
 import { setItem } from "@/libs/local-storage";
 import { toast } from "sonner";
@@ -138,6 +142,66 @@ const productManagerSlice = createSlice({
       .addCase(updateProductVisibilityThunk.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message || "Failed to update product visibility";
+        toast.error(state.error);
+      })
+      .addCase(updateProductBasicInfoThunk.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateProductBasicInfoThunk.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.productDetail = action.payload;
+        state.error = null;
+        toast.success("Product information updated successfully");
+      })
+      .addCase(updateProductBasicInfoThunk.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || "Failed to update product information";
+        toast.error(state.error);
+      })
+      .addCase(updateLimitedProductBasicInfoThunk.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateLimitedProductBasicInfoThunk.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.productDetail = action.payload;
+        state.error = null;
+        toast.success("Limited product information updated successfully");
+      })
+      .addCase(updateLimitedProductBasicInfoThunk.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || "Failed to update limited product information";
+        toast.error(state.error);
+      })
+      .addCase(updateProductVariantThunk.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateProductVariantThunk.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.productDetail = action.payload;
+        state.error = null;
+        toast.success("Product variant updated successfully");
+      })
+      .addCase(updateProductVariantThunk.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || "Failed to update product variant";
+        toast.error(state.error);
+      })
+      .addCase(updateLimitedProductVariantThunk.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateLimitedProductVariantThunk.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.productDetail = action.payload;
+        state.error = null;
+        toast.success("Limited product variant updated successfully");
+      })
+      .addCase(updateLimitedProductVariantThunk.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || "Failed to update limited product variant";
         toast.error(state.error);
       });
   },

@@ -30,7 +30,6 @@ import {
 } from "@/components/ui/dialog";
 import { StatusModal } from "@/components/modal/StatusModal";
 import { useNavigate } from "react-router";
-import { ProductFormMode } from "@/enums/product";
 import { useAppDispatch, type RootState } from "@/libs/stores";
 import {
   getAllProductsThunk,
@@ -289,7 +288,7 @@ const Product: React.FC = () => {
                           title="Edit"
                           onClick={() => {
                             navigate(`/manage/sale/product/${product.id}`, {
-                              state: { type: ProductFormMode.EDIT, data: product },
+                              state: { data: product },
                             });
                           }}
                         >
@@ -303,7 +302,7 @@ const Product: React.FC = () => {
                           title="Edit"
                           onClick={() => {
                             navigate(`/manage/sale/product/${product.id}/edit`, {
-                              state: { type: ProductFormMode.EDIT, data: product },
+                              state: { id: product.id, product: product },
                             });
                           }}
                         >

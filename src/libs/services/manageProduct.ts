@@ -25,6 +25,15 @@ const manageProduct = {
     api.patch(`products/${productId}/state`, { state: status }),
   updateProductVisibility: (productId: string, isActive: boolean) =>
     api.patch(`products/publish/${productId}/${isActive}`),
+
+  //Update product
+  updateProductBasicInfo: (productId: string, data: any) => api.put(`products/${productId}`, data),
+  updateLimitedProductBasicInfo: (productId: string, data: any) =>
+    api.put(`products/limited/${productId}`, data),
+  updateProductVariant: (variantId: string, data: any) =>
+    api.put(`products/variants/${variantId}`, data),
+  updateLimitedProductVariant: (variantId: string, data: any) =>
+    api.put(`products/limited/variants/${variantId}`, data),
 };
 
 export default manageProduct;

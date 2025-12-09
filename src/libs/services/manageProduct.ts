@@ -34,6 +34,8 @@ const manageProduct = {
     api.put(`products/variants/${variantId}`, data),
   updateLimitedProductVariant: (variantId: string, data: any) =>
     api.put(`products/limited/variants/${variantId}`, data),
+  openEarlyPreorderProductDelivery: (productId: string) =>
+    api.patch(`/preorders/staff/products/${productId}/open-early`),
 };
 
 export default manageProduct;

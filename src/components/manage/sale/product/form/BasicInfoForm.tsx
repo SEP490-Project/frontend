@@ -28,6 +28,7 @@ import { getAllCategoriesThunk } from "@/libs/stores/categoryManager/thunk";
 import { useSelector } from "react-redux";
 import type { ProductCategory } from "@/libs/types/category";
 import { getItem, setItem } from "@/libs/local-storage";
+import type { SingleTaskResponse } from "@/libs/task";
 
 export const BasicInfoForm = ({
   form,
@@ -38,9 +39,13 @@ export const BasicInfoForm = ({
   state,
   setIsDisabled,
   setIsCreating,
+  // taskDetailById,
+  // detailLoading,
 }: ProductFormProps<CreateProductPayload | CreateLimitedProductPayload> & {
   isCreating?: boolean;
   setIsCreating?: (value: boolean) => void;
+  taskDetailById?: SingleTaskResponse | null;
+  detailLoading?: boolean;
 }) => {
   const dispatch = useAppDispatch();
   const categories = useSelector((state: any) => state?.manageCategory?.categories?.data);
@@ -250,7 +255,11 @@ export const BasicInfoForm = ({
           name="brand_id"
           control={control}
           render={({ field }) => (
-            <Select value={field.value} onValueChange={field.onChange}>
+            <Select
+              disabled={isLimitedProduct ? true : false}
+              value={field.value}
+              onValueChange={field.onChange}
+            >
               <SelectTrigger className="col-span-3">
                 <SelectValue placeholder="Select a brand" />
               </SelectTrigger>

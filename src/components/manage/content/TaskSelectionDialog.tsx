@@ -19,11 +19,11 @@ import {
   Briefcase,
   AlertTriangle,
 } from "lucide-react";
-import React from "react";
-import { useTaskManager } from "@/libs/hooks/useTask";
+import React, { useEffect } from "react";
 import { manageTask } from "@/libs/services/manageTask";
 import { toast } from "sonner";
 import type { Task } from "@/libs/types/task";
+import { useAuth } from "@/libs/hooks/useAuth";
 
 interface TaskSelectionDialogProps {
   isOpen: boolean;
@@ -46,7 +46,48 @@ const TaskSelectionDialog: React.FC<TaskSelectionDialogProps> = ({
   const [viewingTask, setViewingTask] = React.useState<Task | null>(null);
   const [loadingTaskDetail, setLoadingTaskDetail] = React.useState(false);
 
-  const { loading, tasks, error, fetchTasksByProfile } = useTaskManager();
+  // Local state for tasks fetched from marketing API
+  const [tasks, setTasks] = React.useState<Task[]>([]);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const { user } = useAuth();
+
+  // Fetch tasks without content assigned to current user
+  const fetchAvailableTasks = React.useCallback(async () => {
+    if (!user?.id) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await manageTask.getTaskListMarketing({
+        page: 1,
+        limit: 50,
+        has_content: false,
+        assigned_to_id: user.id,
+        type: "CONTENT",
+        status: "IN_PROGRESS",
+      });
+
+      if (response.data.success) {
+        setTasks(response.data.data || []);
+      } else {
+        setError("Failed to load tasks");
+      }
+    } catch (err) {
+      console.error("Error fetching tasks:", err);
+      setError("Failed to load tasks");
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchAvailableTasks();
+    }
+  }, [isOpen, fetchAvailableTasks]);
 
   // Utility functions
   const getTaskColor = (type: string): string => {
@@ -73,18 +114,8 @@ const TaskSelectionDialog: React.FC<TaskSelectionDialogProps> = ({
     }
   };
 
-  const availableTasks: Task[] = React.useMemo(() => {
-    return tasks.filter((task) => {
-      // Filter by content type - adjust these type mappings as needed
-      const isMatchingType =
-        task.type === "CONTENT" || task.type === "MARKETING" || task.type === "PRODUCT";
-
-      // Filter by status - only show IN_PROGRESS tasks
-      const isInProgressStatus = task.status === "IN_PROGRESS";
-
-      return isMatchingType && isInProgressStatus;
-    });
-  }, [tasks]);
+  // Tasks are already filtered by the API (has_content: false, type: CONTENT, status: IN_PROGRESS)
+  const availableTasks = tasks;
 
   const handleTaskSelect = (task: Task) => {
     setSelectedTask(task);
@@ -163,7 +194,7 @@ const TaskSelectionDialog: React.FC<TaskSelectionDialogProps> = ({
               ) : error ? (
                 <div className="text-center py-8 text-red-500">
                   <p>Error loading tasks: {error}</p>
-                  <Button variant="outline" onClick={() => fetchTasksByProfile()} className="mt-2">
+                  <Button variant="outline" onClick={fetchAvailableTasks} className="mt-2">
                     Retry
                   </Button>
                 </div>
@@ -449,14 +480,6 @@ const TaskDetailView: React.FC<TaskDetailViewProps> = ({ task, onBack, onSelectF
           </div>
           <div className="flex-1">
             <h3 className="text-xl font-semibold text-gray-900 mb-2">{task.name}</h3>
-            <div className="flex items-center gap-2 mb-3">
-              {task.type === "MARKETING" || task.type === "PRODUCT" ? (
-                <Video className="h-4 w-4 text-purple-500" />
-              ) : (
-                <FileText className="h-4 w-4 text-blue-500" />
-              )}
-              <span className="text-sm text-gray-600">{task.type} Content</span>
-            </div>
           </div>
         </div>
 

@@ -19,11 +19,17 @@ import {
 } from "@/components/ui/select";
 import { DatePicker } from "@/components/date-picker";
 import { ContractUploader } from "@/components/global";
-import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/libs/hooks/useAuth";
-import { Card, CardContent } from "@/components/ui/card";
-import { Plus, X } from "lucide-react";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { FileText, Target, Hash, Calendar, Users, CheckSquare } from "lucide-react";
 import { format, parseISO } from "date-fns";
+import {
+  CompactKPISelector,
+  DynamicListInput,
+} from "@/pages/manager/marketing/contracts/component/create/shared/SharedComponents";
+import AddressSelector from "@/components/global/AddressSelector";
+import DateTimePicker from "@/components/date-time-picker";
+import DurationPicker from "@/components/duration-picker";
 
 interface KPIGoal {
   metric: string;
@@ -34,6 +40,7 @@ interface KPIGoal {
 interface TaskDescriptionJson {
   // Advertising/Affiliate
   advertised_item_id?: number;
+  name?: string; // Advertised item name
   product_name?: string;
   platform?: string;
   tagline?: string;
@@ -53,12 +60,19 @@ interface TaskDescriptionJson {
   activities?: string[];
   representation_rules?: string[];
 
-  // Co-Producing (Product)
+  // Co-Producing (Product & Concept)
   is_product_creation_task?: boolean;
   product_id?: number;
   product_description?: string;
   subtasks?: string[];
   materials?: string[];
+
+  // Concept fields
+  concept_id?: number;
+  concept_name?: string;
+  concept_description?: string;
+  related_product_id?: number;
+  related_product_name?: string;
 }
 
 interface TaskDescription {
@@ -84,6 +98,7 @@ interface AddTaskModalProps {
   campaignType: string;
   taskTypeOptions: { value: string; label: string }[];
   milestoneDueDate?: string;
+  suggestedTaskData?: any; // Data from campaign suggestion
 }
 
 const formatDateForInput = (dateString?: string | null) => {
@@ -102,6 +117,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
   campaignType,
   taskTypeOptions,
   milestoneDueDate,
+  suggestedTaskData,
 }) => {
   const defaultType = taskTypeOptions[0]?.value || "OTHER";
   const { user } = useAuth();
@@ -125,6 +141,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
   const [representationRules, setRepresentationRules] = useState<string[]>([]);
   const [subtasks, setSubtasks] = useState<string[]>([]);
   const [materials, setMaterials] = useState<string[]>([]);
+  const [freeformDescription, setFreeformDescription] = useState<string>("");
 
   React.useEffect(() => {
     if (open) {
@@ -148,13 +165,144 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
       setRepresentationRules([]);
       setSubtasks([]);
       setMaterials([]);
+      setFreeformDescription("");
       setFormData({});
     }
   }, [open, defaultType]);
 
+  // Populate data from suggestion when available
+  React.useEffect(() => {
+    if (open && suggestedTaskData) {
+      const populateFromSuggestion = (data: any) => {
+        // Populate basic task info if available
+        if (data.name) {
+          setTaskData((prev) => ({ ...prev, name: data.name }));
+        }
+
+        // Populate based on campaign type and task structure from JSON
+        if (campaignType === "ADVERTISING" || campaignType === "AFFILIATE") {
+          const adData = data.advertised_item || data;
+          if (adData) {
+            const formUpdates: any = {};
+            if (adData.advertised_item_id || adData.id)
+              formUpdates.advertised_item_id = adData.advertised_item_id || adData.id;
+            if (adData.name) formUpdates.advertised_item_name = adData.name;
+            if (adData.platform) formUpdates.platform = adData.platform;
+            if (adData.tagline) formUpdates.tagline = adData.tagline;
+            if (adData.creative_notes) formUpdates.creative_notes = adData.creative_notes;
+            if (adData.tracking_link) formUpdates.tracking_link = adData.tracking_link;
+            setFormData(formUpdates);
+
+            if (adData.hashtags && Array.isArray(adData.hashtags)) {
+              setHashtags(adData.hashtags);
+            }
+            if (adData.kpi_goals && Array.isArray(adData.kpi_goals)) {
+              setKpiGoals(adData.kpi_goals);
+            }
+            if (adData.materials && Array.isArray(adData.materials)) {
+              setMaterials(adData.materials);
+            } else if (adData.material_urls && Array.isArray(adData.material_urls)) {
+              setMaterials(adData.material_urls);
+            }
+          }
+        } else if (campaignType === "BRAND_AMBASSADOR") {
+          // For Brand Ambassador, the data structure is different - look for description_json first
+          const eventData = data.description_json || data.brand_ambassador || data;
+          if (eventData) {
+            const formUpdates: any = {};
+            if (eventData.event_id) formUpdates.event_id = eventData.event_id;
+            if (eventData.event_name) formUpdates.event_name = eventData.event_name;
+            if (eventData.event_date) formUpdates.event_date = eventData.event_date;
+            if (eventData.event_duration) formUpdates.event_duration = eventData.event_duration;
+            if (eventData.location) formUpdates.location = eventData.location;
+            setFormData(formUpdates);
+
+            if (eventData.activities && Array.isArray(eventData.activities)) {
+              setActivities(eventData.activities);
+            }
+            if (eventData.representation_rules && Array.isArray(eventData.representation_rules)) {
+              setRepresentationRules(eventData.representation_rules);
+            }
+            if (eventData.kpi_goals && Array.isArray(eventData.kpi_goals)) {
+              setKpiGoals(eventData.kpi_goals);
+            }
+            // For Brand Ambassador, materials might not be present in the suggestion
+            // Only set materials if they exist - keep them separate from uploaded files
+            if (eventData.materials && Array.isArray(eventData.materials)) {
+              setMaterials(eventData.materials);
+            } else if (eventData.material_urls && Array.isArray(eventData.material_urls)) {
+              setMaterials(eventData.material_urls);
+            }
+          }
+        } else if (campaignType === "CO_PRODUCING") {
+          // Handle both product and concept data
+          const productData = data.product || data;
+          const conceptData = data.concept || data;
+
+          if (productData && productData.is_product_creation_task !== false) {
+            const formUpdates: any = {};
+            if (productData.product_id || productData.id)
+              formUpdates.product_id = productData.product_id || productData.id;
+            if (productData.product_name || productData.name)
+              formUpdates.product_name = productData.product_name || productData.name;
+            if (productData.product_description || productData.description)
+              formUpdates.product_description =
+                productData.product_description || productData.description;
+            setFormData(formUpdates);
+
+            if (productData.subtasks && Array.isArray(productData.subtasks)) {
+              setSubtasks(productData.subtasks);
+            }
+            if (productData.materials && Array.isArray(productData.materials)) {
+              setMaterials(productData.materials);
+            } else if (productData.material_urls && Array.isArray(productData.material_urls)) {
+              setMaterials(productData.material_urls);
+            }
+            if (productData.kpi_goals && Array.isArray(productData.kpi_goals)) {
+              setKpiGoals(productData.kpi_goals);
+            }
+          } else if (conceptData && conceptData.is_product_creation_task === false) {
+            const formUpdates: any = {};
+            if (conceptData.concept_id || conceptData.id)
+              formUpdates.concept_id = conceptData.concept_id || conceptData.id;
+            if (conceptData.concept_name || conceptData.name)
+              formUpdates.concept_name = conceptData.concept_name || conceptData.name;
+            if (conceptData.concept_description || conceptData.description)
+              formUpdates.concept_description =
+                conceptData.concept_description || conceptData.description;
+            if (conceptData.related_product_id)
+              formUpdates.related_product_id = conceptData.related_product_id;
+            if (conceptData.related_product_name)
+              formUpdates.related_product_name = conceptData.related_product_name;
+            if (conceptData.platform) formUpdates.platform = conceptData.platform;
+            setFormData(formUpdates);
+
+            if (conceptData.hashtags && Array.isArray(conceptData.hashtags)) {
+              setHashtags(conceptData.hashtags);
+            }
+            if (conceptData.materials && Array.isArray(conceptData.materials)) {
+              setMaterials(conceptData.materials);
+            } else if (conceptData.material_urls && Array.isArray(conceptData.material_urls)) {
+              setMaterials(conceptData.material_urls);
+            }
+            if (conceptData.kpi_goals && Array.isArray(conceptData.kpi_goals)) {
+              setKpiGoals(conceptData.kpi_goals);
+            }
+          }
+        }
+      };
+
+      populateFromSuggestion(suggestedTaskData);
+    }
+  }, [open, suggestedTaskData, campaignType]);
+
   const [formData, setFormData] = useState<Record<string, any>>({});
 
-  const handleSubmit = () => {
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     const descriptionJson: TaskDescriptionJson = {};
 
     // Common fields
@@ -174,6 +322,9 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
       // Advertising/Affiliate Content Task
       if (formData.advertised_item_id) {
         descriptionJson.advertised_item_id = Number(formData.advertised_item_id);
+      }
+      if (formData.advertised_item_name) {
+        descriptionJson.name = formData.advertised_item_name;
       }
       if (formData.product_name) {
         descriptionJson.product_name = formData.product_name;
@@ -237,12 +388,40 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
       if (materials.length > 0) {
         descriptionJson.materials = materials;
       }
+    } else if (campaignType === "CO_PRODUCING" && taskData.type === "CONCEPT") {
+      // Co-Producing Concept Task
+      descriptionJson.is_product_creation_task = false;
+      if (formData.concept_id) {
+        descriptionJson.concept_id = Number(formData.concept_id);
+      }
+      if (formData.concept_name) {
+        descriptionJson.concept_name = formData.concept_name;
+      }
+      if (formData.concept_description) {
+        descriptionJson.concept_description = formData.concept_description;
+      }
+      if (formData.related_product_id) {
+        descriptionJson.related_product_id = Number(formData.related_product_id);
+      }
+      if (formData.related_product_name) {
+        descriptionJson.related_product_name = formData.related_product_name;
+      }
+      if (formData.platform) {
+        descriptionJson.platform = formData.platform;
+      }
+      if (hashtags.length > 0) {
+        descriptionJson.hashtags = hashtags;
+      }
+      if (materials.length > 0) {
+        descriptionJson.materials = materials;
+      }
     }
 
     const finalTask: Task = {
       ...taskData,
       description: {
         ...taskData.description,
+        description: freeformDescription || taskData.description.description,
         description_json: descriptionJson,
       },
     };
@@ -255,38 +434,6 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const addKPIGoal = () => {
-    setKpiGoals([...kpiGoals, { metric: "", target: "", description: "" }]);
-  };
-
-  const removeKPIGoal = (index: number) => {
-    setKpiGoals(kpiGoals.filter((_, i) => i !== index));
-  };
-
-  const updateKPIGoal = (index: number, field: keyof KPIGoal, value: string) => {
-    const updated = [...kpiGoals];
-    updated[index] = { ...updated[index], [field]: value };
-    setKpiGoals(updated);
-  };
-
-  const addStringItem = (
-    items: string[],
-    setItems: React.Dispatch<React.SetStateAction<string[]>>,
-    value: string,
-  ) => {
-    if (value.trim()) {
-      setItems([...items, value.trim()]);
-    }
-  };
-
-  const removeStringItem = (
-    items: string[],
-    setItems: React.Dispatch<React.SetStateAction<string[]>>,
-    index: number,
-  ) => {
-    setItems(items.filter((_, i) => i !== index));
-  };
-
   const handleMaterialUpload = (urls: string[]) => {
     setTaskData((prev) => ({
       ...prev,
@@ -296,6 +443,9 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
       },
       material_urls: urls,
     }));
+
+    // Keep suggested materials separate from uploaded ones
+    // No need to clear materials array now since they're displayed separately
   };
 
   const handleMaterialFilesChange = (files: File[]) => {
@@ -313,6 +463,8 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
       material_urls: updatedUrls,
       materialFiles: [],
     }));
+
+    // Keep suggested materials separate - don't remove them when removing uploaded files
   };
 
   const renderTypeSpecificFields = () => {
@@ -321,392 +473,420 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
       taskData.type === "CONTENT"
     ) {
       return (
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Advertised Item ID</Label>
-              <Input
-                type="number"
-                placeholder="Enter item ID"
-                value={formData.advertised_item_id || ""}
-                onChange={(e) => updateFormData("advertised_item_id", e.target.value)}
-              />
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100 border-b">
+            <div className="flex items-center gap-3">
+              <div className="bg-orange-100 p-2 rounded-lg">
+                <FileText className="w-5 h-5 text-orange-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800">
+                  {campaignType === "AFFILIATE" ? "Affiliate" : "Advertising"} Content Details
+                </h3>
+                <p className="text-sm text-gray-600">Configure content-specific parameters</p>
+              </div>
             </div>
+          </CardHeader>
+          <CardContent className="p-6 space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Target className="w-4 h-4" />
+                  Advertised Item ID
+                </Label>
+                <Input
+                  type="number"
+                  placeholder="Enter item ID"
+                  value={formData.advertised_item_id || ""}
+                  onChange={(e) => updateFormData("advertised_item_id", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  Advertised Item Name
+                </Label>
+                <Input
+                  placeholder="Enter advertised item name"
+                  value={formData.advertised_item_name || ""}
+                  onChange={(e) => updateFormData("advertised_item_name", e.target.value)}
+                />
+              </div>
+            </div>
+
             <div>
-              <Label>Product Name</Label>
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                Product Name
+              </Label>
               <Input
-                placeholder="Enter product name"
+                placeholder="Enter product name (if different from item name)"
                 value={formData.product_name || ""}
                 onChange={(e) => updateFormData("product_name", e.target.value)}
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Optional: Use if the product name differs from the advertised item name
+              </p>
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Platform</Label>
-              <Select
-                value={formData.platform || ""}
-                onValueChange={(value) => updateFormData("platform", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select platform" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="FACEBOOK">Facebook</SelectItem>
-                  <SelectItem value="INSTAGRAM">Instagram</SelectItem>
-                  <SelectItem value="TIKTOK">TikTok</SelectItem>
-                  <SelectItem value="YOUTUBE">YouTube</SelectItem>
-                  <SelectItem value="TWITTER">Twitter</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm font-medium">Platform</Label>
+                <Select
+                  value={formData.platform || ""}
+                  onValueChange={(value) => updateFormData("platform", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select platform" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="WEBSITE">Website</SelectItem>
+                    <SelectItem value="FACEBOOK">Facebook</SelectItem>
+                    <SelectItem value="TIKTOK">TikTok</SelectItem>
+                    <SelectItem value="INSTAGRAM">Instagram</SelectItem>
+                    <SelectItem value="YOUTUBE">YouTube</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Tagline</Label>
+                <Input
+                  placeholder="Enter catchy tagline"
+                  value={formData.tagline || ""}
+                  onChange={(e) => updateFormData("tagline", e.target.value)}
+                />
+              </div>
             </div>
+
             <div>
-              <Label>Tagline</Label>
-              <Input
-                placeholder="Enter tagline"
-                value={formData.tagline || ""}
-                onChange={(e) => updateFormData("tagline", e.target.value)}
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                Creative Notes
+              </Label>
+              <Textarea
+                rows={4}
+                placeholder="Provide detailed creative direction, style preferences, tone of voice, visual elements, etc..."
+                value={formData.creative_notes || ""}
+                onChange={(e) => updateFormData("creative_notes", e.target.value)}
+                className="resize-none"
               />
             </div>
-          </div>
 
-          <div>
-            <Label>Creative Notes</Label>
-            <Textarea
-              placeholder="Enter creative notes..."
-              value={formData.creative_notes || ""}
-              onChange={(e) => updateFormData("creative_notes", e.target.value)}
+            {campaignType === "AFFILIATE" && (
+              <div>
+                <Label className="text-sm font-medium">Tracking Link</Label>
+                <Input
+                  placeholder="https://affiliate-tracking-url.com"
+                  value={formData.tracking_link || ""}
+                  onChange={(e) => updateFormData("tracking_link", e.target.value)}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Required for affiliate performance tracking
+                </p>
+              </div>
+            )}
+
+            <DynamicListInput
+              label="Hashtags"
+              items={hashtags}
+              placeholder="Enter hashtag (without #)..."
+              icon={<Hash className="w-4 h-4" />}
+              onChange={setHashtags}
+              helpText="Add relevant hashtags for social media content. Don't include the # symbol."
+              addLabel="Add Hashtag"
             />
-          </div>
-
-          {campaignType === "AFFILIATE" && (
-            <div>
-              <Label>Tracking Link</Label>
-              <Input
-                placeholder="Enter affiliate tracking link"
-                value={formData.tracking_link || ""}
-                onChange={(e) => updateFormData("tracking_link", e.target.value)}
-              />
-            </div>
-          )}
-
-          <div>
-            <Label>Hashtags</Label>
-            <div className="flex gap-2 mb-2">
-              <Input
-                placeholder="Add hashtag..."
-                onKeyPress={(e) => {
-                  if (e.key === "Enter") {
-                    const value = (e.target as HTMLInputElement).value;
-                    if (value.trim()) {
-                      addStringItem(hashtags, setHashtags, value);
-                      (e.target as HTMLInputElement).value = "";
-                    }
-                  }
-                }}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const input = document.querySelector(
-                    "input[placeholder='Add hashtag...']",
-                  ) as HTMLInputElement;
-                  if (input?.value.trim()) {
-                    addStringItem(hashtags, setHashtags, input.value);
-                    input.value = "";
-                  }
-                }}
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {hashtags.map((tag, index) => (
-                <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                  {tag}
-                  <X
-                    className="w-3 h-3 cursor-pointer"
-                    onClick={() => removeStringItem(hashtags, setHashtags, index)}
-                  />
-                </Badge>
-              ))}
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       );
     }
 
     if (campaignType === "BRAND_AMBASSADOR" && taskData.type === "EVENT") {
       return (
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Event ID</Label>
-              <Input
-                type="number"
-                placeholder="Enter event ID"
-                value={formData.event_id || ""}
-                onChange={(e) => updateFormData("event_id", e.target.value)}
-              />
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="bg-gradient-to-r from-emerald-50 to-emerald-100 border-b">
+            <div className="flex items-center gap-3">
+              <div className="bg-emerald-100 p-2 rounded-lg">
+                <Users className="w-5 h-5 text-emerald-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Brand Ambassador Event Details
+                </h3>
+                <p className="text-sm text-gray-600">Configure event-specific parameters</p>
+              </div>
             </div>
-            <div>
-              <Label>Event Name</Label>
-              <Input
-                placeholder="Enter event name"
-                value={formData.event_name || ""}
-                onChange={(e) => updateFormData("event_name", e.target.value)}
-              />
+          </CardHeader>
+          <CardContent className="p-6 space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Target className="w-4 h-4" />
+                  Event ID
+                </Label>
+                <Input
+                  type="number"
+                  placeholder="Enter event ID"
+                  value={formData.event_id || ""}
+                  onChange={(e) => updateFormData("event_id", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  Event Name
+                </Label>
+                <Input
+                  placeholder="Enter event name"
+                  value={formData.event_name || ""}
+                  onChange={(e) => updateFormData("event_name", e.target.value)}
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Event Date</Label>
-              <DatePicker
-                value={formData.event_date || ""}
-                onChange={(date) => updateFormData("event_date", date)}
-                placeholder="Select event date"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <DateTimePicker
+                  label="Date & Time"
+                  value={formData.event_date || ""}
+                  onChange={(dateTime) => updateFormData("event_date", dateTime)}
+                  placeholder="Select event date and time"
+                  className="bg-white"
+                />
+              </div>
+              <div>
+                <DurationPicker
+                  label="Expected Duration"
+                  value={formData.event_duration || ""}
+                  onChange={(duration) => updateFormData("event_duration", duration)}
+                  placeholder="Select duration"
+                  maxHours={8}
+                  className="bg-white"
+                />
+              </div>
             </div>
-            <div>
-              <Label>Event Duration</Label>
-              <Input
-                placeholder="e.g., 2 hours"
-                value={formData.event_duration || ""}
-                onChange={(e) => updateFormData("event_duration", e.target.value)}
-              />
-            </div>
-          </div>
 
-          <div>
-            <Label>Location</Label>
-            <Input
-              placeholder="Enter event location"
-              value={formData.location || ""}
-              onChange={(e) => updateFormData("location", e.target.value)}
+            <div>
+              <AddressSelector
+                label="Location"
+                placeholder="Search for event address..."
+                value={formData.location || ""}
+                onChange={(address) => updateFormData("location", address)}
+              />
+            </div>
+
+            <DynamicListInput
+              label="Activities"
+              items={activities}
+              placeholder="Describe an activity or task for the event..."
+              icon={<CheckSquare className="w-4 h-4" />}
+              onChange={setActivities}
+              helpText="List specific activities, performances, or tasks to be completed during the event."
+              multiline={true}
+              addLabel="Add Activity"
             />
-          </div>
 
-          <div>
-            <Label>Activities</Label>
-            <div className="flex gap-2 mb-2">
-              <Input
-                placeholder="Add activity..."
-                onKeyPress={(e) => {
-                  if (e.key === "Enter") {
-                    const value = (e.target as HTMLInputElement).value;
-                    if (value.trim()) {
-                      addStringItem(activities, setActivities, value);
-                      (e.target as HTMLInputElement).value = "";
-                    }
-                  }
-                }}
+            <div>
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                Representation Rules
+              </Label>
+              <Textarea
+                rows={5}
+                placeholder={
+                  "Enter detailed representation guidelines, such as:\n\n• Dress code and appearance requirements\n• Brand messaging and talking points\n• Prohibited behaviors or activities\n• Social media posting guidelines\n• Interaction protocols with attendees"
+                }
+                value={representationRules.join("\n") || ""}
+                onChange={(e) =>
+                  setRepresentationRules(e.target.value.split("\n").filter((rule) => rule.trim()))
+                }
+                className="resize-none"
               />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const input = document.querySelector(
-                    "input[placeholder='Add activity...']",
-                  ) as HTMLInputElement;
-                  if (input?.value.trim()) {
-                    addStringItem(activities, setActivities, input.value);
-                    input.value = "";
-                  }
-                }}
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
+              <p className="text-xs text-gray-500 mt-1">
+                Enter each rule on a separate line. These guidelines ensure consistent brand
+                representation.
+              </p>
             </div>
-            <div className="flex flex-wrap gap-1">
-              {activities.map((activity, index) => (
-                <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                  {activity}
-                  <X
-                    className="w-3 h-3 cursor-pointer"
-                    onClick={() => removeStringItem(activities, setActivities, index)}
-                  />
-                </Badge>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <Label>Representation Rules</Label>
-            <div className="flex gap-2 mb-2">
-              <Input
-                placeholder="Add representation rule..."
-                onKeyPress={(e) => {
-                  if (e.key === "Enter") {
-                    const value = (e.target as HTMLInputElement).value;
-                    if (value.trim()) {
-                      addStringItem(representationRules, setRepresentationRules, value);
-                      (e.target as HTMLInputElement).value = "";
-                    }
-                  }
-                }}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const input = document.querySelector(
-                    "input[placeholder='Add representation rule...']",
-                  ) as HTMLInputElement;
-                  if (input?.value.trim()) {
-                    addStringItem(representationRules, setRepresentationRules, input.value);
-                    input.value = "";
-                  }
-                }}
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {representationRules.map((rule, index) => (
-                <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                  {rule}
-                  <X
-                    className="w-3 h-3 cursor-pointer"
-                    onClick={() =>
-                      removeStringItem(representationRules, setRepresentationRules, index)
-                    }
-                  />
-                </Badge>
-              ))}
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       );
     }
 
-    if (campaignType === "CO_PRODUCING" && taskData.type === "PRODUCT") {
+    if (
+      campaignType === "CO_PRODUCING" &&
+      (taskData.type === "PRODUCT" || taskData.type === "CONCEPT")
+    ) {
       return (
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Product ID</Label>
-              <Input
-                type="number"
-                placeholder="Enter product ID"
-                value={formData.product_id || ""}
-                onChange={(e) => updateFormData("product_id", e.target.value)}
-              />
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="bg-gradient-to-r from-violet-50 to-violet-100 border-b">
+            <div className="flex items-center gap-3">
+              <div className="bg-violet-100 p-2 rounded-lg">
+                <CheckSquare className="w-5 h-5 text-violet-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Co-Producing {taskData.type === "CONCEPT" ? "Concept" : "Product"} Details
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Configure{" "}
+                  {taskData.type === "CONCEPT" ? "concept development" : "product creation"}{" "}
+                  parameters
+                </p>
+              </div>
             </div>
-            <div>
-              <Label>Product Name</Label>
-              <Input
-                placeholder="Enter product name"
-                value={formData.product_name || ""}
-                onChange={(e) => updateFormData("product_name", e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label>Product Description</Label>
-            <Textarea
-              placeholder="Describe the product..."
-              value={formData.product_description || ""}
-              onChange={(e) => updateFormData("product_description", e.target.value)}
-            />
-          </div>
-
-          <div>
-            <Label>Subtasks</Label>
-            <div className="flex gap-2 mb-2">
-              <Input
-                placeholder="Add subtask..."
-                onKeyPress={(e) => {
-                  if (e.key === "Enter") {
-                    const value = (e.target as HTMLInputElement).value;
-                    if (value.trim()) {
-                      addStringItem(subtasks, setSubtasks, value);
-                      (e.target as HTMLInputElement).value = "";
-                    }
-                  }
-                }}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const input = document.querySelector(
-                    "input[placeholder='Add subtask...']",
-                  ) as HTMLInputElement;
-                  if (input?.value.trim()) {
-                    addStringItem(subtasks, setSubtasks, input.value);
-                    input.value = "";
-                  }
-                }}
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {subtasks.map((subtask, index) => (
-                <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                  {subtask}
-                  <X
-                    className="w-3 h-3 cursor-pointer"
-                    onClick={() => removeStringItem(subtasks, setSubtasks, index)}
+          </CardHeader>
+          <CardContent className="p-6 space-y-6">
+            {taskData.type === "PRODUCT" ? (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <Target className="w-4 h-4" />
+                    Product ID
+                  </Label>
+                  <Input
+                    type="number"
+                    placeholder="Enter product ID"
+                    value={formData.product_id || ""}
+                    onChange={(e) => updateFormData("product_id", e.target.value)}
                   />
-                </Badge>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <Label>Materials</Label>
-            <div className="flex gap-2 mb-2">
-              <Input
-                placeholder="Add material..."
-                onKeyPress={(e) => {
-                  if (e.key === "Enter") {
-                    const value = (e.target as HTMLInputElement).value;
-                    if (value.trim()) {
-                      addStringItem(materials, setMaterials, value);
-                      (e.target as HTMLInputElement).value = "";
-                    }
-                  }
-                }}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const input = document.querySelector(
-                    "input[placeholder='Add material...']",
-                  ) as HTMLInputElement;
-                  if (input?.value.trim()) {
-                    addStringItem(materials, setMaterials, input.value);
-                    input.value = "";
-                  }
-                }}
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {materials.map((material, index) => (
-                <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                  {material}
-                  <X
-                    className="w-3 h-3 cursor-pointer"
-                    onClick={() => removeStringItem(materials, setMaterials, index)}
+                </div>
+                <div>
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Product Name
+                  </Label>
+                  <Input
+                    placeholder="Enter product name"
+                    value={formData.product_name || ""}
+                    onChange={(e) => updateFormData("product_name", e.target.value)}
                   />
-                </Badge>
-              ))}
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2">
+                      <Target className="w-4 h-4" />
+                      Concept ID
+                    </Label>
+                    <Input
+                      type="number"
+                      placeholder="Enter concept ID"
+                      value={formData.concept_id || ""}
+                      onChange={(e) => updateFormData("concept_id", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2">
+                      <FileText className="w-4 h-4" />
+                      Concept Name
+                    </Label>
+                    <Input
+                      placeholder="Enter concept name"
+                      value={formData.concept_name || ""}
+                      onChange={(e) => updateFormData("concept_name", e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2">
+                      <Target className="w-4 h-4" />
+                      Related Product ID
+                    </Label>
+                    <Input
+                      type="number"
+                      placeholder="Enter related product ID"
+                      value={formData.related_product_id || ""}
+                      onChange={(e) => updateFormData("related_product_id", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2">
+                      <FileText className="w-4 h-4" />
+                      Related Product Name
+                    </Label>
+                    <Input
+                      placeholder="Enter related product name"
+                      value={formData.related_product_name || ""}
+                      onChange={(e) => updateFormData("related_product_name", e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Platform</Label>
+                  <Select
+                    value={formData.platform || ""}
+                    onValueChange={(value) => updateFormData("platform", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select platform" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="WEBSITE">Website</SelectItem>
+                      <SelectItem value="FACEBOOK">Facebook</SelectItem>
+                      <SelectItem value="TIKTOK">TikTok</SelectItem>
+                      <SelectItem value="INSTAGRAM">Instagram</SelectItem>
+                      <SelectItem value="YOUTUBE">YouTube</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+
+            <div>
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                {taskData.type === "CONCEPT" ? "Concept Description" : "Product Description"}
+              </Label>
+              <Textarea
+                rows={4}
+                placeholder={
+                  taskData.type === "CONCEPT"
+                    ? "Describe the concept, creative direction, brand positioning, messaging strategy, etc..."
+                    : "Provide detailed product description, features, specifications, target audience, etc..."
+                }
+                value={
+                  taskData.type === "CONCEPT"
+                    ? formData.concept_description || ""
+                    : formData.product_description || ""
+                }
+                onChange={(e) =>
+                  updateFormData(
+                    taskData.type === "CONCEPT" ? "concept_description" : "product_description",
+                    e.target.value,
+                  )
+                }
+                className="resize-none"
+              />
             </div>
-          </div>
-        </div>
+
+            {taskData.type === "CONCEPT" && (
+              <DynamicListInput
+                label="Hashtags"
+                items={hashtags}
+                placeholder="Enter hashtag (without #)..."
+                icon={<Hash className="w-4 h-4" />}
+                onChange={setHashtags}
+                helpText="Add relevant hashtags for the concept's social media presence."
+                addLabel="Add Hashtag"
+              />
+            )}
+
+            {taskData.type === "PRODUCT" && (
+              <DynamicListInput
+                label="Subtasks"
+                items={subtasks}
+                placeholder="Describe a specific subtask or milestone..."
+                icon={<CheckSquare className="w-4 h-4" />}
+                onChange={setSubtasks}
+                helpText="Break down the product creation process into manageable subtasks and milestones."
+                multiline={true}
+                addLabel="Add Subtask"
+              />
+            )}
+          </CardContent>
+        </Card>
       );
     }
 
@@ -722,159 +902,181 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
           <DialogTitle>Add New Task</DialogTitle>
         </DialogHeader>
 
-        <form id="task-form" className="space-y-6">
+        <div id="task-form" className="space-y-6">
           {/* Basic Task Information */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Task Name *</Label>
-              <Input
-                value={taskData.name}
-                onChange={(e) => setTaskData((prev) => ({ ...prev, name: e.target.value }))}
-                placeholder="Enter task name"
-              />
-            </div>
-            <div>
-              <Label>Task Type *</Label>
-              <Select
-                value={taskData.type}
-                onValueChange={(value) => setTaskData((prev) => ({ ...prev, type: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select task type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {taskTypeOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 border-b">
+              <div className="flex items-center gap-3">
+                <div className="bg-blue-100 p-2 rounded-lg">
+                  <FileText className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">Basic Task Information</h3>
+                  <p className="text-sm text-gray-600">Essential task details and timeline</p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Task Name *</Label>
+                  <Input
+                    value={taskData.name}
+                    onChange={(e) => setTaskData((prev) => ({ ...prev, name: e.target.value }))}
+                    placeholder="Enter descriptive task name"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Task Type *</Label>
+                  <Select
+                    value={taskData.type}
+                    onValueChange={(value) => setTaskData((prev) => ({ ...prev, type: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select task type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {taskTypeOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-          <div>
-            <Label>Task Description</Label>
-            <Textarea
-              value={taskData.description.description}
-              onChange={(e) =>
-                setTaskData((prev) => ({
-                  ...prev,
-                  description: { ...prev.description, description: e.target.value },
-                }))
-              }
-              placeholder="Enter task description..."
-            />
-          </div>
+              <div>
+                <Label className="text-sm font-medium">Basic Task Description</Label>
+                <Textarea
+                  rows={3}
+                  value={taskData.description.description}
+                  onChange={(e) =>
+                    setTaskData((prev) => ({
+                      ...prev,
+                      description: { ...prev.description, description: e.target.value },
+                    }))
+                  }
+                  placeholder="Provide a brief overview of the task requirements..."
+                  className="resize-none"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Use this field for basic task information. Detailed specifications will be
+                  configured below.
+                </p>
+              </div>
 
-          <div>
-            <Label>Deadline *</Label>
-            <DatePicker
-              value={taskData.deadline}
-              onChange={(date) => setTaskData((prev) => ({ ...prev, deadline: date }))}
-              placeholder="Select task deadline"
-              required
-              maxDate={milestoneDueDate ? formatDateForInput(milestoneDueDate) : undefined}
-            />
-          </div>
+              <div>
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  Deadline *
+                </Label>
+                <DatePicker
+                  value={taskData.deadline}
+                  onChange={(date) => setTaskData((prev) => ({ ...prev, deadline: date }))}
+                  placeholder="Select task deadline"
+                  required
+                  maxDate={milestoneDueDate ? formatDateForInput(milestoneDueDate) : undefined}
+                />
+                {milestoneDueDate && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Task deadline must be before milestone due date:{" "}
+                    {formatDateForInput(milestoneDueDate)}
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* KPI Goals */}
-          <Card>
+          <Card className="border-0 shadow-sm">
             <CardContent className="pt-6">
-              <div className="flex justify-between items-center mb-4">
-                <Label className="text-base font-semibold">KPI Goals</Label>
-                <Button type="button" variant="outline" size="sm" onClick={addKPIGoal}>
-                  <Plus className="w-4 h-4 mr-1" /> Add KPI
-                </Button>
-              </div>
-
-              <div className="space-y-3">
-                {kpiGoals.map((kpi, index) => (
-                  <div key={index} className="flex gap-2 items-end">
-                    <div className="flex-1">
-                      <Label className="text-sm">Metric</Label>
-                      <Input
-                        value={kpi.metric}
-                        onChange={(e) => updateKPIGoal(index, "metric", e.target.value)}
-                        placeholder="e.g., reach, engagement"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <Label className="text-sm">Target</Label>
-                      <Input
-                        value={kpi.target}
-                        onChange={(e) => updateKPIGoal(index, "target", e.target.value)}
-                        placeholder="e.g., 10000, 5%"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <Label className="text-sm">Description</Label>
-                      <Input
-                        value={kpi.description || ""}
-                        onChange={(e) => updateKPIGoal(index, "description", e.target.value)}
-                        placeholder="Optional description"
-                      />
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => removeKPIGoal(index)}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
+              <CompactKPISelector
+                kpis={kpiGoals}
+                onChange={setKpiGoals}
+                contractType={campaignType}
+                requiredMetrics={campaignType === "AFFILIATE" ? ["click_through"] : []}
+              />
             </CardContent>
           </Card>
 
           {/* Type-specific fields */}
           {renderTypeSpecificFields()}
 
+          {/* Additional Notes */}
+          <Card className="border-0 shadow-sm">
+            <CardContent className="pt-6">
+              <Label className="text-base font-semibold flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Additional Notes
+              </Label>
+              <p className="text-sm text-gray-600 mb-3">
+                Add any additional instructions, requirements, or context that doesn't fit in the
+                categories above.
+              </p>
+              <Textarea
+                rows={4}
+                placeholder="Enter any additional notes, special requirements, or context for this task..."
+                value={freeformDescription}
+                onChange={(e) => setFreeformDescription(e.target.value)}
+                className="resize-none"
+              />
+            </CardContent>
+          </Card>
+
           {/* Materials Upload */}
-          <div>
-            <Label>Materials</Label>
-            <ContractUploader
-              userId={user?.id || ""}
-              accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.webp,.mp4,.avi,.mov,.zip,.rar"
-              multiple={true}
-              maxSize={10}
-              maxFiles={5}
-              allowedTypes={[
-                "pdf",
-                "doc",
-                "docx",
-                "ppt",
-                "pptx",
-                "jpg",
-                "jpeg",
-                "png",
-                "gif",
-                "webp",
-                "mp4",
-                "avi",
-                "mov",
-                "zip",
-                "rar",
-              ]}
-              onFilesChange={handleMaterialFilesChange}
-              onUploadComplete={handleMaterialUpload}
-              onFilesRemove={handleMaterialRemove}
-              title="Task Materials"
-              className="w-full"
-              initialFiles={taskData.materialFiles || []}
-              initialUrls={taskData.material_urls || []}
-              context={`add-task-${taskData.id}`}
-            />
-          </div>
-        </form>
+          <Card className="border-0 shadow-sm">
+            <CardContent className="pt-6">
+              <Label className="text-base font-semibold flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Task Materials & Resources (Optional)
+              </Label>
+              <p className="text-sm text-gray-600 mb-4">
+                Upload reference materials, guidelines, assets, or any files needed to complete this
+                task. Suggested materials from the campaign will also appear here.
+              </p>
+
+              <ContractUploader
+                userId={user?.id || ""}
+                accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.webp,.mp4,.avi,.mov,.zip,.rar"
+                multiple={true}
+                maxSize={10}
+                maxFiles={5}
+                allowedTypes={[
+                  "pdf",
+                  "doc",
+                  "docx",
+                  "ppt",
+                  "pptx",
+                  "jpg",
+                  "jpeg",
+                  "png",
+                  "gif",
+                  "webp",
+                  "mp4",
+                  "avi",
+                  "mov",
+                  "zip",
+                  "rar",
+                ]}
+                onFilesChange={handleMaterialFilesChange}
+                onUploadComplete={handleMaterialUpload}
+                onFilesRemove={handleMaterialRemove}
+                title="Upload Additional Materials"
+                className="w-full"
+                initialFiles={taskData.materialFiles || []}
+                initialUrls={taskData.material_urls || []}
+                context={`add-task-${taskData.id}`}
+              />
+            </CardContent>
+          </Card>
+        </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={!isFormValid}>
+          <Button type="button" onClick={() => handleSubmit()} disabled={!isFormValid}>
             Add Task
           </Button>
         </DialogFooter>

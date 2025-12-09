@@ -67,7 +67,7 @@ export interface CampaignRequest {
       deadline: string;
       name: string;
       type: string;
-      description_json: {
+      description: {
         // Common fields
         kpi_goals?: { metric: string; target: string }[] | null;
         material_urls?: string[];

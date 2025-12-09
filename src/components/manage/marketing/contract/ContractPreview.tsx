@@ -254,9 +254,25 @@ export const ContractPDF = ({ data }: { data: any }) => {
   const renderScopeOfWork = () => {
     const deliverables = data.scope_of_work?.deliverables ?? {};
     const events = deliverables.events ?? [];
-    const products = deliverables.products ?? [];
+    const rawProducts = deliverables.products ?? [];
+    const concepts = deliverables.concepts ?? [];
     const advertised_items = deliverables.advertised_items ?? [];
     const platforms = deliverables.platform ?? [];
+
+    // For CO_PRODUCING, merge concepts with products
+    const products = rawProducts.map((product: any) => {
+      if (data.type === "CO_PRODUCING") {
+        const productConcepts = concepts.filter(
+          (concept: any) => concept.product_id === product.id,
+        );
+        return {
+          ...product,
+          concepts: productConcepts,
+          material_url: product.material_url || product.material || [],
+        };
+      }
+      return product;
+    });
 
     switch (data.type) {
       case "BRAND_AMBASSADOR":

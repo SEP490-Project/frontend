@@ -14,7 +14,6 @@ import {
 import { useAuth } from "@/libs/hooks/useAuth";
 import { DatePicker } from "@/components/date-picker";
 import { ContractUploader } from "@/components/global";
-import FileList from "@/components/global/FileList";
 import { Plus, Trash2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { useAppDispatch } from "@/libs/stores";
@@ -704,41 +703,6 @@ const CreateTask: React.FC<CreateTaskProps> = ({
                                   </div>
                                 )}
                             </div>
-                          </div>
-                        )}
-
-                        {/* Display material URLs if available from suggestion */}
-                        {t.material_urls && t.material_urls.length > 0 && (
-                          <div>
-                            <Label>Suggested Materials</Label>
-                            <FileList
-                              files={t.material_urls.map((url, idx) => ({
-                                id: `${t.id}-material-${idx}`,
-                                name: url.split("/").pop() || `Material ${idx + 1}`,
-                                url: url,
-                                progress: 100,
-                                status: "completed" as const,
-                              }))}
-                              onDownload={(file) => {
-                                if (file.url) {
-                                  window.open(file.url, "_blank");
-                                }
-                              }}
-                              onRemove={(id) => {
-                                const urlIndex = parseInt(id.split("-").pop() || "0");
-                                const updatedUrls =
-                                  t.material_urls?.filter((_, idx) => idx !== urlIndex) || [];
-                                updateTask(m.id, t.id, {
-                                  material_urls: updatedUrls,
-                                  description: {
-                                    ...t.description,
-                                    material_url: updatedUrls[0] || "",
-                                  },
-                                });
-                              }}
-                              className="mt-2"
-                              showStatus={false}
-                            />
                           </div>
                         )}
 

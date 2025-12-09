@@ -201,7 +201,7 @@ const AddCampaignPage: React.FC = () => {
         name: t.name,
         type: t.type,
         deadline: formatToISO(t.deadline),
-        description_json: t.description?.description_json || {},
+        description: t.description?.description_json || {},
       })),
     })),
   });

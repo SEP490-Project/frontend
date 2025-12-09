@@ -13,6 +13,7 @@ import {
   updateLimitedProductBasicInfoThunk,
   updateProductVariantThunk,
   updateLimitedProductVariantThunk,
+  openEarlyPreorderProductDeliveryThunk,
 } from "./thunk";
 import { setItem } from "@/libs/local-storage";
 import { toast } from "sonner";
@@ -202,6 +203,20 @@ const productManagerSlice = createSlice({
       .addCase(updateLimitedProductVariantThunk.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message || "Failed to update limited product variant";
+        toast.error(state.error);
+      })
+      .addCase(openEarlyPreorderProductDeliveryThunk.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(openEarlyPreorderProductDeliveryThunk.fulfilled, (state) => {
+        state.isLoading = false;
+        state.error = null;
+        toast.success("Early preorder product delivery opened successfully");
+      })
+      .addCase(openEarlyPreorderProductDeliveryThunk.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || "Failed to open early preorder product delivery";
         toast.error(state.error);
       });
   },

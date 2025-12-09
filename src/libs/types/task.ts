@@ -5,6 +5,7 @@ export interface Task {
   status: string;
   description?: {
     details: string;
+    product_name: string;
   };
   deadline: string;
   created_at: string;
@@ -18,6 +19,7 @@ export interface Task {
   milestone_id: string;
   milestone_details: MilestoneDetails;
   campaign_details: CampaignDetails;
+  brand_info: BrandInfo;
   created_by_id?: string;
   created_by_name?: string;
   updated_by_id?: string;
@@ -25,6 +27,13 @@ export interface Task {
   content_ids?: string[];
   product_ids?: string[];
   child_status?: string;
+}
+
+export interface BrandInfo {
+  id: string;
+  name: string;
+  logo_url: string;
+  status: string;
 }
 
 interface MilestoneDetails {
@@ -128,8 +137,44 @@ export interface TaskListMarketingDetail {
   id: string;
   name: string;
   description: {
-    description: string;
-    material_url: string[];
+    description?: string;
+    material_url?: string[];
+    // Advertising/Affiliate fields
+    advertised_item_id?: number;
+    name?: string;
+    product_name?: string;
+    platform?: string;
+    tagline?: string;
+    creative_notes?: string;
+    hashtags?: string[];
+    kpi_goals?: {
+      metric: string;
+      target: string;
+      description?: string;
+    }[];
+    material_urls?: string[];
+    is_affiliate_content?: boolean;
+    tracking_link?: string;
+    // Brand Ambassador fields
+    event_id?: number;
+    event_name?: string;
+    event_date?: string;
+    event_duration?: string;
+    location?: string;
+    activities?: string[];
+    representation_rules?: string[];
+    // Co-Producing fields
+    is_product_creation_task?: boolean;
+    product_id?: number;
+    product_description?: string;
+    subtasks?: string[];
+    materials?: string[];
+    // Concept fields
+    concept_id?: number;
+    concept_name?: string;
+    concept_description?: string;
+    related_product_id?: number;
+    related_product_name?: string;
   };
   deadline: string;
   type: string;

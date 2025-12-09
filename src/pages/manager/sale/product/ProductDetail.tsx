@@ -18,7 +18,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAppDispatch } from "@/libs/stores";
-import { getProductDetailThunk } from "@/libs/stores/productManager/thunk";
+import {
+  getProductDetailThunk,
+  openEarlyPreorderProductDeliveryThunk,
+} from "@/libs/stores/productManager/thunk";
 import { useSelector } from "react-redux";
 import type {
   ProductData,
@@ -112,10 +115,21 @@ const ProductDetail: React.FC = () => {
     return totalStock;
   };
 
+  const handleOpenEarlyDelivery = async () => {
+    dispatch(openEarlyPreorderProductDeliveryThunk(id as string));
+  };
+
   return (
     <div className="min-h-fit p-4 sm:p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-xl sm:text-2xl font-semibold">Product Details</h1>
+        {(product as LimitedProductData).type === "LIMITED" &&
+          new Date((product as LimitedProductData).limited_product?.availability_start_date || "") >
+            new Date() && (
+            <Button variant="default" onClick={handleOpenEarlyDelivery}>
+              Set Start Date to Today
+            </Button>
+          )}
       </div>
 
       <div className="lg:col-span-2">

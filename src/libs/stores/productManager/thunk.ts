@@ -142,6 +142,74 @@ const updateProductVisibilityThunk = createAsyncThunk(
   },
 );
 
+const updateProductBasicInfoThunk = createAsyncThunk(
+  "products/updateBasicInfo",
+  async (
+    { productId, data }: { productId: string; data: Partial<CreateProductPayload> },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await manageProduct.updateProductBasicInfo(productId, data);
+      return response.data as ProductResponse<ProductData>;
+    } catch (error: AxiosError | unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Failed to update product info");
+    }
+  },
+);
+
+const updateLimitedProductBasicInfoThunk = createAsyncThunk(
+  "products/updateLimitedBasicInfo",
+  async (
+    { productId, data }: { productId: string; data: Partial<CreateProductPayload> },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await manageProduct.updateLimitedProductBasicInfo(productId, data);
+      return response.data as ProductResponse<ProductData>;
+    } catch (error: AxiosError | unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(
+        err.response?.data?.message || "Failed to update limited product info",
+      );
+    }
+  },
+);
+
+const updateProductVariantThunk = createAsyncThunk(
+  "products/updateVariant",
+  async (
+    { variantId, data }: { variantId: string; data: Partial<ProductVariant> },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await manageProduct.updateProductVariant(variantId, data);
+      return response.data as ProductResponse<ProductData>;
+    } catch (error: AxiosError | unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Failed to update product variant");
+    }
+  },
+);
+
+const updateLimitedProductVariantThunk = createAsyncThunk(
+  "products/updateLimitedVariant",
+  async (
+    { variantId, data }: { variantId: string; data: Partial<ProductVariant> },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await manageProduct.updateLimitedProductVariant(variantId, data);
+      return response.data as ProductResponse<ProductData>;
+    } catch (error: AxiosError | unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(
+        err.response?.data?.message || "Failed to update limited product variant",
+      );
+    }
+  },
+);
+
 export {
   getAllProductsThunk,
   getProductByTaskIdThunk,
@@ -152,4 +220,8 @@ export {
   createVariantImageThunk,
   updateProductStateThunk,
   updateProductVisibilityThunk,
+  updateProductBasicInfoThunk,
+  updateLimitedProductBasicInfoThunk,
+  updateProductVariantThunk,
+  updateLimitedProductVariantThunk,
 };

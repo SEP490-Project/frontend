@@ -282,7 +282,8 @@ const Order: React.FC = () => {
                           order.status !== "RECEIVED" &&
                           order.status !== "COMPENSATED" &&
                           order.status !== "REFUNDED" &&
-                          (order.status !== "DELIVERED" || order.order_type !== "LIMITED") && (
+                          order.status === "DELIVERED" &&
+                          order.order_type !== "LIMITED" && (
                             <Button
                               variant="ghost"
                               size="icon"

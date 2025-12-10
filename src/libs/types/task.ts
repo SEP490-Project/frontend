@@ -5,6 +5,7 @@ export interface Task {
   status: string;
   description?: {
     details: string;
+    product_name: string;
   };
   deadline: string;
   created_at: string;
@@ -18,6 +19,7 @@ export interface Task {
   milestone_id: string;
   milestone_details: MilestoneDetails;
   campaign_details: CampaignDetails;
+  brand_info: BrandInfo;
   created_by_id?: string;
   created_by_name?: string;
   updated_by_id?: string;
@@ -25,6 +27,13 @@ export interface Task {
   content_ids?: string[];
   product_ids?: string[];
   child_status?: string;
+}
+
+export interface BrandInfo {
+  id: string;
+  name: string;
+  logo_url: string;
+  status: string;
 }
 
 interface MilestoneDetails {

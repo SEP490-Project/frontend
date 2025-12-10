@@ -210,6 +210,21 @@ const updateLimitedProductVariantThunk = createAsyncThunk(
   },
 );
 
+const openEarlyPreorderProductDeliveryThunk = createAsyncThunk(
+  "products/openEarlyPreorderDelivery",
+  async (productId: string, { rejectWithValue }) => {
+    try {
+      const response = await manageProduct.openEarlyPreorderProductDelivery(productId);
+      return response.data;
+    } catch (error: AxiosError | unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(
+        err.response?.data?.message || "Failed to open early preorder product delivery",
+      );
+    }
+  },
+);
+
 export {
   getAllProductsThunk,
   getProductByTaskIdThunk,
@@ -224,4 +239,5 @@ export {
   updateLimitedProductBasicInfoThunk,
   updateProductVariantThunk,
   updateLimitedProductVariantThunk,
+  openEarlyPreorderProductDeliveryThunk,
 };

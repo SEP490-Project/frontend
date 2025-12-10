@@ -17,6 +17,9 @@ import { useOutletContext, type NavigateFunction } from "react-router";
 import { getItem } from "@/libs/local-storage";
 import TaskDisplayForm from "@/components/manage/sale/product/form/TaskDisplayForm";
 import { Loader2 } from "lucide-react";
+import { useAppDispatch, type RootState } from "@/libs/stores";
+import { useSelector } from "react-redux";
+import { getTaskDetailById } from "@/libs/stores/taskManager/thunk";
 
 const BasicInfoStep = () => {
   const { setOnSubmitStep, steps, currentStep, navigate, state, setIsDisabled, isDisabled } =
@@ -29,6 +32,10 @@ const BasicInfoStep = () => {
       isDisabled: boolean;
       setIsDisabled: React.Dispatch<React.SetStateAction<boolean>>;
     }>();
+
+  const dispatch = useAppDispatch();
+  const taskId = state?.task?.id;
+  const { taskDetailById, detailLoading } = useSelector((state: RootState) => state.manageTask);
 
   const [isCreating, setIsCreating] = useState(false);
   const isLimitedProduct = state?.productType === "LIMITED";
@@ -50,7 +57,7 @@ const BasicInfoStep = () => {
       category_id: "",
       description: null,
       name: "",
-      task_id: state.task?.id || "",
+      task_id: state?.task?.id || "",
       limited_attribute: {
         achievable_quantity: 1,
         premiere_date: "",
@@ -63,6 +70,38 @@ const BasicInfoStep = () => {
   });
 
   const form = isLimitedProduct ? limitedForm : standardForm;
+
+  // Fetch task details if taskId exists
+  useEffect(() => {
+    if (!taskId) return;
+    dispatch(getTaskDetailById(taskId)).unwrap();
+  }, [dispatch, taskId]);
+
+  // Load task data into form after it's fetched
+  useEffect(() => {
+    if (!taskDetailById?.data || !isLimitedProduct) return;
+
+    const existingProduct = getItem<ProductResponse<ProductData>>("currentProduct");
+    // Only set task data if there's no existing product
+    if (existingProduct?.data?.id) return;
+
+    const taskData = taskDetailById.data;
+    limitedForm.reset({
+      brand_id: taskData.brand_info?.id || "",
+      category_id: "",
+      description: taskData.description?.details || null,
+      name: taskData.name || "",
+      task_id: taskData.id || "",
+      limited_attribute: {
+        achievable_quantity: 1,
+        premiere_date: "",
+        availability_start_date: "",
+        availability_end_date: "",
+        is_free_shipping: true,
+        concept_id: undefined,
+      },
+    });
+  }, [taskDetailById, isLimitedProduct, limitedForm]);
 
   // Load existing product data from localStorage
   useEffect(() => {
@@ -77,6 +116,7 @@ const BasicInfoStep = () => {
           description: productData.description || null,
           task_id: (productData as any).task_id || "",
           limited_attribute: {
+            achievable_quantity: (productData as any).limited_attribute?.achievable_quantity || 1,
             premiere_date: (productData as any).limited_attribute?.premiere_date || "",
             availability_start_date:
               (productData as any).limited_attribute?.availability_start_date || "",
@@ -109,7 +149,9 @@ const BasicInfoStep = () => {
           </div>
         </div>
       )}
-      {state?.productType === "LIMITED" && <TaskDisplayForm />}
+      {state?.productType === "LIMITED" && (
+        <TaskDisplayForm taskDetailById={taskDetailById} detailLoading={detailLoading} />
+      )}
       <BasicInfoForm
         form={form as any}
         setOnSubmitStep={setOnSubmitStep}
@@ -121,6 +163,8 @@ const BasicInfoStep = () => {
         isDisabled={isDisabled}
         isCreating={isCreating}
         setIsCreating={setIsCreating}
+        taskDetailById={taskDetailById}
+        detailLoading={detailLoading}
       />
       {isLimitedProduct && <AdditionalInfoForm form={limitedForm} />}
     </>

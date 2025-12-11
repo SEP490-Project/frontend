@@ -1,9 +1,15 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { getRepresentativeConfig, getPrivacyPolicy, getTermsOfService } from "./thunk";
+import {
+  getAllConfigs,
+  getRepresentativeConfig,
+  getPrivacyPolicy,
+  getTermsOfService,
+} from "./thunk";
 import type { RepresentativeConfig } from "@/libs/types/config";
 
 interface stateType {
   loading: boolean;
+  allConfigs: any | null;
   representativeConfig: RepresentativeConfig | null;
   termsOfService: any | null;
   privacyPolicy: any | null;
@@ -11,6 +17,7 @@ interface stateType {
 
 const initialState: stateType = {
   loading: false,
+  allConfigs: null,
   representativeConfig: null,
   termsOfService: null,
   privacyPolicy: null,
@@ -22,6 +29,16 @@ export const manageConfigSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
+      .addCase(getAllConfigs.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(getAllConfigs.fulfilled, (state, action) => {
+        state.loading = false;
+        state.allConfigs = action.payload.data;
+      })
+      .addCase(getAllConfigs.rejected, (state) => {
+        state.loading = false;
+      })
       .addCase(getRepresentativeConfig.pending, (state) => {
         state.loading = true;
       })

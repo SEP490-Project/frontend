@@ -68,6 +68,8 @@ import {
   SalesPreOrderPage,
   SalesProfilePage,
 } from "@/pages/pwa";
+import { PrivacyPolicy } from "@/pages/landing/PrivacyPolicy";
+import { TermsOfUses } from "@/pages/landing/TermsOfUses";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -90,6 +92,8 @@ const AppRoutes = () => (
         <Route path="/about-us" element={<AboutUs />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:id" element={<BlogDetail />} />
+        <Route path="/terms-of-uses" element={<TermsOfUses />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       </Route>
 
       <Route element={<PublicRoute />}>

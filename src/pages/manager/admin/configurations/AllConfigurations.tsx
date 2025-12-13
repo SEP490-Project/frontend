@@ -1,11 +1,15 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAppDispatch } from "@/libs/stores";
-import { getAllConfigs } from "@/libs/stores/configManager/thunk";
+import { getAllConfigs, bulkUpdateConfigs } from "@/libs/stores/configManager/thunk";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import {
   FaUser,
   FaFacebook,
@@ -16,10 +20,23 @@ import {
   FaFileContract,
   FaShieldHalved,
   FaRotate,
+  FaPenToSquare,
+  FaFloppyDisk,
+  FaXmark,
 } from "react-icons/fa6";
 import { FaTiktok, FaCog } from "react-icons/fa";
-import { Settings, Check, X } from "lucide-react";
+import { Settings, Check, X, Loader2, Eye, EyeOff } from "lucide-react";
 import { useConfig } from "@/libs/hooks/useConfig";
+import { toast } from "sonner";
+import {
+  isEditableConfig,
+  getInputType,
+  getPlaceholder,
+  validateConfigValue,
+  prepareValueForSubmit,
+  parseValueForEdit,
+  type EditableValueType,
+} from "@/libs/validation/configurationsValidation";
 
 // Config item interface
 interface ConfigItem {
@@ -244,7 +261,11 @@ interface AllConfigurationsProps {
 
 const AllConfigurations = ({ showHeader = true }: AllConfigurationsProps) => {
   const dispatch = useAppDispatch();
-  const { loading, allConfigs } = useConfig();
+  const { loading, updating, allConfigs } = useConfig();
+  const [editingSection, setEditingSection] = useState<string | null>(null);
+  const [formValues, setFormValues] = useState<Record<string, any>>({});
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!allConfigs) {
@@ -254,6 +275,192 @@ const AllConfigurations = ({ showHeader = true }: AllConfigurationsProps) => {
 
   const handleRefresh = () => {
     dispatch(getAllConfigs());
+  };
+
+  // Start editing a section
+  const handleStartEdit = (category: string, items: ConfigItem[]) => {
+    const initialValues: Record<string, any> = {};
+    items.forEach((item) => {
+      if (isEditableConfig(item.value_type)) {
+        initialValues[item.key] = parseValueForEdit(
+          item.value,
+          item.value_type as EditableValueType,
+        );
+      }
+    });
+    setFormValues(initialValues);
+    setFormErrors({});
+    setEditingSection(category);
+  };
+
+  // Cancel editing
+  const handleCancelEdit = () => {
+    setEditingSection(null);
+    setFormValues({});
+    setFormErrors({});
+  };
+
+  // Update form value
+  const handleValueChange = (key: string, value: any) => {
+    setFormValues((prev) => ({ ...prev, [key]: value }));
+    // Clear error when value changes
+    if (formErrors[key]) {
+      setFormErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[key];
+        return newErrors;
+      });
+    }
+  };
+
+  // Toggle password visibility
+  const togglePasswordVisibility = (key: string) => {
+    setShowPasswords((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  // Save section
+  const handleSaveSection = async (items: ConfigItem[]) => {
+    // Validate all fields
+    const errors: Record<string, string> = {};
+    for (const item of items) {
+      if (!isEditableConfig(item.value_type)) continue;
+
+      const result = await validateConfigValue(
+        item.key,
+        formValues[item.key],
+        item.value_type as EditableValueType,
+      );
+      if (!result.isValid && result.error) {
+        errors[item.key] = result.error;
+      }
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      toast.error("Please fix the validation errors");
+      return;
+    }
+
+    // Prepare values for submission
+    const updatePayload: Record<string, string> = {};
+    items.forEach((item) => {
+      if (!isEditableConfig(item.value_type)) return;
+
+      const preparedValue = prepareValueForSubmit(
+        formValues[item.key],
+        item.value_type as EditableValueType,
+      );
+      updatePayload[item.key] = preparedValue;
+    });
+
+    try {
+      await dispatch(bulkUpdateConfigs(updatePayload)).unwrap();
+      toast.success("Configuration updated successfully");
+      setEditingSection(null);
+      setFormValues({});
+      dispatch(getAllConfigs());
+    } catch (error: any) {
+      toast.error(error || "Failed to update configuration");
+    }
+  };
+
+  // Render input based on type
+  const renderInput = (item: ConfigItem) => {
+    const inputType = getInputType(item.key, item.value_type as EditableValueType);
+    const placeholder = getPlaceholder(item.key, item.value_type as EditableValueType);
+    const value = formValues[item.key];
+    const error = formErrors[item.key];
+
+    const inputClassName = `w-full ${error ? "border-red-500" : ""}`;
+
+    switch (inputType) {
+      case "switch":
+        return (
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={value}
+              onCheckedChange={(checked) => handleValueChange(item.key, checked)}
+            />
+            <span className="text-sm text-gray-600">{value ? "Enabled" : "Disabled"}</span>
+          </div>
+        );
+
+      case "number":
+        return (
+          <Input
+            type="number"
+            value={value}
+            onChange={(e) => handleValueChange(item.key, e.target.valueAsNumber || 0)}
+            placeholder={placeholder}
+            className={inputClassName}
+          />
+        );
+
+      case "textarea":
+      case "json":
+        return (
+          <Textarea
+            value={value}
+            onChange={(e) => handleValueChange(item.key, e.target.value)}
+            placeholder={placeholder}
+            className={`${inputClassName} min-h-[100px] font-mono text-sm`}
+            rows={4}
+          />
+        );
+
+      case "password":
+        return (
+          <div className="relative">
+            <Input
+              type={showPasswords[item.key] ? "text" : "password"}
+              value={value}
+              onChange={(e) => handleValueChange(item.key, e.target.value)}
+              placeholder={placeholder}
+              className={`${inputClassName} pr-10`}
+            />
+            <button
+              type="button"
+              onClick={() => togglePasswordVisibility(item.key)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              {showPasswords[item.key] ? (
+                <EyeOff className="w-4 h-4" />
+              ) : (
+                <Eye className="w-4 h-4" />
+              )}
+            </button>
+          </div>
+        );
+
+      case "array":
+        return (
+          <div>
+            <Input
+              type="text"
+              value={value}
+              onChange={(e) => handleValueChange(item.key, e.target.value)}
+              placeholder={placeholder}
+              className={inputClassName}
+            />
+            <p className="text-xs text-gray-400 mt-1">Separate values with commas</p>
+          </div>
+        );
+
+      case "email":
+      case "url":
+      case "tel":
+      case "text":
+      default:
+        return (
+          <Input
+            type={inputType}
+            value={value}
+            onChange={(e) => handleValueChange(item.key, e.target.value)}
+            placeholder={placeholder}
+            className={inputClassName}
+          />
+        );
+    }
   };
 
   // Group configs by category
@@ -307,41 +514,109 @@ const AllConfigurations = ({ showHeader = true }: AllConfigurationsProps) => {
           const config = categoryConfig[category] || categoryConfig.other;
           const Icon = config.icon;
           const items = groupedConfigs[category];
+          const isEditing = editingSection === category;
+          const hasEditableItems = items.some((item: ConfigItem) =>
+            isEditableConfig(item.value_type),
+          );
 
           return (
             <div key={category}>
-              <div className="flex items-center gap-2 mb-3">
-                <div
-                  className={`w-8 h-8 rounded-lg ${config.bgColor} flex items-center justify-center`}
-                >
-                  <Icon className={`w-4 h-4 ${config.color}`} />
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`w-8 h-8 rounded-lg ${config.bgColor} flex items-center justify-center`}
+                  >
+                    <Icon className={`w-4 h-4 ${config.color}`} />
+                  </div>
+                  <h3 className="font-semibold text-gray-800">{config.label}</h3>
+                  <Badge variant="secondary" className="text-xs">
+                    {items.length}
+                  </Badge>
                 </div>
-                <h3 className="font-semibold text-gray-800">{config.label}</h3>
-                <Badge variant="secondary" className="text-xs">
-                  {items.length}
-                </Badge>
+
+                {/* Edit / Save / Cancel buttons */}
+                {hasEditableItems && (
+                  <div className="flex items-center gap-2">
+                    {isEditing ? (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleCancelEdit}
+                          disabled={updating}
+                        >
+                          <FaXmark className="w-4 h-4 mr-1" />
+                          Cancel
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handleSaveSection(items)}
+                          disabled={updating}
+                        >
+                          {updating ? (
+                            <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                          ) : (
+                            <FaFloppyDisk className="w-4 h-4 mr-1" />
+                          )}
+                          Save
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleStartEdit(category, items)}
+                        disabled={editingSection !== null}
+                        className="text-gray-500 hover:text-gray-700"
+                      >
+                        <FaPenToSquare className="w-4 h-4 mr-1" />
+                        Edit
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="bg-gray-50 rounded-lg divide-y divide-gray-100">
-                {items.map((item: ConfigItem) => (
-                  <div
-                    key={item.key}
-                    className="flex items-center justify-between p-3 hover:bg-gray-100 transition-colors"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-700">
-                        {formatKeyToLabel(item.key)}
-                      </p>
-                      <p className="text-xs text-gray-400 font-mono">{item.key}</p>
+                {items.map((item: ConfigItem) => {
+                  const canEdit = isEditableConfig(item.value_type);
+
+                  return (
+                    <div
+                      key={item.key}
+                      className={`p-3 transition-colors ${
+                        isEditing && canEdit
+                          ? "bg-white border border-gray-200 rounded-lg my-1 mx-1"
+                          : "hover:bg-gray-100"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <Label className="text-sm font-medium text-gray-700">
+                              {formatKeyToLabel(item.key)}
+                            </Label>
+                            <Badge variant="outline" className="text-xs shrink-0">
+                              {item.value_type}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-gray-400 font-mono mt-0.5">{item.key}</p>
+                        </div>
+
+                        {isEditing && canEdit ? (
+                          <div className="flex-1 max-w-md">
+                            {renderInput(item)}
+                            {formErrors[item.key] && (
+                              <p className="text-xs text-red-500 mt-1">{formErrors[item.key]}</p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="text-right">{renderValue(item)}</div>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 ml-4">
-                      <Badge variant="outline" className="text-xs shrink-0">
-                        {item.value_type}
-                      </Badge>
-                      <div className="text-right">{renderValue(item)}</div>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <Separator className="mt-6" />

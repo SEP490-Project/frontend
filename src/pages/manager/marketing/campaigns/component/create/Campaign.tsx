@@ -74,7 +74,7 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
 }) => {
   const dispatch = useAppDispatch();
   const { contracts, loading, pagination } = useContract();
-  const { suggestCampaign, suggestLoading } = useCampaign();
+  const { suggestCampaign, suggestLoading, actions } = useCampaign();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
   const [page, setPage] = useState(1);
@@ -127,6 +127,11 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
       end_date: contract ? formatDateForInput(contract.end_date) : s.end_date,
     }));
     onContractSelect(contract || null);
+
+    // Clear previous suggestion data when contract changes
+    if (actions?.clearSuggestCampaign) {
+      dispatch(actions.clearSuggestCampaign());
+    }
   };
 
   const handleStartDateChange = (date: string) => {
@@ -180,8 +185,13 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
               end_date: prev.end_date,
             }));
 
-            // Clear selected contract
+            // Clear selected contract and suggestion data
             onContractSelect(null);
+
+            // Clear suggestion data when switching modes
+            if (actions?.clearSuggestCampaign) {
+              dispatch(actions.clearSuggestCampaign());
+            }
           }}
         >
           <div className="text-sm font-medium">Contract-based Campaign</div>

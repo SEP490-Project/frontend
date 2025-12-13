@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Campaign, Task, Review } from "./component/create";
@@ -10,6 +10,7 @@ import { useNavigate } from "react-router";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { FaCalendarDays, FaFileLines, FaListCheck, FaArrowLeft } from "react-icons/fa6";
+import { useCampaign } from "@/libs/hooks/useCampaign";
 
 const campaignTypes = [
   { value: "ADVERTISING", label: "Advertising" },
@@ -119,6 +120,7 @@ const AddCampaignPage: React.FC = () => {
 
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const { actions } = useCampaign();
 
   // Reset milestones when campaign mode changes
   useEffect(() => {
@@ -126,8 +128,8 @@ const AddCampaignPage: React.FC = () => {
     setSelectedContract(null);
   }, [campaignMode]);
 
-  // Handle suggestion data from Campaign component
-  const handleSuggestedDataReceived = (suggestionData: any) => {
+  // Handle suggestion data from Campaign component - memoized to prevent infinite loop
+  const handleSuggestedDataReceived = useCallback((suggestionData: any) => {
     if (suggestionData?.suggested_campaign) {
       const suggested = suggestionData.suggested_campaign;
 
@@ -144,14 +146,32 @@ const AddCampaignPage: React.FC = () => {
       }));
 
       // Update milestones with tasks
-      if (suggested.milestones) {
+      if (suggested.milestones && Array.isArray(suggested.milestones)) {
         const newMilestones = suggested.milestones.map((milestone: any) => ({
           id: crypto.randomUUID(),
           description: milestone.description,
           due_date: formatDateForInput(milestone.due_date),
           tasks: milestone.tasks.map((task: any) => {
-            const descriptionJson = task.description_json || {};
-            const materialUrls = descriptionJson.materials || descriptionJson.material_urls || [];
+            // The task.description contains the description_json object directly
+            const descriptionJson = task.description || {};
+
+            // Get material URLs from multiple possible sources
+            const materialUrls = descriptionJson.material_urls || descriptionJson.materials || [];
+
+            // Generate appropriate description text based on task type and campaign type
+            let descriptionText = "";
+            if (descriptionJson.creative_notes) {
+              descriptionText = descriptionJson.creative_notes;
+            } else if (descriptionJson.product_description) {
+              descriptionText = descriptionJson.product_description;
+            } else if (descriptionJson.concept_description) {
+              descriptionText = descriptionJson.concept_description;
+            } else if (descriptionJson.event_name) {
+              descriptionText = descriptionJson.event_name;
+            } else if (task.name) {
+              // Fallback to task name if no specific description found
+              descriptionText = task.name;
+            }
 
             return {
               id: crypto.randomUUID(),
@@ -159,23 +179,19 @@ const AddCampaignPage: React.FC = () => {
               type: task.type,
               deadline: formatDateForInput(task.deadline),
               description: {
-                description:
-                  descriptionJson.product_description ||
-                  descriptionJson.creative_notes ||
-                  descriptionJson.concept_description ||
-                  descriptionJson.event_name ||
-                  "",
+                description: descriptionText,
                 material_url: materialUrls[0] || "",
                 description_json: descriptionJson,
               },
               materialFiles: [],
+              material_urls: materialUrls,
             };
           }),
         }));
         setMilestones(newMilestones);
       }
     }
-  };
+  }, []);
 
   const isCampaignValid = useMemo(() => {
     const baseValid = !!campaignData.name && !!campaignData.start_date && !!campaignData.end_date;
@@ -252,6 +268,11 @@ const AddCampaignPage: React.FC = () => {
     setSelectedContract(null);
     setCampaignMode("contract");
     setActiveTab("campaign");
+
+    // Clear suggestion data from store
+    if (actions?.clearSuggestCampaign) {
+      dispatch(actions.clearSuggestCampaign());
+    }
   };
 
   // Animation variants

@@ -47,6 +47,13 @@ interface TaskDescriptionJson {
   location?: string;
   activities?: string[];
   representation_rules?: string[];
+
+  // Concept fields for CO_PRODUCING CONTENT
+  concept_id?: number;
+  concept_name?: string;
+  concept_description?: string;
+  related_product_id?: number;
+  related_product_name?: string;
 }
 
 interface TaskDescription {
@@ -545,161 +552,589 @@ const CreateTask: React.FC<CreateTaskProps> = ({
                           />
                         </div>
 
-                        {/* Display description_json details if available */}
+                        {/* Editable task details */}
                         {t.description?.description_json && (
-                          <div className="space-y-2">
+                          <div className="space-y-4">
                             <Label className="text-sm font-medium text-slate-700">
-                              Task Details from Suggestion
+                              Task Details {campaignType && `(${campaignType})`}
                             </Label>
-                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2 text-xs">
-                              {/* Affiliate & Advertising */}
-                              {t.type === "CONTENT" &&
-                                t.description.description_json.advertised_item_id && (
-                                  <>
-                                    {t.description.description_json.product_name && (
-                                      <p>
-                                        <span className="font-medium">Product:</span>{" "}
-                                        {t.description.description_json.product_name}
-                                      </p>
-                                    )}
-                                    {t.description.description_json.platform && (
-                                      <p>
-                                        <span className="font-medium">Platform:</span>{" "}
-                                        {t.description.description_json.platform}
-                                      </p>
-                                    )}
-                                    {t.description.description_json.tagline && (
-                                      <p>
-                                        <span className="font-medium">Tagline:</span>{" "}
-                                        {t.description.description_json.tagline}
-                                      </p>
-                                    )}
-                                    {t.description.description_json.creative_notes && (
-                                      <p>
-                                        <span className="font-medium">Creative Notes:</span>{" "}
-                                        {t.description.description_json.creative_notes}
-                                      </p>
-                                    )}
-                                    {t.description.description_json.hashtags &&
-                                      t.description.description_json.hashtags.length > 0 && (
-                                        <p>
-                                          <span className="font-medium">Hashtags:</span>{" "}
-                                          {t.description.description_json.hashtags.join(", ")}
-                                        </p>
-                                      )}
-                                    {t.description.description_json.tracking_link && (
-                                      <p>
-                                        <span className="font-medium">Tracking Link:</span>{" "}
-                                        <a
-                                          href={t.description.description_json.tracking_link}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="text-blue-600 hover:underline"
-                                        >
-                                          {t.description.description_json.tracking_link}
-                                        </a>
-                                      </p>
-                                    )}
-                                  </>
-                                )}
-
-                              {/* Co-Production */}
-                              {t.type === "PRODUCT" &&
-                                t.description.description_json.is_product_creation_task && (
-                                  <>
-                                    {t.description.description_json.product_name && (
-                                      <p>
-                                        <span className="font-medium">Product:</span>{" "}
-                                        {t.description.description_json.product_name}
-                                      </p>
-                                    )}
-                                    {t.description.description_json.product_description && (
-                                      <p>
-                                        <span className="font-medium">Description:</span>{" "}
-                                        {t.description.description_json.product_description}
-                                      </p>
-                                    )}
-                                    {t.description.description_json.subtasks &&
-                                      t.description.description_json.subtasks.length > 0 && (
-                                        <div>
-                                          <p className="font-medium mb-1">Subtasks:</p>
-                                          <ul className="list-disc list-inside ml-2">
-                                            {t.description.description_json.subtasks.map(
-                                              (subtask: string, idx: number) => (
-                                                <li key={idx}>{subtask}</li>
-                                              ),
-                                            )}
-                                          </ul>
-                                        </div>
-                                      )}
-                                  </>
-                                )}
-
-                              {/* Brand Ambassador */}
-                              {t.type === "EVENT" && t.description.description_json.event_id && (
-                                <>
-                                  {t.description.description_json.event_name && (
-                                    <p>
-                                      <span className="font-medium">Event:</span>{" "}
-                                      {t.description.description_json.event_name}
-                                    </p>
-                                  )}
-                                  {t.description.description_json.event_date && (
-                                    <p>
-                                      <span className="font-medium">Date:</span>{" "}
-                                      {t.description.description_json.event_date}
-                                    </p>
-                                  )}
-                                  {t.description.description_json.event_duration && (
-                                    <p>
-                                      <span className="font-medium">Duration:</span>{" "}
-                                      {t.description.description_json.event_duration}
-                                    </p>
-                                  )}
-                                  {t.description.description_json.location && (
-                                    <p>
-                                      <span className="font-medium">Location:</span>{" "}
-                                      {t.description.description_json.location}
-                                    </p>
-                                  )}
-                                  {t.description.description_json.activities &&
-                                    t.description.description_json.activities.length > 0 && (
-                                      <p>
-                                        <span className="font-medium">Activities:</span>{" "}
-                                        {t.description.description_json.activities.join(", ")}
-                                      </p>
-                                    )}
-                                  {t.description.description_json.representation_rules &&
-                                    t.description.description_json.representation_rules.length >
-                                      0 && (
+                            <div className="bg-gray-50 border rounded-lg p-4 space-y-4">
+                              {/* Editable Content Task Fields (Advertising/Affiliate) */}
+                              {(campaignType === "ADVERTISING" || campaignType === "AFFILIATE") &&
+                                t.type === "CONTENT" && (
+                                  <div className="grid grid-cols-2 gap-3 text-sm">
+                                    <div>
+                                      <Label className="text-xs">Product Name</Label>
+                                      <Input
+                                        className="h-8"
+                                        placeholder="Enter product name"
+                                        value={t.description.description_json?.product_name || ""}
+                                        onChange={(e) =>
+                                          updateTask(m.id, t.id, {
+                                            description: {
+                                              ...t.description,
+                                              description_json: {
+                                                ...t.description.description_json,
+                                                product_name: e.target.value,
+                                              },
+                                            },
+                                          })
+                                        }
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label className="text-xs">Platform</Label>
+                                      <Input
+                                        className="h-8"
+                                        placeholder="e.g. Facebook, Instagram"
+                                        value={t.description.description_json?.platform || ""}
+                                        onChange={(e) =>
+                                          updateTask(m.id, t.id, {
+                                            description: {
+                                              ...t.description,
+                                              description_json: {
+                                                ...t.description.description_json,
+                                                platform: e.target.value,
+                                              },
+                                            },
+                                          })
+                                        }
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label className="text-xs">Tagline</Label>
+                                      <Input
+                                        className="h-8"
+                                        placeholder="Enter tagline"
+                                        value={t.description.description_json?.tagline || ""}
+                                        onChange={(e) =>
+                                          updateTask(m.id, t.id, {
+                                            description: {
+                                              ...t.description,
+                                              description_json: {
+                                                ...t.description.description_json,
+                                                tagline: e.target.value,
+                                              },
+                                            },
+                                          })
+                                        }
+                                      />
+                                    </div>
+                                    {campaignType === "AFFILIATE" && (
                                       <div>
-                                        <p className="font-medium mb-1">Representation Rules:</p>
-                                        <ul className="list-disc list-inside ml-2">
-                                          {t.description.description_json.representation_rules.map(
-                                            (rule: string, idx: number) => (
-                                              <li key={idx}>{rule}</li>
-                                            ),
-                                          )}
-                                        </ul>
+                                        <Label className="text-xs">Tracking Link</Label>
+                                        <Input
+                                          className="h-8"
+                                          placeholder="Enter tracking URL"
+                                          value={
+                                            t.description.description_json?.tracking_link || ""
+                                          }
+                                          onChange={(e) =>
+                                            updateTask(m.id, t.id, {
+                                              description: {
+                                                ...t.description,
+                                                description_json: {
+                                                  ...t.description.description_json,
+                                                  tracking_link: e.target.value,
+                                                },
+                                              },
+                                            })
+                                          }
+                                        />
                                       </div>
                                     )}
-                                </>
+                                    <div className="col-span-2">
+                                      <Label className="text-xs">Creative Notes</Label>
+                                      <Textarea
+                                        className="min-h-[60px]"
+                                        placeholder="Enter creative guidelines"
+                                        value={t.description.description_json?.creative_notes || ""}
+                                        onChange={(e) =>
+                                          updateTask(m.id, t.id, {
+                                            description: {
+                                              ...t.description,
+                                              description_json: {
+                                                ...t.description.description_json,
+                                                creative_notes: e.target.value,
+                                              },
+                                            },
+                                          })
+                                        }
+                                      />
+                                    </div>
+                                    <div className="col-span-2">
+                                      <Label className="text-xs">Hashtags (comma-separated)</Label>
+                                      <Input
+                                        className="h-8"
+                                        placeholder="#tag1, #tag2, #tag3"
+                                        value={
+                                          t.description.description_json?.hashtags?.join(", ") || ""
+                                        }
+                                        onChange={(e) =>
+                                          updateTask(m.id, t.id, {
+                                            description: {
+                                              ...t.description,
+                                              description_json: {
+                                                ...t.description.description_json,
+                                                hashtags: e.target.value
+                                                  .split(",")
+                                                  .map((tag) => tag.trim())
+                                                  .filter((tag) => tag),
+                                              },
+                                            },
+                                          })
+                                        }
+                                      />
+                                    </div>
+                                  </div>
+                                )}
+
+                              {/* Editable Event Task Fields (Brand Ambassador) */}
+                              {campaignType === "BRAND_AMBASSADOR" && t.type === "EVENT" && (
+                                <div className="grid grid-cols-2 gap-3 text-sm">
+                                  <div>
+                                    <Label className="text-xs">Event Name</Label>
+                                    <Input
+                                      className="h-8"
+                                      placeholder="Enter event name"
+                                      value={t.description.description_json?.event_name || ""}
+                                      onChange={(e) =>
+                                        updateTask(m.id, t.id, {
+                                          description: {
+                                            ...t.description,
+                                            description_json: {
+                                              ...t.description.description_json,
+                                              event_name: e.target.value,
+                                            },
+                                          },
+                                        })
+                                      }
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label className="text-xs">Duration</Label>
+                                    <Input
+                                      className="h-8"
+                                      placeholder="e.g. 2 hours"
+                                      value={t.description.description_json?.event_duration || ""}
+                                      onChange={(e) =>
+                                        updateTask(m.id, t.id, {
+                                          description: {
+                                            ...t.description,
+                                            description_json: {
+                                              ...t.description.description_json,
+                                              event_duration: e.target.value,
+                                            },
+                                          },
+                                        })
+                                      }
+                                    />
+                                  </div>
+                                  <div className="col-span-2">
+                                    <Label className="text-xs">Location</Label>
+                                    <Input
+                                      className="h-8"
+                                      placeholder="Enter event location"
+                                      value={t.description.description_json?.location || ""}
+                                      onChange={(e) =>
+                                        updateTask(m.id, t.id, {
+                                          description: {
+                                            ...t.description,
+                                            description_json: {
+                                              ...t.description.description_json,
+                                              location: e.target.value,
+                                            },
+                                          },
+                                        })
+                                      }
+                                    />
+                                  </div>
+                                  <div className="col-span-2">
+                                    <Label className="text-xs">Activities (comma-separated)</Label>
+                                    <Input
+                                      className="h-8"
+                                      placeholder="Speaking, Networking, Demo"
+                                      value={
+                                        t.description.description_json?.activities?.join(", ") || ""
+                                      }
+                                      onChange={(e) =>
+                                        updateTask(m.id, t.id, {
+                                          description: {
+                                            ...t.description,
+                                            description_json: {
+                                              ...t.description.description_json,
+                                              activities: e.target.value
+                                                .split(",")
+                                                .map((act) => act.trim())
+                                                .filter((act) => act),
+                                            },
+                                          },
+                                        })
+                                      }
+                                    />
+                                  </div>
+                                  <div className="col-span-2">
+                                    <Label className="text-xs">
+                                      Representation Rules (comma-separated)
+                                    </Label>
+                                    <Input
+                                      className="h-8"
+                                      placeholder="Dress code, behavior guidelines"
+                                      value={
+                                        t.description.description_json?.representation_rules?.join(
+                                          ", ",
+                                        ) || ""
+                                      }
+                                      onChange={(e) =>
+                                        updateTask(m.id, t.id, {
+                                          description: {
+                                            ...t.description,
+                                            description_json: {
+                                              ...t.description.description_json,
+                                              representation_rules: e.target.value
+                                                .split(",")
+                                                .map((rule) => rule.trim())
+                                                .filter((rule) => rule),
+                                            },
+                                          },
+                                        })
+                                      }
+                                    />
+                                  </div>
+                                </div>
                               )}
 
-                              {/* KPI Goals (common) */}
-                              {t.description.description_json.kpi_goals &&
+                              {/* Editable Product Task Fields (Co-Production) */}
+                              {campaignType === "CO_PRODUCING" && t.type === "PRODUCT" && (
+                                <div className="grid grid-cols-2 gap-3 text-sm">
+                                  <div>
+                                    <Label className="text-xs">Product Name</Label>
+                                    <Input
+                                      className="h-8"
+                                      placeholder="Enter product name"
+                                      value={t.description.description_json?.product_name || ""}
+                                      onChange={(e) =>
+                                        updateTask(m.id, t.id, {
+                                          description: {
+                                            ...t.description,
+                                            description_json: {
+                                              ...t.description.description_json,
+                                              product_name: e.target.value,
+                                            },
+                                          },
+                                        })
+                                      }
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label className="text-xs">Product ID</Label>
+                                    <Input
+                                      className="h-8"
+                                      type="number"
+                                      placeholder="Enter product ID"
+                                      value={t.description.description_json?.product_id || ""}
+                                      onChange={(e) =>
+                                        updateTask(m.id, t.id, {
+                                          description: {
+                                            ...t.description,
+                                            description_json: {
+                                              ...t.description.description_json,
+                                              product_id: Number(e.target.value),
+                                            },
+                                          },
+                                        })
+                                      }
+                                    />
+                                  </div>
+                                  <div className="col-span-2">
+                                    <Label className="text-xs">Product Description</Label>
+                                    <Textarea
+                                      className="min-h-[60px]"
+                                      placeholder="Describe the product"
+                                      value={
+                                        t.description.description_json?.product_description || ""
+                                      }
+                                      onChange={(e) =>
+                                        updateTask(m.id, t.id, {
+                                          description: {
+                                            ...t.description,
+                                            description_json: {
+                                              ...t.description.description_json,
+                                              product_description: e.target.value,
+                                            },
+                                          },
+                                        })
+                                      }
+                                    />
+                                  </div>
+                                  <div className="col-span-2">
+                                    <Label className="text-xs">Subtasks (comma-separated)</Label>
+                                    <Input
+                                      className="h-8"
+                                      placeholder="Design, Development, Testing"
+                                      value={
+                                        t.description.description_json?.subtasks?.join(", ") || ""
+                                      }
+                                      onChange={(e) =>
+                                        updateTask(m.id, t.id, {
+                                          description: {
+                                            ...t.description,
+                                            description_json: {
+                                              ...t.description.description_json,
+                                              subtasks: e.target.value
+                                                .split(",")
+                                                .map((task) => task.trim())
+                                                .filter((task) => task),
+                                            },
+                                          },
+                                        })
+                                      }
+                                    />
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Editable Concept Task Fields (Co-Production Content) */}
+                              {campaignType === "CO_PRODUCING" && t.type === "CONTENT" && (
+                                <div className="grid grid-cols-2 gap-3 text-sm">
+                                  <div>
+                                    <Label className="text-xs">Concept Name</Label>
+                                    <Input
+                                      className="h-8"
+                                      placeholder="Enter concept name"
+                                      value={t.description.description_json?.concept_name || ""}
+                                      onChange={(e) =>
+                                        updateTask(m.id, t.id, {
+                                          description: {
+                                            ...t.description,
+                                            description_json: {
+                                              ...t.description.description_json,
+                                              concept_name: e.target.value,
+                                            },
+                                          },
+                                        })
+                                      }
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label className="text-xs">Platform</Label>
+                                    <Input
+                                      className="h-8"
+                                      placeholder="Target platform"
+                                      value={t.description.description_json?.platform || ""}
+                                      onChange={(e) =>
+                                        updateTask(m.id, t.id, {
+                                          description: {
+                                            ...t.description,
+                                            description_json: {
+                                              ...t.description.description_json,
+                                              platform: e.target.value,
+                                            },
+                                          },
+                                        })
+                                      }
+                                    />
+                                  </div>
+                                  <div className="col-span-2">
+                                    <Label className="text-xs">Concept Description</Label>
+                                    <Textarea
+                                      className="min-h-[60px]"
+                                      placeholder="Describe the marketing concept"
+                                      value={
+                                        t.description.description_json?.concept_description || ""
+                                      }
+                                      onChange={(e) =>
+                                        updateTask(m.id, t.id, {
+                                          description: {
+                                            ...t.description,
+                                            description_json: {
+                                              ...t.description.description_json,
+                                              concept_description: e.target.value,
+                                            },
+                                          },
+                                        })
+                                      }
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label className="text-xs">Related Product Name</Label>
+                                    <Input
+                                      className="h-8"
+                                      placeholder="Related product name"
+                                      value={
+                                        t.description.description_json?.related_product_name || ""
+                                      }
+                                      onChange={(e) =>
+                                        updateTask(m.id, t.id, {
+                                          description: {
+                                            ...t.description,
+                                            description_json: {
+                                              ...t.description.description_json,
+                                              related_product_name: e.target.value,
+                                            },
+                                          },
+                                        })
+                                      }
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label className="text-xs">Related Product ID</Label>
+                                    <Input
+                                      className="h-8"
+                                      type="number"
+                                      placeholder="Related product ID"
+                                      value={
+                                        t.description.description_json?.related_product_id || ""
+                                      }
+                                      onChange={(e) =>
+                                        updateTask(m.id, t.id, {
+                                          description: {
+                                            ...t.description,
+                                            description_json: {
+                                              ...t.description.description_json,
+                                              related_product_id: Number(e.target.value),
+                                            },
+                                          },
+                                        })
+                                      }
+                                    />
+                                  </div>
+                                  <div className="col-span-2">
+                                    <Label className="text-xs">Hashtags (comma-separated)</Label>
+                                    <Input
+                                      className="h-8"
+                                      placeholder="#concept, #marketing, #creative"
+                                      value={
+                                        t.description.description_json?.hashtags?.join(", ") || ""
+                                      }
+                                      onChange={(e) =>
+                                        updateTask(m.id, t.id, {
+                                          description: {
+                                            ...t.description,
+                                            description_json: {
+                                              ...t.description.description_json,
+                                              hashtags: e.target.value
+                                                .split(",")
+                                                .map((tag) => tag.trim())
+                                                .filter((tag) => tag),
+                                            },
+                                          },
+                                        })
+                                      }
+                                    />
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* KPI Goals section for all task types */}
+                              {t.description.description_json?.kpi_goals &&
                                 t.description.description_json.kpi_goals.length > 0 && (
                                   <div>
-                                    <p className="font-medium mb-1">KPI Goals:</p>
-                                    <ul className="list-disc list-inside ml-2">
+                                    <Label className="text-xs font-medium">KPI Goals</Label>
+                                    <div className="space-y-2 mt-1">
                                       {t.description.description_json.kpi_goals.map(
-                                        (kpi: any, idx: number) => (
-                                          <li key={idx}>
-                                            {kpi.metric}: {kpi.target}
-                                          </li>
+                                        (kpi, kpiIndex) => (
+                                          <div key={kpiIndex} className="grid grid-cols-3 gap-2">
+                                            <Input
+                                              className="h-8 text-xs"
+                                              placeholder="Metric"
+                                              value={kpi.metric}
+                                              onChange={(e) => {
+                                                const updatedKpis = [
+                                                  ...(t.description.description_json?.kpi_goals ||
+                                                    []),
+                                                ];
+                                                updatedKpis[kpiIndex] = {
+                                                  ...kpi,
+                                                  metric: e.target.value,
+                                                };
+                                                updateTask(m.id, t.id, {
+                                                  description: {
+                                                    ...t.description,
+                                                    description_json: {
+                                                      ...t.description.description_json,
+                                                      kpi_goals: updatedKpis,
+                                                    },
+                                                  },
+                                                });
+                                              }}
+                                            />
+                                            <Input
+                                              className="h-8 text-xs"
+                                              placeholder="Target"
+                                              value={kpi.target}
+                                              onChange={(e) => {
+                                                const updatedKpis = [
+                                                  ...(t.description.description_json?.kpi_goals ||
+                                                    []),
+                                                ];
+                                                updatedKpis[kpiIndex] = {
+                                                  ...kpi,
+                                                  target: e.target.value,
+                                                };
+                                                updateTask(m.id, t.id, {
+                                                  description: {
+                                                    ...t.description,
+                                                    description_json: {
+                                                      ...t.description.description_json,
+                                                      kpi_goals: updatedKpis,
+                                                    },
+                                                  },
+                                                });
+                                              }}
+                                            />
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              className="h-8"
+                                              onClick={() => {
+                                                const updatedKpis = (
+                                                  t.description.description_json?.kpi_goals || []
+                                                ).filter((_, i) => i !== kpiIndex);
+                                                updateTask(m.id, t.id, {
+                                                  description: {
+                                                    ...t.description,
+                                                    description_json: {
+                                                      ...t.description.description_json,
+                                                      kpi_goals:
+                                                        updatedKpis.length > 0
+                                                          ? updatedKpis
+                                                          : undefined,
+                                                    },
+                                                  },
+                                                });
+                                              }}
+                                            >
+                                              Remove
+                                            </Button>
+                                          </div>
                                         ),
                                       )}
-                                    </ul>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="h-8 w-full"
+                                        onClick={() => {
+                                          const currentKpis =
+                                            t.description.description_json?.kpi_goals || [];
+                                          const newKpis = [
+                                            ...currentKpis,
+                                            { metric: "", target: "" },
+                                          ];
+                                          updateTask(m.id, t.id, {
+                                            description: {
+                                              ...t.description,
+                                              description_json: {
+                                                ...t.description.description_json,
+                                                kpi_goals: newKpis,
+                                              },
+                                            },
+                                          });
+                                        }}
+                                      >
+                                        + Add KPI Goal
+                                      </Button>
+                                    </div>
                                   </div>
                                 )}
                             </div>

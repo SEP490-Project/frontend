@@ -11,6 +11,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import { LayoutDashboard } from "lucide-react";
 
 const GlobalHeader = () => {
   const navigate = useNavigate();
@@ -94,10 +95,21 @@ const GlobalHeader = () => {
                 align="end"
                 className="w-56 animate-in slide-in-from-top-2 fade-in-0 duration-200 rounded-xl shadow-lg border border-gray-100 bg-white"
               >
+                {user?.role !== "CUSTOMER" && (
+                  <DropdownMenuItem asChild>
+                    <button
+                      onClick={() => navigate("/manage")}
+                      className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100"
+                    >
+                      <LayoutDashboard size={18} className="mr-2" />
+                      <span>Dashboard</span>
+                    </button>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem asChild>
                   <button
                     onClick={handleLogout}
-                    className="flex items-center gap-2 w-full px-4 py-2 text-red-500 hover:bg-red-50"
+                    className="flex items-center gap-2 w-full px-4 py-2 text-red-500 hover:bg-red-50 "
                   >
                     <FaPowerOff size={18} />
                     <span>Logout</span>

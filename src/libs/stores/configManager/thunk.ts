@@ -14,3 +14,29 @@ export const getRepresentativeConfig = createAsyncThunk(
     }
   },
 );
+
+export const getTermsOfService = createAsyncThunk(
+  "configs/terms-of-service",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await manageConfig.getTermsOfService();
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Thất bại");
+    }
+  },
+);
+
+export const getPrivacyPolicy = createAsyncThunk(
+  "configs/privacy-policy",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await manageConfig.getPrivacyPolicy();
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Thất bại");
+    }
+  },
+);

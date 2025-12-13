@@ -57,7 +57,7 @@ import {
 } from "@/pages/manager/sale";
 import ContentPreviewPage from "@/pages/manager/marketing/content-approval/ContentPreviewPage";
 import AddProductStep from "@/components/manage/sale/product/AddProductStep";
-import { Channel, User, VariantAttribute } from "@/pages/manager/admin";
+import { Channel, Configurations, User, VariantAttribute } from "@/pages/manager/admin";
 import { CreateConceptStep } from "@/pages/manager/sale/product/add-product-step/CreateConceptStep";
 import SalesPwaLayout from "@/layouts/SalesPWALayout";
 import SalesPwaRoute from "./sales-pwa-route";
@@ -68,6 +68,8 @@ import {
   SalesPreOrderPage,
   SalesProfilePage,
 } from "@/pages/pwa";
+import { PrivacyPolicy } from "@/pages/landing/PrivacyPolicy";
+import { TermsOfUses } from "@/pages/landing/TermsOfUses";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -90,6 +92,8 @@ const AppRoutes = () => (
         <Route path="/about-us" element={<AboutUs />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:id" element={<BlogDetail />} />
+        <Route path="/terms-of-uses" element={<TermsOfUses />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       </Route>
 
       <Route element={<PublicRoute />}>
@@ -126,6 +130,7 @@ const AppRoutes = () => (
           <Route path="users" element={<User />} />
           <Route path="variant-attribute" element={<VariantAttribute />} />
           <Route path="channel" element={<Channel />} />
+          <Route path="configurations" element={<Configurations />} />
         </Route>
       </Route>
 

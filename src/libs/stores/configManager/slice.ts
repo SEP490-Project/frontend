@@ -4,11 +4,14 @@ import {
   getRepresentativeConfig,
   getPrivacyPolicy,
   getTermsOfService,
+  updateConfig,
+  bulkUpdateConfigs,
 } from "./thunk";
 import type { RepresentativeConfig } from "@/libs/types/config";
 
 interface stateType {
   loading: boolean;
+  updating: boolean;
   allConfigs: any | null;
   representativeConfig: RepresentativeConfig | null;
   termsOfService: any | null;
@@ -17,6 +20,7 @@ interface stateType {
 
 const initialState: stateType = {
   loading: false,
+  updating: false,
   allConfigs: null,
   representativeConfig: null,
   termsOfService: null,
@@ -68,6 +72,24 @@ export const manageConfigSlice = createSlice({
       })
       .addCase(getPrivacyPolicy.rejected, (state) => {
         state.loading = false;
+      })
+      .addCase(updateConfig.pending, (state) => {
+        state.updating = true;
+      })
+      .addCase(updateConfig.fulfilled, (state) => {
+        state.updating = false;
+      })
+      .addCase(updateConfig.rejected, (state) => {
+        state.updating = false;
+      })
+      .addCase(bulkUpdateConfigs.pending, (state) => {
+        state.updating = true;
+      })
+      .addCase(bulkUpdateConfigs.fulfilled, (state) => {
+        state.updating = false;
+      })
+      .addCase(bulkUpdateConfigs.rejected, (state) => {
+        state.updating = false;
       });
   },
 });

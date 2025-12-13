@@ -1,10 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useAppDispatch, type RootState } from "@/libs/stores";
 import { getTermsOfService } from "@/libs/stores/configManager/thunk";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FaFileContract, FaRotate } from "react-icons/fa6";
+import { FaFileContract, FaRotate, FaPenToSquare } from "react-icons/fa6";
 import { FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEditor, EditorContent } from "@tiptap/react";
@@ -13,6 +13,7 @@ import Link from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
 import Underline from "@tiptap/extension-underline";
 import Highlight from "@tiptap/extension-highlight";
+import ConfigurationUpdate from "@/components/manage/admin/ConfigurationUpdate";
 
 // TipTap Content Viewer Component
 const TiptapContentViewer = ({ content }: { content: any }) => {
@@ -75,6 +76,7 @@ interface TermsOfServiceProps {
 const TermsOfService = ({ showHeader = true }: TermsOfServiceProps) => {
   const dispatch = useAppDispatch();
   const { loading, termsOfService } = useSelector((state: RootState) => state.manageConfig);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     if (!termsOfService) {
@@ -85,6 +87,31 @@ const TermsOfService = ({ showHeader = true }: TermsOfServiceProps) => {
   const handleRefresh = () => {
     dispatch(getTermsOfService());
   };
+
+  const handleEditSuccess = () => {
+    setIsEditing(false);
+    dispatch(getTermsOfService());
+  };
+
+  // Show edit mode
+  if (isEditing) {
+    return (
+      <ConfigurationUpdate
+        configKey="term_of_service"
+        title="Edit Terms of Service"
+        description="Update the legal terms and conditions for using the platform"
+        cardTitle="Terms & Conditions Editor"
+        cardDescription="Use the editor below to modify the terms of service content"
+        icon={FaFileContract}
+        iconColor="text-blue-600"
+        iconBg="bg-blue-100"
+        gradient="from-blue-50 to-cyan-50"
+        content={termsOfService}
+        onCancel={() => setIsEditing(false)}
+        onSuccess={handleEditSuccess}
+      />
+    );
+  }
 
   const renderTiptapContent = (content: any) => {
     if (!content) {
@@ -127,15 +154,26 @@ const TermsOfService = ({ showHeader = true }: TermsOfServiceProps) => {
               Legal terms and conditions for using the platform
             </p>
           </div>
-          <Button
-            size="sm"
-            onClick={handleRefresh}
-            disabled={loading}
-            className="flex items-center gap-2"
-          >
-            <FaRotate className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              onClick={() => setIsEditing(true)}
+              disabled={loading}
+              className="flex items-center gap-2"
+            >
+              <FaPenToSquare className="w-4 h-4" />
+              Edit
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleRefresh}
+              disabled={loading}
+              className="flex items-center gap-2"
+            >
+              <FaRotate className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
       )}
 

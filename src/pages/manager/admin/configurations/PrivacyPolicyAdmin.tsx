@@ -1,10 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useAppDispatch, type RootState } from "@/libs/stores";
 import { getPrivacyPolicy } from "@/libs/stores/configManager/thunk";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FaShieldHalved, FaRotate } from "react-icons/fa6";
+import { FaShieldHalved, FaRotate, FaPenToSquare } from "react-icons/fa6";
 import { Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEditor, EditorContent } from "@tiptap/react";
@@ -13,6 +13,7 @@ import Link from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
 import Underline from "@tiptap/extension-underline";
 import Highlight from "@tiptap/extension-highlight";
+import ConfigurationUpdate from "@/components/manage/admin/ConfigurationUpdate";
 
 // TipTap Content Viewer Component
 const TiptapContentViewer = ({ content }: { content: any }) => {
@@ -75,6 +76,7 @@ interface PrivacyPolicyProps {
 const PrivacyPolicyAdmin = ({ showHeader = true }: PrivacyPolicyProps) => {
   const dispatch = useAppDispatch();
   const { loading, privacyPolicy } = useSelector((state: RootState) => state.manageConfig);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     if (!privacyPolicy) {
@@ -85,6 +87,31 @@ const PrivacyPolicyAdmin = ({ showHeader = true }: PrivacyPolicyProps) => {
   const handleRefresh = () => {
     dispatch(getPrivacyPolicy());
   };
+
+  const handleEditSuccess = () => {
+    setIsEditing(false);
+    dispatch(getPrivacyPolicy());
+  };
+
+  // Show edit mode
+  if (isEditing) {
+    return (
+      <ConfigurationUpdate
+        configKey="privacy_policy"
+        title="Edit Privacy Policy"
+        description="Update information about data collection and privacy practices"
+        cardTitle="Privacy Policy Editor"
+        cardDescription="Use the editor below to modify the privacy policy content"
+        icon={FaShieldHalved}
+        iconColor="text-green-600"
+        iconBg="bg-green-100"
+        gradient="from-green-50 to-emerald-50"
+        content={privacyPolicy}
+        onCancel={() => setIsEditing(false)}
+        onSuccess={handleEditSuccess}
+      />
+    );
+  }
 
   const renderTiptapContent = (content: any) => {
     if (!content) {
@@ -127,15 +154,26 @@ const PrivacyPolicyAdmin = ({ showHeader = true }: PrivacyPolicyProps) => {
               Information about data collection and privacy practices
             </p>
           </div>
-          <Button
-            size="sm"
-            onClick={handleRefresh}
-            disabled={loading}
-            className="flex items-center gap-2"
-          >
-            <FaRotate className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              onClick={() => setIsEditing(true)}
+              disabled={loading}
+              className="flex items-center gap-2"
+            >
+              <FaPenToSquare className="w-4 h-4" />
+              Edit
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleRefresh}
+              disabled={loading}
+              className="flex items-center gap-2"
+            >
+              <FaRotate className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
       )}
 

@@ -1,27 +1,3 @@
-// import js from '@eslint/js'
-// import globals from 'globals'
-// import reactHooks from 'eslint-plugin-react-hooks'
-// import reactRefresh from 'eslint-plugin-react-refresh'
-// import tseslint from 'typescript-eslint'
-// import { globalIgnores } from 'eslint/config'
-
-// export default tseslint.config([
-//   globalIgnores(['dist']),
-//   {
-//     files: ['**/*.{ts,tsx}'],
-//     extends: [
-//       js.configs.recommended,
-//       tseslint.configs.recommended,
-//       reactHooks.configs['recommended-latest'],
-//       reactRefresh.configs.vite,
-//     ],
-//     languageOptions: {
-//       ecmaVersion: 2020,
-//       globals: globals.browser,
-//     },
-//   },
-// ])
-
 import js from "@eslint/js";
 import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
@@ -29,17 +5,18 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 import { globalIgnores } from "eslint/config";
 
-export default tseslint.config([
-  globalIgnores(["dist", "node_modules", "vite.config.ts"]),
+export default [
+  globalIgnores(["dist", "node_modules", "vite.config.ts", "tailwind.config.js"]),
+
+  //Base JS
+  js.configs.recommended,
+
+  //Typescript
+  ...tseslint.configs.recommended,
+
+  //Project Files
   {
     files: ["**/*.{ts,tsx}"],
-    extends: [
-      js.configs.recommended,
-      ...tseslint.configs.recommended,
-      ...tseslint.configs.stylistic,
-      reactHooks.configs["recommended-latest"],
-      reactRefresh.configs.vite,
-    ],
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
@@ -48,8 +25,14 @@ export default tseslint.config([
         tsconfigRootDir: import.meta.dirname,
       },
     },
+
+    plugins: {
+      "react-hooks": reactHooks,
+      "react-refresh": reactRefresh,
+    },
+
     rules: {
-      // React Hooks
+      // React Hooks V7
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
 
@@ -65,4 +48,4 @@ export default tseslint.config([
       quotes: ["error", "double"],
     },
   },
-]);
+];

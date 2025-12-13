@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 import {
   FaUser,
   FaFacebook,
@@ -14,6 +15,7 @@ import {
   FaChartLine,
   FaFileContract,
   FaShieldHalved,
+  FaRotate,
 } from "react-icons/fa6";
 import { FaTiktok, FaCog } from "react-icons/fa";
 import { Settings, Check, X } from "lucide-react";
@@ -250,6 +252,10 @@ const AllConfigurations = ({ showHeader = true }: AllConfigurationsProps) => {
     }
   }, [dispatch, allConfigs]);
 
+  const handleRefresh = () => {
+    dispatch(getAllConfigs());
+  };
+
   // Group configs by category
   const groupedConfigs = (allConfigs || []).reduce(
     (acc: Record<string, ConfigItem[]>, item: ConfigItem) => {
@@ -347,26 +353,48 @@ const AllConfigurations = ({ showHeader = true }: AllConfigurationsProps) => {
   };
 
   return (
-    <Card>
+    <div className="min-h-fit p-4 sm:p-6">
+      {/* Header */}
       {showHeader && (
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 flex items-center gap-2">
+              All Configurations
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              View and manage all system configuration values
+            </p>
+          </div>
+          <Button
+            size="sm"
+            onClick={handleRefresh}
+            disabled={loading}
+            className="flex items-center gap-2"
+          >
+            <FaRotate className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </div>
+      )}
+
+      {/* Content */}
+      <Card>
         <CardHeader className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-t-xl">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
               <FaCog className="w-6 h-6 text-gray-600" />
             </div>
             <div>
-              <CardTitle className="text-lg">All Configurations</CardTitle>
+              <CardTitle className="text-lg">System Settings</CardTitle>
               <CardDescription>
-                View all system configuration values ({allConfigs?.length || 0} items)
+                {allConfigs?.length || 0} configuration items across all categories
               </CardDescription>
             </div>
           </div>
         </CardHeader>
-      )}
-      <CardContent className={showHeader ? "pt-6" : "pt-0"}>
-        {loading ? <ConfigSkeleton /> : renderContent()}
-      </CardContent>
-    </Card>
+        <CardContent className="pt-6">{loading ? <ConfigSkeleton /> : renderContent()}</CardContent>
+      </Card>
+    </div>
   );
 };
 

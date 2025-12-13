@@ -97,7 +97,7 @@ const AppRoutes = () => (
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:id" element={<BlogDetail />} />
         <Route path="/terms-of-uses" element={<TermsOfUses />} />
-        <Route path="/privacy-policy" element={<PrivacyPolicyAdmin />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       </Route>
 
       <Route element={<PublicRoute />}>
@@ -138,7 +138,7 @@ const AppRoutes = () => (
             <Route index element={<AllConfigurations />} />
             <Route path="representative" element={<Representative />} />
             <Route path="terms-of-service" element={<TermsOfService />} />
-            <Route path="privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="privacy-policy" element={<PrivacyPolicyAdmin />} />
           </Route>
         </Route>
       </Route>

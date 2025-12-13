@@ -4,8 +4,9 @@ import { useAppDispatch, type RootState } from "@/libs/stores";
 import { getTermsOfService } from "@/libs/stores/configManager/thunk";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FaFileContract } from "react-icons/fa6";
+import { FaFileContract, FaRotate } from "react-icons/fa6";
 import { FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
@@ -81,6 +82,10 @@ const TermsOfService = ({ showHeader = true }: TermsOfServiceProps) => {
     }
   }, [dispatch, termsOfService]);
 
+  const handleRefresh = () => {
+    dispatch(getTermsOfService());
+  };
+
   const renderTiptapContent = (content: any) => {
     if (!content) {
       return (
@@ -110,24 +115,48 @@ const TermsOfService = ({ showHeader = true }: TermsOfServiceProps) => {
   };
 
   return (
-    <Card>
+    <div className="min-h-fit p-4 sm:p-6">
+      {/* Header */}
       {showHeader && (
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 flex items-center gap-2">
+              Terms of Service
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Legal terms and conditions for using the platform
+            </p>
+          </div>
+          <Button
+            size="sm"
+            onClick={handleRefresh}
+            disabled={loading}
+            className="flex items-center gap-2"
+          >
+            <FaRotate className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </div>
+      )}
+
+      {/* Content */}
+      <Card>
         <CardHeader className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-t-xl">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
               <FaFileContract className="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <CardTitle className="text-lg">Terms of Service</CardTitle>
-              <CardDescription>Legal terms and conditions for using the platform</CardDescription>
+              <CardTitle className="text-lg">Terms & Conditions</CardTitle>
+              <CardDescription>Rules and guidelines for platform usage</CardDescription>
             </div>
           </div>
         </CardHeader>
-      )}
-      <CardContent className={showHeader ? "pt-6" : "pt-0"}>
-        {loading ? <ContentSkeleton /> : renderTiptapContent(termsOfService)}
-      </CardContent>
-    </Card>
+        <CardContent className="pt-6">
+          {loading ? <ContentSkeleton /> : renderTiptapContent(termsOfService)}
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

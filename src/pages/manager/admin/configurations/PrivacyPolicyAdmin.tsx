@@ -128,7 +128,6 @@ const PrivacyPolicyAdmin = ({ showHeader = true }: PrivacyPolicyProps) => {
             </p>
           </div>
           <Button
-            variant="outline"
             size="sm"
             onClick={handleRefresh}
             disabled={loading}

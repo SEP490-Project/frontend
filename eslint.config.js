@@ -1,27 +1,3 @@
-// import js from '@eslint/js'
-// import globals from 'globals'
-// import reactHooks from 'eslint-plugin-react-hooks'
-// import reactRefresh from 'eslint-plugin-react-refresh'
-// import tseslint from 'typescript-eslint'
-// import { globalIgnores } from 'eslint/config'
-
-// export default tseslint.config([
-//   globalIgnores(['dist']),
-//   {
-//     files: ['**/*.{ts,tsx}'],
-//     extends: [
-//       js.configs.recommended,
-//       tseslint.configs.recommended,
-//       reactHooks.configs['recommended-latest'],
-//       reactRefresh.configs.vite,
-//     ],
-//     languageOptions: {
-//       ecmaVersion: 2020,
-//       globals: globals.browser,
-//     },
-//   },
-// ])
-
 import js from "@eslint/js";
 import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
@@ -30,14 +6,13 @@ import tseslint from "typescript-eslint";
 import { globalIgnores } from "eslint/config";
 
 export default [
-  globalIgnores(["dist", "node_modules", "vite.config.ts"]),
+  globalIgnores(["dist", "node_modules", "vite.config.ts", "tailwind.config.js"]),
 
   //Base JS
   js.configs.recommended,
 
   //Typescript
   ...tseslint.configs.recommended,
-  ...tseslint.configs.stylistic,
 
   //Project Files
   {
@@ -58,7 +33,7 @@ export default [
 
     rules: {
       // React Hooks V7
-      ...reactHooks.configs.recommended.rules,
+      "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
 
       // React Refresh

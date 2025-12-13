@@ -107,11 +107,11 @@ const Homepage = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.8, delay: 0.3 }}
               >
-                <div className="relative bg-gradient-to-br from-[#fec6d4] to-[#feb2c5] rounded-3xl p-8">
+                <div className="relative p-8">
                   <img
-                    src="/hero/app-mockup.jpg"
+                    src="/hero/app-mockup.png"
                     alt="B-ShowSell App"
-                    className="w-full max-w-md mx-auto drop-shadow-2xl"
+                    className="w-full max-w-lg mx-auto drop-shadow-2xl"
                   />
                 </div>
               </motion.div>

@@ -58,7 +58,7 @@ const AboutApp = () => {
 
   const screenshots = [
     {
-      src: "/app-screenshots/home-screen.png",
+      src: "/app-screenshots/home-screen.jpg",
       alt: "Home Screen",
     },
     {
@@ -131,7 +131,7 @@ const AboutApp = () => {
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-br from-[#fec6d4] to-[#feb2c5] rounded-3xl blur-3xl opacity-30 scale-110"></div>
                   <img
-                    src="/app-screenshots/home-screen.png"
+                    src="/app-screenshots/home-screen.jpg"
                     alt="B-ShowSell Mobile App"
                     className="relative w-full max-w-md mx-auto drop-shadow-2xl"
                   />

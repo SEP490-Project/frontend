@@ -4,8 +4,9 @@ import { useAppDispatch, type RootState } from "@/libs/stores";
 import { getPrivacyPolicy } from "@/libs/stores/configManager/thunk";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FaShieldHalved } from "react-icons/fa6";
+import { FaShieldHalved, FaRotate } from "react-icons/fa6";
 import { Shield } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
@@ -71,7 +72,7 @@ interface PrivacyPolicyProps {
   showHeader?: boolean;
 }
 
-const PrivacyPolicy = ({ showHeader = true }: PrivacyPolicyProps) => {
+const PrivacyPolicyAdmin = ({ showHeader = true }: PrivacyPolicyProps) => {
   const dispatch = useAppDispatch();
   const { loading, privacyPolicy } = useSelector((state: RootState) => state.manageConfig);
 
@@ -80,6 +81,10 @@ const PrivacyPolicy = ({ showHeader = true }: PrivacyPolicyProps) => {
       dispatch(getPrivacyPolicy());
     }
   }, [dispatch, privacyPolicy]);
+
+  const handleRefresh = () => {
+    dispatch(getPrivacyPolicy());
+  };
 
   const renderTiptapContent = (content: any) => {
     if (!content) {
@@ -110,27 +115,50 @@ const PrivacyPolicy = ({ showHeader = true }: PrivacyPolicyProps) => {
   };
 
   return (
-    <Card>
+    <div className="min-h-fit p-4 sm:p-6">
+      {/* Header */}
       {showHeader && (
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 flex items-center gap-2">
+              Privacy Policy
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Information about data collection and privacy practices
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={loading}
+            className="flex items-center gap-2"
+          >
+            <FaRotate className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </div>
+      )}
+
+      {/* Content */}
+      <Card>
         <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-xl">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
               <FaShieldHalved className="w-6 h-6 text-green-600" />
             </div>
             <div>
-              <CardTitle className="text-lg">Privacy Policy</CardTitle>
-              <CardDescription>
-                Information about data collection and privacy practices
-              </CardDescription>
+              <CardTitle className="text-lg">Privacy & Data Protection</CardTitle>
+              <CardDescription>How we collect, use, and protect your information</CardDescription>
             </div>
           </div>
         </CardHeader>
-      )}
-      <CardContent className={showHeader ? "pt-6" : "pt-0"}>
-        {loading ? <ContentSkeleton /> : renderTiptapContent(privacyPolicy)}
-      </CardContent>
-    </Card>
+        <CardContent className="pt-6">
+          {loading ? <ContentSkeleton /> : renderTiptapContent(privacyPolicy)}
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
-export default PrivacyPolicy;
+export default PrivacyPolicyAdmin;

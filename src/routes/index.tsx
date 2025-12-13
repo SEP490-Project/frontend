@@ -73,6 +73,7 @@ import { TermsOfUses } from "@/pages/landing/TermsOfUses";
 import AllConfigurations from "@/pages/manager/admin/configurations/AllConfigurations";
 import TermsOfService from "@/pages/manager/admin/configurations/TermsOfService";
 import Representative from "@/pages/manager/admin/configurations/Representative";
+import PrivacyPolicyAdmin from "@/pages/manager/admin/configurations/PrivacyPolicyAdmin";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -96,7 +97,7 @@ const AppRoutes = () => (
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:id" element={<BlogDetail />} />
         <Route path="/terms-of-uses" element={<TermsOfUses />} />
-        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicyAdmin />} />
       </Route>
 
       <Route element={<PublicRoute />}>

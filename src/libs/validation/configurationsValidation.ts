@@ -253,6 +253,7 @@ export const getPlaceholder = (key: string, valueType: EditableValueType): strin
     case "ARRAY":
       return "value1, value2, value3";
     case "JSON":
+      // eslint-disable-next-line quotes
       return '{"key": "value"}';
     case "STRING":
     default:

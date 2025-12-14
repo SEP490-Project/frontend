@@ -216,9 +216,12 @@ export const manageContentSlice = createSlice({
       })
       .addCase(contentDetail.fulfilled, (state, action) => {
         state.loading = false;
-        // Content detail API returns an array with single item, extract the first one
-        const apiResponse = action.payload as ContentResponse;
-        const contentItem = apiResponse.data[0];
+        // Content detail API returns data object directly
+        const apiResponse = action.payload;
+        // Handle both array format (data[0]) and object format (data)
+        const contentItem = Array.isArray(apiResponse.data)
+          ? apiResponse.data[0]
+          : apiResponse.data;
         if (contentItem) {
           state.content = contentItem;
         }

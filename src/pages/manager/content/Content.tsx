@@ -1,6 +1,8 @@
 import { useState } from "react";
 import type { Content, CreateContentRequest } from "@/libs/types/content";
-import { useContentManager } from "@/libs/hooks/useContent";
+import { useAppDispatch } from "@/libs/stores";
+import { contents, createContent, updateContent } from "@/libs/stores/contentManager/thunk";
+import { clearGeneratedContent } from "@/libs/stores/contentManager/slice";
 import ContentList from "@/components/manage/content/ContentList";
 import BlogEditor from "@/components/manage/content/BlogEditor";
 import VideoEditor from "@/components/manage/content/VideoEditor";
@@ -12,6 +14,8 @@ type ViewMode = "list" | "editor";
 type ContentType = "blog" | "video";
 
 const ManageContent = () => {
+  const dispatch = useAppDispatch();
+
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [editingContent, setEditingContent] = useState<Content | null>(null);
   const [currentContentType, setCurrentContentType] = useState<ContentType>("blog");
@@ -22,9 +26,6 @@ const ManageContent = () => {
     content: CreateContentRequest | { html: string; json: object };
     contentType: "blog" | "video";
   } | null>(null);
-
-  const { createNewContent, updateExistingContent, fetchContents, clearAIGeneratedContent } =
-    useContentManager();
 
   const handleSave = async (
     content: CreateContentRequest | { html: string; json: object },
@@ -72,7 +73,7 @@ const ManageContent = () => {
           id: editingContent.id,
           ...apiData,
         };
-        const updateResponse = await updateExistingContent(updateData);
+        const updateResponse = await dispatch(updateContent(updateData));
 
         // Check if update was successful or failed
         if (updateResponse.meta.requestStatus === "fulfilled") {
@@ -80,7 +81,7 @@ const ManageContent = () => {
         }
       } else {
         // Create new content
-        const createResponse = await createNewContent(apiData);
+        const createResponse = await dispatch(createContent(apiData));
 
         // Check if creation was successful or failed
         if (createResponse.meta.requestStatus === "fulfilled") {
@@ -90,7 +91,7 @@ const ManageContent = () => {
 
       // Refresh the content list and go back to list view (only if successful)
       if (isSuccess) {
-        await fetchContents({ page: 1, limit: 10 });
+        await dispatch(contents({ page: 1, limit: 10 }));
         handleBackToList();
       }
 
@@ -112,7 +113,7 @@ const ManageContent = () => {
     setEditingContent(null);
     setCurrentContentType(contentType);
     setSelectedTask(task);
-    clearAIGeneratedContent(); // Clear any previous AI generated content
+    dispatch(clearGeneratedContent()); // Clear any previous AI generated content
     setViewMode("editor");
   };
 
@@ -128,7 +129,7 @@ const ManageContent = () => {
     setViewMode("list");
     setEditingContent(null);
     setSelectedTask(null);
-    clearAIGeneratedContent(); // Clear AI generated content when leaving editor
+    dispatch(clearGeneratedContent()); // Clear AI generated content when leaving editor
   };
 
   return (

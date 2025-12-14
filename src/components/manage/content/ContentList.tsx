@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useContent } from "@/libs/hooks/useContent";
 import { useAppDispatch } from "@/libs/stores";
 import {
@@ -52,7 +53,6 @@ import {
 import { Dialog } from "@/components/ui/dialog";
 import { DeleteContentModal } from "@/components/modal/content/DeleteContentModal";
 import { RequestApprovalModal } from "@/components/modal/content/RequestApprovalModal";
-import ContentDetailModal from "./ContentDetailModal";
 import TaskSelectionDialog from "./TaskSelectionDialog";
 import type { Content } from "@/libs/types/content";
 import type { Task } from "@/libs/types/task";
@@ -66,6 +66,7 @@ interface ContentListProps {
 }
 
 const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }) => {
+  const navigate = useNavigate();
   const { loading, contents: contentList, pagination, error } = useContent();
 
   const dispatch = useAppDispatch();
@@ -78,9 +79,6 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     actor: "",
   });
 
-  const [selectedContent, setSelectedContent] = useState<Content | null>(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [isTaskSelectionOpen, setIsTaskSelectionOpen] = useState(false);
   const [selectedContentType, setSelectedContentType] = useState<ContentType>("blog");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -144,40 +142,9 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     setContentToDelete(null);
   };
 
-  const handleViewContent = async (content: Content) => {
-    setIsLoadingDetail(true);
-
-    try {
-      // Fetch detailed content from API first
-      const response = await manageContent.contentDetail(content.id);
-      const apiData = response.data.data;
-
-      if (apiData) {
-        // Use the API response directly as Content (not as array!)
-        const detailedContent: Content = apiData;
-        // Show modal only after we have the complete data
-        setSelectedContent(detailedContent);
-        setIsDetailModalOpen(true);
-      } else {
-        // Fallback: use the content passed to the function
-        setSelectedContent(content);
-        setIsDetailModalOpen(true);
-      }
-    } catch (error) {
-      console.error("Error fetching content detail:", error);
-      setSelectedContent(content);
-      setIsDetailModalOpen(true);
-    } finally {
-      setIsLoadingDetail(false);
-    }
-
-    // Also call the parent onView if provided
+  const handleViewContent = (content: Content) => {
+    navigate(`/manage/content/all-contents/${content.id}`);
     onView?.(content);
-  };
-
-  const handleCloseDetailModal = () => {
-    setIsDetailModalOpen(false);
-    setSelectedContent(null);
   };
 
   const handleEditContent = async (content: Content) => {
@@ -199,15 +166,6 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     }
   };
 
-  const handleRequestApproval = (contentId: string) => {
-    // Find the content by ID and show confirmation modal
-    const content = contentList.find((c) => c.id === contentId);
-    if (content) {
-      setContentToSubmit(content);
-      setShowRequestApprovalModal(true);
-    }
-  };
-
   const handleConfirmRequestApproval = async () => {
     if (!contentToSubmit || isSubmittingApproval) return;
 
@@ -223,13 +181,11 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
       // Always close modals and clear state
       setShowRequestApprovalModal(false);
       setContentToSubmit(null);
-      handleCloseDetailModal();
     } catch (error) {
       console.error("Error submitting content for approval:", error);
       // Close modals and clear state on error
       setShowRequestApprovalModal(false);
       setContentToSubmit(null);
-      handleCloseDetailModal();
     } finally {
       setIsSubmittingApproval(false);
     }
@@ -568,12 +524,9 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start">
-                          <DropdownMenuItem
-                            onClick={() => handleViewContent(content)}
-                            disabled={isLoadingDetail}
-                          >
+                          <DropdownMenuItem onClick={() => handleViewContent(content)}>
                             <Eye className="w-4 h-4 mr-2" />
-                            {isLoadingDetail ? "Loading..." : "View"}
+                            View
                           </DropdownMenuItem>
                           {/* Only show Edit for draft and rejected content */}
                           {(content.status === "DRAFT" || content.status === "REJECTED") && (
@@ -657,14 +610,6 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
           )}
         </CardContent>
       </Card>
-
-      {/* Content Detail Modal */}
-      <ContentDetailModal
-        content={selectedContent}
-        isOpen={isDetailModalOpen}
-        onClose={handleCloseDetailModal}
-        onRequestApproval={handleRequestApproval}
-      />
 
       {/* Task Selection Dialog */}
       <TaskSelectionDialog

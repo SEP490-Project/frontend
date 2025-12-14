@@ -74,9 +74,9 @@ const GlobalHeader = () => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 px-2 md:px-3 py-1 rounded hover:bg-gray-100 transition">
-                  {user?.avatar ? (
+                  {user?.avatar_url ? (
                     <img
-                      src={user.avatar}
+                      src={user.avatar_url}
                       alt="User Avatar"
                       className="w-10 h-10 rounded-full border-2 border-primary shadow-sm"
                     />

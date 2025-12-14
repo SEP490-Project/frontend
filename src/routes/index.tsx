@@ -70,6 +70,10 @@ import {
 } from "@/pages/pwa";
 import { PrivacyPolicy } from "@/pages/landing/PrivacyPolicy";
 import { TermsOfUses } from "@/pages/landing/TermsOfUses";
+import AllConfigurations from "@/pages/manager/admin/configurations/AllConfigurations";
+import TermsOfService from "@/pages/manager/admin/configurations/TermsOfService";
+import Representative from "@/pages/manager/admin/configurations/Representative";
+import PrivacyPolicyAdmin from "@/pages/manager/admin/configurations/PrivacyPolicyAdmin";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -130,6 +134,12 @@ const AppRoutes = () => (
           <Route path="users" element={<User />} />
           <Route path="variant-attribute" element={<VariantAttribute />} />
           <Route path="channel" element={<Channel />} />
+          <Route path="configurations">
+            <Route index element={<AllConfigurations />} />
+            <Route path="representative" element={<Representative />} />
+            <Route path="terms-of-service" element={<TermsOfService />} />
+            <Route path="privacy-policy" element={<PrivacyPolicyAdmin />} />
+          </Route>
         </Route>
       </Route>
 

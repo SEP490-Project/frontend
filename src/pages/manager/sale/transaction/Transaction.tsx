@@ -145,30 +145,6 @@ const Transaction: React.FC<{ type: "ORDER" | "PREORDER" }> = ({ type }) => {
               </SelectContent>
             </Select>
           </div>
-
-          <div className="min-w-[150px]">
-            <Select
-              value={params.method || " "}
-              onValueChange={(value) => {
-                setParams({
-                  ...params,
-                  method: value === " " ? undefined : (value as any),
-                  page: 1,
-                });
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Method" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value=" ">All Methods</SelectItem>
-                <SelectItem value="BANK_TRANSFER">Bank Transfer</SelectItem>
-                <SelectItem value="CREDIT_CARD">Credit Card</SelectItem>
-                <SelectItem value="E_WALLET">E-Wallet</SelectItem>
-                <SelectItem value="PAYOS">PayOS</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
         </div>
       </div>
 

@@ -1,4 +1,5 @@
-import { TaskProvider, useTaskManager } from "@/libs/contexts/TaskContext";
+import { useTask } from "@/libs/hooks/useTask";
+import { getTasksByProfile } from "@/libs/stores/taskManager/thunk";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,11 +14,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { TaskDetailDisplay } from "./TaskDetailDisplay";
 
 export const TaskDisplay = () => {
-  return (
-    <TaskProvider>
-      <TaskList />
-    </TaskProvider>
-  );
+  return <TaskList />;
 };
 
 const getStatusColor = (status: string) => {
@@ -108,7 +105,7 @@ const TaskCard = ({
 export const TaskList = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { loading, tasks, fetchTasksByProfile } = useTaskManager();
+  const { profileTasksLoading: loading, profileTasks: tasks } = useTask();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [onOpenTaskDetail, setOnOpenTaskDetail] = useState(false);
 
@@ -122,8 +119,8 @@ export const TaskList = () => {
   };
 
   useEffect(() => {
-    fetchTasksByProfile();
-  }, [fetchTasksByProfile]);
+    dispatch(getTasksByProfile(undefined));
+  }, [dispatch]);
 
   if (loading) {
     return (

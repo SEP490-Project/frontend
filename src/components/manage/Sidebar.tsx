@@ -272,7 +272,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         label: "Tasks & Schedule",
         icon: <FaCalendarDays size={18} />,
       },
-      { href: "/manage/content/blog", label: "Content", icon: <FaFilePen size={18} /> },
+      { href: "/manage/content/all-contents", label: "Content", icon: <FaFilePen size={18} /> },
       { href: "/manage/content/tag", label: "Tag", icon: <FaHashtag size={18} /> },
     ],
     ADMIN: [

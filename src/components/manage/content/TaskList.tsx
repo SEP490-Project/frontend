@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { useTaskManager } from "@/libs/hooks/useTask";
+import { useTask } from "@/libs/hooks/useTask";
 import type { Task } from "@/libs/types/task";
 
 interface TaskListProps {
@@ -13,7 +13,7 @@ interface TaskListProps {
 }
 
 export function TaskList({ currentDate, onViewTask, statusFilter = "ALL" }: TaskListProps) {
-  const { tasks } = useTaskManager();
+  const { profileTasks: tasks } = useTask();
 
   // Filter tasks by status
   const filteredTasks =

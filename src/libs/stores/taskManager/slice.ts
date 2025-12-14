@@ -5,8 +5,10 @@ import {
   assignTask,
   getTaskDetailById,
   updateTaskState,
+  getTasksByProfile,
 } from "./thunk";
 import type {
+  Task,
   SingleTaskResponse,
   TaskListMarketing,
   TaskListMarketingDetail,
@@ -27,6 +29,18 @@ interface stateType {
   } | null;
   actionLoading: boolean;
   detailLoading: boolean;
+  // Profile tasks (content staff)
+  profileTasks: Task[];
+  profileTasksLoading: boolean;
+  selectedProfileTask: Task | null;
+  profilePagination: {
+    has_next: boolean;
+    has_prev: boolean;
+    limit: number;
+    page: number;
+    total: number;
+    total_pages: number;
+  } | null;
 }
 
 const initialState: stateType = {
@@ -37,6 +51,11 @@ const initialState: stateType = {
   pagination: null,
   actionLoading: false,
   detailLoading: false,
+  // Profile tasks
+  profileTasks: [],
+  profileTasksLoading: false,
+  selectedProfileTask: null,
+  profilePagination: null,
 };
 
 export const manageTaskSlice = createSlice({
@@ -51,6 +70,12 @@ export const manageTaskSlice = createSlice({
     },
     clearTaskDetail: (state) => {
       state.taskDetail = null;
+    },
+    setSelectedProfileTask: (state, action) => {
+      state.selectedProfileTask = action.payload;
+    },
+    clearSelectedProfileTask: (state) => {
+      state.selectedProfileTask = null;
     },
   },
   extraReducers: (builder) => {
@@ -119,9 +144,27 @@ export const manageTaskSlice = createSlice({
       })
       .addCase(updateTaskState.rejected, (state) => {
         state.actionLoading = false;
+      })
+      // Profile tasks
+      .addCase(getTasksByProfile.pending, (state) => {
+        state.profileTasksLoading = true;
+      })
+      .addCase(getTasksByProfile.fulfilled, (state, action) => {
+        state.profileTasksLoading = false;
+        state.profileTasks = action.payload.data || [];
+        state.profilePagination = action.payload.pagination || null;
+      })
+      .addCase(getTasksByProfile.rejected, (state) => {
+        state.profileTasksLoading = false;
       });
   },
 });
 
-export const { clearTaskDetail } = manageTaskSlice.actions;
+export const {
+  clearTaskDetail,
+  clearTaskDetailById,
+  taskDetailById,
+  setSelectedProfileTask,
+  clearSelectedProfileTask,
+} = manageTaskSlice.actions;
 export const { reducer: manageTaskReducer, actions: manageTaskActions } = manageTaskSlice;

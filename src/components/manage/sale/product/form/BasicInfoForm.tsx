@@ -28,7 +28,7 @@ import { getAllCategoriesThunk } from "@/libs/stores/categoryManager/thunk";
 import { useSelector } from "react-redux";
 import type { ProductCategory } from "@/libs/types/category";
 import { getItem, setItem } from "@/libs/local-storage";
-import type { SingleTaskResponse } from "@/libs/task";
+import type { SingleTaskResponse } from "@/libs/types/task";
 
 export const BasicInfoForm = ({
   form,

@@ -29,6 +29,7 @@ import { manageNotificationReducer } from "./notificationManager/slice";
 import { manageBrandAnalyticReducer } from "./brandAnalyticManager/slice";
 import { manageSalesAnalyticReducer } from "./salesAnalyticManager/slice";
 import { manageContentAnalyticReducer } from "./contentAnalyticManager/slice";
+import { reviewManagerReducers } from "./reviewManager/slice";
 
 export const rootReducer = combineReducers({
   manageAuthen: manageAuthenReducer,
@@ -62,4 +63,5 @@ export const rootReducer = combineReducers({
   manageBrandAnalytic: manageBrandAnalyticReducer,
   manageSalesAnalytic: manageSalesAnalyticReducer,
   manageContentAnalytic: manageContentAnalyticReducer,
+  manageReview: reviewManagerReducers,
 });

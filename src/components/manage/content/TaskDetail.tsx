@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { X, User, Clock, AlertTriangle, FileText, Briefcase, Check } from "lucide-react";
+import { X, Clock, AlertTriangle, FileText, Briefcase, Check, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTaskManager } from "@/libs/hooks/useTask";
 import { useAppDispatch } from "@/libs/stores";
@@ -114,10 +114,6 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
     switch (type) {
       case "CONTENT":
         return "#f7c06d";
-      case "MARKETING":
-        return "#ff88fa";
-      case "PRODUCT":
-        return "#9976ff";
       default:
         return "#9976ff";
     }
@@ -223,9 +219,22 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
     return null;
   };
 
+  const getBrandInfo = () => {
+    const brand = (selectedTask as any).brand_info;
+    if (brand && typeof brand === "object") {
+      return {
+        name: brand.name || "Unknown Brand",
+        logoUrl: brand.logo_url || "",
+        status: brand.status || "Unknown",
+      };
+    }
+    return null;
+  };
+
   const materialUrls = getMaterialUrls();
   const campaignInfo = getCampaignInfo();
   const milestoneInfo = getMilestoneInfo();
+  const brandInfo = getBrandInfo();
 
   return (
     <motion.div
@@ -255,10 +264,6 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
           </motion.div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{selectedTask.name}</h1>
-            <p className="text-sm text-gray-500 flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              {selectedTask.type} Content
-            </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -338,15 +343,7 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
               </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white p-4 rounded-lg border border-gray-100">
-                <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
-                  <User className="h-4 w-4" />
-                  Assignee
-                </div>
-                <p className="font-semibold text-gray-900">{selectedTask.assigned_to_name}</p>
-              </div>
-
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div
                 className={`bg-white p-4 rounded-lg border ${
                   isTaskOverdue() ? "border-red-200 bg-red-50" : "border-gray-100"
@@ -426,6 +423,42 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
               <div className="bg-white p-4 rounded-lg border border-gray-100 lg:col-span-2">
                 <p className="text-sm text-gray-500 mb-1">Campaign Description</p>
                 <p className="font-semibold text-gray-900">{campaignInfo.description}</p>
+              </div>
+            </div>
+          </motion.section>
+        )}
+
+        {/* Brand Information */}
+        {brandInfo && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.35 }}
+            className="bg-gradient-to-br from-orange-50 to-white rounded-2xl p-6 border border-orange-200 shadow-sm"
+          >
+            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-orange-600" />
+              Brand Information
+            </h2>
+            <div className="flex items-center gap-4">
+              {brandInfo.logoUrl && (
+                <img
+                  src={brandInfo.logoUrl}
+                  alt={brandInfo.name}
+                  className="w-20 h-20 rounded-lg object-cover border border-gray-200 shadow-sm"
+                />
+              )}
+              <div className="flex-1">
+                <p className="font-semibold text-gray-900 text-xl">{brandInfo.name}</p>
+                <span
+                  className={`inline-flex px-3 py-1 rounded-full text-sm font-semibold mt-2 ${
+                    brandInfo.status === "ACTIVE"
+                      ? "bg-green-100 text-green-800"
+                      : "bg-gray-100 text-gray-800"
+                  }`}
+                >
+                  {brandInfo.status}
+                </span>
               </div>
             </div>
           </motion.section>

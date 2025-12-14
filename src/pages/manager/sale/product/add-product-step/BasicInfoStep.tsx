@@ -11,11 +11,15 @@ import {
   createLimitedProductSchema,
 } from "@/libs/validation/productValidation";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useOutletContext, type NavigateFunction } from "react-router";
 import { getItem } from "@/libs/local-storage";
 import TaskDisplayForm from "@/components/manage/sale/product/form/TaskDisplayForm";
+import { Loader2 } from "lucide-react";
+import { useAppDispatch, type RootState } from "@/libs/stores";
+import { useSelector } from "react-redux";
+import { getTaskDetailById } from "@/libs/stores/taskManager/thunk";
 
 const BasicInfoStep = () => {
   const { setOnSubmitStep, steps, currentStep, navigate, state, setIsDisabled, isDisabled } =
@@ -29,6 +33,11 @@ const BasicInfoStep = () => {
       setIsDisabled: React.Dispatch<React.SetStateAction<boolean>>;
     }>();
 
+  const dispatch = useAppDispatch();
+  const taskId = state?.task?.id;
+  const { taskDetailById, detailLoading } = useSelector((state: RootState) => state.manageTask);
+
+  const [isCreating, setIsCreating] = useState(false);
   const isLimitedProduct = state?.productType === "LIMITED";
 
   const standardForm = useForm<CreateProductPayload>({
@@ -48,8 +57,9 @@ const BasicInfoStep = () => {
       category_id: "",
       description: null,
       name: "",
-      task_id: state.task?.id || "",
+      task_id: state?.task?.id || "",
       limited_attribute: {
+        achievable_quantity: 1,
         premiere_date: "",
         availability_start_date: "",
         availability_end_date: "",
@@ -60,6 +70,38 @@ const BasicInfoStep = () => {
   });
 
   const form = isLimitedProduct ? limitedForm : standardForm;
+
+  // Fetch task details if taskId exists
+  useEffect(() => {
+    if (!taskId) return;
+    dispatch(getTaskDetailById(taskId)).unwrap();
+  }, [dispatch, taskId]);
+
+  // Load task data into form after it's fetched
+  useEffect(() => {
+    if (!taskDetailById?.data || !isLimitedProduct) return;
+
+    const existingProduct = getItem<ProductResponse<ProductData>>("currentProduct");
+    // Only set task data if there's no existing product
+    if (existingProduct?.data?.id) return;
+
+    const taskData = taskDetailById.data;
+    limitedForm.reset({
+      brand_id: taskData.brand_info?.id || "",
+      category_id: "",
+      description: taskData.description?.details || null,
+      name: taskData.name || "",
+      task_id: taskData.id || "",
+      limited_attribute: {
+        achievable_quantity: 1,
+        premiere_date: "",
+        availability_start_date: "",
+        availability_end_date: "",
+        is_free_shipping: true,
+        concept_id: undefined,
+      },
+    });
+  }, [taskDetailById, isLimitedProduct, limitedForm]);
 
   // Load existing product data from localStorage
   useEffect(() => {
@@ -74,6 +116,7 @@ const BasicInfoStep = () => {
           description: productData.description || null,
           task_id: (productData as any).task_id || "",
           limited_attribute: {
+            achievable_quantity: (productData as any).limited_attribute?.achievable_quantity || 1,
             premiere_date: (productData as any).limited_attribute?.premiere_date || "",
             availability_start_date:
               (productData as any).limited_attribute?.availability_start_date || "",
@@ -97,7 +140,18 @@ const BasicInfoStep = () => {
 
   return (
     <>
-      {state?.productType === "LIMITED" && <TaskDisplayForm />}
+      {isCreating && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 flex flex-col items-center gap-4">
+            <Loader2 className="w-12 h-12 animate-spin text-primary" />
+            <p className="text-lg font-semibold">Creating product...</p>
+            <p className="text-sm text-gray-500">Please wait while we process your request</p>
+          </div>
+        </div>
+      )}
+      {state?.productType === "LIMITED" && (
+        <TaskDisplayForm taskDetailById={taskDetailById} detailLoading={detailLoading} />
+      )}
       <BasicInfoForm
         form={form as any}
         setOnSubmitStep={setOnSubmitStep}
@@ -107,6 +161,10 @@ const BasicInfoStep = () => {
         state={state}
         setIsDisabled={setIsDisabled}
         isDisabled={isDisabled}
+        isCreating={isCreating}
+        setIsCreating={setIsCreating}
+        taskDetailById={taskDetailById}
+        detailLoading={detailLoading}
       />
       {isLimitedProduct && <AdditionalInfoForm form={limitedForm} />}
     </>

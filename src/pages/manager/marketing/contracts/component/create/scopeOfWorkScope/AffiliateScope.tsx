@@ -101,12 +101,43 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
         items[index] = { ...item, hash_tag: ["#"] };
         hasChanges = true;
       }
+
+      // Ensure Click-through Total KPI is always present
+      const currentKpis = item.kpis || [];
+      const updatedKpis = ensureClickThroughKPI(currentKpis);
+      if (
+        updatedKpis.length !== currentKpis.length ||
+        JSON.stringify(updatedKpis) !== JSON.stringify(currentKpis)
+      ) {
+        items[index] = { ...items[index], kpis: updatedKpis };
+        hasChanges = true;
+      }
     });
 
     if (hasChanges) {
       updateDeliverables({ advertised_items: items });
     }
   }, [advertisedItems, updateDeliverables]);
+
+  // Ensure Click-through Total KPI is always present for affiliate contracts
+  const ensureClickThroughKPI = (kpis: any[]) => {
+    const hasClickThrough = kpis.some(
+      (kpi) => kpi.metric === "click_through" || kpi.type === "click_through",
+    );
+
+    if (!hasClickThrough) {
+      return [
+        {
+          metric: "click_through",
+          target: "",
+          description: "Required for affiliate tracking",
+        },
+        ...kpis,
+      ];
+    }
+
+    return kpis;
+  };
 
   const newAdvertisingItem = (): AdvertisingItem => ({
     id: 0,
@@ -118,7 +149,7 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
     hash_tag: ["#"],
     creative_notes: "",
     content_requirements: [""],
-    kpis: [{ metric: "", target: "", description: "" }],
+    kpis: [{ metric: "click_through", target: "", description: "Required for affiliate tracking" }],
   });
 
   const allPlatformOptions = ["Website", "TikTok", "Facebook"];
@@ -616,10 +647,12 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
                           description: kpi.description || "",
                         }))}
                         onChange={(kpis) => {
+                          const ensuredKpis = ensureClickThroughKPI(kpis);
                           const updated = [...items];
-                          updated[i] = { ...updated[i], metrics: kpis, kpis };
+                          updated[i] = { ...updated[i], kpis: ensuredKpis };
                           updateDeliverables({ advertised_items: updated });
                         }}
+                        requiredMetrics={["click_through"]}
                       />
                     </div>
                   </div>

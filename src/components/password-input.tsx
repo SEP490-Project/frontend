@@ -5,7 +5,7 @@ import { Eye, EyeClosed } from "lucide-react";
 export const PasswordInput = React.forwardRef<
   HTMLInputElement,
   React.InputHTMLAttributes<HTMLInputElement>
->(({ value, ...props }, ref) => {
+>(({ className, ...props }, ref) => {
   const [showPassword, setShowPassword] = React.useState(false);
 
   const togglePasswordVisibility = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -16,11 +16,10 @@ export const PasswordInput = React.forwardRef<
   return (
     <div className="relative">
       <Input
-        type={showPassword ? "text" : "password"}
-        value={value}
         ref={ref}
+        type={showPassword ? "text" : "password"}
+        className={`pr-10 ${className ?? ""}`}
         {...props}
-        className="pr-10"
       />
       <button
         type="button"

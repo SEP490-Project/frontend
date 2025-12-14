@@ -109,7 +109,6 @@ export const PaymentSchedule: React.FC<{
       percent: 0,
       amount: 0,
       due_date: "",
-      note: "",
     };
     onUpdate([...schedules, newSchedule]);
   };
@@ -136,7 +135,6 @@ export const PaymentSchedule: React.FC<{
       updated[index].amount = totalCost ? Math.round((totalCost * newPercent) / 100) : 0;
     }
 
-    console.log("PaymentSchedule updateSchedule:", { index, field, value, updated });
     onUpdate(updated);
   };
 
@@ -188,7 +186,7 @@ export const PaymentSchedule: React.FC<{
 
       {schedules.map((schedule, index) => (
         <Card key={schedule.id || index} className="p-4 bg-slate-50 border-slate-200">
-          <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_1fr_2fr_auto] gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_1fr_auto] gap-4">
             <div>
               <Label className="text-sm font-medium">Milestone Description</Label>
               <Input
@@ -232,16 +230,6 @@ export const PaymentSchedule: React.FC<{
                 className="bg-white"
                 minDate={index === 0 ? minDate : schedules[index - 1]?.due_date || minDate}
                 maxDate={maxDate}
-              />
-            </div>
-
-            <div>
-              <Label className="text-sm font-medium">Note</Label>
-              <Input
-                placeholder="Optional note"
-                value={schedule.note || ""}
-                onChange={(e) => updateSchedule(index, "note", e.target.value)}
-                className="bg-white"
               />
             </div>
 

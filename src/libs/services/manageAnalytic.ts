@@ -34,14 +34,12 @@ export const manageBrandAnalytic = {
 };
 
 export const manageSalesAnalytic = {
-  getSalesBrands: (params: any) => api.get("/analytics/sales/brands", { params }),
-  getSalesOrders: (params: any) => api.get("/analytics/sales/orders", { params }),
-  getSalesPayment: (params: any) => api.get("/analytics/sales/payments", { params }),
-  getSalesPreOrder: (params: any) => api.get("/analytics/sales/pre-orders", { params }),
-  getSalesProducts: (params: any) => api.get("/analytics/sales/products", { params }),
-  getSalesRevenue: (params: any) => api.get("/analytics/sales/revenue", { params }),
-  getSalesTrends: (params: any) => api.get("/analytics/sales/trend", { params }),
-  getSalesDashboard: (params: any) => api.get("/analytics/sales/dashboard", { params }),
+  getSalesFinancialOverview: (params: any) =>
+    api.get("/analytics/sales/financials/dashboard", { params }),
+  getSalesRevenueGrowth: (params: any) => api.get("/analytics/sales/financials/growth", { params }),
+  getSalesRevenueTrend: (params: any) => api.get("/analytics/sales/financials/trend", { params }),
+  getSalesOrderOverview: (params: any) => api.get("/analytics/sales/orders/dashboard", { params }),
+  getSaleOrderTrend: (params: any) => api.get("/analytics/sales/orders/trend", { params }),
 };
 
 export const manageContentAnalytic = {

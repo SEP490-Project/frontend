@@ -11,6 +11,7 @@ export interface TransactionData {
   id: string;
   reference_id: string;
   reference_type: string;
+  reference_info?: ReferenceInfo;
   amount: string;
   method: string;
   status: string;
@@ -18,6 +19,43 @@ export interface TransactionData {
   gateway_ref: string;
   gateway_id: string;
   updated_at: string;
+}
+
+export interface ReferenceInfo {
+  id: string;
+  user_info: UserInfo;
+  bank_info: BankInfo;
+  order_items?: OrderItem[];
+  product_variant_info?: ProductVariantInfo;
+}
+
+export interface UserInfo {
+  id: string;
+  full_name: string;
+  phone_number: string;
+  email: string;
+}
+
+export interface BankInfo {
+  bank_account: string;
+  bank_name: string;
+  bank_account_holder: string;
+}
+
+export interface OrderItem {
+  id: string;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  subtotal: number;
+}
+
+export interface ProductVariantInfo {
+  id: string;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  total_amount: number;
 }
 
 export interface Pagination {

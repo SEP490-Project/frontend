@@ -23,6 +23,8 @@ import {
   FaMoneyBillTransfer,
   FaRightLeft,
   FaBox,
+  FaUserTie,
+  FaFileShield,
 } from "react-icons/fa6";
 import { useAuth } from "@/libs/hooks/useAuth";
 import { useAppDispatch } from "@/libs/stores";
@@ -250,6 +252,18 @@ const Sidebar: React.FC<SidebarProps> = ({
         href: "/manage/sale/transaction",
         label: "Transaction",
         icon: <FaMoneyCheckDollar size={18} />,
+        subTabs: [
+          {
+            href: "/manage/sale/transaction",
+            label: "Order",
+            icon: <FaMoneyCheckDollar size={14} />,
+          },
+          {
+            href: "/manage/sale/transaction/pre-order",
+            label: "Pre-Order",
+            icon: <FaMoneyCheckDollar size={14} />,
+          },
+        ],
       },
     ],
     CONTENT_STAFF: [
@@ -277,7 +291,28 @@ const Sidebar: React.FC<SidebarProps> = ({
         label: "Channel",
         icon: <FaFolderTree size={18} />,
       },
-      { href: "/manage/admin/configurations", label: "Configurations", icon: <Bolt size={18} /> },
+      {
+        href: "/manage/admin/configurations",
+        label: "Configurations",
+        icon: <Bolt size={18} />,
+        subTabs: [
+          {
+            href: "/manage/admin/configurations/representative",
+            label: "Representative",
+            icon: <FaUserTie size={14} />,
+          },
+          {
+            href: "/manage/admin/configurations/terms-of-service",
+            label: "Terms of Service",
+            icon: <FaFileContract size={14} />,
+          },
+          {
+            href: "/manage/admin/configurations/privacy-policy",
+            label: "Privacy Policy",
+            icon: <FaFileShield size={14} />,
+          },
+        ],
+      },
     ],
   };
 

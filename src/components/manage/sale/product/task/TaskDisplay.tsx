@@ -61,7 +61,7 @@ const TaskCard = ({
 
   return (
     <Card
-      className={`hover:shadow-md cursor-pointer transition-shadow duration-200 w-full flex flex-col mb-4 ${isSelected ? "ring-2 ring-primary" : ""}`}
+      className={`hover:shadow-md cursor-pointer transition-shadow duration-200 w-full flex flex-col mb-4 mx-2 mt-2 ${isSelected ? "ring-2 ring-primary" : ""}`}
       onClick={onClick}
     >
       <CardHeader className="pb-1">
@@ -116,6 +116,7 @@ export const TaskList = () => {
     return tasks.filter(
       (task) =>
         ["todo", "in_progress"].includes(task.status.toLowerCase()) &&
+        // Check if child_status === draft || revision then navigate to edit to complete the task
         !["submitted", "actived"].includes(task.child_status?.toLowerCase() || ""),
     );
   };
@@ -158,7 +159,10 @@ export const TaskList = () => {
 
   return (
     <div className="space-y-4">
-      <div>
+      <div
+        className="h-[70vh] overflow-y-scroll overflow-x-hidden scroll"
+        style={{ scrollbarWidth: "thin" }}
+      >
         {filterIncompleteTasks(tasks).map((task) => (
           <TaskCard
             key={task.id}

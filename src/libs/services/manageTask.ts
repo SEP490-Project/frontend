@@ -22,6 +22,8 @@ export const manageTask = {
     deadline_to_date?: string;
     updated_from_date?: string;
     updated_to_date?: string;
+    has_product?: boolean;
+    has_content?: boolean;
     status?: string;
     type?: string;
     sort_by?: string;

@@ -28,6 +28,7 @@ import { getAllCategoriesThunk } from "@/libs/stores/categoryManager/thunk";
 import { useSelector } from "react-redux";
 import type { ProductCategory } from "@/libs/types/category";
 import { getItem, setItem } from "@/libs/local-storage";
+import type { SingleTaskResponse } from "@/libs/task";
 
 export const BasicInfoForm = ({
   form,
@@ -37,7 +38,15 @@ export const BasicInfoForm = ({
   navigate,
   state,
   setIsDisabled,
-}: ProductFormProps<CreateProductPayload | CreateLimitedProductPayload>) => {
+  setIsCreating,
+  // taskDetailById,
+  // detailLoading,
+}: ProductFormProps<CreateProductPayload | CreateLimitedProductPayload> & {
+  isCreating?: boolean;
+  setIsCreating?: (value: boolean) => void;
+  taskDetailById?: SingleTaskResponse | null;
+  detailLoading?: boolean;
+}) => {
   const dispatch = useAppDispatch();
   const categories = useSelector((state: any) => state?.manageCategory?.categories?.data);
   const { brands } = useBrand();
@@ -54,10 +63,10 @@ export const BasicInfoForm = ({
 
   const [name, category_id, brand_id] = watch(["name", "category_id", "brand_id"]);
 
-  // Watch limited attributes outside of useEffect so they trigger re-renders
   const premiere_date = watch("limited_attribute.premiere_date" as any);
   const availability_start_date = watch("limited_attribute.availability_start_date" as any);
   const availability_end_date = watch("limited_attribute.availability_end_date" as any);
+  const achievable_quantity = watch("limited_attribute.achievable_quantity" as any);
 
   const onSubmit = useCallback(
     async (payload: CreateProductPayload | CreateLimitedProductPayload) => {
@@ -66,6 +75,7 @@ export const BasicInfoForm = ({
           navigate(steps[currentStep]?.path, { state });
           return;
         }
+        setIsCreating?.(true);
         const result = await dispatch(
           state.productType === "STANDARD"
             ? createStandardProductThunk(payload as CreateProductPayload)
@@ -79,19 +89,19 @@ export const BasicInfoForm = ({
         }
       } catch (error) {
         toast.error((error as string) || "Failed to create product");
+      } finally {
+        setIsCreating?.(false);
       }
     },
-    [dispatch, state, navigate, steps, currentStep],
+    [dispatch, state, navigate, steps, currentStep, setIsCreating, productBasicInfos?.id],
   );
 
   const onError = useCallback((errors: any) => {
     toast.error(errors[Object.keys(errors)[0]].message);
   }, []);
 
-  // Validate form and enable/disable next button
   useEffect(() => {
     if (setIsDisabled) {
-      // Base validation for both types
       const isBasicFormValid = Boolean(
         name &&
           name.trim() !== "" &&
@@ -102,10 +112,9 @@ export const BasicInfoForm = ({
           !errors.brand_id,
       );
 
-      // Additional validation for LIMITED products
       if (isLimitedProduct) {
         const isLimitedFormValid = Boolean(
-          premiere_date && availability_start_date && availability_end_date,
+          premiere_date && availability_start_date && availability_end_date && achievable_quantity,
         );
 
         setIsDisabled(!(isBasicFormValid && isLimitedFormValid));
@@ -123,6 +132,7 @@ export const BasicInfoForm = ({
     premiere_date,
     availability_start_date,
     availability_end_date,
+    achievable_quantity,
   ]);
 
   // Load existing product data once on mount
@@ -141,18 +151,15 @@ export const BasicInfoForm = ({
 
   useEffect(() => {
     if (setOnSubmitStep) {
-      // Check if product already exists in localStorage
       const existingProduct = getItem<ProductResponse<ProductData>>("currentProduct")?.data;
 
       if (existingProduct && existingProduct.id) {
-        // Product already created, just navigate to next step
         setOnSubmitStep(() => async () => {
           navigate(steps[currentStep]?.path, { state });
         });
         return;
       }
 
-      // Product not created yet, set up the submit handler
       const submitHandler = async () => {
         await handleSubmit(onSubmit, onError)();
       };
@@ -224,7 +231,7 @@ export const BasicInfoForm = ({
               <SelectTrigger className="col-span-3">
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-70">
                 {categories?.map((category: ProductCategory) => (
                   <SelectItem key={category.id} value={category.id.toString()}>
                     {category.name}
@@ -248,11 +255,15 @@ export const BasicInfoForm = ({
           name="brand_id"
           control={control}
           render={({ field }) => (
-            <Select value={field.value} onValueChange={field.onChange}>
+            <Select
+              disabled={isLimitedProduct ? true : false}
+              value={field.value}
+              onValueChange={field.onChange}
+            >
               <SelectTrigger className="col-span-3">
                 <SelectValue placeholder="Select a brand" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-70">
                 {brands?.map((brand) => (
                   <SelectItem key={brand.id} value={brand?.id}>
                     {brand.name}
@@ -269,6 +280,7 @@ export const BasicInfoForm = ({
           htmlFor="productDescription"
           className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end"
         >
+          <span className="text-red-600">*</span>
           Description
         </label>
         <Textarea

@@ -280,9 +280,25 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
   const renderScopeOfWork = () => {
     const deliverables = previewData.scope_of_work?.deliverables ?? {};
     const events = deliverables.events ?? [];
-    const products = deliverables.products ?? [];
+    const rawProducts = deliverables.products ?? [];
+    const concepts = deliverables.concepts ?? [];
     const advertised_items = deliverables.advertised_items ?? [];
     const platforms = deliverables.platform ?? [];
+
+    // For CO_PRODUCING, merge concepts with products
+    const products = rawProducts.map((product: any) => {
+      if (previewData.type === "CO_PRODUCING") {
+        const productConcepts = concepts.filter(
+          (concept: any) => concept.product_id === product.id,
+        );
+        return {
+          ...product,
+          concepts: productConcepts,
+          material_url: product.material_url || product.material || [],
+        };
+      }
+      return product;
+    });
 
     switch (previewData.type) {
       case "BRAND_AMBASSADOR":
@@ -734,9 +750,6 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
                       {item.percent}%) due by{" "}
                       <span className="font-semibold">{formatDate(item.due_date)}</span>{" "}
                     </p>
-                    {item.note && (
-                      <p className="ml-3 italic text-gray-500 text-xs mt-1">Note: {item.note}</p>
-                    )}
                   </div>
                 ))}
               </div>

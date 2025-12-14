@@ -26,7 +26,7 @@ import {
 import { useSelector } from "react-redux";
 import type { TransactionData, TransactionParams } from "@/libs/types/transaction";
 import { PaginationTable } from "@/components/global";
-import TransactionDetails from "./TransactionDetails";
+import TransactionDetails from "../../../../components/manage/sale/transaction/TransactionDetails";
 import { format } from "date-fns";
 import { convertNumberToCurrency } from "@/libs/helper/helper";
 

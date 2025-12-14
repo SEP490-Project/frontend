@@ -48,6 +48,7 @@ export interface OrderItem {
   quantity: number;
   unit_price: number;
   subtotal: number;
+  product_image_url?: string;
 }
 
 export interface ProductVariantInfo {

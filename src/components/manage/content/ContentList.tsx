@@ -1,6 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { useContentManager } from "@/libs/hooks/useContent";
+import { useContent } from "@/libs/hooks/useContent";
 import { useAppDispatch } from "@/libs/stores";
+import {
+  contents,
+  deleteContent,
+  publishContent,
+  submitContent,
+} from "@/libs/stores/contentManager/thunk";
 import { updateTaskState } from "@/libs/stores/taskManager/thunk";
 import { manageContent } from "@/libs/services/manageContent";
 import { toast } from "sonner";
@@ -60,16 +66,7 @@ interface ContentListProps {
 }
 
 const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }) => {
-  const {
-    loading,
-    contentList,
-    pagination,
-    error,
-    fetchContents,
-    removeContent,
-    publishExistingContent,
-    submitExistingContent,
-  } = useContentManager();
+  const { loading, contents: contentList, pagination, error } = useContent();
 
   const dispatch = useAppDispatch();
 
@@ -95,8 +92,8 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
 
   useEffect(() => {
-    fetchContents(filters);
-  }, [filters, fetchContents]);
+    dispatch(contents(filters));
+  }, [filters, dispatch]);
 
   const handleSearch = (value: string) => {
     setFilters((prev) => ({ ...prev, keywords: value, page: 1 }));
@@ -121,12 +118,12 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
 
     setIsDeletingContent(true);
     try {
-      const deleteResponse = await removeContent(contentToDelete.id);
+      const deleteResponse = await dispatch(deleteContent(contentToDelete.id));
 
       // Check if deletion was successful based on API response
       if (deleteResponse.meta.requestStatus === "fulfilled") {
         // Refresh content list only if successful
-        fetchContents(filters);
+        dispatch(contents(filters));
       }
 
       // Always close modal and clear state
@@ -216,11 +213,11 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
 
     setIsSubmittingApproval(true);
     try {
-      const submitResponse = await submitExistingContent(contentToSubmit.id);
+      const submitResponse = await dispatch(submitContent(contentToSubmit.id));
 
       // Check if submission was successful
       if (submitResponse.meta.requestStatus === "fulfilled") {
-        fetchContents(filters);
+        dispatch(contents(filters));
       }
 
       // Always close modals and clear state
@@ -245,7 +242,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
 
   const handlePublish = async (content: Content) => {
     try {
-      await publishExistingContent(content.id).unwrap();
+      await dispatch(publishContent({ id: content.id })).unwrap();
       if (content.task_id) {
         try {
           const maxAttempts = 10;
@@ -278,7 +275,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
         }
       }
 
-      fetchContents(filters);
+      dispatch(contents(filters));
       toast.success(`Content "${content.title}" has been published successfully.`);
     } catch (error) {
       console.error("Error publishing content:", error);

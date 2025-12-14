@@ -12,7 +12,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useContentManager } from "@/libs/hooks/useContent";
+import { useContent } from "@/libs/hooks/useContent";
+import { useAppDispatch } from "@/libs/stores";
+import { getSupportedAIModels } from "@/libs/stores/contentManager/thunk";
+import { clearStreaming } from "@/libs/stores/contentManager/slice";
+import {
+  streamStructuredContentAction,
+  cancelStreamingAction,
+} from "@/libs/stores/contentManager/streamingActions";
 import { tiptapToHtml, isTipTapJson } from "@/libs/utils/tiptapConverter";
 import type { TipTapDocument } from "@/libs/types/content";
 import {
@@ -38,18 +45,9 @@ const AIGeneratedContent: React.FC<AIGeneratedContentProps> = ({
   selectedPlatform = "",
   className = "",
 }) => {
-  const {
-    loading,
-    aiModels,
-    isStreaming,
-    streamingContent,
-    streamingTipTapContent,
-    tokensUsed,
-    streamStructuredContentHook,
-    cancelStreaming,
-    fetchSupportedAIModels,
-    clearStreamingContent,
-  } = useContentManager();
+  const dispatch = useAppDispatch();
+  const { loading, aiModels, isStreaming, streamingContent, streamingTipTapContent, tokensUsed } =
+    useContent();
 
   // Form states
   const [selectedModel, setSelectedModel] = useState<string>("");
@@ -61,8 +59,8 @@ const AIGeneratedContent: React.FC<AIGeneratedContentProps> = ({
 
   // Load AI models on mount
   useEffect(() => {
-    fetchSupportedAIModels();
-  }, [fetchSupportedAIModels]);
+    dispatch(getSupportedAIModels());
+  }, [dispatch]);
 
   // Set default model when models are loaded
   useEffect(() => {
@@ -92,12 +90,14 @@ const AIGeneratedContent: React.FC<AIGeneratedContentProps> = ({
   const handleStructuredGenerate = async () => {
     if (!context.trim() || !selectedModel || !selectedPlatform || !tone) return;
 
-    await streamStructuredContentHook({
-      context: context.trim(),
-      model: selectedModel,
-      platform: selectedPlatform,
-      tone,
-    });
+    await dispatch(
+      streamStructuredContentAction({
+        context: context.trim(),
+        model: selectedModel,
+        platform: selectedPlatform,
+        tone,
+      }),
+    );
   };
 
   const handleUseContent = () => {
@@ -114,11 +114,11 @@ const AIGeneratedContent: React.FC<AIGeneratedContentProps> = ({
       } else {
         onContentGenerated(streamingContent);
       }
-      clearStreamingContent();
+      dispatch(clearStreaming());
     } else if (streamingTipTapContent && onContentGenerated) {
       const htmlContent = tiptapToHtml(streamingTipTapContent);
       onContentGenerated(htmlContent, streamingTipTapContent);
-      clearStreamingContent();
+      dispatch(clearStreaming());
     }
   };
 
@@ -134,7 +134,7 @@ const AIGeneratedContent: React.FC<AIGeneratedContentProps> = ({
   };
 
   const handleStopGeneration = () => {
-    cancelStreaming();
+    dispatch(cancelStreamingAction());
   };
 
   const tones = [
@@ -326,7 +326,7 @@ const AIGeneratedContent: React.FC<AIGeneratedContentProps> = ({
                       )}
                     </Button>
                     <Button
-                      onClick={clearStreamingContent}
+                      onClick={() => dispatch(clearStreaming())}
                       variant="ghost"
                       className="px-4 text-gray-500"
                     >

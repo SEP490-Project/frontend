@@ -4,7 +4,9 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useContentManager } from "@/libs/hooks/useContent";
+import { useContent } from "@/libs/hooks/useContent";
+import { useAppDispatch } from "@/libs/stores";
+import { getTikTokCreatorInfo } from "@/libs/stores/contentManager/thunk";
 import {
   Clock,
   MessageSquareOff,
@@ -20,12 +22,13 @@ import {
 } from "lucide-react";
 
 const TikTokGuidelineCard: React.FC = () => {
-  const { tikTokCreatorInfo, loading, error, fetchTikTokCreatorInfo } = useContentManager();
+  const dispatch = useAppDispatch();
+  const { tikTokCreatorInfo, loading, error } = useContent();
 
   // Auto-fetch creator info when component mounts
   useEffect(() => {
-    fetchTikTokCreatorInfo();
-  }, [fetchTikTokCreatorInfo]);
+    dispatch(getTikTokCreatorInfo());
+  }, [dispatch]);
 
   const formatDuration = (seconds: number) => {
     if (seconds < 60) return `${seconds}s`;

@@ -12,7 +12,7 @@ export interface UserData {
     | "CONTENT_STAFF"
     | "ADMIN";
   full_name: string;
-  avatar: string | null;
+  avatar_url: string | null;
   phone: string;
   date_of_birth: string;
   is_active: boolean;

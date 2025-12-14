@@ -74,7 +74,7 @@ export const getInitialAuthState = () => {
     role: string;
     username: string;
     is_active: boolean;
-    avatar: string;
+    avatar_url: string;
   }>("user");
 
   return {

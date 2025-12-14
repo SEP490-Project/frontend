@@ -1,7 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { activateBrandThunk, getAllUsersThunk, getProfileThunk, updateProfileThunk } from "./thunk";
 import type { UserData, UserResponse } from "@/libs/types/user";
-import { toast } from "sonner";
 
 const userProfileSlice = createSlice({
   name: "userProfile",
@@ -29,12 +28,10 @@ const userProfileSlice = createSlice({
     builder.addCase(updateProfileThunk.fulfilled, (state, action) => {
       state.loading = false;
       state.userProfile = action.payload;
-      toast.success("Profile updated successfully");
     });
     builder.addCase(updateProfileThunk.rejected, (state, action) => {
       state.loading = false;
       state.error = action.payload as string | null;
-      toast.error("Failed to update profile");
     });
   },
 });

@@ -26,7 +26,7 @@ import {
 import { useSelector } from "react-redux";
 import type { TransactionData, TransactionParams } from "@/libs/types/transaction";
 import { PaginationTable } from "@/components/global";
-import TransactionDetails from "./TransactionDetails";
+import TransactionDetails from "../../../../components/manage/sale/transaction/TransactionDetails";
 import { format } from "date-fns";
 import { convertNumberToCurrency } from "@/libs/helper/helper";
 
@@ -142,30 +142,6 @@ const Transaction: React.FC<{ type: "ORDER" | "PREORDER" }> = ({ type }) => {
                 <SelectItem value="PENDING">Pending</SelectItem>
                 <SelectItem value="CANCELLED">Cancelled</SelectItem>
                 <SelectItem value="EXPIRED">Expired</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="min-w-[150px]">
-            <Select
-              value={params.method || " "}
-              onValueChange={(value) => {
-                setParams({
-                  ...params,
-                  method: value === " " ? undefined : (value as any),
-                  page: 1,
-                });
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Method" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value=" ">All Methods</SelectItem>
-                <SelectItem value="BANK_TRANSFER">Bank Transfer</SelectItem>
-                <SelectItem value="CREDIT_CARD">Credit Card</SelectItem>
-                <SelectItem value="E_WALLET">E-Wallet</SelectItem>
-                <SelectItem value="PAYOS">PayOS</SelectItem>
               </SelectContent>
             </Select>
           </div>

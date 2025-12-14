@@ -5,6 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import type { TransactionData } from "@/libs/types/transaction";
 import { format } from "date-fns";
 import { convertNumberToCurrency } from "@/libs/helper/helper";
+import image from "@/assets/images/beauty-login-banner.jpg";
 
 interface TransactionDetailsProps {
   transaction: TransactionData | null;
@@ -56,7 +57,10 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({
   if (loading) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="text-2xl">Transaction Details</DialogTitle>
+        </DialogHeader>
+        <DialogContent className="max-w-2xl" aria-describedby={undefined}>
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             <span className="ml-2">Loading transaction details...</span>
@@ -74,7 +78,10 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="max-w-5xl max-h-[90vh] overflow-y-auto"
+        aria-describedby={undefined}
+      >
         <DialogHeader>
           <DialogTitle className="text-2xl">Transaction Details</DialogTitle>
         </DialogHeader>
@@ -90,14 +97,76 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({
               <label className="text-sm font-medium text-gray-500">Status</label>
               <div className="mt-1">{getStatusBadge(transaction.status)}</div>
             </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-500">Transaction Date</label>
+              <p className="text-base mt-1">{formatDate(transaction.transaction_date)}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-500">Last Updated</label>
+              <p className="text-base mt-1">{formatDate(transaction.updated_at)}</p>
+            </div>
           </div>
+
+          {/* Customer Information */}
+          {referenceInfo?.user_info && (
+            <>
+              <Separator />
+              <div className="grid grid-cols-1 md:grid-cols-2">
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">Customer Information</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Full Name</label>
+                      <p className="text-base mt-1">{referenceInfo.user_info.full_name}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Phone Number</label>
+                      <p className="text-base mt-1">{referenceInfo.user_info.phone_number}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-sm font-medium text-gray-500">Email</label>
+                      <p className="text-base mt-1">{referenceInfo.user_info.email}</p>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">Bank Information</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Bank Name</label>
+                      <p className="text-base mt-1">
+                        {referenceInfo?.bank_info.bank_name || "Unknown"}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Account Holder</label>
+                      <p className="text-base mt-1">
+                        {referenceInfo?.bank_info.bank_account_holder || "Unknown"}
+                      </p>
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-sm font-medium text-gray-500">Account Number</label>
+                      <p className="text-base font-mono mt-1">
+                        {referenceInfo?.bank_info.bank_account || "Unknown"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
 
           <Separator />
 
           {/* Payment Information */}
           <div>
             <h3 className="text-lg font-semibold mb-3">Payment Information</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-500">Order ID</label>
+                <p className="text-base font-mono mt-1">{transaction.reference_id}</p>
+              </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">Amount</label>
                 <p className="text-xl font-bold text-primary mt-1">
@@ -105,24 +174,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({
                 </p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500">Payment Method</label>
-                <div className="mt-1">{getMethodBadge(transaction.method)}</div>
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Reference Information */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3">Reference Information</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-gray-500">Reference ID</label>
-                <p className="text-base font-mono mt-1">{transaction.reference_id}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-500">Reference Type</label>
+                <label className="text-sm font-medium text-gray-500">Order Type</label>
                 <div className="mt-1">
                   {transaction.reference_type === "ORDER" ? (
                     <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200 hover:bg-indigo-200">
@@ -139,58 +191,12 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({
                   )}
                 </div>
               </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Payment Method</label>
+                <div className="mt-1">{getMethodBadge(transaction.method)}</div>
+              </div>
             </div>
           </div>
-
-          {/* Customer Information */}
-          {referenceInfo?.user_info && (
-            <>
-              <Separator />
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Customer Information</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Full Name</label>
-                    <p className="text-base mt-1">{referenceInfo.user_info.full_name}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Phone Number</label>
-                    <p className="text-base mt-1">{referenceInfo.user_info.phone_number}</p>
-                  </div>
-                  <div className="col-span-2">
-                    <label className="text-sm font-medium text-gray-500">Email</label>
-                    <p className="text-base mt-1">{referenceInfo.user_info.email}</p>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* Bank Information */}
-          {referenceInfo?.bank_info && (
-            <>
-              <Separator />
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Bank Information</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Bank Name</label>
-                    <p className="text-base mt-1">{referenceInfo.bank_info.bank_name}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Account Holder</label>
-                    <p className="text-base mt-1">{referenceInfo.bank_info.bank_account_holder}</p>
-                  </div>
-                  <div className="col-span-2">
-                    <label className="text-sm font-medium text-gray-500">Account Number</label>
-                    <p className="text-base font-mono mt-1">
-                      {referenceInfo.bank_info.bank_account}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
 
           {/* Order Items */}
           {referenceInfo?.order_items && referenceInfo.order_items.length > 0 && (
@@ -201,10 +207,17 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({
                 <div className="space-y-3">
                   {referenceInfo.order_items.map((item) => (
                     <div key={item.id} className="border rounded-lg p-3 bg-gray-50">
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex-1">
-                          <p className="font-medium">{item.product_name}</p>
-                          <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
+                      <div className="flex justify-between items-center ">
+                        <div className="flex items-center">
+                          <img
+                            src={item?.product_image_url || image}
+                            alt={item.product_name}
+                            className="w-16 h-16 object-cover rounded-md mr-4 float-left"
+                          />
+                          <div>
+                            <p className="font-medium">{item.product_name}</p>
+                            <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
+                          </div>
                         </div>
                         <div className="text-right">
                           <p className="text-sm text-gray-500">
@@ -229,29 +242,29 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({
               <div>
                 <h3 className="text-lg font-semibold mb-3">Product Information</h3>
                 <div className="border rounded-lg p-4 bg-gray-50">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="col-span-2">
-                      <label className="text-sm font-medium text-gray-500">Product Name</label>
-                      <p className="text-base mt-1 font-medium">
-                        {referenceInfo.product_variant_info.product_name}
-                      </p>
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <img
+                        src={image} // Placeholder image
+                        alt={referenceInfo.product_variant_info.product_name}
+                        className="w-16 h-16 object-cover rounded-md mr-4"
+                      />
+                      <div>
+                        <p className="font-medium">
+                          {referenceInfo.product_variant_info.product_name}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Quantity: {referenceInfo.product_variant_info.quantity}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Quantity</label>
-                      <p className="text-base mt-1">
-                        {referenceInfo.product_variant_info.quantity}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Unit Price</label>
-                      <p className="text-base mt-1">
+                    <div className="text-right">
+                      <p className="text-sm text-gray-500">
+                        Unit Price:{" "}
                         {convertNumberToCurrency(
                           referenceInfo.product_variant_info.unit_price.toString(),
                         )}
                       </p>
-                    </div>
-                    <div className="col-span-2">
-                      <label className="text-sm font-medium text-gray-500">Total Amount</label>
                       <p className="text-xl font-bold text-primary mt-1">
                         {convertNumberToCurrency(
                           referenceInfo.product_variant_info.total_amount.toString(),
@@ -263,42 +276,6 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({
               </div>
             </>
           )}
-
-          <Separator />
-
-          {/* Gateway Information */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3">Gateway Information</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-gray-500">Gateway ID</label>
-                <p className="text-base font-mono mt-1">{transaction.gateway_id || "N/A"}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-500">Gateway Reference</label>
-                <p className="text-base font-mono mt-1 break-all">
-                  {transaction.gateway_ref || "N/A"}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Date Information */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3">Date & Time</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-gray-500">Transaction Date</label>
-                <p className="text-base mt-1">{formatDate(transaction.transaction_date)}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-500">Last Updated</label>
-                <p className="text-base mt-1">{formatDate(transaction.updated_at)}</p>
-              </div>
-            </div>
-          </div>
         </div>
       </DialogContent>
     </Dialog>

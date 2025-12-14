@@ -2,20 +2,13 @@ import React, { useState } from "react";
 import type { OrderData } from "@/libs/types/order";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useAppDispatch } from "@/libs/stores";
-import { approveRefundAnOrderThunk } from "@/libs/stores/orderManager/thunk";
+import { approveRefundAnOrderThunk, refundAPreOrderThunk } from "@/libs/stores/orderManager/thunk";
 import MobileFileUploader from "./MobileFileUploader";
 import { toast } from "sonner";
-import {
-  FaXmark as FaTimes,
-  FaImage,
-  FaSpinner,
-  FaCircleCheck,
-  FaMoneyBillWave,
-} from "react-icons/fa6";
+import { FaXmark as FaTimes, FaImage, FaSpinner, FaMoneyBillWave } from "react-icons/fa6";
 
 interface MobileRefundRequestProps {
   order: OrderData;
@@ -31,7 +24,6 @@ const MobileRefundRequest: React.FC<MobileRefundRequestProps> = ({
   const dispatch = useAppDispatch();
   const [reason, setReason] = useState("");
   const [proofFiles, setProofFiles] = useState<File[]>([]);
-
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const formatCurrency = (amount: number) => {
@@ -45,16 +37,15 @@ const MobileRefundRequest: React.FC<MobileRefundRequestProps> = ({
     setProofFiles(files);
   };
 
-  const handleRefundOrder = async (isApproved: boolean) => {
+  const isPreOrder = () => {
+    return order.order_type === "PRE_ORDER";
+  };
+
+  const handleApproveRefund = async () => {
     if (!order) return;
 
     if (proofFiles.length === 0) {
-      toast.error("Please upload proof image/video");
-      return;
-    }
-
-    if (!isApproved && !reason.trim()) {
-      toast.error("Please provide a reason for rejection");
+      toast.error("Please upload proof image");
       return;
     }
 
@@ -67,19 +58,31 @@ const MobileRefundRequest: React.FC<MobileRefundRequestProps> = ({
         formData.append("file", file);
       });
 
-      formData.append("isApproved", String(isApproved));
+      formData.append("isApproved", "true");
+
       if (reason.trim()) {
         formData.append("reason", reason.trim());
       }
 
-      await dispatch(
-        approveRefundAnOrderThunk({
-          orderId: order.id,
-          file: formData,
-        }),
-      ).unwrap();
+      const isPreOrderType = isPreOrder();
 
-      toast.success(`Refund request ${isApproved ? "approved" : "rejected"} successfully!`);
+      if (isPreOrderType) {
+        await dispatch(
+          refundAPreOrderThunk({
+            id: order.id,
+            file: formData,
+          }),
+        ).unwrap();
+      } else {
+        await dispatch(
+          approveRefundAnOrderThunk({
+            orderId: order.id,
+            file: formData,
+          }),
+        ).unwrap();
+      }
+
+      toast.success("Refund request approved successfully!");
       onSuccess();
     } catch (error: any) {
       toast.error("Failed to process refund request", {
@@ -151,15 +154,14 @@ const MobileRefundRequest: React.FC<MobileRefundRequestProps> = ({
         <CardContent className="pt-0">
           <div className="space-y-3">
             <div className="text-sm text-gray-600">
-              Please provide photo/video proof for the refund decision (Max 5MB per file).
+              Please provide photo proof for the refund decision (Max 10MB).
             </div>
 
             <MobileFileUploader
-              userId={order.user_id}
-              accept="image/*,video/*"
+              accept="image/*"
               multiple={true}
-              maxFiles={3}
-              maxSize={5}
+              maxFiles={1}
+              maxSize={10}
               allowedTypes={["jpg", "jpeg", "png", "webp"]}
               title="Upload Proof"
               onFilesChange={handleFilesCapture}
@@ -171,19 +173,18 @@ const MobileRefundRequest: React.FC<MobileRefundRequestProps> = ({
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">
-            Reason/Notes
-            <span className="text-red-500 text-sm ml-1">* (Required for rejection)</span>
+            Notes <span className="text-xs text-gray-500 ml-1">(Optional)</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
           <Textarea
-            placeholder="Enter reason or notes about this refund decision..."
+            placeholder="Enter notes about this refund decision (optional)..."
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             className="min-h-[100px] resize-none"
           />
           <div className="text-xs text-gray-500 mt-2">
-            Provide detailed explanation about your decision
+            You can provide additional information about your decision.
           </div>
         </CardContent>
       </Card>
@@ -202,10 +203,9 @@ const MobileRefundRequest: React.FC<MobileRefundRequestProps> = ({
 
         <Button
           type="button"
-          onClick={() => handleRefundOrder(false)}
-          disabled={proofFiles.length === 0 || isSubmitting || !reason.trim()}
-          variant="destructive"
-          className="w-full"
+          onClick={handleApproveRefund}
+          disabled={proofFiles.length === 0 || isSubmitting}
+          className="w-full bg-green-600 hover:bg-green-700"
         >
           {isSubmitting ? (
             <>
@@ -214,31 +214,12 @@ const MobileRefundRequest: React.FC<MobileRefundRequestProps> = ({
             </>
           ) : (
             <>
-              <FaTimes className="w-4 h-4 mr-2" />
-              Reject
+              <FaMoneyBillWave className="w-4 h-4 mr-2" />
+              Approve Refund
             </>
           )}
         </Button>
       </div>
-
-      <Button
-        type="button"
-        onClick={() => handleRefundOrder(true)}
-        disabled={proofFiles.length === 0 || isSubmitting}
-        className="w-full bg-green-600 hover:bg-green-700"
-      >
-        {isSubmitting ? (
-          <>
-            <FaSpinner className="w-4 h-4 mr-2 animate-spin" />
-            Processing...
-          </>
-        ) : (
-          <>
-            <FaCircleCheck className="w-4 h-4 mr-2" />
-            Approve Refund
-          </>
-        )}
-      </Button>
     </div>
   );
 };

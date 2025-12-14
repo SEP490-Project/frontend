@@ -20,6 +20,10 @@ import { contract } from "@/libs/stores/contractManager/thunk";
 import { useDebounce } from "@/libs/hooks/useDebounce";
 import { format, parseISO } from "date-fns";
 import type { ContractBase } from "@/libs/types/contract";
+import { suggestCampaign as suggestCampaignThunk } from "@/libs/stores/campaignManager/thunk";
+import { useCampaign } from "@/libs/hooks/useCampaign";
+import { toast } from "sonner";
+import { Sparkles } from "lucide-react";
 
 interface CampaignData {
   name: string;
@@ -40,6 +44,8 @@ interface CreateCampaignProps {
   onNext: () => void;
   onReset: () => void;
   onContractSelect: (contract: ContractBase | null) => void;
+  onSuggestedDataReceived: (data: any) => void;
+  selectedContract: any;
 }
 
 const ContractItem = ({ contract }: { contract: any }) => (
@@ -63,9 +69,12 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
   onNext,
   onReset,
   onContractSelect,
+  onSuggestedDataReceived,
+  selectedContract,
 }) => {
   const dispatch = useAppDispatch();
   const { contracts, loading, pagination } = useContract();
+  const { suggestCampaign, suggestLoading } = useCampaign();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
   const [page, setPage] = useState(1);
@@ -109,15 +118,15 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
   };
 
   const handleContractSelect = (contractId: string | null) => {
-    const selectedContract = allContracts.find((c) => c.id === contractId);
+    const contract = allContracts.find((c) => c.id === contractId);
     setCampaignData((s) => ({
       ...s,
       contract_id: contractId || "",
-      type: selectedContract?.type || s.type,
-      start_date: selectedContract ? formatDateForInput(selectedContract.start_date) : s.start_date,
-      end_date: selectedContract ? formatDateForInput(selectedContract.end_date) : s.end_date,
+      type: contract?.type || s.type,
+      start_date: contract ? formatDateForInput(contract.start_date) : s.start_date,
+      end_date: contract ? formatDateForInput(contract.end_date) : s.end_date,
     }));
-    onContractSelect(selectedContract || null);
+    onContractSelect(contract || null);
   };
 
   const handleStartDateChange = (date: string) => {
@@ -128,7 +137,23 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
     setCampaignData((s) => ({ ...s, end_date: date }));
   };
 
-  const selectedContract = allContracts.find((c) => c.id === campaignData.contract_id);
+  const handleSuggestCampaign = async () => {
+    if (campaignMode === "contract" && selectedContract?.id) {
+      try {
+        await dispatch(suggestCampaignThunk(selectedContract.id)).unwrap();
+        toast.success("Campaign suggestion generated successfully!");
+      } catch (error: any) {
+        toast.error(error || "Failed to generate campaign suggestion");
+      }
+    }
+  };
+
+  // Handle suggestion data when received
+  React.useEffect(() => {
+    if (suggestCampaign) {
+      onSuggestedDataReceived(suggestCampaign);
+    }
+  }, [suggestCampaign, onSuggestedDataReceived]);
 
   const minDate = selectedContract ? formatDateForInput(selectedContract.start_date) : undefined;
   const maxDate = selectedContract ? formatDateForInput(selectedContract.end_date) : undefined;
@@ -228,7 +253,7 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
                     ? selectedContract.type
                         .replace(/_/g, " ")
                         .toLowerCase()
-                        .replace(/\b\w/g, (l) => l.toUpperCase())
+                        .replace(/\b\w/g, (l: any) => l.toUpperCase())
                     : "Select a contract first"
                 }
                 readOnly
@@ -358,9 +383,31 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
 
       {/* ACTIONS */}
       <div className="flex justify-between pt-4 border-t">
-        <Button variant="outline" onClick={onReset}>
-          Reset
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={onReset}>
+            Reset
+          </Button>
+          {campaignMode === "contract" && selectedContract && (
+            <Button
+              onClick={handleSuggestCampaign}
+              variant="outline"
+              className="flex items-center gap-1 border-dashed"
+              disabled={suggestLoading}
+            >
+              {suggestLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-3 w-3 border-2 border-blue-500 border-t-transparent" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles size={14} />
+                  Suggest Campaign
+                </>
+              )}
+            </Button>
+          )}
+        </div>
         <Button onClick={onNext} disabled={!isCampaignValid}>
           Next
         </Button>

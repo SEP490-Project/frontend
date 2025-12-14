@@ -23,6 +23,7 @@ export default defineConfig({
         short_name: "Sales Orders",
         description: "Update and manage sales orders for Staff",
         start_url: "/sales-app",
+        scope: "/sales-app",
         display: "standalone",
         theme_color: "#ffffff",
         background_color: "#ffffff",

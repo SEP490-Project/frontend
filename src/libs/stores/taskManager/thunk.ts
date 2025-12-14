@@ -1,7 +1,21 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { AxiosError } from "axios";
 import { manageTask } from "@/libs/services/manageTask";
-import type { SingleTaskResponse } from "@/libs/task";
+import type { SingleTaskResponse, TaskListParams, TaskResponse } from "@/libs/types/task";
+
+// Get tasks by profile (for content staff)
+export const getTasksByProfile = createAsyncThunk(
+  "tasks/profile",
+  async (params: TaskListParams | undefined, { rejectWithValue }) => {
+    try {
+      const response = await manageTask.getTasksByProfile(params);
+      return response.data as TaskResponse;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Failed to fetch tasks");
+    }
+  },
+);
 
 export const getTaskList = createAsyncThunk(
   "/tasks",

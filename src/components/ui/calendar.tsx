@@ -1,9 +1,13 @@
+"use client";
+
 import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DayPicker } from "react-day-picker";
-
+import type { DropdownProps } from "react-day-picker";
 import { cn } from "@/libs/utils";
 import { buttonVariants } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
+import { ScrollArea } from "./scroll-area";
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
@@ -17,8 +21,10 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
         months: "flex flex-col sm:flex-row space-y-4 sm:space-y-0 relative",
         month_caption: "flex justify-center pt-1 relative items-center",
         month_grid: "w-full border-collapse space-y-1",
-        caption_label: "text-sm font-medium",
-        nav: "flex items-center justify-between absolute inset-x-0",
+
+        // TEST
+        dropdowns: "flex justify-center gap-1",
+        nav: "flex items-center justify-between absolute inset-x-0 top-2",
         button_previous: cn(
           buttonVariants({ variant: "outline" }),
           "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 z-10",
@@ -27,6 +33,8 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
           buttonVariants({ variant: "outline" }),
           "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 z-10",
         ),
+        // TEST
+
         weeks: "w-full border-collapse space-y-",
         weekdays: "flex",
         weekday: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
@@ -40,7 +48,6 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
         range_end: "day-range-end",
         selected:
           "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-        today: "bg-accent text-accent-foreground",
         outside:
           "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
         disabled: "text-muted-foreground opacity-50",
@@ -49,6 +56,39 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
         ...classNames,
       }}
       components={{
+        Dropdown: ({ value, onChange, options }: DropdownProps) => {
+          const selected = options?.find((child) => child.value === value);
+          const handleChange = (value: string) => {
+            const changeEvent = {
+              target: { value },
+            } as React.ChangeEvent<HTMLSelectElement>;
+            onChange?.(changeEvent);
+          };
+          return (
+            <Select
+              value={value?.toString()}
+              onValueChange={(value) => {
+                handleChange(value);
+              }}
+            >
+              <SelectTrigger className="pr-1.5 focus:ring-0">
+                <SelectValue>{selected?.label}</SelectValue>
+              </SelectTrigger>
+              <SelectContent position="popper">
+                <ScrollArea className="h-80">
+                  {options?.map((option, id: number) => (
+                    <SelectItem
+                      key={`${option.value}-${id}`}
+                      value={option.value?.toString() ?? ""}
+                    >
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </ScrollArea>
+              </SelectContent>
+            </Select>
+          );
+        },
         Chevron: ({ ...props }) =>
           props.orientation === "left" ? (
             <ChevronLeft {...props} className="h-4 w-4" />

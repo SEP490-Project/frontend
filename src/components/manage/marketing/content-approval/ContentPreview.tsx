@@ -351,14 +351,6 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
                   })()}
                   <HlsPlyrHydrator />
                 </div>
-
-                {/* Additional Content Info */}
-                {content.blog?.excerpt && (
-                  <div className="mt-8 pt-6 border-t border-gray-100">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Excerpt</h3>
-                    <p className="text-gray-600 leading-relaxed">{content.blog.excerpt}</p>
-                  </div>
-                )}
               </>
             )}
           </div>

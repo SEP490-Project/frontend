@@ -30,7 +30,6 @@ import {
 } from "@/components/ui/dialog";
 import { StatusModal } from "@/components/modal/StatusModal";
 import { useNavigate } from "react-router";
-import { ProductFormMode } from "@/enums/product";
 import { useAppDispatch, type RootState } from "@/libs/stores";
 import {
   getAllProductsThunk,
@@ -41,11 +40,16 @@ import type { ProductData, ProductParams } from "@/libs/types/product";
 import { PaginationTable } from "@/components/global";
 import { SelectAddProductType } from "@/components/manage/sale/product/SelectAddProductType";
 import { toast } from "sonner";
+import { getAllCategoriesThunk } from "@/libs/stores/categoryManager/thunk";
 
 const Product: React.FC = () => {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+
   const productResponse = useSelector((state: RootState) => state?.manageProduct?.products);
   const pagination = useSelector((state: any) => state?.manageProduct?.products?.pagination);
+  const { categories } = useSelector((state: RootState) => state?.manageCategory);
+
   const products: ProductData[] = productResponse?.data || [];
   const isLoading = useSelector((state: any) => state?.manageProduct?.isLoading);
   const error = useSelector((state: any) => state?.manageProduct?.error);
@@ -54,7 +58,7 @@ const Product: React.FC = () => {
     limit: 10,
   });
 
-  const navigate = useNavigate();
+  const filterParentCategory = categories?.data.filter((cat) => !cat.parent_category);
 
   const handleToggleVisibility = async (product: ProductData, isActive: boolean) => {
     if (product.variants?.length === 0 || !product.variants) {
@@ -65,13 +69,29 @@ const Product: React.FC = () => {
       updateProductVisibilityThunk({ productId: product.id, isActive }),
     );
     if (result.meta.requestStatus === "fulfilled") {
-      dispatch(getAllProductsThunk(params));
+      dispatch(
+        getAllProductsThunk({
+          ...params,
+          type: params.type === " " ? undefined : params.type,
+          category_id: params.category_id === " " ? undefined : params.category_id,
+        }),
+      );
     }
   };
 
   useEffect(() => {
-    dispatch(getAllProductsThunk(params));
+    dispatch(
+      getAllProductsThunk({
+        ...params,
+        type: params.type === " " ? undefined : params.type,
+        category_id: params.category_id === " " ? undefined : params.category_id,
+      }),
+    );
   }, [dispatch, params]);
+
+  useEffect(() => {
+    dispatch(getAllCategoriesThunk({ page: 1, limit: 100 }));
+  }, [dispatch]);
 
   return (
     <div className="min-h-fit p-4 sm:p-6">
@@ -119,8 +139,11 @@ const Product: React.FC = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value=" ">All Category</SelectItem>
-                <SelectItem value="Perfumes">Perfumes</SelectItem>
-                <SelectItem value="Skincare">Skincare</SelectItem>
+                {filterParentCategory?.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -230,21 +253,30 @@ const Product: React.FC = () => {
                     </TableCell>
 
                     <TableCell className="py-4">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <span>
-                            <Switch
-                              checked={product.is_active}
-                              disabled={product.type === "LIMITED"}
-                            />
-                          </span>
-                        </DialogTrigger>
-                        <StatusModal
-                          name={product.name}
-                          status={product.is_active ? "Inactive" : "Active"}
-                          onConfirm={() => handleToggleVisibility(product, !product.is_active)}
-                        />
-                      </Dialog>
+                      {product.type === "LIMITED" ? (
+                        <Badge
+                          className={
+                            product.is_active
+                              ? "bg-green-100 text-green-800 border border-green-200 hover:bg-green-200 "
+                              : "bg-red-100 text-red-800 border border-red-200 hover:bg-red-200"
+                          }
+                        >
+                          {product.status}
+                        </Badge>
+                      ) : (
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <span>
+                              <Switch checked={product.is_active} />
+                            </span>
+                          </DialogTrigger>
+                          <StatusModal
+                            name={product.name}
+                            status={product.is_active ? "Inactive" : "Active"}
+                            onConfirm={() => handleToggleVisibility(product, !product.is_active)}
+                          />
+                        </Dialog>
+                      )}
                     </TableCell>
 
                     <TableCell className="py-4">
@@ -256,7 +288,7 @@ const Product: React.FC = () => {
                           title="Edit"
                           onClick={() => {
                             navigate(`/manage/sale/product/${product.id}`, {
-                              state: { type: ProductFormMode.EDIT, data: product },
+                              state: { data: product },
                             });
                           }}
                         >
@@ -270,7 +302,7 @@ const Product: React.FC = () => {
                           title="Edit"
                           onClick={() => {
                             navigate(`/manage/sale/product/${product.id}/edit`, {
-                              state: { type: ProductFormMode.EDIT, data: product },
+                              state: { id: product.id, product: product },
                             });
                           }}
                         >

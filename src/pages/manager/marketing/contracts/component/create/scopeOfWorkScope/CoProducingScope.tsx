@@ -321,7 +321,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                       <div className="bg-orange-100 p-1 rounded">
                         <FaNewspaper className="w-4 h-4 text-orange-600" />
                       </div>
-                      Concepts
+                      Advertise Contents
                     </div>
                     {p.concepts.map((c: Concept, j: number) => {
                       const isConceptOpen = j === 0 || j === p.concepts.length - 1;
@@ -346,15 +346,17 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                       return (
                         <CollapsibleSection
                           key={j}
-                          title={c.name || `Concept #${j + 1}`}
+                          title={c.name || `Advertise Content #${j + 1}`}
                           defaultOpen={isConceptOpen}
                           actionComponent={DeleteConceptAction}
                         >
                           <div className="space-y-4">
                             <div>
-                              <Label className="text-sm font-medium mb-2 block">Concept Name</Label>
+                              <Label className="text-sm font-medium mb-2 block">
+                                Advertise Content Name
+                              </Label>
                               <Input
-                                placeholder="Concept name"
+                                placeholder="Advertise Content name"
                                 value={c.name || ""}
                                 onChange={(e) => {
                                   const updated = [...products];
@@ -419,10 +421,10 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
 
                             <div>
                               <Label className="text-sm font-medium mb-2 block">
-                                Concept Description
+                                Advertise Description
                               </Label>
                               <Textarea
-                                placeholder="Concept description"
+                                placeholder="Advertise description"
                                 value={c.description || ""}
                                 onChange={(e) => {
                                   const updated = [...products];
@@ -592,7 +594,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                                 onChange={(kpis) => {
                                   const updated = [...products];
                                   const concepts = [...updated[i].concepts];
-                                  concepts[j] = { ...concepts[j], metrics: kpis, kpis };
+                                  concepts[j] = { ...concepts[j], kpis };
                                   updated[i].concepts = concepts;
                                   updateDeliverables({ products: updated });
                                 }}
@@ -617,7 +619,9 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                     >
                       <div className="flex items-center gap-2">
                         <FaPlus className="w-5 h-5 text-orange-600" />
-                        <span className="font-medium text-orange-700">Add New Concept</span>
+                        <span className="font-medium text-orange-700">
+                          Add New Advertise Content
+                        </span>
                       </div>
                     </Button>
                   </div>

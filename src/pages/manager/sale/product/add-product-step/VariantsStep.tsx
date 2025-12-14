@@ -1,7 +1,7 @@
 import { useOutletContext, type NavigateFunction } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2, Plus, ImageIcon, Upload } from "lucide-react";
+import { Trash2, Plus, ImageIcon, Upload, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -26,6 +26,7 @@ import {
   createVariantImageThunk,
   getProductDetailThunk,
 } from "@/libs/stores/productManager/thunk";
+import { clearProductDetail } from "@/libs/stores/productManager/slice";
 import { getItem, setItem } from "@/libs/local-storage";
 import { toast } from "sonner";
 import { convertNumberToCurrency } from "@/libs/helper/helper";
@@ -81,8 +82,12 @@ const VariantsStep = () => {
       getItem<ProductResponse<ProductData>>("currentProduct")?.data.id || "",
     );
     if (productId) {
+      // Clear any previous product detail from Redux before fetching new one
+      dispatch(clearProductDetail());
       dispatch(getProductDetailThunk(productId));
     } else {
+      // No product ID means we're in a new product creation session
+      dispatch(clearProductDetail());
       const savedVariants = getItem<VariantWithImage[]>("currentProductVariants");
       if (savedVariants && savedVariants.length > 0) {
         setVariants(savedVariants);
@@ -161,8 +166,14 @@ const VariantsStep = () => {
       return;
     }
 
+    if (productDetail?.data.variants && productDetail?.data?.variants?.length > 2) {
+      toast.error("You can only add up to 3 variants per product.");
+      return;
+    }
+
     setIsLoading(true);
     try {
+      setIsDialogOpen(false);
       await dispatch(
         createVariantProductThunk({ payload: data, productId: String(currentProduct?.id) }),
       ).unwrap();
@@ -170,7 +181,7 @@ const VariantsStep = () => {
       await dispatch(getProductDetailThunk(String(currentProduct.id))).unwrap();
 
       toast.success("Product variant added successfully!");
-      setIsDialogOpen(false);
+
       form.reset();
     } catch (error) {
       toast.error((error as string) || "Failed to add product variant");
@@ -188,10 +199,19 @@ const VariantsStep = () => {
     } else {
       setIsDisabled(true);
     }
-  }, [variants.length, setIsDisabled, setOnSubmitStep, navigate, steps, currentStep]);
+  }, [variants.length, setIsDisabled, setOnSubmitStep, navigate, steps, currentStep, state]);
 
   return (
     <div className="bg-white p-6 rounded-lg mt-6 mb-12 shadow-md">
+      {isLoading && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 flex flex-col items-center gap-4">
+            <Loader2 className="w-12 h-12 animate-spin text-primary" />
+            <p className="text-lg font-semibold">Processing variant...</p>
+            <p className="text-sm text-gray-500">Please wait while we save your changes</p>
+          </div>
+        </div>
+      )}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h2 className="text-xl font-bold text-gray-900">Product Variants</h2>

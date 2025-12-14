@@ -191,7 +191,7 @@ const ContentDashboard: React.FC = () => {
             <Card className="rounded-2xl shadow-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg font-medium">Weekly CTR Trends</CardTitle>
-                <p className="text-sm text-gray-500">Click-through rate by channel</p>
+                <p className="text-sm text-gray-500">Click-through total by channel</p>
               </CardHeader>
               <CardContent>
                 <LineChartWidget title="" data={weeklyCTR} />

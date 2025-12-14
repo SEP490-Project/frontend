@@ -7,6 +7,10 @@ import {
   FaUpRightFromSquare,
   FaCalendarDays,
   FaDiagramProject,
+  FaHashtag,
+  FaLocationDot,
+  FaBox,
+  FaBullseye,
 } from "react-icons/fa6";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +24,318 @@ interface TaskDetailSliderProps {
   isVisible: boolean;
   loading?: boolean;
 }
+
+const renderTaskDetails = (description: any) => {
+  if (!description || typeof description !== "object") return null;
+
+  // Handle different task types based on the JSON structure
+  if (description.advertised_item_id || description.name) {
+    // Advertising/Affiliate Content Task
+    return (
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+          <FaFileLines className="h-4 w-4" />
+          Advertised Item Details
+        </h3>
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 space-y-3">
+          {description.name && (
+            <div className="flex items-start gap-2">
+              <span className="font-medium text-sm text-gray-700">Product:</span>
+              <span className="text-sm text-gray-600">{description.name}</span>
+            </div>
+          )}
+          {description.platform && (
+            <div className="flex items-start gap-2">
+              <span className="font-medium text-sm text-gray-700">Platform:</span>
+              <span className="text-sm text-gray-600">{description.platform}</span>
+            </div>
+          )}
+          {description.tagline && (
+            <div className="flex items-start gap-2">
+              <span className="font-medium text-sm text-gray-700">Tagline:</span>
+              <span className="text-sm text-gray-600">{description.tagline}</span>
+            </div>
+          )}
+          {description.creative_notes && (
+            <div className="flex items-start gap-2">
+              <span className="font-medium text-sm text-gray-700">Creative Notes:</span>
+              <span className="text-sm text-gray-600">{description.creative_notes}</span>
+            </div>
+          )}
+          {description.hashtags && description.hashtags.length > 0 && (
+            <div className="flex items-start gap-2">
+              <FaHashtag className="h-4 w-4 text-blue-600 mt-0.5" />
+              <div className="flex flex-wrap gap-1">
+                {description.hashtags.map((tag: string, idx: number) => (
+                  <Badge key={idx} variant="outline" className="text-xs">
+                    #{tag}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+          {description.tracking_link && (
+            <div className="flex items-start gap-2">
+              <span className="font-medium text-sm text-gray-700">Tracking Link:</span>
+              <a
+                href={description.tracking_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+              >
+                {description.tracking_link}
+                <FaUpRightFromSquare className="h-3 w-3" />
+              </a>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (description.event_id || description.event_name) {
+    // Brand Ambassador Event Task
+    return (
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+          <FaCalendarDays className="h-4 w-4" />
+          Event Details
+        </h3>
+        <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 space-y-3">
+          {description.event_name && (
+            <div className="flex items-start gap-2">
+              <span className="font-medium text-sm text-gray-700">Event:</span>
+              <span className="text-sm text-gray-600">{description.event_name}</span>
+            </div>
+          )}
+          {description.event_date && (
+            <div className="flex items-start gap-2">
+              <span className="font-medium text-sm text-gray-700">Date:</span>
+              <span className="text-sm text-gray-600">{description.event_date}</span>
+            </div>
+          )}
+          {description.event_duration && (
+            <div className="flex items-start gap-2">
+              <span className="font-medium text-sm text-gray-700">Duration:</span>
+              <span className="text-sm text-gray-600">{description.event_duration}</span>
+            </div>
+          )}
+          {description.location && (
+            <div className="flex items-start gap-2">
+              <FaLocationDot className="h-4 w-4 text-red-600 mt-0.5" />
+              <span className="text-sm text-gray-600">{description.location}</span>
+            </div>
+          )}
+          {description.activities && description.activities.length > 0 && (
+            <div>
+              <span className="font-medium text-sm text-gray-700 block mb-2">Activities:</span>
+              <ul className="list-disc list-inside space-y-1 ml-4">
+                {description.activities.map((activity: string, idx: number) => (
+                  <li key={idx} className="text-sm text-gray-600">
+                    {activity}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {description.representation_rules && description.representation_rules.length > 0 && (
+            <div>
+              <span className="font-medium text-sm text-gray-700 block mb-2">
+                Representation Rules:
+              </span>
+              <ul className="list-disc list-inside space-y-1 ml-4">
+                {description.representation_rules.map((rule: string, idx: number) => (
+                  <li key={idx} className="text-sm text-gray-600">
+                    {rule}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (
+    description.is_product_creation_task === true ||
+    description.product_id ||
+    description.product_name
+  ) {
+    // Co-Producing Product Task
+    return (
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+          <FaBox className="h-4 w-4" />
+          Product Details
+        </h3>
+        <div className="bg-violet-50 border border-violet-200 rounded-lg p-4 space-y-3">
+          {description.product_name && (
+            <div className="flex items-start gap-2">
+              <span className="font-medium text-sm text-gray-700">Product:</span>
+              <span className="text-sm text-gray-600">{description.product_name}</span>
+            </div>
+          )}
+          {description.product_description && (
+            <div className="flex items-start gap-2">
+              <span className="font-medium text-sm text-gray-700">Description:</span>
+              <span className="text-sm text-gray-600">{description.product_description}</span>
+            </div>
+          )}
+          {description.subtasks && description.subtasks.length > 0 && (
+            <div>
+              <span className="font-medium text-sm text-gray-700 block mb-2">Subtasks:</span>
+              <ul className="list-disc list-inside space-y-1 ml-4">
+                {description.subtasks.map((subtask: string, idx: number) => (
+                  <li key={idx} className="text-sm text-gray-600">
+                    {subtask}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (
+    description.is_product_creation_task === false ||
+    description.concept_id ||
+    description.concept_name
+  ) {
+    // Co-Producing Concept Task
+    return (
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+          <FaBullseye className="h-4 w-4" />
+          Concept Details
+        </h3>
+        <div className="bg-violet-50 border border-violet-200 rounded-lg p-4 space-y-3">
+          {description.concept_name && (
+            <div className="flex items-start gap-2">
+              <span className="font-medium text-sm text-gray-700">Concept:</span>
+              <span className="text-sm text-gray-600">{description.concept_name}</span>
+            </div>
+          )}
+          {description.concept_description && (
+            <div className="flex items-start gap-2">
+              <span className="font-medium text-sm text-gray-700">Description:</span>
+              <span className="text-sm text-gray-600">{description.concept_description}</span>
+            </div>
+          )}
+          {description.related_product_name && (
+            <div className="flex items-start gap-2">
+              <span className="font-medium text-sm text-gray-700">Related Product:</span>
+              <span className="text-sm text-gray-600">{description.related_product_name}</span>
+            </div>
+          )}
+          {description.platform && (
+            <div className="flex items-start gap-2">
+              <span className="font-medium text-sm text-gray-700">Platform:</span>
+              <span className="text-sm text-gray-600">{description.platform}</span>
+            </div>
+          )}
+          {description.hashtags && description.hashtags.length > 0 && (
+            <div className="flex items-start gap-2">
+              <FaHashtag className="h-4 w-4 text-blue-600 mt-0.5" />
+              <div className="flex flex-wrap gap-1">
+                {description.hashtags.map((tag: string, idx: number) => (
+                  <Badge key={idx} variant="outline" className="text-xs">
+                    #{tag}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Display KPI Goals if available (common across all types)
+  if (description.kpi_goals && description.kpi_goals.length > 0) {
+    return (
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+          <FaBullseye className="h-4 w-4" />
+          KPI Goals
+        </h3>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
+          {description.kpi_goals.map((kpi: any, idx: number) => (
+            <div
+              key={idx}
+              className="flex items-center justify-between p-2 bg-white rounded border"
+            >
+              <span className="text-sm font-medium text-gray-700">
+                {kpi.metric?.replace(/_/g, " ")}
+              </span>
+              <span className="text-sm text-gray-600">{kpi.target}</span>
+              {kpi.description && (
+                <span className="text-xs text-gray-500">({kpi.description})</span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+};
+
+const renderMaterials = (description: any) => {
+  const materials = [];
+
+  // Check for material_url array
+  if (
+    description?.material_url &&
+    Array.isArray(description.material_url) &&
+    description.material_url.length > 0
+  ) {
+    materials.push(...description.material_url);
+  }
+
+  // Check for materials array in structured data
+  if (
+    description?.materials &&
+    Array.isArray(description.materials) &&
+    description.materials.length > 0
+  ) {
+    materials.push(...description.materials);
+  }
+
+  // Check for material_urls in structured data
+  if (
+    description?.material_urls &&
+    Array.isArray(description.material_urls) &&
+    description.material_urls.length > 0
+  ) {
+    materials.push(...description.material_urls);
+  }
+
+  if (materials.length === 0) return null;
+
+  return (
+    <div className="mt-4">
+      <h3 className="text-sm font-medium text-gray-700 mb-2">Task Materials:</h3>
+      <div className="flex flex-wrap gap-2">
+        {materials.map((material, index) => (
+          <a
+            key={index}
+            href={material}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs hover:bg-blue-200 transition-colors"
+          >
+            <FaUpRightFromSquare className="h-3 w-3" />
+            Material {index + 1}
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 function TaskDetailSlider({ task, onBack, isVisible, loading }: TaskDetailSliderProps) {
   const navigate = useNavigate();
@@ -118,9 +434,46 @@ function TaskDetailSlider({ task, onBack, isVisible, loading }: TaskDetailSlider
                   <FaFileLines className="h-4 w-4 text-indigo-600" />
                   Task Overview
                 </h2>
-                <p className="text-gray-700 leading-relaxed mb-4">
-                  {task.description?.description || "No description provided."}
-                </p>
+
+                {/* Basic Description */}
+                {task.description?.description && (
+                  <p className="text-gray-700 leading-relaxed mb-4">
+                    {task.description.description}
+                  </p>
+                )}
+
+                {/* Structured Task Details based on type */}
+                {task.description && renderTaskDetails(task.description)}
+
+                {/* KPI Goals Section */}
+                {task.description?.kpi_goals && task.description.kpi_goals.length > 0 && (
+                  <div className="mt-4">
+                    <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2 mb-3">
+                      <FaBullseye className="h-4 w-4 text-green-600" />
+                      KPI Goals
+                    </h3>
+                    <div className="grid grid-cols-1 gap-2">
+                      {task.description.kpi_goals.map((kpi: any, idx: number) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg"
+                        >
+                          <div className="flex-1">
+                            <span className="text-sm font-medium text-gray-700">
+                              {kpi.metric?.replace(/_/g, " ") || "Unknown Metric"}
+                            </span>
+                            {kpi.description && (
+                              <p className="text-xs text-gray-500 mt-1">{kpi.description}</p>
+                            )}
+                          </div>
+                          <Badge variant="outline" className="ml-2">
+                            {kpi.target}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <InfoCard label="Assignee" icon={<FaUser />} value={task.assigned_to_name} />
@@ -159,26 +512,8 @@ function TaskDetailSlider({ task, onBack, isVisible, loading }: TaskDetailSlider
                   />
                 </div>
 
-                {/* Material URLs */}
-                {task.description?.material_url && task.description.material_url.length > 0 && (
-                  <div className="mt-4">
-                    <h3 className="text-sm font-medium text-gray-700 mb-2">Task Materials:</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {task.description.material_url.map((url, index) => (
-                        <a
-                          key={index}
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs hover:bg-blue-200 transition-colors"
-                        >
-                          <FaUpRightFromSquare className="h-3 w-3" />
-                          Material {index + 1}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                {/* Materials */}
+                {renderMaterials(task.description)}
               </div>
 
               {/* Campaign Information */}

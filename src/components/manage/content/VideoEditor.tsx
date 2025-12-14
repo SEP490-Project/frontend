@@ -97,13 +97,25 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
     dispatch(channelList());
   }, [dispatch]);
 
-  // Debug log to see what content we're working with
+  // Sync state when editingContent changes (e.g., when detail API returns full content)
   useEffect(() => {
     if (editingContent) {
-      console.log("Editing content:", editingContent);
-      console.log("Extracted video URL:", videoContent.body);
+      const extractedVideoUrl =
+        editingContent.video_url ||
+        (typeof editingContent.body === "string"
+          ? editingContent.body
+          : (editingContent.body as any)?.video_url || (editingContent.body as any)?.body || "") ||
+        "";
+
+      setVideoContent({
+        channel: editingContent.content_channels?.[0]?.channel_id || "",
+        title: editingContent.title || "",
+        description: editingContent.description || "",
+        body: extractedVideoUrl,
+      });
     }
-  }, [editingContent, videoContent.body]); // Filter channels for video content (only Facebook and TikTok allowed)
+  }, [editingContent]);
+
   const allowedVideoChannels = React.useMemo(() => {
     return channels.filter(
       (channel) =>
@@ -366,11 +378,19 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
               </div>
             ) : (
               <div className="relative">
-                <div className="mb-2 text-xs text-gray-500">Video URL: {videoContent.body}</div>
                 <video
+                  key={videoContent.body}
                   src={videoContent.body}
                   controls
+                  preload="metadata"
                   className="w-full max-h-[300px] rounded-lg"
+                  onLoadedData={(e) => {
+                    // Seek to first frame to show thumbnail
+                    const video = e.currentTarget;
+                    if (video.currentTime === 0) {
+                      video.currentTime = 0.1;
+                    }
+                  }}
                   onError={(e) => {
                     console.error("Video load error:", e);
                     console.log("Video URL that failed:", videoContent.body);

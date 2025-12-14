@@ -2,15 +2,7 @@ import React, { useState } from "react";
 import type { OrderData } from "@/libs/types/order";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 
 import { FaCheck, FaXmark as FaTimes, FaImage, FaSpinner } from "react-icons/fa6";
@@ -18,6 +10,19 @@ import MobileFileUploader from "./MobileFileUploader";
 import MobileCompensateRequest from "./MobileCompensateRequest";
 import MobileRefundRequest from "./MobileRefundRequest";
 import { toast } from "sonner";
+import { useAppDispatch } from "@/libs/stores";
+import {
+  markOrderIsReadyToPickedUpThunk,
+  markOrderIsReceivedAfterPickedUpThunk,
+  censorAnOrderThunk,
+  markSelfDeliveryOrderAsDeliveredThunk,
+  markSelfDeliveryOrderAsInTransitThunk,
+  markLimitedOrderAsDeliveredThunk,
+  markLimitedOrderAsInTransitThunk,
+  approvePreOrderThunk,
+  receivedSelfPickupPreOrderThunk,
+  obligateRefundAnOrderThunk,
+} from "@/libs/stores/orderManager/thunk";
 
 interface MobileChangeStatusModalProps {
   order: OrderData;
@@ -30,11 +35,12 @@ const MobileChangeStatusModal: React.FC<MobileChangeStatusModalProps> = ({
   onSuccess,
   onCancel,
 }) => {
-  const [selectedStatus, setSelectedStatus] = useState("");
+  const dispatch = useAppDispatch();
+  const [selectedAction, setSelectedAction] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [proofFiles, setProofFiles] = useState<File[]>([]);
-  const [proofUrls, setProofUrls] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCancelForm, setShowCancelForm] = useState(false);
 
   if (order.status === "REFUND_REQUEST") {
     return <MobileRefundRequest order={order} onSuccess={onSuccess} onCancel={onCancel} />;
@@ -44,38 +50,94 @@ const MobileChangeStatusModal: React.FC<MobileChangeStatusModalProps> = ({
     return <MobileCompensateRequest order={order} onSuccess={onSuccess} onCancel={onCancel} />;
   }
 
-  const getNextStatuses = () => {
+  const getAvailableActions = () => {
     const currentStatus = order.status.toUpperCase();
+    const orderType = order.order_type;
+    const actions = [];
 
     if (order.is_self_picked_up) {
       switch (currentStatus) {
         case "PAID":
-          return ["CONFIRMED"];
+          actions.push({ action: "CONFIRM", label: "Confirm Order", variant: "default" as const });
+          actions.push({
+            action: "CANCEL",
+            label: "Cancel Order",
+            variant: "destructive" as const,
+            requiresReason: true,
+          });
+          break;
         case "CONFIRMED":
-          return ["AWAITING_PICKUP"];
+          actions.push({
+            action: "AWAITING_PICKUP",
+            label: "Mark Ready for Pickup",
+            variant: "default" as const,
+          });
+          break;
         case "AWAITING_PICKUP":
-          return ["RECEIVED"];
-        default:
-          return [];
+          actions.push({
+            action: "RECEIVED",
+            label: "Mark as Received",
+            variant: "default" as const,
+            requiresProof: true,
+          });
+          break;
       }
     } else {
       switch (currentStatus) {
         case "PAID":
-          return ["CONFIRMED"];
+          actions.push({ action: "CONFIRM", label: "Confirm Order", variant: "default" as const });
+          actions.push({
+            action: "CANCEL",
+            label: "Cancel Order",
+            variant: "destructive" as const,
+            requiresReason: true,
+          });
+          break;
         case "CONFIRMED":
-          return ["SHIPPED", "IN_TRANSIT"];
+          if (orderType === "LIMITED" || orderType === "LIMITED_PRODUCT") {
+            actions.push({
+              action: "IN_TRANSIT",
+              label: "Mark In Transit",
+              variant: "default" as const,
+            });
+          } else if (orderType === "PRE_ORDER") {
+            actions.push({
+              action: "DELIVERED",
+              label: "Mark as Delivered",
+              variant: "default" as const,
+              requiresProof: true,
+            });
+          } else {
+            actions.push({
+              action: "SHIPPED",
+              label: "Mark as Shipped",
+              variant: "default" as const,
+            });
+          }
+          break;
         case "SHIPPED":
         case "IN_TRANSIT":
-          return ["DELIVERED"];
+          actions.push({
+            action: "DELIVERED",
+            label: "Mark as Delivered",
+            variant: "default" as const,
+            requiresProof: true,
+          });
+          break;
         case "DELIVERED":
-          return ["RECEIVED"];
-        default:
-          return [];
+          actions.push({
+            action: "RECEIVED",
+            label: "Mark as Received",
+            variant: "default" as const,
+          });
+          break;
       }
     }
+
+    return actions;
   };
 
-  const availableStatuses = getNextStatuses();
+  const availableActions = getAvailableActions();
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
@@ -103,53 +165,128 @@ const MobileChangeStatusModal: React.FC<MobileChangeStatusModalProps> = ({
     return statusMap[status] || "bg-gray-100 text-gray-800 border border-gray-200";
   };
 
-  const isProofRequired = () => {
-    return ["DELIVERED", "RECEIVED"].includes(selectedStatus);
+  const isProofRequired = (action: string) => {
+    return ["DELIVERED", "RECEIVED"].includes(action);
+  };
+
+  const requiresReason = (action: string) => {
+    return action === "CANCEL";
   };
 
   const handleFilesCapture = (files: File[]) => {
     setProofFiles(files);
   };
 
-  const handleUploadComplete = (urls: string[]) => {
-    setProofUrls(urls);
-  };
-
-  const handleSubmit = async () => {
-    if (!selectedStatus) {
-      toast.error("Please select a status");
+  const handleAction = async (action: string) => {
+    if (requiresReason(action) && !notes.trim()) {
+      toast.error("Please provide a reason");
       return;
     }
 
-    if (isProofRequired() && proofUrls.length === 0) {
-      toast.error("Proof image is required for this status");
+    if (isProofRequired(action) && proofFiles.length === 0) {
+      toast.error("Proof image is required for this action");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      const formData = new FormData();
-      formData.append("state", selectedStatus);
+      const orderType = order.order_type;
+      const isPreOrderType = orderType === "PRE_ORDER";
+      const isLimitedOrderType = orderType === "LIMITED" || orderType === "LIMITED_PRODUCT";
 
-      if (notes.trim()) {
-        formData.append("notes", notes.trim());
-      }
+      if (action === "CONFIRM") {
+        if (isPreOrderType) {
+          await dispatch(approvePreOrderThunk({ id: order.id })).unwrap();
+        } else {
+          await dispatch(
+            censorAnOrderThunk({ orderId: order.id, action: "CONFIRM", reason: notes || "" }),
+          ).unwrap();
+        }
+      } else if (action === "CANCEL") {
+        const formData = new FormData();
+        if (proofFiles.length > 0) {
+          proofFiles.forEach((file) => {
+            formData.append("file", file);
+          });
+        }
+        formData.append("reason", notes.trim());
 
-      if (proofFiles.length > 0) {
+        await dispatch(obligateRefundAnOrderThunk({ orderId: order.id, file: formData })).unwrap();
+      } else if (action === "AWAITING_PICKUP") {
+        await dispatch(markOrderIsReadyToPickedUpThunk(order.id)).unwrap();
+      } else if (action === "IN_TRANSIT" || action === "SHIPPED") {
+        if (isLimitedOrderType) {
+          await dispatch(markLimitedOrderAsInTransitThunk(order.id)).unwrap();
+        } else {
+          if (order.is_self_picked_up) {
+            await dispatch(markSelfDeliveryOrderAsInTransitThunk(order.id)).unwrap();
+          } else {
+            toast.success("Order marked as shipped!");
+            onSuccess();
+            return;
+          }
+        }
+      } else if (action === "DELIVERED") {
+        const formData = new FormData();
         proofFiles.forEach((file) => {
-          formData.append("file", file);
+          formData.append("files", file);
         });
+        if (notes.trim()) {
+          formData.append("notes", notes.trim());
+        }
+
+        if (isLimitedOrderType) {
+          await dispatch(
+            markLimitedOrderAsDeliveredThunk({ orderId: order.id, files: formData }),
+          ).unwrap();
+        } else {
+          if (order.is_self_picked_up) {
+            await dispatch(
+              markSelfDeliveryOrderAsDeliveredThunk({ orderId: order.id, files: formData }),
+            ).unwrap();
+          } else {
+            toast.success("Order marked as delivered!");
+            onSuccess();
+            return;
+          }
+        }
+      } else if (action === "RECEIVED") {
+        const formData = new FormData();
+        if (isLimitedOrderType || isPreOrderType) {
+          proofFiles.forEach((file) => {
+            formData.append("file", file);
+          });
+        } else {
+          proofFiles.forEach((file) => {
+            formData.append("files", file);
+          });
+        }
+        if (notes.trim()) {
+          formData.append("notes", notes.trim());
+        }
+
+        if (isLimitedOrderType || isPreOrderType) {
+          await dispatch(
+            receivedSelfPickupPreOrderThunk({ id: order.id, file: formData }),
+          ).unwrap();
+        } else {
+          await dispatch(
+            markOrderIsReceivedAfterPickedUpThunk({ orderId: order.id, files: formData }),
+          ).unwrap();
+        }
       }
 
-      toast.success("Order status updated successfully!");
+      toast.success("Order updated successfully!");
       onSuccess();
     } catch (error: any) {
-      toast.error("Failed to update order status", {
+      toast.error("Failed to update order", {
         description: error?.message || "Please try again.",
       });
     } finally {
       setIsSubmitting(false);
+      setSelectedAction(null);
+      setShowCancelForm(false);
     }
   };
 
@@ -160,12 +297,24 @@ const MobileChangeStatusModal: React.FC<MobileChangeStatusModalProps> = ({
           <CardTitle className="text-base">Current Status</CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Badge className={getStatusBadgeClass(order.status.toUpperCase())}>
               {getStatusLabel(order.status.toUpperCase())}
             </Badge>
+            <Badge
+              variant="outline"
+              className={
+                order.order_type === "STANDARD"
+                  ? "border-blue-300 text-blue-700"
+                  : order.order_type === "LIMITED" || order.order_type === "LIMITED_PRODUCT"
+                    ? "border-orange-300 text-orange-700"
+                    : "border-purple-300 text-purple-700"
+              }
+            >
+              {order.order_type || "STANDARD"}
+            </Badge>
             <span className="text-sm text-gray-600">
-              {order.is_self_picked_up ? "Self Pickup" : "Delivery"} Order
+              {order.is_self_picked_up ? "Self Pickup" : "Delivery"}
             </span>
           </div>
         </CardContent>
@@ -173,82 +322,55 @@ const MobileChangeStatusModal: React.FC<MobileChangeStatusModalProps> = ({
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Change Status</CardTitle>
+          <CardTitle className="text-base">Available Actions</CardTitle>
         </CardHeader>
-        <CardContent className="pt-0 space-y-4">
-          {availableStatuses.length > 0 ? (
-            <>
-              <div>
-                <Label htmlFor="status" className="text-sm font-medium mb-2 block">
-                  Select New Status
-                </Label>
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose next status..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableStatuses.map((status) => (
-                      <SelectItem key={status} value={status}>
-                        <div className="flex items-center gap-2">
-                          <div
-                            className={`w-2 h-2 rounded-full ${
-                              status === "CONFIRMED"
-                                ? "bg-green-500"
-                                : status === "AWAITING_PICKUP"
-                                  ? "bg-blue-500"
-                                  : status === "SHIPPED" || status === "IN_TRANSIT"
-                                    ? "bg-orange-500"
-                                    : status === "DELIVERED" || status === "RECEIVED"
-                                      ? "bg-green-600"
-                                      : "bg-gray-500"
-                            }`}
-                          />
-                          {getStatusLabel(status)}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {selectedStatus && (
-                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="flex items-center gap-2">
-                    <Badge className={getStatusBadgeClass(selectedStatus)}>
-                      {getStatusLabel(selectedStatus)}
+        <CardContent className="pt-0 space-y-3">
+          {availableActions.length > 0 ? (
+            <div className="space-y-2">
+              {availableActions.map((actionItem) => (
+                <Button
+                  key={actionItem.action}
+                  variant={actionItem.variant === "destructive" ? "destructive" : "default"}
+                  onClick={() => {
+                    if (actionItem.action === "CANCEL") {
+                      setShowCancelForm(true);
+                      setSelectedAction(actionItem.action);
+                    } else if (actionItem.requiresProof || actionItem.requiresReason) {
+                      setSelectedAction(actionItem.action);
+                    } else {
+                      handleAction(actionItem.action);
+                    }
+                  }}
+                  disabled={isSubmitting}
+                  className={`w-full justify-start ${
+                    actionItem.variant !== "destructive"
+                      ? "bg-green-600 hover:bg-green-700 text-white"
+                      : ""
+                  }`}
+                >
+                  {actionItem.label}
+                  {actionItem.requiresProof && (
+                    <Badge variant="outline" className="ml-auto text-xs text-white">
+                      Proof Required
                     </Badge>
-                    {isProofRequired() && (
-                      <Badge variant="outline" className="text-xs">
-                        Proof Required
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              )}
-            </>
+                  )}
+                  {actionItem.requiresReason && (
+                    <Badge variant="outline" className="ml-auto text-xs text-white">
+                      Reason Required
+                    </Badge>
+                  )}
+                </Button>
+              ))}
+            </div>
           ) : (
             <div className="p-4 text-center text-gray-500 bg-gray-50 rounded-lg">
-              No status changes available for this order
+              No actions available for this order
             </div>
           )}
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Notes (Optional)</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <Textarea
-            placeholder="Add notes about this status change..."
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            className="min-h-[80px] resize-none"
-          />
-        </CardContent>
-      </Card>
-
-      {selectedStatus && isProofRequired() && (
+      {selectedAction && isProofRequired(selectedAction) && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
@@ -259,21 +381,120 @@ const MobileChangeStatusModal: React.FC<MobileChangeStatusModalProps> = ({
           <CardContent className="pt-0">
             <div className="space-y-3">
               <div className="text-sm text-gray-600">
-                Please provide photo proof for {getStatusLabel(selectedStatus).toLowerCase()}{" "}
-                status.
+                Please provide photo proof for this action.
               </div>
 
               <MobileFileUploader
-                userId={order.user_id}
                 accept="image/*"
                 multiple={true}
-                maxFiles={3}
-                maxSize={20}
+                maxFiles={1}
+                maxSize={10}
                 allowedTypes={["jpg", "jpeg", "png", "webp"]}
                 title="Upload Proof"
                 onFilesChange={handleFilesCapture}
-                onUploadComplete={handleUploadComplete}
               />
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSelectedAction(null);
+                    setProofFiles([]);
+                  }}
+                  disabled={isSubmitting}
+                  className="flex-1"
+                >
+                  <FaTimes className="w-4 h-4 mr-2" />
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => handleAction(selectedAction)}
+                  disabled={isSubmitting || proofFiles.length === 0}
+                  className="flex-1"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <FaSpinner className="w-4 h-4 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <FaCheck className="w-4 h-4 mr-2" />
+                      Confirm
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {showCancelForm && (
+        <Card className="border-red-200">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base text-red-700">
+              <FaTimes className="w-4 h-4" />
+              Cancel Order
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="space-y-3">
+              <div className="text-sm text-red-600">
+                Please provide a reason for cancelling this order.
+              </div>
+
+              <Textarea
+                placeholder="Enter cancellation reason..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="min-h-[80px] resize-none border-red-200 focus:border-red-300"
+              />
+
+              <MobileFileUploader
+                accept="image/*"
+                multiple={true}
+                maxFiles={1}
+                maxSize={10}
+                allowedTypes={["jpg", "jpeg", "png", "webp"]}
+                title="Upload Proof (Optional)"
+                onFilesChange={handleFilesCapture}
+              />
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowCancelForm(false);
+                    setSelectedAction(null);
+                    setNotes("");
+                    setProofFiles([]);
+                  }}
+                  disabled={isSubmitting}
+                  className="flex-1"
+                >
+                  <FaTimes className="w-4 h-4 mr-2" />
+                  Back
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => handleAction("CANCEL")}
+                  disabled={isSubmitting || !notes.trim()}
+                  className="flex-1"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <FaSpinner className="w-4 h-4 mr-2 animate-spin" />
+                      Cancelling...
+                    </>
+                  ) : (
+                    <>
+                      <FaTimes className="w-4 h-4 mr-2" />
+                      Cancel Order
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -296,39 +517,20 @@ const MobileChangeStatusModal: React.FC<MobileChangeStatusModalProps> = ({
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-2 gap-3 pt-2">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-          disabled={isSubmitting}
-          className="w-full"
-        >
-          <FaTimes className="w-4 h-4 mr-2" />
-          Cancel
-        </Button>
-
-        <Button
-          type="button"
-          onClick={handleSubmit}
-          disabled={
-            !selectedStatus || isSubmitting || (isProofRequired() && proofUrls.length === 0)
-          }
-          className="w-full"
-        >
-          {isSubmitting ? (
-            <>
-              <FaSpinner className="w-4 h-4 mr-2 animate-spin" />
-              Updating...
-            </>
-          ) : (
-            <>
-              <FaCheck className="w-4 h-4 mr-2" />
-              Update Status
-            </>
-          )}
-        </Button>
-      </div>
+      {!selectedAction && !showCancelForm && (
+        <div className="pt-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            disabled={isSubmitting}
+            className="w-full"
+          >
+            <FaTimes className="w-4 h-4 mr-2" />
+            Close
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

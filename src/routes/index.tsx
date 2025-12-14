@@ -38,7 +38,7 @@ import { AuthenticationLayout } from "../layouts/AuthenticationLayout";
 import { ForgotPassword } from "@/pages/authentication/ForgotPassword";
 import { ResetPassword } from "@/pages/authentication/ResetPassword";
 import CustomerLayout from "@/layouts/CustomerLayout";
-import { AssignedTasks, ManageContent, ManageTags } from "@/pages/manager/content";
+import { AssignedTasks, ManageContent, ManageTags, ContentDetail } from "@/pages/manager/content";
 import PrivateRoute from "./private-route";
 import PublicRoute from "./public-route";
 import {
@@ -51,10 +51,12 @@ import {
   VariantsStep,
   DoneStep,
   PreOrder,
+  AssignedTask,
+  EditProduct,
+  ProductDetail,
 } from "@/pages/manager/sale";
 import ContentPreviewPage from "@/pages/manager/marketing/content-approval/ContentPreviewPage";
 import AddProductStep from "@/components/manage/sale/product/AddProductStep";
-import ProductDetail from "@/pages/manager/sale/product/ProductDetail";
 import { Channel, User, VariantAttribute } from "@/pages/manager/admin";
 import { CreateConceptStep } from "@/pages/manager/sale/product/add-product-step/CreateConceptStep";
 import SalesPwaLayout from "@/layouts/SalesPWALayout";
@@ -66,6 +68,12 @@ import {
   SalesPreOrderPage,
   SalesProfilePage,
 } from "@/pages/pwa";
+import { PrivacyPolicy } from "@/pages/landing/PrivacyPolicy";
+import { TermsOfUses } from "@/pages/landing/TermsOfUses";
+import AllConfigurations from "@/pages/manager/admin/configurations/AllConfigurations";
+import TermsOfService from "@/pages/manager/admin/configurations/TermsOfService";
+import Representative from "@/pages/manager/admin/configurations/Representative";
+import PrivacyPolicyAdmin from "@/pages/manager/admin/configurations/PrivacyPolicyAdmin";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -88,6 +96,8 @@ const AppRoutes = () => (
         <Route path="/about-us" element={<AboutUs />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:id" element={<BlogDetail />} />
+        <Route path="/terms-of-uses" element={<TermsOfUses />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       </Route>
 
       <Route element={<PublicRoute />}>
@@ -124,11 +134,18 @@ const AppRoutes = () => (
           <Route path="users" element={<User />} />
           <Route path="variant-attribute" element={<VariantAttribute />} />
           <Route path="channel" element={<Channel />} />
+          <Route path="configurations">
+            <Route index element={<AllConfigurations />} />
+            <Route path="representative" element={<Representative />} />
+            <Route path="terms-of-service" element={<TermsOfService />} />
+            <Route path="privacy-policy" element={<PrivacyPolicyAdmin />} />
+          </Route>
         </Route>
       </Route>
 
       <Route element={<PrivateRoute allowedRoles={["SALES_STAFF"]} />}>
         <Route path="/manage/sale" element={<ManageLayout />}>
+          <Route path="task" element={<AssignedTask />} />
           <Route path="product" element={<Product />} />
           <Route path="product/create" element={<AddProductStep />}>
             <Route index element={<BasicInfoStep />} />
@@ -136,7 +153,7 @@ const AppRoutes = () => (
             <Route path="variants" element={<VariantsStep />} />
             <Route path="done" element={<DoneStep />} />
           </Route>
-          {/* <Route path="product/:id/edit" element={<ProductDetail />} /> */}
+          <Route path="product/:id/edit" element={<EditProduct />} />
           <Route path="product/:id" element={<ProductDetail />} />
           <Route path="category" element={<Category />} />
           <Route path="order">
@@ -190,7 +207,8 @@ const AppRoutes = () => (
       <Route element={<PrivateRoute allowedRoles={["CONTENT_STAFF"]} />}>
         <Route path="/manage/content" element={<ManageLayout />}>
           <Route path="task" element={<AssignedTasks />} />
-          <Route path="blog" element={<ManageContent />} />
+          <Route path="all-contents" element={<ManageContent />} />
+          <Route path="all-contents/:id" element={<ContentDetail />} />
           <Route path="tag" element={<ManageTags />} />
         </Route>
       </Route>

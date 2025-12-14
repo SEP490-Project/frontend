@@ -18,12 +18,13 @@ import {
   Loader2,
   Briefcase,
   AlertTriangle,
+  Building2,
 } from "lucide-react";
-import React from "react";
-import { useTaskManager } from "@/libs/hooks/useTask";
+import React, { useEffect } from "react";
 import { manageTask } from "@/libs/services/manageTask";
 import { toast } from "sonner";
 import type { Task } from "@/libs/types/task";
+import { useAuth } from "@/libs/hooks/useAuth";
 
 interface TaskSelectionDialogProps {
   isOpen: boolean;
@@ -46,7 +47,48 @@ const TaskSelectionDialog: React.FC<TaskSelectionDialogProps> = ({
   const [viewingTask, setViewingTask] = React.useState<Task | null>(null);
   const [loadingTaskDetail, setLoadingTaskDetail] = React.useState(false);
 
-  const { loading, tasks, error, fetchTasksByProfile } = useTaskManager();
+  // Local state for tasks fetched from marketing API
+  const [tasks, setTasks] = React.useState<Task[]>([]);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const { user } = useAuth();
+
+  // Fetch tasks without content assigned to current user
+  const fetchAvailableTasks = React.useCallback(async () => {
+    if (!user?.id) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await manageTask.getTaskListMarketing({
+        page: 1,
+        limit: 50,
+        has_content: false,
+        assigned_to_id: user.id,
+        type: "CONTENT",
+        status: "IN_PROGRESS",
+      });
+
+      if (response.data.success) {
+        setTasks(response.data.data || []);
+      } else {
+        setError("Failed to load tasks");
+      }
+    } catch (err) {
+      console.error("Error fetching tasks:", err);
+      setError("Failed to load tasks");
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchAvailableTasks();
+    }
+  }, [isOpen, fetchAvailableTasks]);
 
   // Utility functions
   const getTaskColor = (type: string): string => {
@@ -73,18 +115,8 @@ const TaskSelectionDialog: React.FC<TaskSelectionDialogProps> = ({
     }
   };
 
-  const availableTasks: Task[] = React.useMemo(() => {
-    return tasks.filter((task) => {
-      // Filter by content type - adjust these type mappings as needed
-      const isMatchingType =
-        task.type === "CONTENT" || task.type === "MARKETING" || task.type === "PRODUCT";
-
-      // Filter by status - only show IN_PROGRESS tasks
-      const isInProgressStatus = task.status === "IN_PROGRESS";
-
-      return isMatchingType && isInProgressStatus;
-    });
-  }, [tasks]);
+  // Tasks are already filtered by the API (has_content: false, type: CONTENT, status: IN_PROGRESS)
+  const availableTasks = tasks;
 
   const handleTaskSelect = (task: Task) => {
     setSelectedTask(task);
@@ -163,7 +195,7 @@ const TaskSelectionDialog: React.FC<TaskSelectionDialogProps> = ({
               ) : error ? (
                 <div className="text-center py-8 text-red-500">
                   <p>Error loading tasks: {error}</p>
-                  <Button variant="outline" onClick={() => fetchTasksByProfile()} className="mt-2">
+                  <Button variant="outline" onClick={fetchAvailableTasks} className="mt-2">
                     Retry
                   </Button>
                 </div>
@@ -418,9 +450,22 @@ const TaskDetailView: React.FC<TaskDetailViewProps> = ({ task, onBack, onSelectF
     return null;
   };
 
+  const getBrandInfo = () => {
+    const brand = (task as any).brand_info;
+    if (brand && typeof brand === "object") {
+      return {
+        name: brand.name || "Unknown Brand",
+        logoUrl: brand.logo_url || "",
+        status: brand.status || "Unknown",
+      };
+    }
+    return null;
+  };
+
   const materialUrls = getMaterialUrls();
   const campaignInfo = getCampaignInfo();
   const milestoneInfo = getMilestoneInfo();
+  const brandInfo = getBrandInfo();
 
   return (
     <>
@@ -449,14 +494,6 @@ const TaskDetailView: React.FC<TaskDetailViewProps> = ({ task, onBack, onSelectF
           </div>
           <div className="flex-1">
             <h3 className="text-xl font-semibold text-gray-900 mb-2">{task.name}</h3>
-            <div className="flex items-center gap-2 mb-3">
-              {task.type === "MARKETING" || task.type === "PRODUCT" ? (
-                <Video className="h-4 w-4 text-purple-500" />
-              ) : (
-                <FileText className="h-4 w-4 text-blue-500" />
-              )}
-              <span className="text-sm text-gray-600">{task.type} Content</span>
-            </div>
           </div>
         </div>
 
@@ -556,6 +593,37 @@ const TaskDetailView: React.FC<TaskDetailViewProps> = ({ task, onBack, onSelectF
               <div className="bg-white p-3 rounded border border-gray-100 md:col-span-2">
                 <p className="text-xs text-gray-500 mb-1">Description</p>
                 <p className="font-medium text-gray-900 text-sm">{campaignInfo.description}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Brand Information */}
+        {brandInfo && (
+          <div className="bg-gradient-to-br from-orange-50 to-white rounded-lg p-4 border border-orange-200">
+            <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-orange-600" />
+              Brand Information
+            </h4>
+            <div className="flex items-center gap-4">
+              {brandInfo.logoUrl && (
+                <img
+                  src={brandInfo.logoUrl}
+                  alt={brandInfo.name}
+                  className="w-16 h-16 rounded-lg object-cover border border-gray-200"
+                />
+              )}
+              <div className="flex-1">
+                <p className="font-medium text-gray-900 text-lg">{brandInfo.name}</p>
+                <span
+                  className={`inline-flex px-2 py-1 rounded-full text-xs font-medium mt-1 ${
+                    brandInfo.status === "ACTIVE"
+                      ? "bg-green-100 text-green-800"
+                      : "bg-gray-100 text-gray-800"
+                  }`}
+                >
+                  {brandInfo.status}
+                </span>
               </div>
             </div>
           </div>

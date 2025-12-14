@@ -33,9 +33,9 @@ const SalesProfile: React.FC = () => {
             <div className="flex items-center gap-4">
               <div className="relative">
                 <div className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-100 to-slate-100 flex items-center justify-center shadow-sm">
-                  {user?.avatar ? (
+                  {user?.avatar_url ? (
                     <img
-                      src={user.avatar}
+                      src={user.avatar_url}
                       alt="Profile"
                       className="w-20 h-20 rounded-full object-cover"
                     />

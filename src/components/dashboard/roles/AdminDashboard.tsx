@@ -319,15 +319,15 @@ const AdminDashboard: React.FC = () => {
       contracts
         ? [
             {
-              metric: "Total Value",
+              metric: "Total Contract Amount",
               amount: formatCurrency(contracts.total_value),
             },
             {
-              metric: "Collected Amount",
+              metric: "Collected Contract Amount",
               amount: formatCurrency(contracts.collected_amount),
             },
             {
-              metric: "Pending Amount",
+              metric: "Pending Contract Amount",
               amount: formatCurrency(contracts.pending_amount),
             },
           ]
@@ -401,7 +401,7 @@ const AdminDashboard: React.FC = () => {
       <Card className="p-4">
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center flex-wrap gap-2">
-            <h2 className="text-lg font-semibold">Revenue Trend</h2>
+            <h2 className="text-lg font-semibold">Total Revenue Trend</h2>
             <div className="flex gap-2 items-center flex-wrap">
               <DatePicker
                 value={formatDateInput(revenueFilter.start_date)}
@@ -468,7 +468,7 @@ const AdminDashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="p-4">
           <div className="flex flex-col gap-4">
-            <h2 className="text-lg font-semibold">Revenue Breakdown</h2>
+            <h2 className="text-lg font-semibold">Contract & Order Revenue Breakdown</h2>
             {isEmptyData(revenueBreakdownData) ? (
               <NoDataMessage message="No revenue analytics data available" />
             ) : (
@@ -579,7 +579,7 @@ const AdminDashboard: React.FC = () => {
               iconBg="bg-emerald-100"
             />
             <KPIWidget
-              title="Total Value"
+              title="Total Contract Value"
               data={{
                 value: contracts?.total_value ?? 0,
               }}
@@ -588,7 +588,7 @@ const AdminDashboard: React.FC = () => {
               iconBg="bg-emerald-100"
             />
             <KPIWidget
-              title="Collected / Pending"
+              title="Contract Amount Collected / Pending"
               data={{
                 value: contracts?.collected_amount ?? 0,
                 status: "up",

@@ -38,6 +38,7 @@ const Header: React.FC<HeaderProps> = ({
   const { user } = useAuth();
   const dispatch = useAppDispatch();
   const { notifications } = useNotification();
+  console.log("Notifications in Header:", user);
 
   const { unreadCount } = useFuckingNotification();
 
@@ -96,9 +97,9 @@ const Header: React.FC<HeaderProps> = ({
             <TooltipTrigger asChild>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 px-2 md:px-3 py-1 rounded hover:bg-gray-100 transition">
-                  {user?.avatar ? (
+                  {user?.avatar_url ? (
                     <img
-                      src={user?.avatar}
+                      src={user?.avatar_url}
                       alt="avatar"
                       className="w-9 h-9 rounded-full border-2 border-primary shadow-sm"
                     />

@@ -31,8 +31,9 @@ import { useSelector } from "react-redux";
 import type { OrderData, OrderRequestQuery } from "@/libs/types/order";
 import { PaginationTable } from "@/components/global";
 import OrderDetail from "@/components/manage/sale/order/OrderDetail";
-import { ChangeStatusModal } from "@/components/manage/sale/order/ChangeStatusModal";
 import { SquarePen } from "lucide-react";
+import { convertNumberToCurrency } from "@/libs/helper/helper";
+import ChangeOrderStatusModal from "@/components/manage/sale/order/ChangeOrderStatusModal";
 
 const Order: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -69,13 +70,6 @@ const Order: React.FC = () => {
     dispatch(getOrderForSaleStaffThunk(queryParams));
   }, [dispatch, params]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(amount);
-  };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
@@ -86,10 +80,26 @@ const Order: React.FC = () => {
     });
   };
 
+  const statusOptions = [
+    "PENDING",
+    "PAID",
+    "CANCELLED",
+    "AWAITING_PICKUP",
+    "REFUNDED_REQUEST",
+    "REFUNDED",
+    "SHIPPED",
+    "IN_TRANSIT",
+    "CONFIRMED",
+    "DELIVERED",
+    "COMPENSATED",
+    "COMPENSATE_REQUEST",
+    "RECEIVED",
+  ];
+
   const getStatusBadgeClass = (status: string) => {
     const statusMap: Record<string, string> = {
-      paid: "bg-green-100 text-green-800 border border-green-200 hover:bg-green-200",
       pending: "bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200",
+      paid: "bg-green-100 text-green-800 border border-green-200 hover:bg-green-200",
       cancelled: "bg-red-100 text-red-800 border border-red-200 hover:bg-red-200",
       refunded: "bg-green-100 text-green-800 border border-green-200 hover:bg-green-200",
       received: "bg-green-100 text-green-800 border border-green-200 hover:bg-green-200",
@@ -156,16 +166,12 @@ const Order: React.FC = () => {
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value=" ">All Status</SelectItem>
-                <SelectItem value="PENDING">Pending</SelectItem>
-                <SelectItem value="PAID">Paid</SelectItem>
-                <SelectItem value="SHIPPED">Shipped</SelectItem>
-                <SelectItem value="DELIVERED">Delivered</SelectItem>
-                <SelectItem value="CANCELLED">Cancelled</SelectItem>
-                <SelectItem value="REFUNDED">Refunded</SelectItem>
-                <SelectItem value="IN_TRANSIT">In Transit</SelectItem>
-                <SelectItem value="CONFIRMED">Confirmed</SelectItem>
-                <SelectItem value="RECEIVED">Received</SelectItem>
+                <SelectItem value=" ">All Statuses</SelectItem>
+                {statusOptions.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -232,10 +238,10 @@ const Order: React.FC = () => {
 
                     <TableCell className="py-4">
                       <div className="font-semibold text-gray-900">
-                        {formatCurrency(order.total_amount)}
+                        {convertNumberToCurrency(String(order.total_amount))}
                       </div>
                       <div className="text-xs text-gray-500">
-                        Shipping: {formatCurrency(order.shipping_fee)}
+                        Shipping: {convertNumberToCurrency(String(order.shipping_fee))}
                       </div>
                     </TableCell>
 
@@ -272,29 +278,24 @@ const Order: React.FC = () => {
                         >
                           <FaEye className="text-blue-600" />
                         </Button>
-                        {order.status === "CANCELLED" ||
-                        order.status === "REFUNDED" ||
-                        order.status === "RECEIVED" ||
-                        order.status === "COMPENSATED" ? null : (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="hover:bg-yellow-100"
-                            title="Change Status"
-                            onClick={() => {
-                              setSelectedOrder(order);
-                              setIsChangeStatusModalOpen(true);
-                            }}
-                            disabled={
-                              order.status === "CANCELLED" ||
-                              order.status === "REFUNDED" ||
-                              order.status === "RECEIVED" ||
-                              order.status === "COMPENSATED"
-                            }
-                          >
-                            <SquarePen className="text-yellow-600" />
-                          </Button>
-                        )}
+                        {order.status !== "CANCELLED" &&
+                          order.status !== "RECEIVED" &&
+                          order.status !== "COMPENSATED" &&
+                          order.status !== "REFUNDED" &&
+                          !(order.status === "DELIVERED" && order.order_type === "LIMITED") && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="hover:bg-yellow-100"
+                              title="Change Status"
+                              onClick={() => {
+                                setSelectedOrder(order);
+                                setIsChangeStatusModalOpen(true);
+                              }}
+                            >
+                              <SquarePen className="text-yellow-600" />
+                            </Button>
+                          )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -345,10 +346,10 @@ const Order: React.FC = () => {
 
                 <div className="space-y-1">
                   <div className="font-semibold text-gray-900">
-                    Total: {formatCurrency(order.total_amount)}
+                    Total: {convertNumberToCurrency(String(order.total_amount))}
                   </div>
                   <div className="text-xs text-gray-500">
-                    Shipping: {formatCurrency(order.shipping_fee)}
+                    Shipping: {convertNumberToCurrency(String(order.shipping_fee))}
                   </div>
                 </div>
 
@@ -372,10 +373,11 @@ const Order: React.FC = () => {
                       setIsChangeStatusModalOpen(true);
                     }}
                     disabled={
-                      order.status === "CANCELLED" ||
-                      order.status === "REFUNDED" ||
                       order.status === "RECEIVED" ||
-                      order.status === "COMPENSATED"
+                      order.status === "CANCELLED" ||
+                      order.status === "COMPENSATED" ||
+                      order.status === "REFUNDED" ||
+                      (order.status === "DELIVERED" && order.order_type === "LIMITED")
                     }
                   >
                     <SquarePen className="text-yellow-600 mr-2" />
@@ -409,7 +411,7 @@ const Order: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
           {selectedOrder && (
-            <ChangeStatusModal
+            <ChangeOrderStatusModal
               order={selectedOrder}
               onSuccess={() => setIsChangeStatusModalOpen(false)}
             />

@@ -1,7 +1,7 @@
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { useTaskManager } from "@/libs/hooks/useTask";
+import { useTask } from "@/libs/hooks/useTask";
 
 const daysOfWeek = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
@@ -11,7 +11,7 @@ interface CalendarProps {
 }
 
 export function Calendar({ currentDate, setCurrentDate }: CalendarProps) {
-  const { tasks } = useTaskManager();
+  const { profileTasks: tasks } = useTask();
   const today = new Date();
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -25,10 +25,10 @@ export function Calendar({ currentDate, setCurrentDate }: CalendarProps) {
   const lastDayOfPrevMonth = new Date(year, month, 0);
   const daysInPrevMonth = lastDayOfPrevMonth.getDate();
 
-  // Function to check if a date has tasks
+  // Function to check if a date has tasks (by created_at)
   const hasTasksOnDate = (date: Date): boolean => {
     return tasks.some((task) => {
-      const taskDate = new Date(task.deadline);
+      const taskDate = new Date(task.created_at);
       return (
         taskDate.getFullYear() === date.getFullYear() &&
         taskDate.getMonth() === date.getMonth() &&

@@ -110,14 +110,14 @@ const GlobalFooter = () => {
           <div className="flex space-x-4 mt-3 md:mt-0">
             <button
               type="button"
-              onClick={() => navigate("/privacy")}
+              onClick={() => navigate("/privacy-policy")}
               className="hover:text-[#fec6d4]"
             >
               Privacy Policy
             </button>
             <button
               type="button"
-              onClick={() => navigate("/terms")}
+              onClick={() => navigate("/terms-of-uses")}
               className="hover:text-[#fec6d4]"
             >
               Terms of Use

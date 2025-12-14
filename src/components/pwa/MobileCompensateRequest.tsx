@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useAppDispatch } from "@/libs/stores";
-import { compensateAnOrderThunk } from "@/libs/stores/orderManager/thunk";
+import { compensateAnOrderThunk, compensateAPreOrderThunk } from "@/libs/stores/orderManager/thunk";
 import MobileFileUploader from "./MobileFileUploader";
 import { toast } from "sonner";
 import {
@@ -44,11 +44,15 @@ const MobileCompensateRequest: React.FC<MobileCompensateRequestProps> = ({
     setProofFiles(files);
   };
 
+  const isPreOrder = () => {
+    return order.order_type === "PRE_ORDER";
+  };
+
   const handleCompensateOrder = async (isApproved: boolean) => {
     if (!order) return;
 
     if (proofFiles.length === 0) {
-      toast.error("Please upload proof image/video");
+      toast.error("Please upload proof image");
       return;
     }
 
@@ -71,12 +75,23 @@ const MobileCompensateRequest: React.FC<MobileCompensateRequestProps> = ({
         formData.append("reason", reason.trim());
       }
 
-      await dispatch(
-        compensateAnOrderThunk({
-          orderId: order.id,
-          file: formData,
-        }),
-      ).unwrap();
+      const isPreOrderType = isPreOrder();
+
+      if (isPreOrderType) {
+        await dispatch(
+          compensateAPreOrderThunk({
+            id: order.id,
+            file: formData,
+          }),
+        ).unwrap();
+      } else {
+        await dispatch(
+          compensateAnOrderThunk({
+            orderId: order.id,
+            file: formData,
+          }),
+        ).unwrap();
+      }
 
       toast.success(`Compensation request ${isApproved ? "approved" : "rejected"} successfully!`);
       onSuccess();
@@ -150,15 +165,14 @@ const MobileCompensateRequest: React.FC<MobileCompensateRequestProps> = ({
         <CardContent className="pt-0">
           <div className="space-y-3">
             <div className="text-sm text-gray-600">
-              Please provide photo/video proof for the compensation decision (Max 5MB per file).
+              Please provide photo proof for the compensation decision (Max 10MB).
             </div>
 
             <MobileFileUploader
-              userId={order.user_id}
-              accept="image/*,video/*"
+              accept="image/*"
               multiple={true}
-              maxFiles={3}
-              maxSize={5}
+              maxFiles={1}
+              maxSize={10}
               allowedTypes={["jpg", "jpeg", "png", "webp"]}
               title="Upload Proof"
               onFilesChange={handleFilesCapture}

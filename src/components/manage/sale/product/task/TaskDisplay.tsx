@@ -1,4 +1,5 @@
-import { TaskProvider, useTaskManager } from "@/libs/contexts/TaskContext";
+import { useTask } from "@/libs/hooks/useTask";
+import { getTasksByProfile } from "@/libs/stores/taskManager/thunk";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,11 +14,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { TaskDetailDisplay } from "./TaskDetailDisplay";
 
 export const TaskDisplay = () => {
-  return (
-    <TaskProvider>
-      <TaskList />
-    </TaskProvider>
-  );
+  return <TaskList />;
 };
 
 const getStatusColor = (status: string) => {
@@ -61,7 +58,7 @@ const TaskCard = ({
 
   return (
     <Card
-      className={`hover:shadow-md cursor-pointer transition-shadow duration-200 w-full flex flex-col mb-4 ${isSelected ? "ring-2 ring-primary" : ""}`}
+      className={`hover:shadow-md cursor-pointer transition-shadow duration-200 w-full flex flex-col mb-4 mx-2 mt-2 ${isSelected ? "ring-2 ring-primary" : ""}`}
       onClick={onClick}
     >
       <CardHeader className="pb-1">
@@ -108,7 +105,7 @@ const TaskCard = ({
 export const TaskList = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { loading, tasks, fetchTasksByProfile } = useTaskManager();
+  const { profileTasksLoading: loading, profileTasks: tasks } = useTask();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [onOpenTaskDetail, setOnOpenTaskDetail] = useState(false);
 
@@ -116,13 +113,14 @@ export const TaskList = () => {
     return tasks.filter(
       (task) =>
         ["todo", "in_progress"].includes(task.status.toLowerCase()) &&
+        // Check if child_status === draft || revision then navigate to edit to complete the task
         !["submitted", "actived"].includes(task.child_status?.toLowerCase() || ""),
     );
   };
 
   useEffect(() => {
-    fetchTasksByProfile();
-  }, [fetchTasksByProfile]);
+    dispatch(getTasksByProfile(undefined));
+  }, [dispatch]);
 
   if (loading) {
     return (
@@ -158,7 +156,10 @@ export const TaskList = () => {
 
   return (
     <div className="space-y-4">
-      <div>
+      <div
+        className="h-[70vh] overflow-y-scroll overflow-x-hidden scroll"
+        style={{ scrollbarWidth: "thin" }}
+      >
         {filterIncompleteTasks(tasks).map((task) => (
           <TaskCard
             key={task.id}

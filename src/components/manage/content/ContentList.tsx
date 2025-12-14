@@ -1,6 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { useContentManager } from "@/libs/hooks/useContent";
+import { useNavigate } from "react-router-dom";
+import { useContent } from "@/libs/hooks/useContent";
 import { useAppDispatch } from "@/libs/stores";
+import {
+  contents,
+  deleteContent,
+  publishContent,
+  submitContent,
+} from "@/libs/stores/contentManager/thunk";
 import { updateTaskState } from "@/libs/stores/taskManager/thunk";
 import { manageContent } from "@/libs/services/manageContent";
 import { toast } from "sonner";
@@ -28,18 +35,24 @@ import {
   Search,
   Calendar,
   User,
-  ChevronLeft,
-  ChevronRight,
   FileText,
   Video,
   Settings,
   Globe,
+  Loader2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { Dialog } from "@/components/ui/dialog";
 import { DeleteContentModal } from "@/components/modal/content/DeleteContentModal";
 import { RequestApprovalModal } from "@/components/modal/content/RequestApprovalModal";
-import ContentDetailModal from "./ContentDetailModal";
 import TaskSelectionDialog from "./TaskSelectionDialog";
 import type { Content } from "@/libs/types/content";
 import type { Task } from "@/libs/types/task";
@@ -53,16 +66,8 @@ interface ContentListProps {
 }
 
 const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }) => {
-  const {
-    loading,
-    contentList,
-    pagination,
-    error,
-    fetchContents,
-    removeContent,
-    publishExistingContent,
-    submitExistingContent,
-  } = useContentManager();
+  const navigate = useNavigate();
+  const { loading, contents: contentList, pagination, error } = useContent();
 
   const dispatch = useAppDispatch();
 
@@ -74,9 +79,6 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     actor: "",
   });
 
-  const [selectedContent, setSelectedContent] = useState<Content | null>(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [isTaskSelectionOpen, setIsTaskSelectionOpen] = useState(false);
   const [selectedContentType, setSelectedContentType] = useState<ContentType>("blog");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -85,10 +87,11 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
   const [showRequestApprovalModal, setShowRequestApprovalModal] = useState(false);
   const [contentToSubmit, setContentToSubmit] = useState<Content | null>(null);
   const [isSubmittingApproval, setIsSubmittingApproval] = useState(false);
+  const [isLoadingEdit, setIsLoadingEdit] = useState(false);
 
   useEffect(() => {
-    fetchContents(filters);
-  }, [filters, fetchContents]);
+    dispatch(contents(filters));
+  }, [filters, dispatch]);
 
   const handleSearch = (value: string) => {
     setFilters((prev) => ({ ...prev, keywords: value, page: 1 }));
@@ -113,12 +116,12 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
 
     setIsDeletingContent(true);
     try {
-      const deleteResponse = await removeContent(contentToDelete.id);
+      const deleteResponse = await dispatch(deleteContent(contentToDelete.id));
 
       // Check if deletion was successful based on API response
       if (deleteResponse.meta.requestStatus === "fulfilled") {
         // Refresh content list only if successful
-        fetchContents(filters);
+        dispatch(contents(filters));
       }
 
       // Always close modal and clear state
@@ -139,48 +142,27 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     setContentToDelete(null);
   };
 
-  const handleViewContent = async (content: Content) => {
-    setIsLoadingDetail(true);
-
-    try {
-      // Fetch detailed content from API first
-      const response = await manageContent.contentDetail(content.id);
-      const apiData = response.data.data;
-
-      if (apiData) {
-        // Use the API response directly as Content (not as array!)
-        const detailedContent: Content = apiData;
-        // Show modal only after we have the complete data
-        setSelectedContent(detailedContent);
-        setIsDetailModalOpen(true);
-      } else {
-        // Fallback: use the content passed to the function
-        setSelectedContent(content);
-        setIsDetailModalOpen(true);
-      }
-    } catch (error) {
-      console.error("Error fetching content detail:", error);
-      setSelectedContent(content);
-      setIsDetailModalOpen(true);
-    } finally {
-      setIsLoadingDetail(false);
-    }
-
-    // Also call the parent onView if provided
+  const handleViewContent = (content: Content) => {
+    navigate(`/manage/content/all-contents/${content.id}`);
     onView?.(content);
   };
 
-  const handleCloseDetailModal = () => {
-    setIsDetailModalOpen(false);
-    setSelectedContent(null);
-  };
+  const handleEditContent = async (content: Content) => {
+    setIsLoadingEdit(true);
 
-  const handleRequestApproval = (contentId: string) => {
-    // Find the content by ID and show confirmation modal
-    const content = contentList.find((c) => c.id === contentId);
-    if (content) {
-      setContentToSubmit(content);
-      setShowRequestApprovalModal(true);
+    try {
+      const response = await manageContent.contentDetail(content.id);
+      const apiData = response.data.data;
+      if (apiData) {
+        onEdit?.(apiData);
+      } else {
+        onEdit?.(content);
+      }
+    } catch (error) {
+      console.error("Error fetching content detail for edit:", error);
+      onEdit?.(content);
+    } finally {
+      setIsLoadingEdit(false);
     }
   };
 
@@ -189,23 +171,21 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
 
     setIsSubmittingApproval(true);
     try {
-      const submitResponse = await submitExistingContent(contentToSubmit.id);
+      const submitResponse = await dispatch(submitContent(contentToSubmit.id));
 
       // Check if submission was successful
       if (submitResponse.meta.requestStatus === "fulfilled") {
-        fetchContents(filters);
+        dispatch(contents(filters));
       }
 
       // Always close modals and clear state
       setShowRequestApprovalModal(false);
       setContentToSubmit(null);
-      handleCloseDetailModal();
     } catch (error) {
       console.error("Error submitting content for approval:", error);
       // Close modals and clear state on error
       setShowRequestApprovalModal(false);
       setContentToSubmit(null);
-      handleCloseDetailModal();
     } finally {
       setIsSubmittingApproval(false);
     }
@@ -218,28 +198,41 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
 
   const handlePublish = async (content: Content) => {
     try {
-      const publishResponse = await publishExistingContent(content.id);
+      await dispatch(publishContent({ id: content.id })).unwrap();
+      if (content.task_id) {
+        try {
+          const maxAttempts = 10;
+          const pollInterval = 1500;
+          let isPosted = false;
 
-      // Check if publishing was successful
-      if (publishResponse.meta.requestStatus === "fulfilled") {
-        // Update task state to DONE if content has a task_id
-        if (content.task_id) {
-          try {
+          for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            await new Promise((resolve) => setTimeout(resolve, pollInterval));
+            const response = await manageContent.contentDetail(content.id);
+            const latestContent = response.data.data;
+
+            if (latestContent?.status === "POSTED") {
+              isPosted = true;
+              break;
+            }
+          }
+
+          if (isPosted) {
             await dispatch(
               updateTaskState({
                 taskId: content.task_id,
                 state: "DONE",
               }),
             ).unwrap();
-          } catch (taskError) {
-            console.warn("Failed to update task state:", taskError);
-            // Don't fail the entire operation if task update fails
+          } else {
+            console.warn("Content was not confirmed as posted after polling, skipping task update");
           }
+        } catch (taskError) {
+          console.warn("Failed to update task state:", taskError);
         }
-
-        fetchContents(filters);
-        toast.success(`Content "${content.title}" has been published successfully.`);
       }
+
+      dispatch(contents(filters));
+      toast.success(`Content "${content.title}" has been published successfully.`);
     } catch (error) {
       console.error("Error publishing content:", error);
       toast.error(error instanceof Error ? error.message : "Failed to publish content");
@@ -393,12 +386,12 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="await_staff">Awaiting Review</SelectItem>
-                <SelectItem value="await_brand">Awaiting Brand</SelectItem>
-                <SelectItem value="approved">Approved</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
-                <SelectItem value="posted">Posted</SelectItem>
+                <SelectItem value="DRAFT">Draft</SelectItem>
+                <SelectItem value="AWAIT_STAFF">Awaiting Review</SelectItem>
+                <SelectItem value="AWAIT_BRAND">Awaiting Brand</SelectItem>
+                <SelectItem value="APPROVED">Approved</SelectItem>
+                <SelectItem value="REJECTED">Rejected</SelectItem>
+                <SelectItem value="POSTED">Posted</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -432,8 +425,8 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
         <CardContent className="p-0">
           {loading ? (
             <div className="p-8 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500 mx-auto"></div>
-              <p className="mt-2 text-gray-500">Loading contents...</p>
+              <Loader2 className="mx-auto mb-4 h-12 w-12 text-primary animate-spin" />
+              <p className="text-gray-500">Loading contents</p>
             </div>
           ) : error ? (
             <div className="p-8 text-center text-red-500">
@@ -531,18 +524,18 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start">
-                          <DropdownMenuItem
-                            onClick={() => handleViewContent(content)}
-                            disabled={isLoadingDetail}
-                          >
+                          <DropdownMenuItem onClick={() => handleViewContent(content)}>
                             <Eye className="w-4 h-4 mr-2" />
-                            {isLoadingDetail ? "Loading..." : "View"}
+                            View
                           </DropdownMenuItem>
                           {/* Only show Edit for draft and rejected content */}
                           {(content.status === "DRAFT" || content.status === "REJECTED") && (
-                            <DropdownMenuItem onClick={() => onEdit?.(content)}>
+                            <DropdownMenuItem
+                              onClick={() => handleEditContent(content)}
+                              disabled={isLoadingEdit}
+                            >
                               <Edit className="w-4 h-4 mr-2" />
-                              Edit
+                              {isLoadingEdit ? "Loading..." : "Edit"}
                             </DropdownMenuItem>
                           )}
 
@@ -577,50 +570,46 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
               )}
             </>
           )}
+
+          {/* Pagination */}
+          {pagination && pagination.total_pages > 1 && (
+            <div className="flex justify-end p-4 border-t bg-gray-50">
+              <Pagination className="w-auto mx-0 justify-end">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() => handlePageChange(pagination.page - 1)}
+                      className={
+                        !pagination.has_prev ? "pointer-events-none opacity-50" : "cursor-pointer"
+                      }
+                    />
+                  </PaginationItem>
+                  {Array.from({ length: pagination.total_pages }, (_, i) => i + 1).map(
+                    (pageNum) => (
+                      <PaginationItem key={pageNum}>
+                        <PaginationLink
+                          onClick={() => handlePageChange(pageNum)}
+                          isActive={pagination.page === pageNum}
+                        >
+                          {pageNum}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ),
+                  )}
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() => handlePageChange(pagination.page + 1)}
+                      className={
+                        !pagination.has_next ? "pointer-events-none opacity-50" : "cursor-pointer"
+                      }
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </CardContent>
       </Card>
-
-      {/* Pagination */}
-      {pagination && pagination.total_pages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
-            {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}{" "}
-            results
-          </p>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(pagination.page - 1)}
-              disabled={!pagination.has_prev}
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Previous
-            </Button>
-            <span className="px-3 py-1 text-sm">
-              Page {pagination.page} of {pagination.total_pages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(pagination.page + 1)}
-              disabled={!pagination.has_next}
-            >
-              Next
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Content Detail Modal */}
-      <ContentDetailModal
-        content={selectedContent}
-        isOpen={isDetailModalOpen}
-        onClose={handleCloseDetailModal}
-        onRequestApproval={handleRequestApproval}
-      />
 
       {/* Task Selection Dialog */}
       <TaskSelectionDialog

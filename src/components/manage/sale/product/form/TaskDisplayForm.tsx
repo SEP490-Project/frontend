@@ -1,4 +1,4 @@
-import type { SingleTaskResponse } from "@/libs/task";
+import type { SingleTaskResponse } from "@/libs/types/task";
 import { Calendar, TriangleAlert } from "lucide-react";
 
 const TaskDisplayForm = ({

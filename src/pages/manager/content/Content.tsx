@@ -1,20 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Content, CreateContentRequest } from "@/libs/types/content";
 import { useAppDispatch } from "@/libs/stores";
 import { contents, createContent, updateContent } from "@/libs/stores/contentManager/thunk";
+import { getTasksByProfile } from "@/libs/stores/taskManager/thunk";
 import { clearGeneratedContent } from "@/libs/stores/contentManager/slice";
 import ContentList from "@/components/manage/content/ContentList";
 import BlogEditor from "@/components/manage/content/BlogEditor";
 import VideoEditor from "@/components/manage/content/VideoEditor";
 import { Dialog } from "@/components/ui/dialog";
 import { SaveConfirmModal } from "@/components/modal/content/SaveConfirmModal";
-import { TaskProvider } from "@/libs/contexts/TaskContext";
 
 type ViewMode = "list" | "editor";
 type ContentType = "blog" | "video";
 
 const ManageContent = () => {
   const dispatch = useAppDispatch();
+
+  // Fetch profile tasks on mount
+  useEffect(() => {
+    dispatch(getTasksByProfile(undefined));
+  }, [dispatch]);
 
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [editingContent, setEditingContent] = useState<Content | null>(null);
@@ -133,62 +138,58 @@ const ManageContent = () => {
   };
 
   return (
-    <TaskProvider>
-      <div className="min-h-fit p-4 sm:p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          {/* Main Content */}
-          {viewMode === "list" ? (
-            /* Content List View */
-            <ContentList onCreateNew={handleCreateNew} onEdit={handleEdit} />
-          ) : /* Editor View */
-          currentContentType === "blog" ? (
-            <BlogEditor
-              editingContent={editingContent}
-              selectedTask={selectedTask}
-              onSave={handleSave}
-              onBack={handleBackToList}
-            />
-          ) : (
-            <VideoEditor
-              editingContent={editingContent}
-              selectedTask={selectedTask}
-              onSave={handleSave}
-              onBack={handleBackToList}
-            />
-          )}
-        </div>
-
-        {/* Save Confirmation Modal */}
-        <Dialog
-          open={showConfirmModal}
-          onOpenChange={(open) => {
-            // Prevent closing modal while saving
-            if (!isSaving) {
-              setShowConfirmModal(open);
-            }
-          }}
-        >
-          {pendingSaveData && (
-            <SaveConfirmModal
-              contentTitle={(() => {
-                if ("title" in pendingSaveData.content && "body" in pendingSaveData.content) {
-                  return pendingSaveData.content.title;
-                } else {
-                  const oldContent = pendingSaveData.content as { html: string; json: object };
-                  return (
-                    (oldContent.json as any)?.title || `Untitled ${pendingSaveData.contentType}`
-                  );
-                }
-              })()}
-              contentType={pendingSaveData.contentType}
-              isUpdate={!!editingContent}
-              onConfirm={handleConfirmSave}
-              isLoading={isSaving}
-            />
-          )}
-        </Dialog>
+    <div className="min-h-fit p-4 sm:p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Main Content */}
+        {viewMode === "list" ? (
+          /* Content List View */
+          <ContentList onCreateNew={handleCreateNew} onEdit={handleEdit} />
+        ) : /* Editor View */
+        currentContentType === "blog" ? (
+          <BlogEditor
+            editingContent={editingContent}
+            selectedTask={selectedTask}
+            onSave={handleSave}
+            onBack={handleBackToList}
+          />
+        ) : (
+          <VideoEditor
+            editingContent={editingContent}
+            selectedTask={selectedTask}
+            onSave={handleSave}
+            onBack={handleBackToList}
+          />
+        )}
       </div>
-    </TaskProvider>
+
+      {/* Save Confirmation Modal */}
+      <Dialog
+        open={showConfirmModal}
+        onOpenChange={(open) => {
+          // Prevent closing modal while saving
+          if (!isSaving) {
+            setShowConfirmModal(open);
+          }
+        }}
+      >
+        {pendingSaveData && (
+          <SaveConfirmModal
+            contentTitle={(() => {
+              if ("title" in pendingSaveData.content && "body" in pendingSaveData.content) {
+                return pendingSaveData.content.title;
+              } else {
+                const oldContent = pendingSaveData.content as { html: string; json: object };
+                return (oldContent.json as any)?.title || `Untitled ${pendingSaveData.contentType}`;
+              }
+            })()}
+            contentType={pendingSaveData.contentType}
+            isUpdate={!!editingContent}
+            onConfirm={handleConfirmSave}
+            isLoading={isSaving}
+          />
+        )}
+      </Dialog>
+    </div>
   );
 };
 

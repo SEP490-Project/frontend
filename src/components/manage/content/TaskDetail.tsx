@@ -1,9 +1,13 @@
 import { motion } from "framer-motion";
 import { X, Clock, AlertTriangle, FileText, Briefcase, Check, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useTaskManager } from "@/libs/hooks/useTask";
+import { useTask } from "@/libs/hooks/useTask";
 import { useAppDispatch } from "@/libs/stores";
-import { updateTaskState } from "@/libs/stores/taskManager/thunk";
+import {
+  updateTaskState,
+  getTaskDetailById,
+  getTasksByProfile,
+} from "@/libs/stores/taskManager/thunk";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
@@ -14,14 +18,15 @@ interface TaskDetailProps {
 }
 
 export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
-  const { selectedTask, fetchTaskById, loading, fetchTasksByProfile } = useTaskManager();
+  const { taskDetailById, detailLoading: loading } = useTask();
   const dispatch = useAppDispatch();
+  const selectedTask = taskDetailById?.data || null;
 
   useEffect(() => {
     if (taskId && isVisible) {
-      fetchTaskById(taskId);
+      dispatch(getTaskDetailById(taskId));
     }
-  }, [taskId, isVisible, fetchTaskById]);
+  }, [taskId, isVisible, dispatch]);
 
   const handleStartTask = async () => {
     if (!selectedTask?.id) return;
@@ -43,7 +48,7 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
       toast.success("Task started successfully!");
 
       // Refresh the task list to show updated status
-      await fetchTasksByProfile();
+      await dispatch(getTasksByProfile(undefined));
 
       onClose(); // Navigate back to task list
     } catch (error) {

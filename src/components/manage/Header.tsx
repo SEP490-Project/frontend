@@ -38,7 +38,6 @@ const Header: React.FC<HeaderProps> = ({
   const { user } = useAuth();
   const dispatch = useAppDispatch();
   const { notifications } = useNotification();
-  console.log("Notifications in Header:", user);
 
   const { unreadCount } = useFuckingNotification();
 

@@ -232,7 +232,15 @@ const Sidebar: React.FC<SidebarProps> = ({
     ],
     SALES_STAFF: [
       { href: "/manage/sale/task", label: "Tasks & Schedule", icon: <FaCalendarDays size={18} /> },
-      { href: "/manage/sale/product", label: "Product", icon: <FaBoxOpen size={18} /> },
+      {
+        href: "/manage/sale/product",
+        label: "Product",
+        icon: <FaBoxOpen size={18} />,
+        subTabs: [
+          { href: "/manage/sale/product", label: "Standard", icon: <FaBoxOpen size={14} /> },
+          { href: "/manage/sale/product/limited", label: "Limited", icon: <FaBoxOpen size={14} /> },
+        ],
+      },
       { href: "/manage/sale/category", label: "Category", icon: <FaFolderTree size={18} /> },
       {
         href: "/manage/sale/order",

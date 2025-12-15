@@ -42,7 +42,7 @@ import { SelectAddProductType } from "@/components/manage/sale/product/SelectAdd
 import { toast } from "sonner";
 import { getAllCategoriesThunk } from "@/libs/stores/categoryManager/thunk";
 
-const Product: React.FC = () => {
+const Product: React.FC<{ type: "STANDARD" | "LIMITED" }> = ({ type }) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
@@ -56,6 +56,7 @@ const Product: React.FC = () => {
   const [params, setParams] = useState<ProductParams>({
     page: 1,
     limit: 10,
+    type: type || " ",
   });
 
   const filterParentCategory = categories?.data.filter((cat) => !cat.parent_category);
@@ -78,6 +79,10 @@ const Product: React.FC = () => {
       );
     }
   };
+
+  useEffect(() => {
+    setParams((prev) => ({ ...prev, type: type, page: 1 }));
+  }, [type]);
 
   useEffect(() => {
     dispatch(
@@ -138,7 +143,7 @@ const Product: React.FC = () => {
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value=" ">All Category</SelectItem>
+                <SelectItem value=" ">All Categories</SelectItem>
                 {filterParentCategory?.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name}
@@ -148,23 +153,29 @@ const Product: React.FC = () => {
             </Select>
           </div>
 
-          <div className="min-w-[150px]">
-            <Select
-              value={params.type || " "}
-              onValueChange={(value) => {
-                setParams({ ...params, type: value });
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value=" ">All Types</SelectItem>
-                <SelectItem value="STANDARD">Standard</SelectItem>
-                <SelectItem value="LIMITED">Limited</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {type === "LIMITED" && (
+            <div className="min-w-[150px]">
+              <Select
+                value={params.status || " "}
+                onValueChange={(value) => {
+                  setParams({ ...params, status: value });
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value=" ">All Status</SelectItem>
+                  <SelectItem value="DRAFT">Draft</SelectItem>
+                  <SelectItem value="SUBMITTED">Submitted</SelectItem>
+                  <SelectItem value="APPROVED">Approved</SelectItem>
+                  <SelectItem value="REVISION">Revision</SelectItem>
+                  <SelectItem value="ACTIVED">Actived</SelectItem>
+                  <SelectItem value="INACTIVED">Inactived</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
       </div>
 

@@ -114,7 +114,8 @@ export const TaskList = () => {
       (task) =>
         ["todo", "in_progress"].includes(task.status.toLowerCase()) &&
         // Check if child_status === draft || revision then navigate to edit to complete the task
-        !["submitted", "actived"].includes(task.child_status?.toLowerCase() || ""),
+        !["submitted", "actived"].includes(task.child_status?.toLowerCase() || "") &&
+        (!task.product_ids?.length || task.product_ids.length === 0),
     );
   };
 
@@ -148,7 +149,16 @@ export const TaskList = () => {
   const handleChooseTask = () => {
     if (selectedTask?.status.toLowerCase() === "todo") {
       dispatch(updateTaskStateThunk({ taskId: selectedTask.id, newState: "IN_PROGRESS" }));
+    } else if (
+      selectedTask?.child_status?.toLowerCase() === "draft" ||
+      selectedTask?.child_status?.toLowerCase() === "revision"
+    ) {
+      navigate(`/manage/sale/product/${selectedTask.product_ids?.[0]?.id}/edit`, {
+        state: { formType: "EDIT", productType: "LIMITED", task: selectedTask },
+      });
+      return;
     }
+
     navigate("create", {
       state: { formType: "CREATE", productType: "LIMITED", task: selectedTask },
     });

@@ -60,7 +60,7 @@ function PaymentDetailModal({
   isPaymentLoading = false,
 }: PaymentDetailModalProps) {
   const dispatch = useAppDispatch();
-  const { contractPaymentDetail, loading } = useContractPayment();
+  const { contractPaymentDetail, detailLoading } = useContractPayment();
 
   useEffect(() => {
     if (isOpen && paymentId) {
@@ -86,7 +86,7 @@ function PaymentDetailModal({
           </DialogTitle>
         </DialogHeader>
 
-        {loading ? (
+        {detailLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <span className="ml-2">Loading payment details...</span>

@@ -5,7 +5,6 @@ import {
   FaChartLine,
   FaUserGear,
   FaRegUser,
-  FaRegCircleQuestion,
   FaHashtag,
   FaCalendarDays,
   FaFilePen,
@@ -326,7 +325,6 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const otherTabs: TabItem[] = [
     { href: "/manage/account", label: "Account", icon: <FaRegUser size={18} /> },
-    { href: "/manage/help", label: "Help", icon: <FaRegCircleQuestion size={18} /> },
   ];
 
   return (

@@ -80,6 +80,7 @@ const ContractPaymentBrandPage: React.FC = () => {
   const [modalPaymentLoading, setModalPaymentLoading] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isEarlyPaymentWarningOpen, setIsEarlyPaymentWarningOpen] = useState(false);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [pendingPaymentData, setPendingPaymentData] = useState<{
     contractPaymentId: string;
     amount: number;
@@ -383,13 +384,17 @@ const ContractPaymentBrandPage: React.FC = () => {
   };
 
   const handleViewPayment = (paymentId: string) => {
+    setIsDetailLoading(true);
     setSelectedPaymentId(paymentId);
     setIsModalOpen(true);
+    // Reset loading state after a short delay to allow modal to open
+    setTimeout(() => setIsDetailLoading(false), 100);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedPaymentId(null);
+    setIsDetailLoading(false);
   };
 
   const BrandCard = useMemo(
@@ -575,7 +580,7 @@ const ContractPaymentBrandPage: React.FC = () => {
       </motion.div>
 
       <div className="bg-white rounded-lg overflow-hidden shadow">
-        {loading ? (
+        {loading && !isDetailLoading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <span className="ml-2">Loading contract payments...</span>

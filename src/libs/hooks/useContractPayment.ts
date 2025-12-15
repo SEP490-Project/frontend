@@ -4,6 +4,7 @@ import type { RootState } from "@/libs/stores";
 export const useContractPayment = () => {
   const {
     loading,
+    detailLoading,
     contractPayments,
     contractPaymentBrand,
     pagination,
@@ -13,6 +14,7 @@ export const useContractPayment = () => {
   } = useSelector((state: RootState) => state.manageContractPayment);
   return {
     loading,
+    detailLoading,
     contractPayments,
     contractPaymentBrand,
     pagination,

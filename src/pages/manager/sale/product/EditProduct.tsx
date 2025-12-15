@@ -10,6 +10,7 @@ import {
   updateLimitedProductBasicInfoThunk,
   updateProductVariantThunk,
   updateLimitedProductVariantThunk,
+  createVariantProductThunk,
 } from "@/libs/stores/productManager/thunk";
 import { getAllCategoriesThunk } from "@/libs/stores/categoryManager/thunk";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -21,6 +22,8 @@ import * as yup from "yup";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import type { Task } from "@/libs/types/task";
+import type { ProductVariant } from "@/libs/types/product";
 
 const updateProductBasicInfoSchema = yup.object({
   brand_id: yup.string().required("Brand is required"),
@@ -38,10 +41,14 @@ const updateLimitedProductBasicInfoSchema = yup.object({
   premiere_date: yup.string().required("Premiere date is required"),
   availability_end_date: yup.string().required("Availability end date is required"),
   availability_start_date: yup.string().required("Availability start date is required"),
+  achievable_quantity: yup
+    .number()
+    .min(1, "Achievable quantity cannot be negative")
+    .required("Achievable quantity is required"),
 });
 
 const updateLimitedProductVariantSchema = yup.object({
-  capaity: yup.number().required("Capacity is required").positive("Capacity must be positive"),
+  capacity: yup.number().required("Capacity is required").positive("Capacity must be positive"),
   capacity_unit: yup.string().required("Capacity unit is required"),
   container_type: yup.string().required("Container type is required"),
   dispenser_type: yup.string().required("Dispenser type is required"),
@@ -52,31 +59,31 @@ const updateLimitedProductVariantSchema = yup.object({
   is_default: yup.boolean().required("Is default is required"),
   length: yup.number().required("Length is required").positive("Length must be positive"),
   manufacturing_date: yup.string().required("Manufacturing date is required"),
-  max_stock: yup.number().required("Max stock is required").positive("Max stock must be positive"),
+  // max_stock: yup.number().required("Max stock is required").positive("Max stock must be positive"),
   pre_order_limit: yup
     .number()
     .required("Pre order limit is required")
     .positive("Pre order limit must be positive"),
   price: yup.number().required("Price is required").min(1000, "Price must be at least 1000"),
-  uses: yup.string().required("Uses is required"),
+  uses: yup.string().nullable(),
   weight: yup.number().required("Weight is required").positive("Weight must be positive"),
   width: yup.number().required("Width is required").positive("Width must be positive"),
 });
 
 const updateStandardProductVariantSchema = yup.object({
-  capaity: yup.number().required("Capacity is required").positive("Capacity must be positive"),
+  capacity: yup.number().required("Capacity is required").positive("Capacity must be positive"),
   capacity_unit: yup.string().required("Capacity unit is required"),
   container_type: yup.string().required("Container type is required"),
   dispenser_type: yup.string().required("Dispenser type is required"),
-  expiry_date: yup.string().required("Expiry date is required"),
+  expiry_date: yup.date().required("Expiry date is required"),
   height: yup.number().required("Height is required").positive("Height must be positive"),
-  input_stock: yup.number().required("Input stock is required").min(0, "Stock cannot be negative"),
+  // input_stock: yup.number().required("Input stock is required").min(0, "Stock cannot be negative"),
   instrucstions: yup.string().nullable(),
   is_default: yup.boolean().required("Is default is required"),
   length: yup.number().required("Length is required").positive("Length must be positive"),
-  manufacturing_date: yup.string().required("Manufacturing date is required"),
+  manufacturing_date: yup.date().required("Manufacturing date is required"),
   price: yup.number().required("Price is required").min(1000, "Price must be at least 1000"),
-  uses: yup.string().required("Uses is required"),
+  uses: yup.string().nullable(),
   weight: yup.number().required("Weight is required").positive("Weight must be positive"),
   width: yup.number().required("Width is required").positive("Width must be positive"),
 });
@@ -85,7 +92,12 @@ const EditProduct = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { state } = useLocation();
-  const { id } = state as { id: string };
+  const { id, task, formType, productType } = state as {
+    id: string;
+    task: Task;
+    formType: string;
+    productType: string;
+  };
   const { brands } = useBrand();
 
   const { productDetail, isLoading } = useSelector((state: RootState) => state.manageProduct);
@@ -96,28 +108,26 @@ const EditProduct = () => {
   const [params] = useState({ page: 1, limit: 100 });
 
   const isLimitedProduct = productDetail?.data?.type === "LIMITED";
+  const productId = id || task?.product_ids?.[0]?.id || null;
 
   const standardBasicInfoForm = useForm({
     resolver: yupResolver(updateProductBasicInfoSchema),
   });
-
   const limitedBasicInfoForm = useForm({
     resolver: yupResolver(updateLimitedProductBasicInfoSchema),
   });
-
   const limitedVariantForm = useForm({
     resolver: yupResolver(updateLimitedProductVariantSchema),
   });
-
   const standardVariantForm = useForm({
     resolver: yupResolver(updateStandardProductVariantSchema),
   });
 
   useEffect(() => {
-    if (id) {
-      dispatch(getProductDetailThunk(id));
+    if (productId) {
+      dispatch(getProductDetailThunk(productId));
     }
-  }, [dispatch, id]);
+  }, [dispatch, productId]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -161,6 +171,7 @@ const EditProduct = () => {
             (data as any).limited_product?.availability_start_date?.split("T")[0] || "",
           availability_end_date:
             (data as any).limited_product?.availability_end_date?.split("T")[0] || "",
+          achievable_quantity: (data as any).limited_product?.achievable_quantity || "",
         });
       } else {
         standardBasicInfoForm.reset({
@@ -171,7 +182,7 @@ const EditProduct = () => {
         });
       }
     }
-  }, [productDetail, isLimitedProduct]);
+  }, [productDetail, isLimitedProduct, limitedBasicInfoForm, standardBasicInfoForm]);
 
   const handleUpdateBasicInfo = async (data: any, isLimited: boolean) => {
     try {
@@ -180,9 +191,8 @@ const EditProduct = () => {
       } else {
         await dispatch(updateProductBasicInfoThunk({ productId: id, data })).unwrap();
       }
-      toast.success("Product basic information updated successfully!");
-      // Refresh product detail
-      dispatch(getProductDetailThunk(id));
+
+      dispatch(getProductDetailThunk(productId));
     } catch (error) {
       toast.error((error as string) || "Failed to update product basic information");
     }
@@ -195,11 +205,24 @@ const EditProduct = () => {
       } else {
         await dispatch(updateProductVariantThunk({ variantId, data })).unwrap();
       }
-      toast.success("Product variant updated successfully!");
-      // Refresh product detail
-      dispatch(getProductDetailThunk(id));
+      dispatch(getProductDetailThunk(productId));
     } catch (error) {
       toast.error((error as string) || "Failed to update product variant");
+    }
+  };
+
+  const handleCreateVariant = async (data: ProductVariant) => {
+    try {
+      await dispatch(
+        createVariantProductThunk({
+          payload: data,
+          productId: productId!,
+        }),
+      ).unwrap();
+      toast.success("Variant created successfully");
+      dispatch(getProductDetailThunk(productId));
+    } catch (error) {
+      toast.error((error as string) || "Failed to create product variant");
     }
   };
 
@@ -240,7 +263,15 @@ const EditProduct = () => {
         <UpdateVariantSection
           form={isLimitedProduct ? limitedVariantForm : standardVariantForm}
           onSubmit={handleUpdateVariant}
+          onCreateVariant={handleCreateVariant}
         />
+        {formType === "EDIT" && task && productType === "LIMITED" && (
+          <div className="bg-white p-3 flex justify-end absolute bottom-0 right-0 w-full border-t">
+            <Button variant="default" onClick={() => {}}>
+              Re-submit for Approval
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

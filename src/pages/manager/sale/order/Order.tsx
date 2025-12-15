@@ -85,7 +85,7 @@ const Order: React.FC = () => {
     "PAID",
     "CANCELLED",
     "AWAITING_PICKUP",
-    "REFUNDED_REQUEST",
+    "REFUND_REQUEST",
     "REFUNDED",
     "SHIPPED",
     "IN_TRANSIT",

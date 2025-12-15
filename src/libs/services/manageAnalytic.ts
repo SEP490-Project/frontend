@@ -31,6 +31,7 @@ export const manageBrandAnalytic = {
   getBrandRevenueTrend: (params: any) =>
     api.get("/analytics/brand-partner/revenue-trend", { params }),
   getBrandTopProduct: (params: any) => api.get("/analytics/brand-partner/top-products", { params }),
+  getBrandDashboard: (params: any) => api.get("/analytics/brand-partner/dashboard", { params }),
 };
 
 export const manageSalesAnalytic = {

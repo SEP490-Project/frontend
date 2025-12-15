@@ -105,6 +105,8 @@ const EditProduct = () => {
     (state: RootState) => state.manageCategory,
   );
 
+  console.log("Product Detail:", task);
+
   const [params] = useState({ page: 1, limit: 100 });
 
   const isLimitedProduct = productDetail?.data?.type === "LIMITED";
@@ -241,7 +243,12 @@ const EditProduct = () => {
     <div className="min-h-screen p-4 sm:p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="sm" onClick={() => navigate("/manage/sale/product")}>
+          <Button
+            variant="outline"
+            className="bg-white"
+            size="sm"
+            onClick={() => navigate("/manage/sale/product")}
+          >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Products
           </Button>

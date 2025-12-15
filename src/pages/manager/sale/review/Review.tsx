@@ -17,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatDate } from "@/libs/helper/helper";
 import { useAppDispatch, type RootState } from "@/libs/stores";
 import { getReviewsForStaffThunk } from "@/libs/stores/reviewManager/thunk";
 import type { ProductParams } from "@/libs/types/product";
@@ -138,13 +139,13 @@ const Review = () => {
                       <span className="font-medium">{review.user_info.full_name}</span>
                       <span className="text-sm text-gray-500">
                         {" "}
-                        Product - <span className="font-bold">{review.product.name}</span>
+                        Product - <span className="font-medium">{review.product.name}</span>
                       </span>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col">
-                      <span className="flex items-center text-lg font-bold">
+                      <span className="flex items-center text-lg font-medium">
                         <FaStar className="inline text-yellow-500 mr-1" size={16} />
                         {review.review_content.rating_stars.toFixed(1)}
                       </span>
@@ -152,7 +153,9 @@ const Review = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm text-gray-500">2023-10-01</span>
+                    <span className="text-sm text-gray-500">
+                      {formatDate(review.review_content.created_at)}
+                    </span>
                   </TableCell>
                   <TableCell>
                     <Button

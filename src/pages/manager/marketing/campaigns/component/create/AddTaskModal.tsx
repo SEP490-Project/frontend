@@ -27,15 +27,10 @@ import {
   CompactKPISelector,
   DynamicListInput,
 } from "@/pages/manager/marketing/contracts/component/create/shared/SharedComponents";
+import type { KPI } from "@/pages/manager/marketing/contracts/component/create/types/scopeTypes";
 import AddressSelector from "@/components/global/AddressSelector";
 import DateTimePicker from "@/components/date-time-picker";
 import DurationPicker from "@/components/duration-picker";
-
-interface KPIGoal {
-  metric: string;
-  target: string;
-  description?: string;
-}
 
 interface TaskDescriptionJson {
   // Advertising/Affiliate
@@ -46,7 +41,7 @@ interface TaskDescriptionJson {
   tagline?: string;
   creative_notes?: string;
   hashtags?: string[];
-  kpi_goals?: KPIGoal[];
+  kpi_goals?: KPI[];
   material_urls?: string[];
   is_affiliate_content?: boolean;
   tracking_link?: string;
@@ -75,6 +70,15 @@ interface TaskDescriptionJson {
   related_product_name?: string;
 }
 
+// Interface for suggested task data from API
+interface SuggestedTaskData {
+  name: string;
+  type: string;
+  deadline: string;
+  description: TaskDescriptionJson;
+  scope_of_work_item_id?: string;
+}
+
 interface TaskDescription {
   description: string;
   material_url?: string;
@@ -91,6 +95,15 @@ interface Task {
   material_urls?: string[];
 }
 
+// Interface for suggested task data from API
+interface SuggestedTaskData {
+  name: string;
+  type: string;
+  deadline: string;
+  description: TaskDescriptionJson;
+  scope_of_work_item_id?: string;
+}
+
 interface AddTaskModalProps {
   open: boolean;
   onClose: () => void;
@@ -98,7 +111,7 @@ interface AddTaskModalProps {
   campaignType: string;
   taskTypeOptions: { value: string; label: string }[];
   milestoneDueDate?: string;
-  suggestedTaskData?: any; // Data from campaign suggestion
+  suggestedTaskData?: SuggestedTaskData; // Data from campaign suggestion
 }
 
 const formatDateForInput = (dateString?: string | null) => {
@@ -135,7 +148,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
     material_urls: [],
   });
 
-  const [kpiGoals, setKpiGoals] = useState<KPIGoal[]>([]);
+  const [kpiGoals, setKpiGoals] = useState<KPI[]>([]);
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [activities, setActivities] = useState<string[]>([]);
   const [representationRules, setRepresentationRules] = useState<string[]>([]);
@@ -173,128 +186,126 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
   // Populate data from suggestion when available
   React.useEffect(() => {
     if (open && suggestedTaskData) {
-      const populateFromSuggestion = (data: any) => {
-        // Populate basic task info if available
-        if (data.name) {
-          setTaskData((prev) => ({ ...prev, name: data.name }));
+      const data = suggestedTaskData;
+      const desc = data.description || {};
+
+      // Set basic task info
+      setTaskData((prev) => ({
+        ...prev,
+        name: data.name || "",
+        type: data.type || defaultType,
+        deadline: formatDateForInput(data.deadline),
+      }));
+
+      // Set KPI goals
+      if (desc.kpi_goals && Array.isArray(desc.kpi_goals)) {
+        setKpiGoals(desc.kpi_goals);
+      }
+
+      // Set material URLs and materials
+      if (desc.material_urls && Array.isArray(desc.material_urls)) {
+        setTaskData((prev) => ({
+          ...prev,
+          material_urls: desc.material_urls,
+          description: {
+            ...prev.description,
+            material_url: desc.material_urls?.[0] || "",
+          },
+        }));
+      }
+
+      // Handle materials array (for CO_PRODUCING)
+      if (desc.materials && Array.isArray(desc.materials)) {
+        setMaterials(desc.materials);
+        setTaskData((prev) => ({
+          ...prev,
+          material_urls: desc.materials,
+          description: {
+            ...prev.description,
+            material_url: desc.materials?.[0] || "",
+          },
+        }));
+      }
+
+      // Set hashtags
+      if (desc.hashtags && Array.isArray(desc.hashtags)) {
+        setHashtags(desc.hashtags);
+      }
+
+      // Type-specific population based on campaign type and task type
+      if (
+        (campaignType === "ADVERTISING" || campaignType === "AFFILIATE") &&
+        data.type === "CONTENT"
+      ) {
+        // Advertising/Affiliate Content Task
+        const formUpdates: any = {};
+        if (desc.advertised_item_id) formUpdates.advertised_item_id = desc.advertised_item_id;
+        if (desc.name || desc.product_name)
+          formUpdates.advertised_item_name = desc.name || desc.product_name;
+        if (desc.product_name) formUpdates.product_name = desc.product_name;
+        if (desc.platform) formUpdates.platform = desc.platform;
+        if (desc.tagline) formUpdates.tagline = desc.tagline;
+        if (desc.creative_notes) formUpdates.creative_notes = desc.creative_notes;
+        if (desc.tracking_link) formUpdates.tracking_link = desc.tracking_link;
+        setFormData(formUpdates);
+
+        // Set description to creative notes or general description
+        setFreeformDescription(desc.creative_notes || "");
+      } else if (campaignType === "BRAND_AMBASSADOR" && data.type === "EVENT") {
+        // Brand Ambassador Event Task
+        const formUpdates: any = {};
+        if (desc.event_id) formUpdates.event_id = desc.event_id;
+        if (desc.event_name) formUpdates.event_name = desc.event_name;
+        if (desc.event_date) {
+          // Handle both "2025-12-22 00:30:00" and ISO formats
+          const dateStr = desc.event_date.includes(" ")
+            ? desc.event_date.split(" ")[0]
+            : desc.event_date;
+          formUpdates.event_date = formatDateForInput(dateStr);
+        }
+        if (desc.event_duration) formUpdates.event_duration = desc.event_duration;
+        if (desc.location) formUpdates.location = desc.location;
+        setFormData(formUpdates);
+
+        if (desc.activities && Array.isArray(desc.activities)) {
+          setActivities(desc.activities);
+        }
+        if (desc.representation_rules && Array.isArray(desc.representation_rules)) {
+          setRepresentationRules(desc.representation_rules);
         }
 
-        // Populate based on campaign type and task structure from JSON
-        if (campaignType === "ADVERTISING" || campaignType === "AFFILIATE") {
-          const adData = data.advertised_item || data;
-          if (adData) {
-            const formUpdates: any = {};
-            if (adData.advertised_item_id || adData.id)
-              formUpdates.advertised_item_id = adData.advertised_item_id || adData.id;
-            if (adData.name) formUpdates.advertised_item_name = adData.name;
-            if (adData.platform) formUpdates.platform = adData.platform;
-            if (adData.tagline) formUpdates.tagline = adData.tagline;
-            if (adData.creative_notes) formUpdates.creative_notes = adData.creative_notes;
-            if (adData.tracking_link) formUpdates.tracking_link = adData.tracking_link;
-            setFormData(formUpdates);
+        // Set description to event name
+        setFreeformDescription(desc.event_name || "");
+      } else if (campaignType === "CO_PRODUCING" && data.type === "PRODUCT") {
+        // Co-Producing Product Task
+        const formUpdates: any = {};
+        if (desc.product_id) formUpdates.product_id = desc.product_id;
+        if (desc.product_name) formUpdates.product_name = desc.product_name;
+        if (desc.product_description) formUpdates.product_description = desc.product_description;
+        setFormData(formUpdates);
 
-            if (adData.hashtags && Array.isArray(adData.hashtags)) {
-              setHashtags(adData.hashtags);
-            }
-            if (adData.kpi_goals && Array.isArray(adData.kpi_goals)) {
-              setKpiGoals(adData.kpi_goals);
-            }
-            if (adData.materials && Array.isArray(adData.materials)) {
-              setMaterials(adData.materials);
-            } else if (adData.material_urls && Array.isArray(adData.material_urls)) {
-              setMaterials(adData.material_urls);
-            }
-          }
-        } else if (campaignType === "BRAND_AMBASSADOR") {
-          // For Brand Ambassador, the data structure is different - look for description_json first
-          const eventData = data.description_json || data.brand_ambassador || data;
-          if (eventData) {
-            const formUpdates: any = {};
-            if (eventData.event_id) formUpdates.event_id = eventData.event_id;
-            if (eventData.event_name) formUpdates.event_name = eventData.event_name;
-            if (eventData.event_date) formUpdates.event_date = eventData.event_date;
-            if (eventData.event_duration) formUpdates.event_duration = eventData.event_duration;
-            if (eventData.location) formUpdates.location = eventData.location;
-            setFormData(formUpdates);
-
-            if (eventData.activities && Array.isArray(eventData.activities)) {
-              setActivities(eventData.activities);
-            }
-            if (eventData.representation_rules && Array.isArray(eventData.representation_rules)) {
-              setRepresentationRules(eventData.representation_rules);
-            }
-            if (eventData.kpi_goals && Array.isArray(eventData.kpi_goals)) {
-              setKpiGoals(eventData.kpi_goals);
-            }
-            // For Brand Ambassador, materials might not be present in the suggestion
-            // Only set materials if they exist - keep them separate from uploaded files
-            if (eventData.materials && Array.isArray(eventData.materials)) {
-              setMaterials(eventData.materials);
-            } else if (eventData.material_urls && Array.isArray(eventData.material_urls)) {
-              setMaterials(eventData.material_urls);
-            }
-          }
-        } else if (campaignType === "CO_PRODUCING") {
-          // Handle both product and concept data
-          const productData = data.product || data;
-          const conceptData = data.concept || data;
-
-          if (productData && productData.is_product_creation_task !== false) {
-            const formUpdates: any = {};
-            if (productData.product_id || productData.id)
-              formUpdates.product_id = productData.product_id || productData.id;
-            if (productData.product_name || productData.name)
-              formUpdates.product_name = productData.product_name || productData.name;
-            if (productData.product_description || productData.description)
-              formUpdates.product_description =
-                productData.product_description || productData.description;
-            setFormData(formUpdates);
-
-            if (productData.subtasks && Array.isArray(productData.subtasks)) {
-              setSubtasks(productData.subtasks);
-            }
-            if (productData.materials && Array.isArray(productData.materials)) {
-              setMaterials(productData.materials);
-            } else if (productData.material_urls && Array.isArray(productData.material_urls)) {
-              setMaterials(productData.material_urls);
-            }
-            if (productData.kpi_goals && Array.isArray(productData.kpi_goals)) {
-              setKpiGoals(productData.kpi_goals);
-            }
-          } else if (conceptData && conceptData.is_product_creation_task === false) {
-            const formUpdates: any = {};
-            if (conceptData.concept_id || conceptData.id)
-              formUpdates.concept_id = conceptData.concept_id || conceptData.id;
-            if (conceptData.concept_name || conceptData.name)
-              formUpdates.concept_name = conceptData.concept_name || conceptData.name;
-            if (conceptData.concept_description || conceptData.description)
-              formUpdates.concept_description =
-                conceptData.concept_description || conceptData.description;
-            if (conceptData.related_product_id)
-              formUpdates.related_product_id = conceptData.related_product_id;
-            if (conceptData.related_product_name)
-              formUpdates.related_product_name = conceptData.related_product_name;
-            if (conceptData.platform) formUpdates.platform = conceptData.platform;
-            setFormData(formUpdates);
-
-            if (conceptData.hashtags && Array.isArray(conceptData.hashtags)) {
-              setHashtags(conceptData.hashtags);
-            }
-            if (conceptData.materials && Array.isArray(conceptData.materials)) {
-              setMaterials(conceptData.materials);
-            } else if (conceptData.material_urls && Array.isArray(conceptData.material_urls)) {
-              setMaterials(conceptData.material_urls);
-            }
-            if (conceptData.kpi_goals && Array.isArray(conceptData.kpi_goals)) {
-              setKpiGoals(conceptData.kpi_goals);
-            }
-          }
+        if (desc.subtasks && Array.isArray(desc.subtasks)) {
+          setSubtasks(desc.subtasks);
         }
-      };
 
-      populateFromSuggestion(suggestedTaskData);
+        // Set description to product description
+        setFreeformDescription(desc.product_description || "");
+      } else if (campaignType === "CO_PRODUCING" && data.type === "CONTENT") {
+        // Co-Producing Concept Task (marketing concept)
+        const formUpdates: any = {};
+        if (desc.concept_id) formUpdates.concept_id = desc.concept_id;
+        if (desc.concept_name) formUpdates.concept_name = desc.concept_name;
+        if (desc.concept_description) formUpdates.concept_description = desc.concept_description;
+        if (desc.related_product_id) formUpdates.related_product_id = desc.related_product_id;
+        if (desc.related_product_name) formUpdates.related_product_name = desc.related_product_name;
+        if (desc.platform) formUpdates.platform = desc.platform;
+        setFormData(formUpdates);
+
+        // Set description to concept description
+        setFreeformDescription(desc.concept_description || "");
+      }
     }
-  }, [open, suggestedTaskData, campaignType]);
+  }, [open, suggestedTaskData, campaignType, defaultType]);
 
   const [formData, setFormData] = useState<Record<string, any>>({});
 
@@ -388,8 +399,8 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
       if (materials.length > 0) {
         descriptionJson.materials = materials;
       }
-    } else if (campaignType === "CO_PRODUCING" && taskData.type === "CONCEPT") {
-      // Co-Producing Concept Task
+    } else if (campaignType === "CO_PRODUCING" && taskData.type === "CONTENT") {
+      // Co-Producing Content/Concept Task
       descriptionJson.is_product_creation_task = false;
       if (formData.concept_id) {
         descriptionJson.concept_id = Number(formData.concept_id);
@@ -713,7 +724,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
 
     if (
       campaignType === "CO_PRODUCING" &&
-      (taskData.type === "PRODUCT" || taskData.type === "CONCEPT")
+      (taskData.type === "PRODUCT" || taskData.type === "CONTENT")
     ) {
       return (
         <Card className="border-0 shadow-sm">
@@ -724,11 +735,11 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-800">
-                  Co-Producing {taskData.type === "CONCEPT" ? "Concept" : "Product"} Details
+                  Co-Producing {taskData.type === "CONTENT" ? "Concept" : "Product"} Details
                 </h3>
                 <p className="text-sm text-gray-600">
                   Configure{" "}
-                  {taskData.type === "CONCEPT" ? "concept development" : "product creation"}{" "}
+                  {taskData.type === "CONTENT" ? "concept development" : "product creation"}{" "}
                   parameters
                 </p>
               </div>
@@ -837,23 +848,23 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
             <div>
               <Label className="text-sm font-medium flex items-center gap-2">
                 <FileText className="w-4 h-4" />
-                {taskData.type === "CONCEPT" ? "Concept Description" : "Product Description"}
+                {taskData.type === "CONTENT" ? "Concept Description" : "Product Description"}
               </Label>
               <Textarea
                 rows={4}
                 placeholder={
-                  taskData.type === "CONCEPT"
+                  taskData.type === "CONTENT"
                     ? "Describe the concept, creative direction, brand positioning, messaging strategy, etc..."
                     : "Provide detailed product description, features, specifications, target audience, etc..."
                 }
                 value={
-                  taskData.type === "CONCEPT"
+                  taskData.type === "CONTENT"
                     ? formData.concept_description || ""
                     : formData.product_description || ""
                 }
                 onChange={(e) =>
                   updateFormData(
-                    taskData.type === "CONCEPT" ? "concept_description" : "product_description",
+                    taskData.type === "CONTENT" ? "concept_description" : "product_description",
                     e.target.value,
                   )
                 }
@@ -861,7 +872,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
               />
             </div>
 
-            {taskData.type === "CONCEPT" && (
+            {taskData.type === "CONTENT" && (
               <DynamicListInput
                 label="Hashtags"
                 items={hashtags}
@@ -994,7 +1005,11 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
               <CompactKPISelector
                 kpis={kpiGoals}
                 onChange={setKpiGoals}
-                contractType={campaignType}
+                contractType={
+                  campaignType === "CO_PRODUCING" && taskData.type === "CONTENT"
+                    ? "ADVERTISING" // Use ADVERTISING metrics for CO_PRODUCING CONTENT (concept)
+                    : campaignType
+                }
                 requiredMetrics={campaignType === "AFFILIATE" ? ["click_through"] : []}
               />
             </CardContent>

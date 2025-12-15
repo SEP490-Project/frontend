@@ -6,6 +6,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { HelpCircle } from "lucide-react";
 
 export type BadgeVariant = "campaignStatus" | "contractStatus" | "contractType";
 
@@ -29,6 +31,7 @@ export interface TableWidgetProps {
   title?: string;
   data: Record<string, TableCellValue>[];
   hiddenColumns?: string[];
+  tooltip?: string;
 }
 
 const BADGE_STYLES: Record<BadgeVariant, Record<string, string>> = {
@@ -96,7 +99,7 @@ const renderCell = (cell: TableCellValue) => {
   return "-";
 };
 
-function TableWidget({ title, data, hiddenColumns = [] }: TableWidgetProps) {
+function TableWidget({ title, data, hiddenColumns = [], tooltip }: TableWidgetProps) {
   if (!Array.isArray(data) || data.length === 0) {
     return <div className="py-6 text-center text-sm text-muted-foreground">No data available</div>;
   }
@@ -111,7 +114,19 @@ function TableWidget({ title, data, hiddenColumns = [] }: TableWidgetProps) {
     <div className="rounded-md border bg-white overflow-hidden">
       {title && (
         <div className="px-4 py-3 border-b">
-          <h3 className="text-sm font-semibold">{title}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold">{title}</h3>
+            {tooltip && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-xs">{tooltip}</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
         </div>
       )}
 

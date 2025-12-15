@@ -8,6 +8,8 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
+import { Tooltip as ShadcnTooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { HelpCircle } from "lucide-react";
 
 interface Props {
   title: string;
@@ -23,9 +25,10 @@ interface Props {
       color: string;
     };
   };
+  tooltip?: string;
 }
 
-function LineChartWidget({ title, data, unit, lineConfig }: Props) {
+function LineChartWidget({ title, data, unit, lineConfig, tooltip }: Props) {
   if (!Array.isArray(data) || !data.length || !data[0]?.month) {
     return null;
   }
@@ -48,7 +51,19 @@ function LineChartWidget({ title, data, unit, lineConfig }: Props) {
 
   return (
     <div className="h-[340px] flex flex-col">
-      <h3 className="text-gray-700 text-base font-semibold mb-3">{title}</h3>
+      <div className="flex items-center gap-2 mb-3">
+        <h3 className="text-gray-700 text-base font-semibold">{title}</h3>
+        {tooltip && (
+          <ShadcnTooltip>
+            <TooltipTrigger asChild>
+              <HelpCircle className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help" />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="max-w-xs">{tooltip}</p>
+            </TooltipContent>
+          </ShadcnTooltip>
+        )}
+      </div>
       <div className="flex-1">
         <ResponsiveContainer debounce={250} width="100%" height="100%">
           <LineChart data={data}>
@@ -67,7 +82,12 @@ function LineChartWidget({ title, data, unit, lineConfig }: Props) {
                   return Math.ceil(dataMax / 100) * 100;
                 },
               ]}
-              tickFormatter={(tick: number) => Math.floor(tick).toLocaleString("en-US")}
+              tickFormatter={(value) =>
+                new Intl.NumberFormat("en-US", {
+                  notation: "compact",
+                  compactDisplay: "short",
+                }).format(value)
+              }
               tickMargin={5}
               unit={unit ? ` ${unit}` : undefined}
               width={100}
@@ -75,7 +95,8 @@ function LineChartWidget({ title, data, unit, lineConfig }: Props) {
             <Tooltip
               formatter={(value: number, name: string) => {
                 const displayName = lineConfig?.[name]?.label || name;
-                return [unit ? `${value} ${unit}` : value, displayName];
+                const formattedValue = value.toLocaleString();
+                return [unit ? `${formattedValue} ${unit}` : formattedValue, displayName];
               }}
             />
             <Legend formatter={(value: string) => lineConfig?.[value]?.label || value} />

@@ -374,6 +374,7 @@ const AdminDashboard: React.FC = () => {
           icon={<FaBullhorn size={20} />}
           iconColor="text-purple-600"
           iconBg="bg-purple-100"
+          tooltip="Total number of marketing campaigns created in the system, including running, draft, completed, and cancelled campaigns"
         />
         <KPIWidget
           title="Total Contracts"
@@ -381,6 +382,7 @@ const AdminDashboard: React.FC = () => {
           icon={<FaFileContract size={20} />}
           iconColor="text-blue-600"
           iconBg="bg-blue-100"
+          tooltip="Total number of contracts signed with brand partners, including active, pending, and completed agreements"
         />
         <KPIWidget
           title="Total Users"
@@ -388,6 +390,7 @@ const AdminDashboard: React.FC = () => {
           icon={<FaUser size={20} />}
           iconColor="text-green-600"
           iconBg="bg-green-100"
+          tooltip="Total number of registered users across all roles including admin, staff, brand partners, and customers"
         />
         <KPIWidget
           title="Total Revenue"
@@ -395,6 +398,7 @@ const AdminDashboard: React.FC = () => {
           icon={<FaMoneyBillWave size={20} />}
           iconColor="text-indigo-600"
           iconBg="bg-indigo-100"
+          tooltip="Total revenue generated from all sources including contracts, product sales, advertising, and affiliate commissions"
         />
       </div>
 
@@ -470,6 +474,7 @@ const AdminDashboard: React.FC = () => {
                   color: "#6366f1",
                 },
               }}
+              tooltip="Revenue trend over time showing the total income generated from all business activities in the selected time period"
             />
           )}
         </div>
@@ -528,6 +533,7 @@ const AdminDashboard: React.FC = () => {
               icon={<FaBullhorn size={20} />}
               iconColor="text-purple-600"
               iconBg="bg-purple-100"
+              tooltip="Total count of all marketing campaigns with breakdown of currently running campaigns"
             />
 
             <KPIWidget
@@ -540,6 +546,7 @@ const AdminDashboard: React.FC = () => {
               icon={<FaBullhorn size={20} />}
               iconColor="text-emerald-600"
               iconBg="bg-emerald-100"
+              tooltip="Percentage of campaigns that have been completed successfully out of total campaigns created"
             />
 
             <KPIWidget
@@ -552,13 +559,18 @@ const AdminDashboard: React.FC = () => {
               icon={<FaBullhorn size={20} />}
               iconColor="text-blue-600"
               iconBg="bg-blue-100"
+              tooltip="Total number of content pieces that have been posted and published, showing the percentage of created content that went live"
             />
           </div>
 
           {isEmptyData(campaignsTableData) ? (
             <NoDataMessage message="No campaign data available" />
           ) : (
-            <TableWidget title="Details" data={campaignsTableData} />
+            <TableWidget
+              title="Details"
+              data={campaignsTableData}
+              tooltip="Detailed breakdown of campaigns by status including total, running, draft, completed, cancelled, and content creation progress"
+            />
           )}
         </div>
       </Card>

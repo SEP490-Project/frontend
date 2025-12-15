@@ -308,6 +308,7 @@ const MarketingDashboard: React.FC = () => {
           icon={<FaBullhorn size={20} />}
           iconColor="text-purple-600"
           iconBg="bg-purple-100"
+          tooltip="Number of brand partners currently active in campaigns and collaborations, indicating business partnership health"
         />
         <KPIWidget
           title="Active Campaigns"
@@ -315,6 +316,7 @@ const MarketingDashboard: React.FC = () => {
           icon={<FaBullhorn size={20} />}
           iconColor="text-blue-600"
           iconBg="bg-blue-100"
+          tooltip="Number of marketing campaigns currently running and actively generating engagement and revenue"
         />
         <KPIWidget
           title="Draft Campaigns"
@@ -322,6 +324,7 @@ const MarketingDashboard: React.FC = () => {
           icon={<FaRegCircleCheck size={20} />}
           iconColor="text-orange-600"
           iconBg="bg-orange-100"
+          tooltip="Number of campaigns in draft status that need review and approval before going live"
         />
         <KPIWidget
           title="Total Alerts"
@@ -332,6 +335,7 @@ const MarketingDashboard: React.FC = () => {
           icon={<FaTriangleExclamation size={20} />}
           iconColor="text-red-600"
           iconBg="bg-red-100"
+          tooltip="Total number of system alerts requiring attention including upcoming deadlines, campaign issues, and other notifications"
         />
       </div>
 
@@ -394,6 +398,7 @@ const MarketingDashboard: React.FC = () => {
             icon={<FaMoneyBillWave size={20} />}
             iconColor="text-indigo-600"
             iconBg="bg-indigo-100"
+            tooltip="Revenue generated from contracts in the selected month, showing the financial performance of marketing activities"
           />
         </div>
       </Card>
@@ -498,7 +503,12 @@ const MarketingDashboard: React.FC = () => {
           {isEmptyData(brandRevenueData) ? (
             <NoDataMessage message="No brand revenue data available for the selected period" />
           ) : (
-            <BarChartWidget title="" data={brandRevenueData} unit="VND" />
+            <BarChartWidget
+              title=""
+              data={brandRevenueData}
+              unit="VND"
+              tooltip="Ranking of brand partners by contract revenue generated, helping identify the most valuable business relationships"
+            />
           )}
         </div>
       </Card>
@@ -588,7 +598,12 @@ const MarketingDashboard: React.FC = () => {
             {isEmptyData(revenueByTypeData) ? (
               <NoDataMessage message="No revenue breakdown data available for the selected period" />
             ) : (
-              <BarChartWidget title="" data={revenueByTypeData} unit="VND" />
+              <BarChartWidget
+                title=""
+                data={revenueByTypeData}
+                unit="VND"
+                tooltip="Breakdown of revenue by contract type showing which services generate the most income for the business"
+              />
             )}
           </div>
         </Card>
@@ -599,7 +614,12 @@ const MarketingDashboard: React.FC = () => {
             {isEmptyData(revenueShareData) ? (
               <NoDataMessage message="No revenue distribution data available" />
             ) : (
-              <PieChartWidget title="" data={revenueShareData} mode="percent" />
+              <PieChartWidget
+                title=""
+                data={revenueShareData}
+                mode="percent"
+                tooltip="Percentage distribution of revenue across different contract types, showing the relative contribution of each service"
+              />
             )}
           </div>
         </Card>

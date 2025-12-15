@@ -1,10 +1,13 @@
 import { convertNumberToCurrency } from "@/libs/helper/helper";
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { Tooltip as ShadcnTooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { HelpCircle } from "lucide-react";
 
 interface Props {
   title: string;
   data: { type: string; value: number }[];
   mode?: "count" | "percent" | "currency";
+  tooltip?: string;
 }
 
 const COLORS = [
@@ -48,12 +51,24 @@ const renderCustomizedLabel =
     );
   };
 
-function PieChartWidget({ title, data, mode = "count" }: Props) {
+function PieChartWidget({ title, data, mode = "count", tooltip }: Props) {
   if (!Array.isArray(data) || !data.length || !data[0]?.type || typeof data[0]?.value !== "number")
     return null;
   return (
     <div className="p-6 h-[340px] flex flex-col bg-white rounded-lg shadow">
-      <h3 className="text-gray-700 text-base font-semibold mb-3">{title}</h3>
+      <div className="flex items-center gap-2 mb-3">
+        <h3 className="text-gray-700 text-base font-semibold">{title}</h3>
+        {tooltip && (
+          <ShadcnTooltip>
+            <TooltipTrigger asChild>
+              <HelpCircle className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help" />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="max-w-xs">{tooltip}</p>
+            </TooltipContent>
+          </ShadcnTooltip>
+        )}
+      </div>
       <div className="flex-1">
         <ResponsiveContainer debounce={250} width="100%" height="100%">
           <PieChart>

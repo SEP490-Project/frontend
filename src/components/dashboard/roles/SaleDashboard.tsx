@@ -322,6 +322,7 @@ const OverviewTab: React.FC<TabProps> = ({ startDate, endDate, periodGap = "day"
           icon={<Banknote size={20} />}
           iconColor="text-green-600"
           iconBg="bg-green-100"
+          tooltip="Total revenue generated from all product sales including both standard and limited edition products"
         />
         <KPIWidget
           title="Limited Product Revenue"
@@ -330,6 +331,7 @@ const OverviewTab: React.FC<TabProps> = ({ startDate, endDate, periodGap = "day"
           icon={<Banknote size={20} />}
           iconColor="text-yellow-700"
           iconBg="bg-yellow-100"
+          tooltip="Revenue generated specifically from limited edition and exclusive product sales with higher profit margins"
         />
         <KPIWidget
           title="Standard Product Revenue"
@@ -338,6 +340,7 @@ const OverviewTab: React.FC<TabProps> = ({ startDate, endDate, periodGap = "day"
           icon={<Banknote size={20} />}
           iconColor="text-blue-700"
           iconBg="bg-blue-100"
+          tooltip="Revenue generated from regular product sales representing the core business income stream"
         />
         <KPIWidget
           title="Total Refund"
@@ -346,6 +349,7 @@ const OverviewTab: React.FC<TabProps> = ({ startDate, endDate, periodGap = "day"
           icon={<BanknoteArrowDown size={20} />}
           iconColor="text-red-700"
           iconBg="bg-red-100"
+          tooltip="Total amount refunded to customers due to returns, cancellations, or product issues"
         />
         <KPIWidget
           title="Revenue Growth"
@@ -354,6 +358,7 @@ const OverviewTab: React.FC<TabProps> = ({ startDate, endDate, periodGap = "day"
           icon={<ChartLine size={20} />}
           iconColor="text-teal-700"
           iconBg="bg-teal-100"
+          tooltip="Percentage change in revenue compared to the previous period, indicating business growth or decline"
         />
         <KPIWidget
           title="Average Order Value"
@@ -362,6 +367,7 @@ const OverviewTab: React.FC<TabProps> = ({ startDate, endDate, periodGap = "day"
           icon={<BadgePercent size={20} />}
           iconColor="text-purple-700"
           iconBg="bg-purple-100"
+          tooltip="Average monetary value of each customer order, indicating customer spending patterns and purchase behavior"
         />
         <KPIWidget
           title="New Customers"
@@ -369,6 +375,7 @@ const OverviewTab: React.FC<TabProps> = ({ startDate, endDate, periodGap = "day"
           icon={<UserRound size={20} />}
           iconColor="text-orange-700"
           iconBg="bg-orange-100"
+          tooltip="Number of first-time customers who made their initial purchase during the selected time period"
         />
         <KPIWidget
           title="Returning Customers"
@@ -376,6 +383,7 @@ const OverviewTab: React.FC<TabProps> = ({ startDate, endDate, periodGap = "day"
           icon={<UserRoundCheck size={20} />}
           iconColor="text-emerald-700"
           iconBg="bg-emerald-100"
+          tooltip="Number of existing customers who made repeat purchases, indicating customer loyalty and satisfaction"
         />
       </div>
 
@@ -451,9 +459,21 @@ const OverviewTab: React.FC<TabProps> = ({ startDate, endDate, periodGap = "day"
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-        <TableWidget title="Top Selling Products" data={formatTableData.top_selling_products} />
-        <TableWidget title="Top Brands" data={formatTableData.top_brands} />
-        <TableWidget title="Top Categories" data={formatTableData.top_categories} />
+        <TableWidget
+          title="Top Selling Products"
+          data={formatTableData.top_selling_products}
+          tooltip="Ranking of products by revenue generated, showing which items are most popular and profitable"
+        />
+        <TableWidget
+          title="Top Brands"
+          data={formatTableData.top_brands}
+          tooltip="Ranking of brands by total sales revenue, indicating which brand partnerships are most successful"
+        />
+        <TableWidget
+          title="Top Categories"
+          data={formatTableData.top_categories}
+          tooltip="Ranking of product categories by sales performance, helping identify which product types are in highest demand"
+        />
       </div>
     </div>
   );
@@ -595,6 +615,7 @@ const OrderTab: React.FC<TabProps> = ({ startDate, endDate, periodGap }) => {
           icon={<FaBox size={20} />}
           iconColor="text-teal-600"
           iconBg="bg-teal-100"
+          tooltip="Total number of orders received including all statuses: pending, completed, cancelled, and refunded"
         />
         <KPIWidget
           title="Completed Orders"
@@ -676,15 +697,28 @@ const OrderTab: React.FC<TabProps> = ({ startDate, endDate, periodGap }) => {
               color: "#ef4444",
             },
           }}
+          tooltip="Trend analysis showing the volume of regular orders versus pre-orders over time, helping predict demand patterns"
         />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-        <PieChartWidget title="Compare State in Orders" data={formatPieChartData.orders} />
-        <PieChartWidget title="Compare State in Preorders" data={formatPieChartData.pre_orders} />
+        <PieChartWidget
+          title="Compare State in Orders"
+          data={formatPieChartData.orders}
+          tooltip="Distribution of regular orders by status showing the proportion of pending, completed, cancelled, and refunded orders"
+        />
+        <PieChartWidget
+          title="Compare State in Preorders"
+          data={formatPieChartData.pre_orders}
+          tooltip="Distribution of pre-orders by status showing customer commitment and potential future revenue"
+        />
       </div>
       <div className="flex flex-col gap-4">
-        <TableWidget title="Recent Orders" data={formatTableData.latest_orders} />
+        <TableWidget
+          title="Recent Orders"
+          data={formatTableData.latest_orders}
+          tooltip="List of most recent orders with customer details, status, and order values for quick monitoring of current sales activity"
+        />
       </div>
     </div>
   );

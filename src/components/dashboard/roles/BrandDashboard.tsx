@@ -303,6 +303,7 @@ const BrandDashboard: React.FC = () => {
           icon={<FaBullhorn size={20} />}
           iconColor="text-purple-600"
           iconBg="bg-purple-100"
+          tooltip="Total number of marketing campaigns your brand is involved in, including active and completed campaigns"
         />
         <KPIWidget
           title="Total Contracts"
@@ -313,6 +314,7 @@ const BrandDashboard: React.FC = () => {
           icon={<FaFileContract size={20} />}
           iconColor="text-blue-600"
           iconBg="bg-blue-100"
+          tooltip="Total number of contracts your brand has signed, showing how many are currently active and generating business"
         />
         <KPIWidget
           title="Total Content"
@@ -320,6 +322,7 @@ const BrandDashboard: React.FC = () => {
           icon={<FaFile size={20} />}
           iconColor="text-green-600"
           iconBg="bg-green-100"
+          tooltip="Total amount of content created for your brand campaigns, including both draft and published content pieces"
         />
         <KPIWidget
           title="Total Revenue"
@@ -330,6 +333,7 @@ const BrandDashboard: React.FC = () => {
           icon={<FaMoneyBillWave size={20} />}
           iconColor="text-indigo-600"
           iconBg="bg-indigo-100"
+          tooltip="Total revenue generated from your brand partnerships, product sales, and marketing activities"
         />
       </div>
 
@@ -382,6 +386,7 @@ const BrandDashboard: React.FC = () => {
               icon={<FaLink size={20} />}
               iconColor="text-blue-600"
               iconBg="bg-blue-100"
+              tooltip="Total number of affiliate links created for your brand, showing how many are currently active and driving traffic"
             />
             <KPIWidget
               title="Total Clicks"
@@ -389,6 +394,7 @@ const BrandDashboard: React.FC = () => {
               icon={<FaChartLine size={20} />}
               iconColor="text-green-600"
               iconBg="bg-green-100"
+              tooltip="Total number of clicks received on all your affiliate links, indicating customer engagement and interest"
             />
             <KPIWidget
               title="Content Created"
@@ -396,6 +402,7 @@ const BrandDashboard: React.FC = () => {
               icon={<FaFile size={20} />}
               iconColor="text-purple-600"
               iconBg="bg-purple-100"
+              tooltip="Total content pieces created for your brand including posts, articles, videos, and other marketing materials"
             />
             <KPIWidget
               title="Engagement Rate"
@@ -403,6 +410,7 @@ const BrandDashboard: React.FC = () => {
               icon={<FaChartLine size={20} />}
               iconColor="text-amber-600"
               iconBg="bg-amber-100"
+              tooltip="Average engagement rate across all your content showing likes, comments, shares, and other interactions as a percentage"
             />
           </div>
         </div>
@@ -480,6 +488,7 @@ const BrandDashboard: React.FC = () => {
                   color: "#6366f1",
                 },
               }}
+              tooltip="Revenue trend showing how your brand's earnings have changed over the selected time period from all partnership activities"
             />
           )}
         </div>
@@ -544,7 +553,12 @@ const BrandDashboard: React.FC = () => {
           {isEmptyData(topProductsData) ? (
             <NoDataMessage message="No product revenue data available for the selected period" />
           ) : (
-            <BarChartWidget title="" data={topProductsData} unit="VND" />
+            <BarChartWidget
+              title=""
+              data={topProductsData}
+              unit="VND"
+              tooltip="Ranking of your products by revenue generated, helping identify which products are performing best in the market"
+            />
           )}
         </div>
       </Card>

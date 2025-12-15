@@ -1,4 +1,4 @@
-import { TooltipTrigger, TooltipContent } from "@radix-ui/react-tooltip";
+import { Tooltip as ShadcnTooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { HelpCircle } from "lucide-react";
 import {
   LineChart,

@@ -74,7 +74,7 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
 }) => {
   const dispatch = useAppDispatch();
   const { contracts, loading, pagination } = useContract();
-  const { suggestCampaign, suggestLoading } = useCampaign();
+  const { suggestCampaign, suggestLoading, actions } = useCampaign();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
   const [page, setPage] = useState(1);
@@ -119,14 +119,22 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
 
   const handleContractSelect = (contractId: string | null) => {
     const contract = allContracts.find((c) => c.id === contractId);
-    setCampaignData((s) => ({
-      ...s,
+
+    // Reset all campaign data when selecting different contract
+    setCampaignData({
+      name: "", // Reset name
+      description: "", // Reset description
       contract_id: contractId || "",
-      type: contract?.type || s.type,
-      start_date: contract ? formatDateForInput(contract.start_date) : s.start_date,
-      end_date: contract ? formatDateForInput(contract.end_date) : s.end_date,
-    }));
+      type: contract?.type || "",
+      start_date: contract ? formatDateForInput(contract.start_date) : "",
+      end_date: contract ? formatDateForInput(contract.end_date) : "",
+    });
     onContractSelect(contract || null);
+
+    // Clear previous suggestion data when contract changes
+    if (actions?.clearSuggestCampaign) {
+      dispatch(actions.clearSuggestCampaign());
+    }
   };
 
   const handleStartDateChange = (date: string) => {
@@ -180,8 +188,13 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
               end_date: prev.end_date,
             }));
 
-            // Clear selected contract
+            // Clear selected contract and suggestion data
             onContractSelect(null);
+
+            // Clear suggestion data when switching modes
+            if (actions?.clearSuggestCampaign) {
+              dispatch(actions.clearSuggestCampaign());
+            }
           }}
         >
           <div className="text-sm font-medium">Contract-based Campaign</div>

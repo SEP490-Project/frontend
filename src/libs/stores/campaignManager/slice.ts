@@ -48,6 +48,10 @@ export const manageCampaignSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    clearSuggestCampaign: (state) => {
+      state.suggestCampaign = null;
+      state.suggestLoading = false;
+    },
     clearCampaignDetail: (state) => {
       state.campaignDetail = null;
     },

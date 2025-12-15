@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, FileText, Target, CheckCircle } from "lucide-react";
 import { useCampaign } from "@/libs/hooks/useCampaign";
+import { TaskDetailCard, TaskDetailModal } from "./TaskDetailCard";
 
 interface TaskDescription {
   description: string;
@@ -61,6 +62,8 @@ const Review: React.FC<ReviewProps> = ({
 }) => {
   const totalTasks = milestones.reduce((acc, m) => acc + m.tasks.length, 0);
   const { loading } = useCampaign();
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [taskDetailOpen, setTaskDetailOpen] = useState(false);
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return "—";
@@ -84,19 +87,14 @@ const Review: React.FC<ReviewProps> = ({
     }
   };
 
-  const getTaskTypeColor = (type: string) => {
-    switch (type.toLowerCase()) {
-      case "design":
-        return "bg-pink-100 text-pink-800";
-      case "content":
-        return "bg-yellow-100 text-yellow-800";
-      case "development":
-        return "bg-indigo-100 text-indigo-800";
-      case "analysis":
-        return "bg-teal-100 text-teal-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
+  const handleViewTaskDetails = (task: Task) => {
+    setSelectedTask(task);
+    setTaskDetailOpen(true);
+  };
+
+  const handleCloseTaskDetails = () => {
+    setTaskDetailOpen(false);
+    setSelectedTask(null);
   };
 
   return (
@@ -242,39 +240,11 @@ const Review: React.FC<ReviewProps> = ({
                       {/* Tasks */}
                       <div className="space-y-2">
                         {milestone.tasks.map((task) => (
-                          <div key={task.id} className="bg-gray-50 rounded-md p-3 border">
-                            <div className="flex justify-between items-start mb-2">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="font-medium text-gray-900">
-                                    {task.name || "Untitled task"}
-                                  </span>
-                                  <Badge
-                                    variant="secondary"
-                                    className={`text-xs ${getTaskTypeColor(task.type)}`}
-                                  >
-                                    {task.type || "—"}
-                                  </Badge>
-                                </div>
-                                <p className="text-sm text-gray-600 mb-2">
-                                  {task.description?.description || "No description"}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className="flex justify-between items-center text-xs text-gray-500">
-                              <div className="flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                <span>Due: {formatDate(task.deadline)}</span>
-                              </div>
-                              {task.materialFiles && task.materialFiles.length > 0 && (
-                                <div className="flex items-center gap-1">
-                                  <FileText className="w-3 h-3" />
-                                  <span>{task.materialFiles.length} files</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
+                          <TaskDetailCard
+                            key={task.id}
+                            task={task}
+                            onViewDetails={handleViewTaskDetails}
+                          />
                         ))}
                       </div>
                     </div>
@@ -301,6 +271,9 @@ const Review: React.FC<ReviewProps> = ({
           </Button>
         </div>
       </div>
+
+      {/* Task Detail Modal */}
+      <TaskDetailModal task={selectedTask} open={taskDetailOpen} onClose={handleCloseTaskDetails} />
     </div>
   );
 };

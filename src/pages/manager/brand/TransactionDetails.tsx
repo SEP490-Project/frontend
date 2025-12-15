@@ -2,8 +2,11 @@ import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 import type { TransactionData } from "@/libs/types/transaction";
 import { format } from "date-fns";
+import { ExternalLink } from "lucide-react";
+import { useNavigate } from "react-router";
 
 interface TransactionDetailsProps {
   transaction: TransactionData | null;
@@ -18,38 +21,24 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({
   onOpenChange,
   loading,
 }) => {
+  const navigate = useNavigate();
+
   const getStatusBadge = (status: string) => {
     const statusColors: Record<string, string> = {
-      COMPLETED: "bg-green-100 text-green-800 border-green-200 hover:bg-green-200",
-      PENDING: "bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200",
-      CANCELLED: "bg-red-100 text-red-800 border-red-200 hover:bg-red-200",
-      EXPIRED: "bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200",
+      COMPLETED: "bg-green-100 text-green-800",
+      PENDING: "bg-yellow-100 text-yellow-800",
+      CANCELLED: "bg-red-100 text-red-800",
+      EXPIRED: "bg-gray-100 text-gray-800",
     };
 
-    return <Badge className={statusColors[status] || "bg-gray-100 text-gray-800"}>{status}</Badge>;
+    return <Badge className={statusColors[status]}>{status}</Badge>;
   };
 
-  const getMethodBadge = (method: string) => {
-    const methodColors: Record<string, string> = {
-      BANK_TRANSFER: "bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200",
-      CREDIT_CARD: "bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-200",
-      E_WALLET: "bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-200",
-      PAYOS: "bg-pink-100 text-pink-800 border-pink-200 hover:bg-pink-200",
-    };
-
-    return (
-      <Badge className={methodColors[method] || "bg-gray-100 text-gray-800"}>
-        {method?.replace(/_/g, " ")}
-      </Badge>
-    );
-  };
-
-  const formatCurrency = (amount: string) => {
-    return new Intl.NumberFormat("vi-VN", {
+  const formatCurrency = (amount: string) =>
+    new Intl.NumberFormat("vi-VN", {
       style: "currency",
       currency: "VND",
-    }).format(parseFloat(amount));
-  };
+    }).format(Number(amount));
 
   const formatDate = (dateString: string) => {
     try {
@@ -59,116 +48,149 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({
     }
   };
 
-  if (loading) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl">
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            <span className="ml-2">Loading transaction details...</span>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
+  if (loading || !transaction) return null;
 
-  if (!transaction) {
-    return null;
-  }
+  const ref = transaction.reference_info;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl">Transaction Details</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Transaction ID & Status */}
+          {/* Status */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Status</p>
+              {getStatusBadge(transaction.status)}
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-gray-500">Amount</p>
+              <p className="text-xl font-bold text-primary">{formatCurrency(transaction.amount)}</p>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Contract Info */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3">Contract Information</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm text-gray-500">Contract Number</label>
+                <p className="font-medium mt-1">{ref?.contract_number}</p>
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-500">Type</label>
+                <div className="mt-1">
+                  <Badge
+                    className={
+                      ref?.is_deposit
+                        ? "bg-emerald-100 text-emerald-800"
+                        : "bg-indigo-100 text-indigo-800"
+                    }
+                  >
+                    {ref?.is_deposit ? "Deposit" : "Payment"}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="col-span-2">
+                <label className="text-sm text-gray-500">Contract</label>
+                <div className="mt-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate(`/manage/brand/contracts/${ref?.contract_id}`)}
+                  >
+                    View Contract
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Brand Info */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3">Brand Information</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm text-gray-500">Brand Name</label>
+                <p className="mt-1 font-medium">{ref?.brand_info?.name}</p>
+              </div>
+              <div>
+                <label className="text-sm text-gray-500">Representative</label>
+                <p className="mt-1">{ref?.brand_info?.representative_name}</p>
+              </div>
+              <div>
+                <label className="text-sm text-gray-500">Email</label>
+                <p className="mt-1">{ref?.brand_info?.contact_email}</p>
+              </div>
+              <div>
+                <label className="text-sm text-gray-500">Phone</label>
+                <p className="mt-1">{ref?.brand_info?.contact_phone}</p>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Bank Info */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3">Bank Information</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm text-gray-500">Bank Name</label>
+                <p className="mt-1">{ref?.bank_info?.bank_name}</p>
+              </div>
+              <div>
+                <label className="text-sm text-gray-500">Account Holder</label>
+                <p className="mt-1">{ref?.bank_info?.bank_account_holder}</p>
+              </div>
+              <div className="col-span-2">
+                <label className="text-sm text-gray-500">Account Number</label>
+                <p className="mt-1 font-mono">{ref?.bank_info?.bank_account}</p>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Gateway */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3">Payment Gateway</h3>
+            <div className="flex items-center justify-between">
+              <Badge>{transaction.method}</Badge>
+
+              {transaction.gateway_ref && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open(transaction.gateway_ref, "_blank")}
+                >
+                  Open Payment Link
+                  <ExternalLink className="ml-2 h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Date */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium text-gray-500">Transaction ID</label>
-              <p className="text-base font-mono mt-1">{transaction.id}</p>
+              <label className="text-sm text-gray-500">Transaction Date</label>
+              <p className="mt-1">{formatDate(transaction.transaction_date)}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-500">Status</label>
-              <div className="mt-1">{getStatusBadge(transaction.status)}</div>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Reference Information */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3">Reference Information</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-gray-500">Reference Type</label>
-                <p className="text-base mt-1">
-                  <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200">
-                    {transaction.reference_type}
-                  </Badge>
-                </p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-500">Reference ID</label>
-                <p className="text-base font-mono mt-1">{transaction.reference_id}</p>
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Payment Information */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3">Payment Information</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-gray-500">Amount</label>
-                <p className="text-xl font-bold text-primary mt-1">
-                  {formatCurrency(transaction.amount)}
-                </p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-500">Payment Method</label>
-                <div className="mt-1">{getMethodBadge(transaction.method)}</div>
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Gateway Information */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3">Gateway Information</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-gray-500">Gateway ID</label>
-                <p className="text-base font-mono mt-1">{transaction.gateway_id || "N/A"}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-500">Gateway Reference</label>
-                <p className="text-base font-mono mt-1 break-all">
-                  {transaction.gateway_ref || "N/A"}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Date Information */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3">Date & Time</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-gray-500">Transaction Date</label>
-                <p className="text-base mt-1">{formatDate(transaction.transaction_date)}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-500">Last Updated</label>
-                <p className="text-base mt-1">{formatDate(transaction.updated_at)}</p>
-              </div>
+              <label className="text-sm text-gray-500">Last Updated</label>
+              <p className="mt-1">{formatDate(transaction.updated_at)}</p>
             </div>
           </div>
         </div>

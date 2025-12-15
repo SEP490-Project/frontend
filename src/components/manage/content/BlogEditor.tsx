@@ -6,13 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -43,6 +36,7 @@ import { tiptapToHtml } from "@/libs/utils/tiptapConverter";
 import type { Tag } from "@/libs/types/tag";
 import { HlsPlyrHydrator } from "@/components/hls-video-hydrator";
 import AIGeneratedContent from "./AIGeneratedContent";
+import TaskInfoSidebar from "./TaskInfoSidebar";
 
 type ContentType = "blog" | "video";
 
@@ -67,9 +61,9 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
   // Get available tags from API
   const { tags: availableTags, loading: tagsLoading, error: tagsError } = useTag();
 
-  // Channel state
+  // Channel state - now supports multi-select
   const [availableChannels, setAvailableChannels] = React.useState<Channel[]>([]);
-  const [selectedChannel, setSelectedChannel] = React.useState<string>("");
+  const [selectedChannels, setSelectedChannels] = React.useState<string[]>([]);
   const [channelLoading, setChannelLoading] = React.useState(true);
 
   // Fetch channels on component mount
@@ -80,7 +74,7 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
         const response = await manageChannel.channelList();
         const channels = response.data.data || [];
 
-        // Filter for Website and Facebook channels only
+        // Filter for Website and Facebook channels only for blog content
         const blogChannels = channels.filter(
           (channel: Channel) =>
             channel.name.toLowerCase() === "website" || channel.name.toLowerCase() === "facebook",
@@ -88,18 +82,21 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
 
         setAvailableChannels(blogChannels);
 
-        // If editing, use the channel from editingContent
-        if (editingContent?.content_channels?.[0]?.channel_id) {
-          setSelectedChannel(editingContent.content_channels[0].channel_id);
+        // If editing, use the channels from editingContent
+        if (editingContent?.content_channels && editingContent.content_channels.length > 0) {
+          const existingChannelIds = editingContent.content_channels
+            .map((cc: any) => cc.channel_id)
+            .filter(Boolean);
+          setSelectedChannels(existingChannelIds);
         } else {
           // Set default selection to Website if available (for new content)
           const websiteChannel = blogChannels.find(
             (channel: Channel) => channel.name.toLowerCase() === "website",
           );
           if (websiteChannel) {
-            setSelectedChannel(websiteChannel.id);
+            setSelectedChannels([websiteChannel.id]);
           } else if (blogChannels.length > 0) {
-            setSelectedChannel(blogChannels[0].id);
+            setSelectedChannels([blogChannels[0].id]);
           }
         }
       } catch (error) {
@@ -111,6 +108,18 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
 
     fetchChannels();
   }, [editingContent]);
+
+  // Handle channel toggle for multi-select
+  const handleChannelToggle = useCallback((channelId: string) => {
+    setSelectedChannels((prev) => {
+      if (prev.includes(channelId)) {
+        // Don't allow deselecting if it's the last channel
+        if (prev.length === 1) return prev;
+        return prev.filter((id) => id !== channelId);
+      }
+      return [...prev, channelId];
+    });
+  }, []);
 
   // Initialize selected tags from editing content - memoized to avoid recalculation
   const [selectedTags, setSelectedTags] = useState<Tag[]>(() => {
@@ -197,9 +206,9 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
       localTitle.length > 200 ||
       !selectedTags.length ||
       channelLoading ||
-      !selectedChannel
+      selectedChannels.length === 0
     );
-  }, [content, localTitle, selectedTags.length, channelLoading, selectedChannel]);
+  }, [content, localTitle, selectedTags.length, channelLoading, selectedChannels.length]);
   // Memoized preview toggle handler
   const handlePreviewToggle = useCallback(() => {
     setShowPreview((prev) => !prev);
@@ -212,7 +221,7 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
 
   // Memoized form submission handler
   const handleFormSubmit = useCallback(() => {
-    if (content && localTitle.trim() && selectedChannel) {
+    if (content && localTitle.trim() && selectedChannels.length > 0) {
       // Create excerpt from content (first 150 characters of plain text)
       const plainText = content.html.replace(/<[^>]*>/g, "");
       const excerpt = plainText.substring(0, 150) + (plainText.length > 150 ? "..." : "");
@@ -227,7 +236,7 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
           read_time: calculateReadTime(content.html),
           tags: selectedTags.map((tag) => tag.name),
         },
-        channels: [selectedChannel],
+        channels: selectedChannels, // Now supports multiple channels
         task_id: selectedTask?.id?.toString() || null,
         affiliate_link: null,
         ai_generated_text: aiGeneratedText || null,
@@ -238,7 +247,7 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
   }, [
     content,
     localTitle,
-    selectedChannel,
+    selectedChannels,
     selectedTags,
     user?.id,
     selectedTask?.id,
@@ -397,231 +406,232 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
         </Button>
       </div>
 
-      {/* Editor */}
-      <Card>
-        <CardHeader>
-          <h3 className="text-lg font-semibold">
-            {editingContent ? "Edit Blog Content" : `Create New ${contentType}`}
-          </h3>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Title Input */}
-          <div className="space-y-2">
-            <Label htmlFor="title">Title *</Label>
-            <Input
-              id="title"
-              placeholder="Enter blog title..."
-              value={localTitle}
-              onChange={(e) => setLocalTitle(e.target.value)}
-              className="w-full"
-            />
-          </div>
-
-          {/* Channel Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="channel">Channel *</Label>
-            <Select
-              value={selectedChannel}
-              onValueChange={(value) => setSelectedChannel(value)}
-              disabled={channelLoading}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue
-                  placeholder={channelLoading ? "Loading channels..." : "Select a channel"}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {availableChannels.map((channel) => (
-                  <SelectItem key={channel.id} value={channel.id}>
-                    {channel.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Tag Selection */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label>Tags</Label>
-              {selectedTags.length > 0 && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearAllTags}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  Clear all
-                </Button>
-              )}
-            </div>
-
-            {/* Selected Tags Display */}
-            <div className="flex flex-wrap gap-2 min-h-[2rem]">
-              {selectedTags.map((tag) => (
-                <Badge
-                  key={tag.id}
-                  className="flex items-center gap-1 px-3 py-1 bg-[#FF9DB0] hover:bg-pink-600 text-white border-0"
-                >
-                  <TagIcon className="h-3 w-3" />
-                  {tag.name}
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-4 w-4 p-0 hover:bg-white/20 text-white"
-                    onClick={() => handleTagRemove(tag.id)}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </Badge>
-              ))}
-
-              {/* Add Tag Button - Always Show */}
-              <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
-                <PopoverTrigger asChild>
-                  {selectedTags.length > 0 ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="default"
-                      className="h-10 w-10 border-[#FF9DB0] text-[#FF9DB0] hover:bg-[#FF9DB0] hover:text-white transition-colors flex items-center justify-center"
-                    >
-                      <span className="text-2xl font-bold leading-none">+</span>
-                    </Button>
-                  ) : (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="justify-start gap-2 text-muted-foreground border-dashed hover:border-[#FF9DB0] hover:text-[#FF9DB0] transition-colors"
-                    >
-                      <TagIcon className="h-4 w-4" />
-                      Add tags...
-                    </Button>
-                  )}
-                </PopoverTrigger>
-                <PopoverContent className="w-full p-0 bg-white border" align="start">
-                  <Command className="bg-white">
-                    <CommandInput placeholder="Search tags..." className="border-0 focus:ring-0" />
-                    {tagsLoading ? (
-                      <div className="p-4 text-center text-sm text-muted-foreground">
-                        Loading tags...
-                      </div>
-                    ) : tagsError ? (
-                      <div className="p-4 text-center text-sm text-red-500">
-                        Error loading tags: {tagsError}
-                      </div>
-                    ) : (
-                      <>
-                        <CommandEmpty>No tags found.</CommandEmpty>
-                        <CommandGroup className="max-h-64 overflow-auto">
-                          {availableTags
-                            .filter(
-                              (tag) => !selectedTags.some((selected) => selected.id === tag.id),
-                            )
-                            .map((tag) => (
-                              <CommandItem
-                                key={tag.id}
-                                value={tag.name}
-                                onSelect={() => handleTagSelect(tag)}
-                                className="cursor-pointer hover:bg-[#FF9DB0]/10 data-[selected]:bg-[#FFFFFF]/20"
-                              >
-                                <div className="flex items-center space-x-2 flex-1">
-                                  <TagIcon className="h-4 w-4 text-[#FF9DB0]" />
-                                  <div className="flex-1">
-                                    <div className="font-medium">{tag.name}</div>
-                                    {tag.description && (
-                                      <div className="text-sm text-muted-foreground">
-                                        {tag.description}
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="text-xs text-muted-foreground bg-[#FF9DB0]/10 px-2 py-1 rounded-full">
-                                    {tag.usage_count} uses
-                                  </div>
-                                </div>
-                              </CommandItem>
-                            ))}
-                        </CommandGroup>
-                      </>
-                    )}
-                  </Command>
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
-
-          {/* Content Editor */}
-          <div className="space-y-2">
-            <Label htmlFor="content">Content *</Label>
-            <TiptapEditor
-              key={editorKey}
-              initialContent={
-                content?.json?.type === "doc"
-                  ? content.json
-                  : content?.html ||
-                    (editingContent
-                      ? typeof editingContent.body === "string"
-                        ? editingContent.body
-                        : typeof editingContent.body === "object"
-                          ? editingContent.body
-                          : ""
-                      : "")
-              }
-              onChange={handleContentChange}
-            />
-          </div>
-
-          {/* AI Content Generator */}
-          <AIGeneratedContent
-            onContentGenerated={handleAIContentGenerated}
-            selectedPlatform={availableChannels.find((ch) => ch.id === selectedChannel)?.name || ""}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Preview Toggle Button */}
-      <div className="flex justify-center">
-        <Button
-          variant="default"
-          onClick={handlePreviewToggle}
-          className="w-[200px]"
-          disabled={isPreviewDisabled}
-        >
-          {showPreview ? "Hide Preview" : "Show Preview"}
-        </Button>
-      </div>
-
-      {/* Preview Section - Memoized */}
-      {useMemo(() => {
-        if (!showPreview || !content || !localTitle.trim()) return null;
-
-        return (
+      {/* Two-Column Layout */}
+      <div className="flex gap-6">
+        {/* Left Column - Main Editor */}
+        <div className="flex-1 min-w-0 space-y-6">
+          {/* Editor Card */}
           <Card>
             <CardHeader>
-              <h3 className="text-lg font-semibold">Blog Preview</h3>
+              <h3 className="text-lg font-semibold">
+                {editingContent ? "Edit Blog Content" : `Create New ${contentType}`}
+              </h3>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="border-b pb-4">
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">{localTitle}</h1>
-                  <div className="flex items-center text-sm text-gray-500">
-                    <Calendar className="w-4 h-4 mr-1" />
-                    <span className="mr-4">{new Date().toLocaleDateString()}</span>
-                    <span>{calculateReadTime(content.html)} min read</span>
-                  </div>
-                </div>
-                <div
-                  className="ProseMirror prose prose-sm sm:prose-base lg:prose-lg max-w-none prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-blockquote:my-2"
-                  dangerouslySetInnerHTML={{ __html: content.html }}
+            <CardContent className="space-y-6">
+              {/* Title Input */}
+              <div className="space-y-2">
+                <Label htmlFor="title">Title *</Label>
+                <Input
+                  id="title"
+                  placeholder="Enter blog title..."
+                  value={localTitle}
+                  onChange={(e) => setLocalTitle(e.target.value)}
+                  className="w-full"
                 />
-                <HlsPlyrHydrator />
               </div>
+
+              {/* Tag Selection */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Tags *</Label>
+                  {selectedTags.length > 0 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearAllTags}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      Clear all
+                    </Button>
+                  )}
+                </div>
+
+                {/* Selected Tags Display */}
+                <div className="flex flex-wrap gap-2 min-h-[2rem]">
+                  {selectedTags.map((tag) => (
+                    <Badge
+                      key={tag.id}
+                      className="flex items-center gap-1 px-3 py-1 bg-[#FF9DB0] hover:bg-pink-600 text-white border-0"
+                    >
+                      <TagIcon className="h-3 w-3" />
+                      {tag.name}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-4 w-4 p-0 hover:bg-white/20 text-white"
+                        onClick={() => handleTagRemove(tag.id)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </Badge>
+                  ))}
+
+                  {/* Add Tag Button - Always Show */}
+                  <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
+                    <PopoverTrigger asChild>
+                      {selectedTags.length > 0 ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="default"
+                          className="h-10 w-10 border-[#FF9DB0] text-[#FF9DB0] hover:bg-[#FF9DB0] hover:text-white transition-colors flex items-center justify-center"
+                        >
+                          <span className="text-2xl font-bold leading-none">+</span>
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="justify-start gap-2 text-muted-foreground border-dashed hover:border-[#FF9DB0] hover:text-[#FF9DB0] transition-colors"
+                        >
+                          <TagIcon className="h-4 w-4" />
+                          Add tags...
+                        </Button>
+                      )}
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0 bg-white border" align="start">
+                      <Command className="bg-white">
+                        <CommandInput
+                          placeholder="Search tags..."
+                          className="border-0 focus:ring-0"
+                        />
+                        {tagsLoading ? (
+                          <div className="p-4 text-center text-sm text-muted-foreground">
+                            Loading tags...
+                          </div>
+                        ) : tagsError ? (
+                          <div className="p-4 text-center text-sm text-red-500">
+                            Error loading tags: {tagsError}
+                          </div>
+                        ) : (
+                          <>
+                            <CommandEmpty>No tags found.</CommandEmpty>
+                            <CommandGroup className="max-h-64 overflow-auto">
+                              {availableTags
+                                .filter(
+                                  (tag) => !selectedTags.some((selected) => selected.id === tag.id),
+                                )
+                                .map((tag) => (
+                                  <CommandItem
+                                    key={tag.id}
+                                    value={tag.name}
+                                    onSelect={() => handleTagSelect(tag)}
+                                    className="cursor-pointer hover:bg-[#FF9DB0]/10 data-[selected]:bg-[#FFFFFF]/20"
+                                  >
+                                    <div className="flex items-center space-x-2 flex-1">
+                                      <TagIcon className="h-4 w-4 text-[#FF9DB0]" />
+                                      <div className="flex-1">
+                                        <div className="font-medium">{tag.name}</div>
+                                        {tag.description && (
+                                          <div className="text-sm text-muted-foreground">
+                                            {tag.description}
+                                          </div>
+                                        )}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground bg-[#FF9DB0]/10 px-2 py-1 rounded-full">
+                                        {tag.usage_count} uses
+                                      </div>
+                                    </div>
+                                  </CommandItem>
+                                ))}
+                            </CommandGroup>
+                          </>
+                        )}
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+
+              {/* Content Editor */}
+              <div className="space-y-2">
+                <Label htmlFor="content">Content *</Label>
+                <TiptapEditor
+                  key={editorKey}
+                  initialContent={
+                    content?.json?.type === "doc"
+                      ? content.json
+                      : content?.html ||
+                        (editingContent
+                          ? typeof editingContent.body === "string"
+                            ? editingContent.body
+                            : typeof editingContent.body === "object"
+                              ? editingContent.body
+                              : ""
+                          : "")
+                  }
+                  onChange={handleContentChange}
+                />
+              </div>
+
+              {/* AI Content Generator */}
+              <AIGeneratedContent
+                onContentGenerated={handleAIContentGenerated}
+                selectedPlatform={
+                  availableChannels.find((ch) => selectedChannels.includes(ch.id))?.name || ""
+                }
+              />
             </CardContent>
           </Card>
-        );
-      }, [showPreview, content, localTitle, calculateReadTime])}
+
+          {/* Preview Toggle Button */}
+          <div className="flex justify-center">
+            <Button
+              variant="default"
+              onClick={handlePreviewToggle}
+              className="w-[200px]"
+              disabled={isPreviewDisabled}
+            >
+              {showPreview ? "Hide Preview" : "Show Preview"}
+            </Button>
+          </div>
+
+          {/* Preview Section - Memoized */}
+          {useMemo(() => {
+            if (!showPreview || !content || !localTitle.trim()) return null;
+
+            return (
+              <Card>
+                <CardHeader>
+                  <h3 className="text-lg font-semibold">Blog Preview</h3>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="border-b pb-4">
+                      <h1 className="text-3xl font-bold text-gray-900 mb-2">{localTitle}</h1>
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Calendar className="w-4 h-4 mr-1" />
+                        <span className="mr-4">{new Date().toLocaleDateString()}</span>
+                        <span>{calculateReadTime(content.html)} min read</span>
+                      </div>
+                    </div>
+                    <div
+                      className="ProseMirror prose prose-sm sm:prose-base lg:prose-lg max-w-none prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-blockquote:my-2"
+                      dangerouslySetInnerHTML={{ __html: content.html }}
+                    />
+                    <HlsPlyrHydrator />
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          }, [showPreview, content, localTitle, calculateReadTime])}
+        </div>
+
+        {/* Right Column - Task Info Sidebar */}
+        <div className="w-80 flex-shrink-0">
+          <TaskInfoSidebar
+            task={selectedTask}
+            channels={availableChannels}
+            selectedChannels={selectedChannels}
+            onChannelToggle={handleChannelToggle}
+            isLoadingChannels={channelLoading}
+            allowedChannelTypes={["website", "facebook"]}
+            contentType="blog"
+          />
+        </div>
+      </div>
 
       {/* Unsaved Changes Dialog */}
       <Dialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>

@@ -399,20 +399,12 @@ const OverviewTab: React.FC<TabProps> = ({ startDate, endDate, periodGap = "day"
             title=""
             data={formatProductTypeTrendData()}
             unit="VND"
-            lineConfig={{
-              standard_revenue: {
-                label: "Standard Products",
-                color: "#6366f1",
-              },
-              limited_revenue: {
-                label: "Limited Products",
-                color: "#ef4444",
-              },
-              all_revenue: {
-                label: "All Products",
-                color: "#10b981",
-              },
-            }}
+            xAxisKey="month"
+            lines={[
+              { dataKey: "all_revenue", color: "#10b981", name: "All Products" },
+              { dataKey: "standard_revenue", color: "#6366f1", name: "Standard Products" },
+              { dataKey: "limited_revenue", color: "#ef4444", name: "Limited Products" },
+            ]}
           />
         )}
       </div>
@@ -687,17 +679,12 @@ const OrderTab: React.FC<TabProps> = ({ startDate, endDate, periodGap }) => {
         <LineChartWidget
           title="Order Trend"
           data={formatTrendData()}
-          lineConfig={{
-            order_count: {
-              label: "Orders",
-              color: "#6366f1",
-            },
-            pre_order_count: {
-              label: "Pre-orders",
-              color: "#ef4444",
-            },
-          }}
           tooltip="Trend analysis showing the volume of regular orders versus pre-orders over time, helping predict demand patterns"
+          xAxisKey="month"
+          lines={[
+            { dataKey: "order_count", color: "#ef4444", name: "Orders" },
+            { dataKey: "pre_order_count", color: "#3b82f6", name: "Pre-Orders" },
+          ]}
         />
       </div>
 

@@ -1,13 +1,14 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { ArrowUpRight, ArrowDownRight, HelpCircle } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { useRef, useEffect } from "react";
 import { convertNumberToCurrency } from "@/libs/helper/helper";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { HelpTooltip } from "@/components/ui/help-tooltip";
 
 interface KPIData {
   value: string | number;
-  status?: "up" | "down";
+  status?: "up" | "down" | "stable";
   statusText?: string;
+  compareLabel?: string;
 }
 
 interface Props {
@@ -55,19 +56,10 @@ function KPIWidget({
   return (
     <Card className="rounded-2xl shadow-sm" id={id}>
       <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0 gap-2">
-        <div className="flex items-center gap-2">
-          <CardTitle className="text-base font-medium text-gray-500">{title}</CardTitle>
-          {tooltip && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <HelpCircle className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help" />
-              </TooltipTrigger>
-              <TooltipContent>
-                <p className="max-w-xs">{tooltip}</p>
-              </TooltipContent>
-            </Tooltip>
-          )}
-        </div>
+        <CardTitle className="text-base font-medium text-gray-500 flex items-center gap-1.5">
+          {title}
+          {tooltip && <HelpTooltip>{tooltip}</HelpTooltip>}
+        </CardTitle>
         {icon && (
           <div
             className={`w-12 h-12 flex items-center justify-center rounded-lg ${iconBg} ${iconColor}`}
@@ -99,11 +91,22 @@ function KPIWidget({
         {data?.status && data?.statusText && (
           <p
             className={`flex items-center gap-1 text-xs font-medium mt-1 ${
-              data.status === "up" ? "text-green-600" : "text-red-600"
+              data.status === "up"
+                ? "text-green-600"
+                : data.status === "down"
+                  ? "text-red-600"
+                  : "text-gray-500"
             }`}
           >
-            {data.status === "up" ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+            {data.status === "up" ? (
+              <ArrowUpRight size={14} />
+            ) : data.status === "down" ? (
+              <ArrowDownRight size={14} />
+            ) : null}
             {data.statusText}
+            {data.compareLabel && (
+              <span className="text-gray-400 font-normal ml-1">{data.compareLabel}</span>
+            )}
           </p>
         )}
       </CardContent>

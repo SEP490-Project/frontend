@@ -468,13 +468,9 @@ const AdminDashboard: React.FC = () => {
               title=""
               data={revenueTrendData}
               unit="VND"
-              lineConfig={{
-                value: {
-                  label: "Total Revenue",
-                  color: "#6366f1",
-                },
-              }}
               tooltip="Revenue trend over time showing the total income generated from all business activities in the selected time period"
+              xAxisKey="month"
+              lines={[{ dataKey: "revenue", color: "#ef4444", name: "Total Revenue" }]}
             />
           )}
         </div>
@@ -727,12 +723,8 @@ const AdminDashboard: React.FC = () => {
               title=""
               data={userGrowthData}
               unit="account"
-              lineConfig={{
-                value: {
-                  label: "New Users",
-                  color: "#10b981",
-                },
-              }}
+              xAxisKey="month"
+              lines={[{ dataKey: "new_users", color: "#10b981", name: "New Users" }]}
             />
           )}
         </div>

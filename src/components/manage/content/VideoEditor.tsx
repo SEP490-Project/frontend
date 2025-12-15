@@ -1,16 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -26,6 +19,7 @@ import { useNavigationBlocker } from "@/libs/hooks/useNavigationBlocker";
 import { useChunkUpload } from "@/libs/hooks/useChunkUpload";
 import { useChannel } from "@/libs/hooks/useChannel";
 import TikTokGuidelineCard from "./TikTokGuideline";
+import TaskInfoSidebar from "./TaskInfoSidebar";
 import { useDispatch } from "react-redux";
 import type { AppDispatch } from "@/libs/stores";
 import { channelList } from "@/libs/stores/channelManager/thunk";
@@ -53,13 +47,19 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
 
   const { uploadFileInChunks, progress, isUploading, error } = useChunkUpload();
 
+  // Multi-channel selection state
+  const [selectedChannels, setSelectedChannels] = useState<string[]>(() => {
+    if (editingContent?.content_channels && editingContent.content_channels.length > 0) {
+      return editingContent.content_channels.map((cc: any) => cc.channel_id).filter(Boolean);
+    }
+    return [];
+  });
+
   const [videoContent, setVideoContent] = useState<{
-    channel: string;
     title: string;
     description: string;
     body: string;
   }>({
-    channel: editingContent ? editingContent.content_channels?.[0]?.channel_id || "" : "",
     title: editingContent ? editingContent.title || "" : "",
     description: editingContent ? editingContent.description || "" : "",
     body: editingContent
@@ -75,7 +75,9 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
   // Keep track of initial values to detect unsaved changes
   const initialContent = React.useMemo(
     () => ({
-      channel: editingContent ? editingContent.content_channels?.[0]?.channel_id || "" : "",
+      channels: editingContent?.content_channels
+        ? editingContent.content_channels.map((cc: any) => cc.channel_id).filter(Boolean)
+        : [],
       title: editingContent ? editingContent.title || "" : "",
       description: editingContent ? editingContent.description || "" : "",
       body: editingContent
@@ -108,13 +110,29 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
         "";
 
       setVideoContent({
-        channel: editingContent.content_channels?.[0]?.channel_id || "",
         title: editingContent.title || "",
         description: editingContent.description || "",
         body: extractedVideoUrl,
       });
+
+      if (editingContent.content_channels && editingContent.content_channels.length > 0) {
+        const channelIds = editingContent.content_channels
+          .map((cc: any) => cc.channel_id)
+          .filter(Boolean);
+        setSelectedChannels(channelIds);
+      }
     }
   }, [editingContent]);
+
+  // Set default channel selection when channels load
+  useEffect(() => {
+    if (!editingContent && channels.length > 0 && selectedChannels.length === 0) {
+      const tiktokChannel = channels.find((channel) => channel.name.toLowerCase() === "tiktok");
+      if (tiktokChannel) {
+        setSelectedChannels([tiktokChannel.id]);
+      }
+    }
+  }, [channels, editingContent, selectedChannels.length]);
 
   const allowedVideoChannels = React.useMemo(() => {
     return channels.filter(
@@ -123,16 +141,30 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
     );
   }, [channels]);
 
+  // Handle channel toggle for multi-select
+  const handleChannelToggle = useCallback((channelId: string) => {
+    setSelectedChannels((prev) => {
+      if (prev.includes(channelId)) {
+        // Don't allow deselecting if it's the last channel
+        if (prev.length === 1) return prev;
+        return prev.filter((id) => id !== channelId);
+      }
+      return [...prev, channelId];
+    });
+  }, []);
+
   // Check if there are unsaved changes
   const hasUnsavedChanges = React.useMemo(() => {
+    const channelsChanged =
+      JSON.stringify(selectedChannels.sort()) !== JSON.stringify(initialContent.channels.sort());
     return (
-      videoContent.channel !== initialContent.channel ||
+      channelsChanged ||
       videoContent.title !== initialContent.title ||
       videoContent.description !== initialContent.description ||
       videoContent.body !== initialContent.body ||
       uploadedFile !== null
     );
-  }, [videoContent, initialContent, uploadedFile]);
+  }, [videoContent, initialContent, uploadedFile, selectedChannels]);
 
   // Block browser navigation when there are unsaved changes
   useNavigationBlocker({
@@ -150,7 +182,7 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
     }
 
     if (
-      videoContent.channel &&
+      selectedChannels.length > 0 &&
       videoContent.title &&
       videoContent.description &&
       videoContent.body
@@ -163,7 +195,7 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
           description: videoContent.description,
         },
         type: "VIDEO",
-        channels: [videoContent.channel],
+        channels: selectedChannels, // Now supports multiple channels
         task_id: selectedTask?.id?.toString() || null,
         affiliate_link: null,
         ai_generated_text: null,
@@ -243,6 +275,25 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
     }
   };
 
+  // Check if TikTok is selected (for guidelines display)
+  const hasTikTokSelected = useMemo(() => {
+    return selectedChannels.some((channelId) => {
+      const channel = allowedVideoChannels.find((ch) => ch.id === channelId);
+      return channel?.name.toLowerCase() === "tiktok";
+    });
+  }, [selectedChannels, allowedVideoChannels]);
+
+  // Preview disabled state
+  const isPreviewDisabled = useMemo(() => {
+    return (
+      isUploading ||
+      selectedChannels.length === 0 ||
+      !videoContent.title ||
+      !videoContent.description ||
+      !videoContent.body
+    );
+  }, [isUploading, selectedChannels.length, videoContent]);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -264,7 +315,7 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
         </div>
         <Button
           onClick={handleSave}
-          disabled={isUploading}
+          disabled={isUploading || isPreviewDisabled}
           className="bg-[#FF9DB0] hover:bg-pink-600 disabled:opacity-50"
         >
           {isUploading
@@ -275,151 +326,71 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
         </Button>
       </div>
 
-      {/* Editor */}
-      <Card>
-        <CardHeader>
-          <h3 className="text-lg font-semibold">
-            {editingContent ? "Edit Video Content" : `Create New ${contentType}`}
-          </h3>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Channel Selector */}
-          <div className="space-y-2">
-            <Label htmlFor="channel">Channel *</Label>
-            <Select
-              value={videoContent.channel}
-              onValueChange={(value) => handleInputChange("channel", value)}
-              disabled={isLoadingChannels}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue
-                  placeholder={isLoadingChannels ? "Loading channels..." : "Select a channel"}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {allowedVideoChannels.map((channel) => (
-                  <SelectItem key={channel.id} value={channel.id}>
-                    {channel.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Title Input */}
-          <div className="space-y-2">
-            <Label htmlFor="title">Title *</Label>
-            <input
-              type="text"
-              id="title"
-              placeholder="Enter video title..."
-              value={videoContent.title}
-              onChange={(e) => handleInputChange("title", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          {/* Description Input */}
-          <div className="space-y-2">
-            <Label htmlFor="description">Description *</Label>
-            <Textarea
-              id="description"
-              placeholder="Enter video description..."
-              value={videoContent.description}
-              onChange={(e) => handleInputChange("description", e.target.value)}
-              className="w-full min-h-[120px] resize-none"
-            />
-          </div>
-
-          {/* TikTok Guidelines - Show only when TikTok is selected */}
-          {videoContent.channel &&
-            allowedVideoChannels
-              .find((ch) => ch.id === videoContent.channel)
-              ?.name.toLowerCase() === "tiktok" && (
+      {/* Two-Column Layout */}
+      <div className="flex gap-6">
+        {/* Left Column - Main Editor */}
+        <div className="flex-1 min-w-0 space-y-6">
+          {/* Editor Card */}
+          <Card>
+            <CardHeader>
+              <h3 className="text-lg font-semibold">
+                {editingContent ? "Edit Video Content" : `Create New ${contentType}`}
+              </h3>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Title Input */}
               <div className="space-y-2">
-                <TikTokGuidelineCard />
-              </div>
-            )}
-
-          {/* Video Upload */}
-          <div className="space-y-2">
-            <Label htmlFor="video">Video *</Label>
-            {error && <div className="text-red-500 text-sm mb-2">{error}</div>}
-            {!videoContent.body ? (
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                <p className="text-gray-600 mb-4">
-                  {isUploading ? `Uploading... ${progress}%` : "Upload your video file"}
-                </p>
-                {isUploading && (
-                  <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${progress}%` }}
-                    ></div>
-                  </div>
-                )}
-                <input
-                  type="file"
-                  id="video-upload"
-                  accept="video/*"
-                  onChange={handleVideoUpload}
-                  disabled={isUploading}
-                  className="hidden"
+                <Label htmlFor="title">Title *</Label>
+                <Input
+                  type="text"
+                  id="title"
+                  placeholder="Enter video title..."
+                  value={videoContent.title}
+                  onChange={(e) => handleInputChange("title", e.target.value)}
+                  className="w-full"
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={isUploading}
-                  onClick={() => document.getElementById("video-upload")?.click()}
-                >
-                  {isUploading ? `Uploading ${progress}%` : "Choose Video File"}
-                </Button>
               </div>
-            ) : (
-              <div className="relative">
-                <video
-                  key={videoContent.body}
-                  src={videoContent.body}
-                  controls
-                  preload="metadata"
-                  className="w-full max-h-[300px] rounded-lg"
-                  onLoadedData={(e) => {
-                    // Seek to first frame to show thumbnail
-                    const video = e.currentTarget;
-                    if (video.currentTime === 0) {
-                      video.currentTime = 0.1;
-                    }
-                  }}
-                  onError={(e) => {
-                    console.error("Video load error:", e);
-                    console.log("Video URL that failed:", videoContent.body);
-                  }}
-                >
-                  Your browser does not support the video tag.
-                </video>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={handleRemoveVideo}
-                  className="absolute top-2 right-2"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-                <div className="mt-2 flex items-center justify-between">
-                  <div className="text-sm text-gray-600">
-                    {uploadedFile ? (
-                      <span>Uploaded: {uploadedFile.name}</span>
-                    ) : editingContent ? (
-                      <span>Current video loaded</span>
-                    ) : (
-                      <span>Video ready</span>
+
+              {/* Description Input */}
+              <div className="space-y-2">
+                <Label htmlFor="description">Description *</Label>
+                <Textarea
+                  id="description"
+                  placeholder="Enter video description..."
+                  value={videoContent.description}
+                  onChange={(e) => handleInputChange("description", e.target.value)}
+                  className="w-full min-h-[120px] resize-none"
+                />
+              </div>
+
+              {/* TikTok Guidelines - Show only when TikTok is selected */}
+              {hasTikTokSelected && (
+                <div className="space-y-2">
+                  <TikTokGuidelineCard />
+                </div>
+              )}
+
+              {/* Video Upload */}
+              <div className="space-y-2">
+                <Label htmlFor="video">Video *</Label>
+                {error && <div className="text-red-500 text-sm mb-2">{error}</div>}
+                {!videoContent.body ? (
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                    <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                    <p className="text-gray-600 mb-4">
+                      {isUploading ? `Uploading... ${progress}%` : "Upload your video file"}
+                    </p>
+                    {isUploading && (
+                      <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+                        <div
+                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${progress}%` }}
+                        ></div>
+                      </div>
                     )}
-                  </div>
-                  <div className="space-x-2">
                     <input
                       type="file"
-                      id="video-replace"
+                      id="video-upload"
                       accept="video/*"
                       onChange={handleVideoUpload}
                       disabled={isUploading}
@@ -428,83 +399,153 @@ const VideoEditor = ({ editingContent, selectedTask, onSave, onBack }: VideoEdit
                     <Button
                       type="button"
                       variant="outline"
-                      size="sm"
                       disabled={isUploading}
-                      onClick={() => document.getElementById("video-replace")?.click()}
+                      onClick={() => document.getElementById("video-upload")?.click()}
                     >
-                      {isUploading ? `Uploading ${progress}%` : "Replace Video"}
+                      {isUploading ? `Uploading ${progress}%` : "Choose Video File"}
                     </Button>
                   </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Preview Toggle Button */}
-      <div className="flex justify-center">
-        <Button
-          variant="default"
-          onClick={() => setShowPreview(!showPreview)}
-          className="w-[200px]"
-          disabled={
-            isUploading ||
-            !videoContent.channel ||
-            !videoContent.title ||
-            !videoContent.description ||
-            !videoContent.body
-          }
-        >
-          {showPreview ? "Hide Preview" : "Show Preview"}
-        </Button>
-      </div>
-
-      {/* Preview Section */}
-      {showPreview &&
-        videoContent.channel &&
-        videoContent.title &&
-        videoContent.description &&
-        videoContent.body && (
-          <Card>
-            <CardHeader>
-              <h3 className="text-lg font-semibold">Video Preview</h3>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {/* Channel Preview */}
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium text-gray-700">Channel:</span>
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                    {allowedVideoChannels.find((ch) => ch.id === videoContent.channel)?.name ||
-                      videoContent.channel}
-                  </Badge>
-                </div>
-
-                {/* Title Preview */}
-                <div>
-                  <h4 className="text-lg font-semibold text-gray-900">{videoContent.title}</h4>
-                </div>
-
-                {/* Description Preview */}
-                <div>
-                  <p className="text-gray-700 leading-relaxed">{videoContent.description}</p>
-                </div>
-
-                {/* Video Preview */}
-                <div className="mt-6">
-                  <video
-                    src={videoContent.body || undefined}
-                    controls
-                    className="w-full rounded-lg shadow-lg"
-                  >
-                    Your browser does not support the video tag.
-                  </video>
-                </div>
+                ) : (
+                  <div className="relative">
+                    <video
+                      key={videoContent.body}
+                      src={videoContent.body}
+                      controls
+                      preload="metadata"
+                      className="w-full max-h-[300px] rounded-lg"
+                      onLoadedData={(e) => {
+                        // Seek to first frame to show thumbnail
+                        const video = e.currentTarget;
+                        if (video.currentTime === 0) {
+                          video.currentTime = 0.1;
+                        }
+                      }}
+                      onError={(e) => {
+                        console.error("Video load error:", e);
+                        console.log("Video URL that failed:", videoContent.body);
+                      }}
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleRemoveVideo}
+                      className="absolute top-2 right-2"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                    <div className="mt-2 flex items-center justify-between">
+                      <div className="text-sm text-gray-600">
+                        {uploadedFile ? (
+                          <span>Uploaded: {uploadedFile.name}</span>
+                        ) : editingContent ? (
+                          <span>Current video loaded</span>
+                        ) : (
+                          <span>Video ready</span>
+                        )}
+                      </div>
+                      <div className="space-x-2">
+                        <input
+                          type="file"
+                          id="video-replace"
+                          accept="video/*"
+                          onChange={handleVideoUpload}
+                          disabled={isUploading}
+                          className="hidden"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={isUploading}
+                          onClick={() => document.getElementById("video-replace")?.click()}
+                        >
+                          {isUploading ? `Uploading ${progress}%` : "Replace Video"}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
-        )}
+
+          {/* Preview Toggle Button */}
+          <div className="flex justify-center">
+            <Button
+              variant="default"
+              onClick={() => setShowPreview(!showPreview)}
+              className="w-[200px]"
+              disabled={isPreviewDisabled}
+            >
+              {showPreview ? "Hide Preview" : "Show Preview"}
+            </Button>
+          </div>
+
+          {/* Preview Section */}
+          {showPreview && !isPreviewDisabled && (
+            <Card>
+              <CardHeader>
+                <h3 className="text-lg font-semibold">Video Preview</h3>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Channels Preview */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-medium text-gray-700">Channels:</span>
+                    {selectedChannels.map((channelId) => {
+                      const channel = allowedVideoChannels.find((ch) => ch.id === channelId);
+                      return channel ? (
+                        <span
+                          key={channelId}
+                          className="px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 rounded-full"
+                        >
+                          {channel.name}
+                        </span>
+                      ) : null;
+                    })}
+                  </div>
+
+                  {/* Title Preview */}
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900">{videoContent.title}</h4>
+                  </div>
+
+                  {/* Description Preview */}
+                  <div>
+                    <p className="text-gray-700 leading-relaxed">{videoContent.description}</p>
+                  </div>
+
+                  {/* Video Preview */}
+                  <div className="mt-6">
+                    <video
+                      src={videoContent.body || undefined}
+                      controls
+                      className="w-full rounded-lg shadow-lg"
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Right Column - Task Info Sidebar */}
+        <div className="w-80 flex-shrink-0">
+          <TaskInfoSidebar
+            task={selectedTask}
+            channels={allowedVideoChannels}
+            selectedChannels={selectedChannels}
+            onChannelToggle={handleChannelToggle}
+            isLoadingChannels={isLoadingChannels}
+            allowedChannelTypes={["tiktok", "facebook"]}
+            contentType="video"
+          />
+        </div>
+      </div>
 
       {/* Unsaved Changes Dialog */}
       <Dialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>

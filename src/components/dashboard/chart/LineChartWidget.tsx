@@ -1,3 +1,5 @@
+import { TooltipTrigger, TooltipContent } from "@radix-ui/react-tooltip";
+import { HelpCircle } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -8,37 +10,27 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { Tooltip as ShadcnTooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { HelpCircle } from "lucide-react";
+
+// 1. Define a config for each line to make it generic
+interface LineConfig {
+  dataKey: string;
+  color: string;
+  name?: string; // Human readable name (e.g., "reach" -> "Total Reach")
+}
 
 interface Props {
   title: string;
-  data: {
-    month?: string;
-    name?: string;
-    [key: string]: any;
-  }[];
+  data: Record<string, any>[];
   unit?: string;
-  lineConfig?: {
-    [key: string]: {
-      label: string;
-      color: string;
-    };
-  };
+  xAxisKey: string; // Dynamic X-Axis (e.g., "month", "date", "year")
+  lines?: LineConfig[]; // Explicit definition of what lines to draw
+  className?: string;
   tooltip?: string;
 }
 
-function LineChartWidget({ title, data, unit, lineConfig, tooltip }: Props) {
-  if (!Array.isArray(data) || !data.length || !data[0]?.month) {
-    return null;
-  }
-
-  // Check if there's at least one data property besides "month" and "name"
-  const dataKeys = Object.keys(data[0]).filter((key) => key !== "month" && key !== "name");
-  if (!dataKeys.length) {
-    return null;
-  }
-
+function LineChartWidget({ title, data, xAxisKey, lines, className, unit, tooltip }: Props) {
+  // 2. Better "Empty State" handling
+  const isEmpty = !Array.isArray(data) || data.length === 0;
   const defaultColors = [
     "#6366f1",
     "#ef4444",
@@ -49,10 +41,35 @@ function LineChartWidget({ title, data, unit, lineConfig, tooltip }: Props) {
     "#ec4899",
   ];
 
+  if (isEmpty) {
+    return (
+      <div
+        className={`h-[340px] flex flex-col justify-center items-center bg-gray-50 rounded border ${className}`}
+      >
+        <p className="text-gray-400 font-medium">No data available for {title}</p>
+      </div>
+    );
+  }
+
+  // 3. Determine which keys to draw lines for
+  let linesToRender: LineConfig[] = [];
+
+  if (lines) {
+    linesToRender = lines;
+  } else {
+    // Auto-detect keys (excluding the x-axis key)
+    linesToRender = Object.keys(data[0])
+      .filter((key) => key !== xAxisKey)
+      .map((key, index) => ({
+        dataKey: key,
+        color: defaultColors[index % defaultColors.length],
+      }));
+  }
+
   return (
-    <div className="h-[340px] flex flex-col">
+    <div className={`h-[340px] flex flex-col ${className}`}>
       <div className="flex items-center gap-2 mb-3">
-        <h3 className="text-gray-700 text-base font-semibold">{title}</h3>
+        <h3 className="text-gray-700 text-base font-semibold mb-3">{title}</h3>
         {tooltip && (
           <ShadcnTooltip>
             <TooltipTrigger asChild>
@@ -64,11 +81,21 @@ function LineChartWidget({ title, data, unit, lineConfig, tooltip }: Props) {
           </ShadcnTooltip>
         )}
       </div>
-      <div className="flex-1">
+      <div className="flex-1 w-full min-w-0">
+        {" "}
+        {/* min-w-0 fixes flex issues with charts */}
         <ResponsiveContainer debounce={250} width="100%" height="100%">
-          <LineChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="month" />
+          <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+
+            <XAxis
+              dataKey={xAxisKey}
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: "#6b7280", fontSize: 12 }}
+              dy={10}
+            />
+
             <YAxis
               type="number"
               tick={{ fontSize: "12px" }}
@@ -91,23 +118,30 @@ function LineChartWidget({ title, data, unit, lineConfig, tooltip }: Props) {
               tickMargin={5}
               unit={unit ? ` ${unit}` : undefined}
               width={100}
+              axisLine={false}
+              tickLine={false}
             />
+
             <Tooltip
-              formatter={(value: number, name: string) => {
-                const displayName = lineConfig?.[name]?.label || name;
-                const formattedValue = value.toLocaleString();
-                return [unit ? `${formattedValue} ${unit}` : formattedValue, displayName];
+              contentStyle={{
+                borderRadius: "8px",
+                border: "none",
+                boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
               }}
             />
-            <Legend formatter={(value: string) => lineConfig?.[value]?.label || value} />
-            {dataKeys.map((key, index) => (
+
+            <Legend verticalAlign="top" height={36} iconType="circle" />
+
+            {linesToRender.map((line) => (
               <Line
-                key={key}
+                key={line.dataKey}
                 type="monotone"
-                dataKey={key}
-                stroke={lineConfig?.[key]?.color || defaultColors[index % defaultColors.length]}
+                dataKey={line.dataKey}
+                stroke={line.color}
                 strokeWidth={2}
-                name={lineConfig?.[key]?.label || key}
+                name={line.name || line.dataKey} // Custom label support
+                dot={false} // Cleaner look for dense data
+                activeDot={{ r: 6, strokeWidth: 0 }}
               />
             ))}
           </LineChart>

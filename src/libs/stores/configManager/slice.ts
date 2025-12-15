@@ -1,9 +1,18 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { getRepresentativeConfig, getPrivacyPolicy, getTermsOfService } from "./thunk";
+import {
+  getAllConfigs,
+  getRepresentativeConfig,
+  getPrivacyPolicy,
+  getTermsOfService,
+  updateConfig,
+  bulkUpdateConfigs,
+} from "./thunk";
 import type { RepresentativeConfig } from "@/libs/types/config";
 
 interface stateType {
   loading: boolean;
+  updating: boolean;
+  allConfigs: any | null;
   representativeConfig: RepresentativeConfig | null;
   termsOfService: any | null;
   privacyPolicy: any | null;
@@ -11,6 +20,8 @@ interface stateType {
 
 const initialState: stateType = {
   loading: false,
+  updating: false,
+  allConfigs: null,
   representativeConfig: null,
   termsOfService: null,
   privacyPolicy: null,
@@ -22,6 +33,16 @@ export const manageConfigSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
+      .addCase(getAllConfigs.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(getAllConfigs.fulfilled, (state, action) => {
+        state.loading = false;
+        state.allConfigs = action.payload.data;
+      })
+      .addCase(getAllConfigs.rejected, (state) => {
+        state.loading = false;
+      })
       .addCase(getRepresentativeConfig.pending, (state) => {
         state.loading = true;
       })
@@ -51,6 +72,24 @@ export const manageConfigSlice = createSlice({
       })
       .addCase(getPrivacyPolicy.rejected, (state) => {
         state.loading = false;
+      })
+      .addCase(updateConfig.pending, (state) => {
+        state.updating = true;
+      })
+      .addCase(updateConfig.fulfilled, (state) => {
+        state.updating = false;
+      })
+      .addCase(updateConfig.rejected, (state) => {
+        state.updating = false;
+      })
+      .addCase(bulkUpdateConfigs.pending, (state) => {
+        state.updating = true;
+      })
+      .addCase(bulkUpdateConfigs.fulfilled, (state) => {
+        state.updating = false;
+      })
+      .addCase(bulkUpdateConfigs.rejected, (state) => {
+        state.updating = false;
       });
   },
 });

@@ -38,7 +38,7 @@ import { AuthenticationLayout } from "../layouts/AuthenticationLayout";
 import { ForgotPassword } from "@/pages/authentication/ForgotPassword";
 import { ResetPassword } from "@/pages/authentication/ResetPassword";
 import CustomerLayout from "@/layouts/CustomerLayout";
-import { AssignedTasks, ManageContent, ManageTags } from "@/pages/manager/content";
+import { AssignedTasks, ManageContent, ManageTags, ContentDetail } from "@/pages/manager/content";
 import PrivateRoute from "./private-route";
 import PublicRoute from "./public-route";
 import {
@@ -57,7 +57,7 @@ import {
 } from "@/pages/manager/sale";
 import ContentPreviewPage from "@/pages/manager/marketing/content-approval/ContentPreviewPage";
 import AddProductStep from "@/components/manage/sale/product/AddProductStep";
-import { Channel, Configurations, User, VariantAttribute } from "@/pages/manager/admin";
+import { Channel, User, VariantAttribute } from "@/pages/manager/admin";
 import { CreateConceptStep } from "@/pages/manager/sale/product/add-product-step/CreateConceptStep";
 import SalesPwaLayout from "@/layouts/SalesPWALayout";
 import SalesPwaRoute from "./sales-pwa-route";
@@ -70,6 +70,10 @@ import {
 } from "@/pages/pwa";
 import { PrivacyPolicy } from "@/pages/landing/PrivacyPolicy";
 import { TermsOfUses } from "@/pages/landing/TermsOfUses";
+import AllConfigurations from "@/pages/manager/admin/configurations/AllConfigurations";
+import TermsOfService from "@/pages/manager/admin/configurations/TermsOfService";
+import Representative from "@/pages/manager/admin/configurations/Representative";
+import PrivacyPolicyAdmin from "@/pages/manager/admin/configurations/PrivacyPolicyAdmin";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -130,7 +134,12 @@ const AppRoutes = () => (
           <Route path="users" element={<User />} />
           <Route path="variant-attribute" element={<VariantAttribute />} />
           <Route path="channel" element={<Channel />} />
-          <Route path="configurations" element={<Configurations />} />
+          <Route path="configurations">
+            <Route index element={<AllConfigurations />} />
+            <Route path="representative" element={<Representative />} />
+            <Route path="terms-of-service" element={<TermsOfService />} />
+            <Route path="privacy-policy" element={<PrivacyPolicyAdmin />} />
+          </Route>
         </Route>
       </Route>
 
@@ -198,7 +207,8 @@ const AppRoutes = () => (
       <Route element={<PrivateRoute allowedRoles={["CONTENT_STAFF"]} />}>
         <Route path="/manage/content" element={<ManageLayout />}>
           <Route path="task" element={<AssignedTasks />} />
-          <Route path="blog" element={<ManageContent />} />
+          <Route path="all-contents" element={<ManageContent />} />
+          <Route path="all-contents/:id" element={<ContentDetail />} />
           <Route path="tag" element={<ManageTags />} />
         </Route>
       </Route>

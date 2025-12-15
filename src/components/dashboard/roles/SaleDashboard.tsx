@@ -387,7 +387,25 @@ const OverviewTab: React.FC<TabProps> = ({ startDate, endDate, periodGap = "day"
             No data available
           </div>
         ) : (
-          <LineChartWidget title="" data={formatProductTypeTrendData()} />
+          <LineChartWidget
+            title=""
+            data={formatProductTypeTrendData()}
+            unit="VND"
+            lineConfig={{
+              standard_revenue: {
+                label: "Standard Products",
+                color: "#6366f1",
+              },
+              limited_revenue: {
+                label: "Limited Products",
+                color: "#ef4444",
+              },
+              all_revenue: {
+                label: "All Products",
+                color: "#10b981",
+              },
+            }}
+          />
         )}
       </div>
 
@@ -399,7 +417,7 @@ const OverviewTab: React.FC<TabProps> = ({ startDate, endDate, periodGap = "day"
             No data available
           </div>
         ) : (
-          <BarChartWidget title="" data={formatBarChartData?.revenue_by_category} />
+          <BarChartWidget title="" data={formatBarChartData?.revenue_by_category} unit="VND" />
         )}
       </div>
 
@@ -645,7 +663,20 @@ const OrderTab: React.FC<TabProps> = ({ startDate, endDate, periodGap }) => {
 
       {/* Chart Section */}
       <div className="flex flex-col gap-4 bg-white shadow rounded-xl p-4">
-        <LineChartWidget title="Order Trend" data={formatTrendData()} />
+        <LineChartWidget
+          title="Order Trend"
+          data={formatTrendData()}
+          lineConfig={{
+            order_count: {
+              label: "Orders",
+              color: "#6366f1",
+            },
+            pre_order_count: {
+              label: "Pre-orders",
+              color: "#ef4444",
+            },
+          }}
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">

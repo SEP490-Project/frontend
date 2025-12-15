@@ -65,6 +65,8 @@ function PieChartWidget({ title, data, mode = "count" }: Props) {
               label={renderCustomizedLabel(mode)}
               labelLine={false}
               isAnimationActive={false}
+              startAngle={90}
+              endAngle={-270}
             >
               {data.map((_, i) => (
                 <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />
@@ -81,6 +83,9 @@ function PieChartWidget({ title, data, mode = "count" }: Props) {
               ]}
             />
             <Legend
+              layout="vertical"
+              verticalAlign="middle"
+              align="right"
               formatter={(value: string) => <span style={{ fontWeight: 500 }}>{value}</span>}
             />
           </PieChart>

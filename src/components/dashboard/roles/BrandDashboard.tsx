@@ -450,7 +450,17 @@ const BrandDashboard: React.FC = () => {
           {isEmptyData(revenueTrendData) ? (
             <NoDataMessage message="No revenue data available for the selected time period" />
           ) : (
-            <LineChartWidget title="" data={revenueTrendData} />
+            <LineChartWidget
+              title=""
+              data={revenueTrendData}
+              unit="VND"
+              lineConfig={{
+                value: {
+                  label: "Brand Revenue",
+                  color: "#6366f1",
+                },
+              }}
+            />
           )}
         </div>
       </Card>
@@ -514,7 +524,7 @@ const BrandDashboard: React.FC = () => {
           {isEmptyData(topProductsData) ? (
             <NoDataMessage message="No product revenue data available for the selected period" />
           ) : (
-            <BarChartWidget title="" data={topProductsData} />
+            <BarChartWidget title="" data={topProductsData} unit="VND" />
           )}
         </div>
       </Card>

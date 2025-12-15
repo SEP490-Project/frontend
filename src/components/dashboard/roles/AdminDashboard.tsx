@@ -460,7 +460,17 @@ const AdminDashboard: React.FC = () => {
           {isEmptyData(revenueTrendData) ? (
             <NoDataMessage message="No revenue data available for the selected time period" />
           ) : (
-            <LineChartWidget title="" data={revenueTrendData} />
+            <LineChartWidget
+              title=""
+              data={revenueTrendData}
+              unit="VND"
+              lineConfig={{
+                value: {
+                  label: "Total Revenue",
+                  color: "#6366f1",
+                },
+              }}
+            />
           )}
         </div>
       </Card>
@@ -472,7 +482,7 @@ const AdminDashboard: React.FC = () => {
             {isEmptyData(revenueBreakdownData) ? (
               <NoDataMessage message="No revenue analytics data available" />
             ) : (
-              <BarChartWidget title="" data={revenueBreakdownData} />
+              <BarChartWidget title="" data={revenueBreakdownData} unit="VND" />
             )}
           </div>
         </Card>
@@ -701,7 +711,17 @@ const AdminDashboard: React.FC = () => {
           {isEmptyData(userGrowthData) ? (
             <NoDataMessage message="No user growth data available for the selected time period" />
           ) : (
-            <LineChartWidget title="" data={userGrowthData} />
+            <LineChartWidget
+              title=""
+              data={userGrowthData}
+              unit="account"
+              lineConfig={{
+                value: {
+                  label: "New Users",
+                  color: "#10b981",
+                },
+              }}
+            />
           )}
         </div>
       </Card>

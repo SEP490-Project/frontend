@@ -498,7 +498,7 @@ const MarketingDashboard: React.FC = () => {
           {isEmptyData(brandRevenueData) ? (
             <NoDataMessage message="No brand revenue data available for the selected period" />
           ) : (
-            <BarChartWidget title="" data={brandRevenueData} />
+            <BarChartWidget title="" data={brandRevenueData} unit="VND" />
           )}
         </div>
       </Card>
@@ -588,7 +588,7 @@ const MarketingDashboard: React.FC = () => {
             {isEmptyData(revenueByTypeData) ? (
               <NoDataMessage message="No revenue breakdown data available for the selected period" />
             ) : (
-              <BarChartWidget title="" data={revenueByTypeData} />
+              <BarChartWidget title="" data={revenueByTypeData} unit="VND" />
             )}
           </div>
         </Card>

@@ -3,9 +3,10 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 interface Props {
   title: string;
   data: { name: string; value: number }[];
+  unit?: string;
 }
 
-function BarChartWidget({ title, data }: Props) {
+function BarChartWidget({ title, data, unit }: Props) {
   if (!Array.isArray(data) || !data.length || !data[0]?.name || !data[0]?.value) return null;
 
   const formatTick = (tickItem: string) => {
@@ -20,7 +21,12 @@ function BarChartWidget({ title, data }: Props) {
       return (
         <div className="bg-white p-3 shadow-lg border rounded-lg">
           <p className="font-medium text-gray-900">{label}</p>
-          <p className="text-indigo-600">Value: {payload[0].value.toLocaleString()}</p>
+          <p className="text-indigo-600">
+            Value:{" "}
+            {unit
+              ? `${payload[0].value.toLocaleString()} ${unit}`
+              : payload[0].value.toLocaleString()}
+          </p>
         </div>
       );
     }
@@ -43,7 +49,24 @@ function BarChartWidget({ title, data }: Props) {
               interval={0}
               tick={{ fontSize: 11 }}
             />
-            <YAxis tick={{ fontSize: 11 }} />
+            <YAxis
+              type="number"
+              tick={{ fontSize: "12px" }}
+              tickCount={11}
+              domain={[
+                0,
+                (dataMax: number) => {
+                  if (dataMax <= 10) return 20;
+                  if (dataMax <= 50) return Math.ceil(dataMax / 10) * 10;
+                  if (dataMax <= 100) return Math.ceil(dataMax / 20) * 20;
+                  return Math.ceil(dataMax / 100) * 100;
+                },
+              ]}
+              tickFormatter={(tick: number) => Math.floor(tick).toLocaleString("en-US")}
+              tickMargin={5}
+              unit={unit ? ` ${unit}` : undefined}
+              width={100}
+            />
             <Tooltip content={<CustomTooltip />} />
             <Bar dataKey="value" fill="#6366f1" radius={[8, 8, 0, 0]} />
           </BarChart>

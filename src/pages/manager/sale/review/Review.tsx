@@ -17,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatDate } from "@/libs/helper/helper";
 import { useAppDispatch, type RootState } from "@/libs/stores";
 import { getReviewsForStaffThunk } from "@/libs/stores/reviewManager/thunk";
 import type { ProductParams } from "@/libs/types/product";
@@ -152,7 +153,9 @@ const Review = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm text-gray-500">2023-10-01</span>
+                    <span className="text-sm text-gray-500">
+                      {formatDate(review.review_content.created_at)}
+                    </span>
                   </TableCell>
                   <TableCell>
                     <Button

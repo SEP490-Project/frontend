@@ -199,30 +199,50 @@ const BrandDashboard: React.FC = () => {
 
   const campaignsTableData = Array.isArray(campaigns)
     ? campaigns.map((c: any) => ({
+        id: c.campaign_id,
         name: c.campaign_name,
-        status: c.status,
-        "start date": new Date(c.start_date).toLocaleDateString(),
-        "end date": new Date(c.end_date).toLocaleDateString(),
-        milestones: c.milestone_count,
-        tasks: `${c.completed_tasks}/${c.task_count}`,
-        completion: `${c.completion_rate}%`,
-        content: c.content_count,
-        views: c.total_views.toLocaleString(),
-        engagements: c.total_engagements.toLocaleString(),
+        status: {
+          type: "badge",
+          value: c.status,
+          variant: "campaignStatus",
+        },
+        duration: `${new Date(c.start_date).toLocaleDateString()} → ${new Date(
+          c.end_date,
+        ).toLocaleDateString()}`,
+        progress: `${c.completed_tasks}/${c.task_count} (${c.completion_rate}%)`,
+        action: {
+          type: "action",
+          label: "View",
+          href: `/manage/brand/campaigns/${c.campaign_id}`,
+        },
       }))
     : [];
 
   const contractsTableData = Array.isArray(contracts)
     ? contracts.map((c: any) => ({
+        id: c.contract_id,
         number: c.contract_number,
-        type: c.type,
-        status: c.status,
+        type: {
+          type: "badge",
+          value: c.type,
+          variant: "contractType",
+        },
+        status: {
+          type: "badge",
+          value: c.status,
+          variant: "contractStatus",
+        },
         value: formatCurrency(c.total_value),
         paid: formatCurrency(c.paid_amount),
         pending: formatCurrency(c.pending_amount),
-        "start date": new Date(c.start_date).toLocaleDateString(),
-        "end date": new Date(c.end_date).toLocaleDateString(),
-        campaigns: c.campaign_count,
+        duration: `${new Date(c.start_date).toLocaleDateString()} → ${new Date(
+          c.end_date,
+        ).toLocaleDateString()}`,
+        action: {
+          type: "action",
+          label: "View",
+          href: `/manage/brand/contracts/${c.contract_id}`,
+        },
       }))
     : [];
 
@@ -605,7 +625,7 @@ const BrandDashboard: React.FC = () => {
           {isEmptyData(campaignsTableData) ? (
             <NoDataMessage message="No campaign data available" />
           ) : (
-            <TableWidget title="" data={campaignsTableData} />
+            <TableWidget title="" data={campaignsTableData as any} />
           )}
         </div>
       </Card>
@@ -652,7 +672,7 @@ const BrandDashboard: React.FC = () => {
           {isEmptyData(contractsTableData) ? (
             <NoDataMessage message="No contract data available" />
           ) : (
-            <TableWidget title="" data={contractsTableData} />
+            <TableWidget title="" data={contractsTableData as any} />
           )}
         </div>
       </Card>

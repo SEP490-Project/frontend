@@ -1,7 +1,8 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, HelpCircle } from "lucide-react";
 import { useRef, useEffect } from "react";
 import { convertNumberToCurrency } from "@/libs/helper/helper";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface KPIData {
   value: string | number;
@@ -17,6 +18,7 @@ interface Props {
   iconColor?: string;
   iconBg?: string;
   id?: string;
+  tooltip?: string;
 }
 
 function KPIWidget({
@@ -27,6 +29,7 @@ function KPIWidget({
   iconColor = "text-gray-500",
   iconBg = "bg-gray-100",
   id,
+  tooltip,
 }: Props) {
   const formatValue = (val: string | number) => {
     if (typeof val === "number") {
@@ -52,7 +55,19 @@ function KPIWidget({
   return (
     <Card className="rounded-2xl shadow-sm" id={id}>
       <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0 gap-2">
-        <CardTitle className="text-base font-medium text-gray-500">{title}</CardTitle>
+        <div className="flex items-center gap-2">
+          <CardTitle className="text-base font-medium text-gray-500">{title}</CardTitle>
+          {tooltip && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <HelpCircle className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="max-w-xs">{tooltip}</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
         {icon && (
           <div
             className={`w-12 h-12 flex items-center justify-center rounded-lg ${iconBg} ${iconColor}`}

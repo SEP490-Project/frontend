@@ -23,8 +23,12 @@ export interface TransactionData {
 
 export interface ReferenceInfo {
   id: string;
-  user_info: UserInfo;
-  bank_info: BankInfo;
+  contract_id?: string;
+  contract_number?: string;
+  is_deposit?: boolean;
+  user_info?: UserInfo;
+  brand_info?: BrandInfo;
+  bank_info?: BankInfo;
   order_items?: OrderItem[];
   product_variant_info?: ProductVariantInfo;
 }
@@ -36,6 +40,16 @@ export interface UserInfo {
   email: string;
 }
 
+export interface BrandInfo {
+  id: string;
+  user_id: string;
+  name: string;
+  contact_email: string;
+  contact_phone: string;
+  representative_name: string;
+  representative_email: string;
+  representative_phone: string;
+}
 export interface BankInfo {
   bank_account: string;
   bank_name: string;

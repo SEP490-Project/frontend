@@ -28,7 +28,7 @@ import { useChannel } from "@/libs/hooks/useChannel";
 import ContentPreview from "@/components/manage/marketing/content-approval/ContentPreview";
 import { getItem } from "@/libs/local-storage";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 5;
 
 const CONTENT_TYPE_LABELS: Record<string, string> = {
   POST: "Post",
@@ -50,6 +50,7 @@ const ContentApprovalPage: React.FC = () => {
   const [sortBy, setSortBy] = useState<string>("created_at");
   const [sortOrder, setSortOrder] = useState<string>("desc");
   const [selectedContentId, setSelectedContentId] = useState<string | null>(null);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
   const user = getItem<{
     id: string;
   }>("user");
@@ -115,11 +116,15 @@ const ContentApprovalPage: React.FC = () => {
   };
 
   const handleViewContent = (content: Content) => {
+    setIsDetailLoading(true);
     setSelectedContentId(content.id);
+    // Reset loading state after a short delay to allow modal to open
+    setTimeout(() => setIsDetailLoading(false), 100);
   };
 
   const handleCloseModal = () => {
     setSelectedContentId(null);
+    setIsDetailLoading(false);
   };
 
   const itemVariants = {
@@ -259,7 +264,7 @@ const ContentApprovalPage: React.FC = () => {
       {/* Content Table */}
       <Card>
         <CardContent className="p-0">
-          {loading ? (
+          {loading && !isDetailLoading ? (
             <div className="p-8 text-center">
               <Loader2 className="mx-auto mb-4 h-12 w-12 text-primary animate-spin" />
               <p className="text-gray-500">Loading contents...</p>

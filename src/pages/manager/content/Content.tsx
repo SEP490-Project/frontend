@@ -96,7 +96,7 @@ const ManageContent = () => {
 
       // Refresh the content list and go back to list view (only if successful)
       if (isSuccess) {
-        await dispatch(contents({ page: 1, limit: 10 }));
+        await dispatch(contents({ page: 1, limit: 5 }));
         handleBackToList();
       }
 

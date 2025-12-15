@@ -45,7 +45,7 @@ const Transaction: React.FC<{ type: "ORDER" | "PREORDER" }> = ({ type }) => {
 
   const [params, setParams] = useState<TransactionParams>({
     page: 1,
-    limit: 10,
+    limit: 5,
     reference_type: type,
   });
 

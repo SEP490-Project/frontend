@@ -29,7 +29,7 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
   onClose,
   onContentUpdated,
 }) => {
-  const { content, loading } = useContentMarketing();
+  const { content, detailLoading } = useContentMarketing();
   const dispatch = useAppDispatch();
   const [approving, setApproving] = useState(false);
   const [rejecting, setRejecting] = useState(false);
@@ -276,7 +276,7 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
 
         <div className="flex-1 overflow-y-auto">
           <div className="px-6 pb-6 space-y-6">
-            {loading ? (
+            {detailLoading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-pink-500" />
                 <span className="ml-3 text-gray-600">Loading content...</span>

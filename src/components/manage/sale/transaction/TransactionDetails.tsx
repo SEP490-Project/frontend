@@ -136,19 +136,19 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({
                     <div>
                       <label className="text-sm font-medium text-gray-500">Bank Name</label>
                       <p className="text-base mt-1">
-                        {referenceInfo?.bank_info.bank_name || "Unknown"}
+                        {referenceInfo?.bank_info?.bank_name || "Unknown"}
                       </p>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-500">Account Holder</label>
                       <p className="text-base mt-1">
-                        {referenceInfo?.bank_info.bank_account_holder || "Unknown"}
+                        {referenceInfo?.bank_info?.bank_account_holder || "Unknown"}
                       </p>
                     </div>
                     <div className="col-span-2">
                       <label className="text-sm font-medium text-gray-500">Account Number</label>
                       <p className="text-base font-mono mt-1">
-                        {referenceInfo?.bank_info.bank_account || "Unknown"}
+                        {referenceInfo?.bank_info?.bank_account || "Unknown"}
                       </p>
                     </div>
                   </div>

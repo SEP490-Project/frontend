@@ -10,6 +10,7 @@ import { toast } from "sonner";
 
 interface stateType {
   loading: boolean;
+  detailLoading: boolean;
   contents: ListContent[];
   content: ListContent | null;
   pagination: {
@@ -24,6 +25,7 @@ interface stateType {
 
 const initialState: stateType = {
   loading: false,
+  detailLoading: false,
   contents: [],
   content: null,
   pagination: null,
@@ -48,14 +50,14 @@ export const manageContentMarketingSlice = createSlice({
       })
 
       .addCase(marketingContentDetail.pending, (state) => {
-        state.loading = true;
+        state.detailLoading = true;
       })
       .addCase(marketingContentDetail.fulfilled, (state, action) => {
-        state.loading = false;
+        state.detailLoading = false;
         state.content = action.payload.data;
       })
       .addCase(marketingContentDetail.rejected, (state) => {
-        state.loading = false;
+        state.detailLoading = false;
       })
 
       .addCase(marketingApproveContent.pending, (state) => {

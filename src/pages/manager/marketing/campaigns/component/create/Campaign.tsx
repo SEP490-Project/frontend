@@ -119,13 +119,16 @@ const CreateCampaign: React.FC<CreateCampaignProps> = ({
 
   const handleContractSelect = (contractId: string | null) => {
     const contract = allContracts.find((c) => c.id === contractId);
-    setCampaignData((s) => ({
-      ...s,
+
+    // Reset all campaign data when selecting different contract
+    setCampaignData({
+      name: "", // Reset name
+      description: "", // Reset description
       contract_id: contractId || "",
-      type: contract?.type || s.type,
-      start_date: contract ? formatDateForInput(contract.start_date) : s.start_date,
-      end_date: contract ? formatDateForInput(contract.end_date) : s.end_date,
-    }));
+      type: contract?.type || "",
+      start_date: contract ? formatDateForInput(contract.start_date) : "",
+      end_date: contract ? formatDateForInput(contract.end_date) : "",
+    });
     onContractSelect(contract || null);
 
     // Clear previous suggestion data when contract changes

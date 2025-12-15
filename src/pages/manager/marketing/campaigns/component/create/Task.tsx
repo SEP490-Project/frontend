@@ -21,9 +21,11 @@ import { getContractById } from "@/libs/stores/contractManager/thunk";
 import { useContract } from "@/libs/hooks/useContract";
 import { generateMilestonesFromContract } from "../../utils/milestoneGenerator";
 import AddTaskModal from "./AddTaskModal";
+import { CompactKPISelector } from "../../../contracts/component/create/shared/SharedComponents";
+import type { KPI } from "../../../contracts/component/create/types/scopeTypes";
 
 interface TaskDescriptionJson {
-  kpi_goals?: { metric: string; target: string }[] | null;
+  kpi_goals?: KPI[] | null;
   material_urls?: string[];
   advertised_item_id?: number;
   product_name?: string;
@@ -1027,116 +1029,31 @@ const CreateTask: React.FC<CreateTaskProps> = ({
                               )}
 
                               {/* KPI Goals section for all task types */}
-                              {t.description.description_json?.kpi_goals &&
-                                t.description.description_json.kpi_goals.length > 0 && (
-                                  <div>
-                                    <Label className="text-xs font-medium">KPI Goals</Label>
-                                    <div className="space-y-2 mt-1">
-                                      {t.description.description_json.kpi_goals.map(
-                                        (kpi, kpiIndex) => (
-                                          <div key={kpiIndex} className="grid grid-cols-3 gap-2">
-                                            <Input
-                                              className="h-8 text-xs"
-                                              placeholder="Metric"
-                                              value={kpi.metric}
-                                              onChange={(e) => {
-                                                const updatedKpis = [
-                                                  ...(t.description.description_json?.kpi_goals ||
-                                                    []),
-                                                ];
-                                                updatedKpis[kpiIndex] = {
-                                                  ...kpi,
-                                                  metric: e.target.value,
-                                                };
-                                                updateTask(m.id, t.id, {
-                                                  description: {
-                                                    ...t.description,
-                                                    description_json: {
-                                                      ...t.description.description_json,
-                                                      kpi_goals: updatedKpis,
-                                                    },
-                                                  },
-                                                });
-                                              }}
-                                            />
-                                            <Input
-                                              className="h-8 text-xs"
-                                              placeholder="Target"
-                                              value={kpi.target}
-                                              onChange={(e) => {
-                                                const updatedKpis = [
-                                                  ...(t.description.description_json?.kpi_goals ||
-                                                    []),
-                                                ];
-                                                updatedKpis[kpiIndex] = {
-                                                  ...kpi,
-                                                  target: e.target.value,
-                                                };
-                                                updateTask(m.id, t.id, {
-                                                  description: {
-                                                    ...t.description,
-                                                    description_json: {
-                                                      ...t.description.description_json,
-                                                      kpi_goals: updatedKpis,
-                                                    },
-                                                  },
-                                                });
-                                              }}
-                                            />
-                                            <Button
-                                              size="sm"
-                                              variant="outline"
-                                              className="h-8"
-                                              onClick={() => {
-                                                const updatedKpis = (
-                                                  t.description.description_json?.kpi_goals || []
-                                                ).filter((_, i) => i !== kpiIndex);
-                                                updateTask(m.id, t.id, {
-                                                  description: {
-                                                    ...t.description,
-                                                    description_json: {
-                                                      ...t.description.description_json,
-                                                      kpi_goals:
-                                                        updatedKpis.length > 0
-                                                          ? updatedKpis
-                                                          : undefined,
-                                                    },
-                                                  },
-                                                });
-                                              }}
-                                            >
-                                              Remove
-                                            </Button>
-                                          </div>
-                                        ),
-                                      )}
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        className="h-8 w-full"
-                                        onClick={() => {
-                                          const currentKpis =
-                                            t.description.description_json?.kpi_goals || [];
-                                          const newKpis = [
-                                            ...currentKpis,
-                                            { metric: "", target: "" },
-                                          ];
-                                          updateTask(m.id, t.id, {
-                                            description: {
-                                              ...t.description,
-                                              description_json: {
-                                                ...t.description.description_json,
-                                                kpi_goals: newKpis,
-                                              },
-                                            },
-                                          });
-                                        }}
-                                      >
-                                        + Add KPI Goal
-                                      </Button>
-                                    </div>
-                                  </div>
-                                )}
+                              <div className="mt-3">
+                                <CompactKPISelector
+                                  kpis={t.description.description_json?.kpi_goals || []}
+                                  onChange={(updatedKpis) => {
+                                    updateTask(m.id, t.id, {
+                                      description: {
+                                        ...t.description,
+                                        description_json: {
+                                          ...t.description.description_json,
+                                          kpi_goals:
+                                            updatedKpis.length > 0 ? updatedKpis : undefined,
+                                        },
+                                      },
+                                    });
+                                  }}
+                                  contractType={
+                                    campaignType === "CO_PRODUCING" && t.type === "CONTENT"
+                                      ? "ADVERTISING" // Use ADVERTISING metrics for CO_PRODUCING CONTENT (concept)
+                                      : campaignType
+                                  }
+                                  requiredMetrics={
+                                    campaignType === "AFFILIATE" ? ["click_through"] : []
+                                  }
+                                />
+                              </div>
                             </div>
                           </div>
                         )}

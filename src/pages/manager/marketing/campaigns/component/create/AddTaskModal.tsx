@@ -27,15 +27,10 @@ import {
   CompactKPISelector,
   DynamicListInput,
 } from "@/pages/manager/marketing/contracts/component/create/shared/SharedComponents";
+import type { KPI } from "@/pages/manager/marketing/contracts/component/create/types/scopeTypes";
 import AddressSelector from "@/components/global/AddressSelector";
 import DateTimePicker from "@/components/date-time-picker";
 import DurationPicker from "@/components/duration-picker";
-
-interface KPIGoal {
-  metric: string;
-  target: string;
-  description?: string;
-}
 
 interface TaskDescriptionJson {
   // Advertising/Affiliate
@@ -46,7 +41,7 @@ interface TaskDescriptionJson {
   tagline?: string;
   creative_notes?: string;
   hashtags?: string[];
-  kpi_goals?: KPIGoal[];
+  kpi_goals?: KPI[];
   material_urls?: string[];
   is_affiliate_content?: boolean;
   tracking_link?: string;
@@ -153,7 +148,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
     material_urls: [],
   });
 
-  const [kpiGoals, setKpiGoals] = useState<KPIGoal[]>([]);
+  const [kpiGoals, setKpiGoals] = useState<KPI[]>([]);
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [activities, setActivities] = useState<string[]>([]);
   const [representationRules, setRepresentationRules] = useState<string[]>([]);
@@ -1010,7 +1005,11 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
               <CompactKPISelector
                 kpis={kpiGoals}
                 onChange={setKpiGoals}
-                contractType={campaignType}
+                contractType={
+                  campaignType === "CO_PRODUCING" && taskData.type === "CONTENT"
+                    ? "ADVERTISING" // Use ADVERTISING metrics for CO_PRODUCING CONTENT (concept)
+                    : campaignType
+                }
                 requiredMetrics={campaignType === "AFFILIATE" ? ["click_through"] : []}
               />
             </CardContent>

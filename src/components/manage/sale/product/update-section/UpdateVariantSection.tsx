@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DatePicker } from "@/components/date-picker";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -17,29 +18,56 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { UseFormReturn } from "react-hook-form";
-import { Controller } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { useSelector } from "react-redux";
-import type { RootState } from "@/libs/stores";
+import { useAppDispatch, type RootState } from "@/libs/stores";
 import { Badge } from "@/components/ui/badge";
 import { Package } from "lucide-react";
 import { convertNumberToCurrency } from "@/libs/helper/helper";
 import { useState } from "react";
 import { FaMoneyBill } from "react-icons/fa6";
+import type { VariantWithImage, ProductVariant } from "@/libs/types/product";
+import { VariationForm } from "../form/VariationForm";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { productVariantSchema } from "@/libs/validation/productValidation";
 
 interface UpdateVariantSectionProps {
   form: UseFormReturn<any>;
   onSubmit: (variantId: string, isLimited: boolean, data: any) => void;
+  onCreateVariant?: (data: ProductVariant) => void;
 }
 
-export const UpdateVariantSection = ({ form, onSubmit }: UpdateVariantSectionProps) => {
+export const UpdateVariantSection = ({
+  form,
+  onSubmit,
+  onCreateVariant,
+}: UpdateVariantSectionProps) => {
+  const dispatch = useAppDispatch();
   const { productDetail } = useSelector((state: RootState) => state.manageProduct);
   const isLimitedProduct = productDetail?.data?.type === "LIMITED";
   const variants = productDetail?.data?.variants || [];
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
+  const newVariantForm = useForm<ProductVariant>({
+    resolver: yupResolver(productVariantSchema),
+    context: { isLimited: isLimitedProduct },
+    defaultValues: {
+      is_default: false,
+      attributes: [],
+      type: isLimitedProduct ? "LIMITED" : "STANDARD",
+    },
+  });
 
   const {
-    register,
     handleSubmit,
     control,
     formState: { errors, isDirty },
@@ -48,29 +76,33 @@ export const UpdateVariantSection = ({ form, onSubmit }: UpdateVariantSectionPro
   } = form;
 
   const manufactureDate = watch("manufacturing_date");
-  // const expiryDate = watch("expiry_date");
-
-  // Get current date for validation
   const today = new Date().toISOString().split("T")[0];
 
   const handleVariantSelect = (variantId: string) => {
     const variant = variants.find((v) => v.id === variantId);
     if (variant) {
       setSelectedVariantId(variantId);
+
+      // Helper function to safely format dates
+      const formatDate = (dateValue: any): string => {
+        if (!dateValue) return "";
+        const date = new Date(dateValue);
+        return isNaN(date.getTime()) ? "" : date.toISOString().split("T")[0];
+      };
+
       reset({
-        capaity: variant.capacity,
+        capacity: variant.capacity,
         capacity_unit: variant.capacity_unit,
         container_type: variant.container_type,
         dispenser_type: variant.dispenser_type,
-        expiry_date: String(variant.expiry_date)?.split("T")[0] || "",
+        expiry_date: formatDate(variant.expiry_date),
         height: variant.height,
         input_stock: variant.current_stock,
         instrucstions: variant.instructions || "",
         is_default: variant.is_default,
         length: variant.length,
-        manufacturing_date: String(variant.manufacturing_date)?.split("T")[0] || "",
-        max_stock: isLimitedProduct ? (variant as any).max_stock : undefined,
-        pre_order_limit: isLimitedProduct ? (variant as any).bought_limit : undefined,
+        manufacturing_date: formatDate(variant.manufacturing_date),
+        pre_order_limit: isLimitedProduct ? (variant as any).pre_order_limit : undefined,
         price: variant.price,
         uses: variant.uses || "",
         weight: variant.weight,
@@ -80,20 +112,36 @@ export const UpdateVariantSection = ({ form, onSubmit }: UpdateVariantSectionPro
   };
 
   const handleFormSubmit = (data: any) => {
+    console.log("Submitting variant update:", data);
     if (selectedVariantId) {
       onSubmit(selectedVariantId, isLimitedProduct, data);
     }
   };
 
+  const onError = (errors: any) => {
+    console.log("Form errors:", errors);
+  };
+
+  const handleCreateVariant = (data: ProductVariant) => {
+    console.log("Creating new variant:", data);
+    if (onCreateVariant) {
+      onCreateVariant(data);
+      setIsCreateDialogOpen(false);
+      newVariantForm.reset();
+    }
+  };
+
   return (
-    <Card>
-      <CardHeader>
+    <Card className="mb-10">
+      <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <CardTitle className="text-xl font-semibold">Product Variants</CardTitle>
+        <Button variant="outline" onClick={() => setIsCreateDialogOpen(true)}>
+          Create New Variant
+        </Button>
       </CardHeader>
       <CardContent>
         {/* Variant Selection */}
         <div className="mb-6">
-          <Label className="text-sm font-medium mb-2 block">Select Variant to Update</Label>
           <Accordion type="single" collapsible className="w-full">
             {variants.map((variant, index) => (
               <AccordionItem key={variant.id} value={variant.id!}>
@@ -103,6 +151,11 @@ export const UpdateVariantSection = ({ form, onSubmit }: UpdateVariantSectionPro
                 >
                   <div className="flex items-center justify-between w-full pr-4">
                     <div className="flex items-center gap-3">
+                      <img
+                        src={(variant as VariantWithImage)?.images?.[0]?.image_url || "/logo.svg"}
+                        alt={variant.name || `Variant ${index + 1}`}
+                        className="w-10 h-10 object-cover rounded-md"
+                      />
                       <span className="font-semibold">
                         {variant.name || `Variant ${index + 1}`}
                       </span>
@@ -125,29 +178,9 @@ export const UpdateVariantSection = ({ form, onSubmit }: UpdateVariantSectionPro
                   </div>
                 </AccordionTrigger>
                 <AccordionContent>
-                  <div className="p-4 bg-gray-50 rounded-lg space-y-2 text-sm">
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <span className="text-gray-600">Type:</span>{" "}
-                        <span className="font-medium">{variant.type}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Stock:</span>{" "}
-                        <span className="font-medium">{variant.current_stock}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Container:</span>{" "}
-                        <span className="font-medium">{variant.container_type}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Dispenser:</span>{" "}
-                        <span className="font-medium">{variant.dispenser_type}</span>
-                      </div>
-                    </div>
-                  </div>
                   {/* Variant Update Form */}
                   {selectedVariantId && (
-                    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+                    <form onSubmit={handleSubmit(handleFormSubmit, onError)} className="space-y-6">
                       {/* Basic Information */}
                       <div className="border-b pb-6">
                         <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
@@ -157,37 +190,24 @@ export const UpdateVariantSection = ({ form, onSubmit }: UpdateVariantSectionPro
                             <Label htmlFor="price">
                               Price (VND) <span className="text-red-500">*</span>
                             </Label>
-                            <Input
-                              id="price"
-                              type="number"
-                              step={1000}
-                              min={1000}
-                              placeholder="Minimum 1000 VND"
-                              {...register("price", { valueAsNumber: true })}
-                              className={errors.price ? "border-red-500" : ""}
+                            <Controller
+                              name="price"
+                              control={control}
+                              render={({ field }) => (
+                                <Input
+                                  id="price"
+                                  type="number"
+                                  step={1000}
+                                  min={1000}
+                                  placeholder="Minimum 1000 VND"
+                                  {...field}
+                                  className={errors.price ? "border-red-500" : ""}
+                                />
+                              )}
                             />
                             {errors.price && (
                               <p className="text-sm text-red-500">
                                 {errors.price.message as string}
-                              </p>
-                            )}
-                          </div>
-
-                          {/* Input Stock */}
-                          <div className="space-y-2">
-                            <Label htmlFor="input_stock">
-                              Current Stock <span className="text-red-500">*</span>
-                            </Label>
-                            <Input
-                              id="input_stock"
-                              type="number"
-                              min={0}
-                              {...register("input_stock", { valueAsNumber: true })}
-                              className={errors.input_stock ? "border-red-500" : ""}
-                            />
-                            {errors.input_stock && (
-                              <p className="text-sm text-red-500">
-                                {errors.input_stock.message as string}
                               </p>
                             )}
                           </div>
@@ -221,15 +241,21 @@ export const UpdateVariantSection = ({ form, onSubmit }: UpdateVariantSectionPro
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {/* Max Stock */}
                             <div className="space-y-2">
-                              <Label htmlFor="max_stock">
-                                Max Stock <span className="text-red-500">*</span>
+                              <Label htmlFor="input_stock">
+                                Stock <span className="text-red-500">*</span>
                               </Label>
-                              <Input
-                                id="max_stock"
-                                type="number"
-                                min={1}
-                                {...register("max_stock", { valueAsNumber: true })}
-                                className={errors.max_stock ? "border-red-500" : ""}
+                              <Controller
+                                name="input_stock"
+                                control={control}
+                                render={({ field }) => (
+                                  <Input
+                                    id="input_stock"
+                                    type="number"
+                                    min={1}
+                                    {...field}
+                                    className={errors.input_stock ? "border-red-500" : ""}
+                                  />
+                                )}
                               />
                               {errors.max_stock && (
                                 <p className="text-sm text-red-500">
@@ -241,14 +267,20 @@ export const UpdateVariantSection = ({ form, onSubmit }: UpdateVariantSectionPro
                             {/* Pre-order Limit */}
                             <div className="space-y-2">
                               <Label htmlFor="pre_order_limit">
-                                Purchase Limit per Customer <span className="text-red-500">*</span>
+                                Pre-order Limit <span className="text-red-500">*</span>
                               </Label>
-                              <Input
-                                id="pre_order_limit"
-                                type="number"
-                                min={1}
-                                {...register("pre_order_limit", { valueAsNumber: true })}
-                                className={errors.pre_order_limit ? "border-red-500" : ""}
+                              <Controller
+                                name="pre_order_limit"
+                                control={control}
+                                render={({ field }) => (
+                                  <Input
+                                    id="pre_order_limit"
+                                    type="number"
+                                    min={1}
+                                    {...field}
+                                    className={errors.pre_order_limit ? "border-red-500" : ""}
+                                  />
+                                )}
                               />
                               {errors.pre_order_limit && (
                                 <p className="text-sm text-red-500">
@@ -266,20 +298,26 @@ export const UpdateVariantSection = ({ form, onSubmit }: UpdateVariantSectionPro
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {/* Capacity */}
                           <div className="space-y-2">
-                            <Label htmlFor="capaity">
+                            <Label htmlFor="capacity">
                               Capacity <span className="text-red-500">*</span>
                             </Label>
-                            <Input
-                              id="capaity"
-                              type="number"
-                              step="0.01"
-                              min={0}
-                              {...register("capaity", { valueAsNumber: true })}
-                              className={errors.capaity ? "border-red-500" : ""}
+                            <Controller
+                              name="capacity"
+                              control={control}
+                              render={({ field }) => (
+                                <Input
+                                  id="capacity"
+                                  type="number"
+                                  step="0.01"
+                                  min={0}
+                                  {...field}
+                                  className={errors.capacity ? "border-red-500" : ""}
+                                />
+                              )}
                             />
-                            {errors.capaity && (
+                            {errors.capacity && (
                               <p className="text-sm text-red-500">
-                                {errors.capaity.message as string}
+                                {errors.capacity.message as string}
                               </p>
                             )}
                           </div>
@@ -397,13 +435,19 @@ export const UpdateVariantSection = ({ form, onSubmit }: UpdateVariantSectionPro
                             <Label htmlFor="length">
                               Length (cm) <span className="text-red-500">*</span>
                             </Label>
-                            <Input
-                              id="length"
-                              type="number"
-                              step="0.01"
-                              min={0}
-                              {...register("length", { valueAsNumber: true })}
-                              className={errors.length ? "border-red-500" : ""}
+                            <Controller
+                              name="length"
+                              control={control}
+                              render={({ field }) => (
+                                <Input
+                                  id="length"
+                                  type="number"
+                                  step="0.01"
+                                  min={0}
+                                  {...field}
+                                  className={errors.length ? "border-red-500" : ""}
+                                />
+                              )}
                             />
                             {errors.length && (
                               <p className="text-sm text-red-500">
@@ -416,13 +460,19 @@ export const UpdateVariantSection = ({ form, onSubmit }: UpdateVariantSectionPro
                             <Label htmlFor="width">
                               Width (cm) <span className="text-red-500">*</span>
                             </Label>
-                            <Input
-                              id="width"
-                              type="number"
-                              step="0.01"
-                              min={0}
-                              {...register("width", { valueAsNumber: true })}
-                              className={errors.width ? "border-red-500" : ""}
+                            <Controller
+                              name="width"
+                              control={control}
+                              render={({ field }) => (
+                                <Input
+                                  id="width"
+                                  type="number"
+                                  step="0.01"
+                                  min={0}
+                                  {...field}
+                                  className={errors.width ? "border-red-500" : ""}
+                                />
+                              )}
                             />
                             {errors.width && (
                               <p className="text-sm text-red-500">
@@ -435,13 +485,19 @@ export const UpdateVariantSection = ({ form, onSubmit }: UpdateVariantSectionPro
                             <Label htmlFor="height">
                               Height (cm) <span className="text-red-500">*</span>
                             </Label>
-                            <Input
-                              id="height"
-                              type="number"
-                              step="0.01"
-                              min={0}
-                              {...register("height", { valueAsNumber: true })}
-                              className={errors.height ? "border-red-500" : ""}
+                            <Controller
+                              name="height"
+                              control={control}
+                              render={({ field }) => (
+                                <Input
+                                  id="height"
+                                  type="number"
+                                  step="0.01"
+                                  min={0}
+                                  {...field}
+                                  className={errors.height ? "border-red-500" : ""}
+                                />
+                              )}
                             />
                             {errors.height && (
                               <p className="text-sm text-red-500">
@@ -454,13 +510,19 @@ export const UpdateVariantSection = ({ form, onSubmit }: UpdateVariantSectionPro
                             <Label htmlFor="weight">
                               Weight (g) <span className="text-red-500">*</span>
                             </Label>
-                            <Input
-                              id="weight"
-                              type="number"
-                              step="0.01"
-                              min={0}
-                              {...register("weight", { valueAsNumber: true })}
-                              className={errors.weight ? "border-red-500" : ""}
+                            <Controller
+                              name="weight"
+                              control={control}
+                              render={({ field }) => (
+                                <Input
+                                  id="weight"
+                                  type="number"
+                                  step="0.01"
+                                  min={0}
+                                  {...field}
+                                  className={errors.weight ? "border-red-500" : ""}
+                                />
+                              )}
                             />
                             {errors.weight && (
                               <p className="text-sm text-red-500">
@@ -476,39 +538,41 @@ export const UpdateVariantSection = ({ form, onSubmit }: UpdateVariantSectionPro
                         <h3 className="text-lg font-semibold mb-4">Manufacturing & Expiry</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="manufacturing_date">
-                              Manufacturing Date <span className="text-red-500">*</span>
-                            </Label>
-                            <Input
-                              id="manufacturing_date"
-                              type="date"
-                              max={today}
-                              {...register("manufacturing_date")}
-                              className={errors.manufacturing_date ? "border-red-500" : ""}
+                            <Controller
+                              name="manufacturing_date"
+                              control={control}
+                              render={({ field }) => (
+                                <DatePicker
+                                  label="Manufacturing Date"
+                                  value={field.value}
+                                  onChange={field.onChange}
+                                  placeholder="Select manufacturing date"
+                                  maxDate={today}
+                                  dateFormat="dd/MM/yyyy hh:mm"
+                                  required
+                                  error={errors.manufacturing_date?.message as string}
+                                />
+                              )}
                             />
-                            {errors.manufacturing_date && (
-                              <p className="text-sm text-red-500">
-                                {errors.manufacturing_date.message as string}
-                              </p>
-                            )}
                           </div>
 
                           <div className="space-y-2">
-                            <Label htmlFor="expiry_date">
-                              Expiry Date <span className="text-red-500">*</span>
-                            </Label>
-                            <Input
-                              id="expiry_date"
-                              type="date"
-                              min={manufactureDate || today}
-                              {...register("expiry_date")}
-                              className={errors.expiry_date ? "border-red-500" : ""}
+                            <Controller
+                              name="expiry_date"
+                              control={control}
+                              render={({ field }) => (
+                                <DatePicker
+                                  label="Expiry Date"
+                                  value={field.value}
+                                  onChange={field.onChange}
+                                  placeholder="Select expiry date"
+                                  minDate={manufactureDate || today}
+                                  dateFormat="dd/MM/yyyy hh:mm"
+                                  required
+                                  error={errors.expiry_date?.message as string}
+                                />
+                              )}
                             />
-                            {errors.expiry_date && (
-                              <p className="text-sm text-red-500">
-                                {errors.expiry_date.message as string}
-                              </p>
-                            )}
                           </div>
                         </div>
                       </div>
@@ -519,36 +583,40 @@ export const UpdateVariantSection = ({ form, onSubmit }: UpdateVariantSectionPro
                         <div className="space-y-4">
                           <div className="space-y-2">
                             <Label htmlFor="instrucstions">Instructions</Label>
-                            <Textarea
-                              id="instrucstions"
-                              placeholder="How to use this product..."
-                              rows={3}
-                              {...register("instrucstions")}
+                            <Controller
+                              name="instrucstions"
+                              control={control}
+                              render={({ field }) => (
+                                <Textarea
+                                  id="instrucstions"
+                                  placeholder="How to use this product..."
+                                  rows={3}
+                                  {...field}
+                                />
+                              )}
                             />
                           </div>
 
                           <div className="space-y-2">
-                            <Label htmlFor="uses">
-                              Uses <span className="text-red-500">*</span>
-                            </Label>
-                            <Textarea
-                              id="uses"
-                              placeholder="What is this product used for..."
-                              rows={3}
-                              {...register("uses")}
-                              className={errors.uses ? "border-red-500" : ""}
+                            <Label htmlFor="uses">Uses</Label>
+                            <Controller
+                              name="uses"
+                              control={control}
+                              render={({ field }) => (
+                                <Textarea
+                                  id="uses"
+                                  placeholder="What is this product used for..."
+                                  rows={3}
+                                  {...field}
+                                />
+                              )}
                             />
-                            {errors.uses && (
-                              <p className="text-sm text-red-500">
-                                {errors.uses.message as string}
-                              </p>
-                            )}
                           </div>
                         </div>
                       </div>
 
                       {/* Action Buttons */}
-                      <div className="flex justify-end gap-3 pt-4 border-t">
+                      <div className="flex justify-end gap-3">
                         <Button
                           type="button"
                           variant="outline"
@@ -572,14 +640,26 @@ export const UpdateVariantSection = ({ form, onSubmit }: UpdateVariantSectionPro
             ))}
           </Accordion>
         </div>
-
-        {!selectedVariantId && (
-          <div className="text-center py-8 text-gray-500">
-            <Package className="w-12 h-12 mx-auto mb-2 opacity-50" />
-            <p>Select a variant above to update its details</p>
-          </div>
-        )}
       </CardContent>
+
+      {/* Create New Variant Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New Variant</DialogTitle>
+            <DialogDescription>
+              Add a new variant for this {isLimitedProduct ? "limited edition" : "standard"}{" "}
+              product.
+            </DialogDescription>
+          </DialogHeader>
+          <VariationForm
+            form={newVariantForm}
+            onSubmit={handleCreateVariant}
+            state={{ productType: isLimitedProduct ? "LIMITED" : "STANDARD" }}
+            dispatch={dispatch}
+          />
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };

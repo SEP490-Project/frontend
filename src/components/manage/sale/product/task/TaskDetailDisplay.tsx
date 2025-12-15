@@ -60,7 +60,7 @@ export const TaskDetailDisplay = ({
 
   return (
     <Dialog open={onOpen} onOpenChange={setOnOpen}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">Task Details</DialogTitle>
         </DialogHeader>
@@ -288,32 +288,6 @@ export const TaskDetailDisplay = ({
                             >
                               <span className="text-gray-600">#{index + 1}:</span>{" "}
                               <span className="text-gray-900">{contentId}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  )}
-
-                  {task.product_ids && task.product_ids.length > 0 && (
-                    <AccordionItem value="products" className="border border-gray-200 rounded-lg">
-                      <AccordionTrigger className="px-4 hover:bg-gray-50 hover:no-underline">
-                        <div className="flex items-center gap-2">
-                          <Package className="h-4 w-4 text-gray-600" />
-                          <span className="font-semibold">
-                            Product Items ({task.product_ids.length})
-                          </span>
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="px-4 pb-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                          {task.product_ids.map((productId, index) => (
-                            <div
-                              key={productId}
-                              className="bg-gray-50 border border-gray-200 rounded px-3 py-2 font-mono text-xs"
-                            >
-                              <span className="text-gray-600">#{index + 1}:</span>{" "}
-                              <span className="text-gray-900">{productId}</span>
                             </div>
                           ))}
                         </div>

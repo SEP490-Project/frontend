@@ -72,7 +72,9 @@ export const BasicInfoForm = ({
     async (payload: CreateProductPayload | CreateLimitedProductPayload) => {
       try {
         if (productBasicInfos?.id) {
-          navigate(steps[currentStep]?.path, { state });
+          if (navigate && steps && currentStep !== undefined) {
+            navigate(steps[currentStep]?.path, { state });
+          }
           return;
         }
         setIsCreating?.(true);
@@ -85,7 +87,9 @@ export const BasicInfoForm = ({
         if (result) {
           setItem("currentProduct", result);
           toast.success("Product created successfully");
-          navigate(steps[currentStep]?.path, { state });
+          if (navigate && steps && currentStep !== undefined) {
+            navigate(steps[currentStep]?.path, { state });
+          }
         }
       } catch (error) {
         toast.error((error as string) || "Failed to create product");
@@ -155,7 +159,9 @@ export const BasicInfoForm = ({
 
       if (existingProduct && existingProduct.id) {
         setOnSubmitStep(() => async () => {
-          navigate(steps[currentStep]?.path, { state });
+          if (navigate && steps && currentStep !== undefined) {
+            navigate(steps[currentStep]?.path, { state });
+          }
         });
         return;
       }

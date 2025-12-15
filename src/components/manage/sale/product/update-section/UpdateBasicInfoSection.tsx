@@ -15,6 +15,7 @@ import type { UseFormReturn } from "react-hook-form";
 import { Controller } from "react-hook-form";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/libs/stores";
+import DatePicker from "@/components/date-picker";
 
 interface UpdateBasicInfoSectionProps {
   form: UseFormReturn<any>;
@@ -40,10 +41,7 @@ export const UpdateBasicInfoSection = ({
   } = form;
 
   // Get current datetime in ISO format for min attribute
-  const now = new Date();
-  const currentDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-    .toISOString()
-    .slice(0, 16);
+  const today = new Date().toISOString().split("T")[0];
 
   const handleFormSubmit = (data: any) => {
     onSubmit(data, isLimitedProduct);
@@ -98,7 +96,7 @@ export const UpdateBasicInfoSection = ({
                     <SelectTrigger className={errors.category_id ? "border-red-500" : ""}>
                       <SelectValue placeholder="Select a category" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-70">
                       {categories?.map((category) => (
                         <SelectItem key={category.id} value={category.id.toString()}>
                           {category.name}
@@ -129,10 +127,13 @@ export const UpdateBasicInfoSection = ({
                 control={control}
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger className={errors.brand_id ? "border-red-500" : ""}>
+                    <SelectTrigger
+                      disabled={true}
+                      className={errors.brand_id ? "border-red-500" : ""}
+                    >
                       <SelectValue placeholder="Select a brand" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-70">
                       {brands?.map((brand) => (
                         <SelectItem key={brand.id} value={brand.id.toString()}>
                           {brand.name}
@@ -170,9 +171,33 @@ export const UpdateBasicInfoSection = ({
           {isLimitedProduct && (
             <>
               <div className="border-t pt-6 mt-6">
-                <h3 className="text-lg font-semibold mb-4 text-pink-900">
+                <h3 className="text-lg font-semibold mb-4 text-yellow-900">
                   Limited Edition Information
                 </h3>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+                <Label
+                  htmlFor="premiere_date"
+                  className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end"
+                >
+                  <span className="text-red-600">*</span>
+                  Achievable Quantity
+                </Label>
+                <div className="col-span-3">
+                  <Controller
+                    name="achievable_quantity"
+                    control={control}
+                    render={({ field }) => (
+                      <Input id="achievable_quantity" type="number" min={1} {...field} />
+                    )}
+                  />
+                  {errors.achievable_quantity && (
+                    <p className="text-sm text-red-500 mt-1">
+                      {errors.achievable_quantity.message as string}
+                    </p>
+                  )}
+                </div>
               </div>
 
               {/* Premiere Date */}
@@ -185,18 +210,18 @@ export const UpdateBasicInfoSection = ({
                   Premiere Date
                 </Label>
                 <div className="col-span-3">
-                  <Input
-                    id="premiere_date"
-                    type="datetime-local"
-                    min={currentDateTime}
-                    {...register("premiere_date")}
-                    className={errors.premiere_date ? "border-red-500" : ""}
+                  <Controller
+                    name="premiere_date"
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        value={field.value}
+                        onChange={field.onChange}
+                        dateFormat="dd/MM/yyyy hh:mm"
+                        minDate={today}
+                      />
+                    )}
                   />
-                  {errors.premiere_date && (
-                    <p className="text-sm text-red-500 mt-1">
-                      {errors.premiere_date.message as string}
-                    </p>
-                  )}
                 </div>
               </div>
 
@@ -210,17 +235,18 @@ export const UpdateBasicInfoSection = ({
                   Start Sale Date
                 </Label>
                 <div className="col-span-3">
-                  <Input
-                    id="availability_start_date"
-                    type="datetime-local"
-                    {...register("availability_start_date")}
-                    className={errors.availability_start_date ? "border-red-500" : ""}
+                  <Controller
+                    name="availability_start_date"
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        value={field.value}
+                        onChange={field.onChange}
+                        dateFormat="dd/MM/yyyy hh:mm"
+                        minDate={today}
+                      />
+                    )}
                   />
-                  {errors.availability_start_date && (
-                    <p className="text-sm text-red-500 mt-1">
-                      {errors.availability_start_date.message as string}
-                    </p>
-                  )}
                 </div>
               </div>
 
@@ -234,30 +260,18 @@ export const UpdateBasicInfoSection = ({
                   End Sale Date
                 </Label>
                 <div className="col-span-3">
-                  <Input
-                    id="availability_end_date"
-                    type="datetime-local"
-                    {...register("availability_end_date")}
-                    className={errors.availability_end_date ? "border-red-500" : ""}
+                  <Controller
+                    name="availability_end_date"
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        value={field.value}
+                        onChange={field.onChange}
+                        dateFormat="dd/MM/yyyy hh:mm"
+                        minDate={today}
+                      />
+                    )}
                   />
-                  {errors.availability_end_date && (
-                    <p className="text-sm text-red-500 mt-1">
-                      {errors.availability_end_date.message as string}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Concept ID */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-                <Label
-                  htmlFor="concept_id"
-                  className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end"
-                >
-                  Concept ID
-                </Label>
-                <div className="col-span-3">
-                  <Input id="concept_id" placeholder="Optional" {...register("concept_id")} />
                 </div>
               </div>
             </>
@@ -274,7 +288,7 @@ export const UpdateBasicInfoSection = ({
               Reset Changes
             </Button>
             <Button type="submit" className="bg-primary hover:bg-primary/90" disabled={!isDirty}>
-              Update Basic Information
+              Update Information
             </Button>
           </div>
         </form>

@@ -448,29 +448,6 @@ const TaskDisplayForm = ({
               </div>
             </div>
           )}
-
-          {task.product_ids && task.product_ids.length > 0 && (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">
-              <label className="text-sm font-medium text-gray-700 text-right items-start flex justify-start md:justify-end pt-2">
-                Product Items ({task.product_ids.length})
-              </label>
-              <div className="col-span-3">
-                <div className="bg-gray-50 px-3 py-3 rounded-md border border-gray-200">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {task.product_ids.map((productId, index) => (
-                      <div
-                        key={productId}
-                        className="bg-white border border-gray-200 rounded px-3 py-2 font-mono text-xs"
-                      >
-                        <span className="text-gray-600">#{index + 1}:</span>{" "}
-                        <span className="text-gray-900">{productId}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </>
       )}
     </div>

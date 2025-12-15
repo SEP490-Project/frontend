@@ -148,10 +148,10 @@ export interface ProductParams {
 export interface ProductFormProps<T extends FieldValues> {
   form: UseFormReturn<T>;
   setOnSubmitStep?: React.Dispatch<React.SetStateAction<null | (() => Promise<void>)>>;
-  navigate: NavigateFunction;
-  steps: { path: string; label: string }[];
-  currentStep: number;
-  state: any;
-  isDisabled: boolean;
-  setIsDisabled: React.Dispatch<React.SetStateAction<boolean>>;
+  navigate?: NavigateFunction;
+  steps?: { path: string; label: string }[];
+  currentStep?: number;
+  state?: any;
+  isDisabled?: boolean;
+  setIsDisabled?: React.Dispatch<React.SetStateAction<boolean>>;
 }

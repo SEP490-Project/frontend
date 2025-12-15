@@ -146,8 +146,17 @@ const AppRoutes = () => (
       <Route element={<PrivateRoute allowedRoles={["SALES_STAFF"]} />}>
         <Route path="/manage/sale" element={<ManageLayout />}>
           <Route path="task" element={<AssignedTask />} />
-          <Route path="product" element={<Product />} />
+          <Route path="product">
+            <Route index element={<Product type="STANDARD" />} />
+            <Route path="limited" element={<Product type="LIMITED" />} />
+          </Route>
           <Route path="product/create" element={<AddProductStep />}>
+            <Route index element={<BasicInfoStep />} />
+            <Route path="concept" element={<CreateConceptStep />} />
+            <Route path="variants" element={<VariantsStep />} />
+            <Route path="done" element={<DoneStep />} />
+          </Route>
+          <Route path="product/limited/create" element={<AddProductStep />}>
             <Route index element={<BasicInfoStep />} />
             <Route path="concept" element={<CreateConceptStep />} />
             <Route path="variants" element={<VariantsStep />} />

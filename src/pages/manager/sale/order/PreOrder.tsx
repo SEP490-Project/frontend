@@ -45,7 +45,7 @@ const PreOrder: React.FC = () => {
 
   const [params, setParams] = useState<OrderRequestQuery>({
     page: 1,
-    limit: 10,
+    limit: 5,
     search: "",
     status: "",
   });

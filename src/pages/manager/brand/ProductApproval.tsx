@@ -28,7 +28,7 @@ const ProductApprovalPage: React.FC = () => {
 
   const [params, setParams] = useState({
     page: 1,
-    limit: 10,
+    limit: 5,
     type: "LIMITED",
     status: "SUBMITTED",
     search: "",

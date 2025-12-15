@@ -50,7 +50,7 @@ const PaymentTransactionPage: React.FC = () => {
 
   const [params, setParams] = useState<TransactionParams>({
     page: 1,
-    limit: 10,
+    limit: 5,
     reference_type: "CONTRACT_PAYMENT",
     payer_id: user?.id,
   });

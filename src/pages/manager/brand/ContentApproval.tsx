@@ -28,7 +28,7 @@ import { useChannel } from "@/libs/hooks/useChannel";
 import ContentPreview from "@/components/manage/marketing/content-approval/ContentPreview";
 import { getItem } from "@/libs/local-storage";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 5;
 
 const CONTENT_TYPE_LABELS: Record<string, string> = {
   POST: "Post",

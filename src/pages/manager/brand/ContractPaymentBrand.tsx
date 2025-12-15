@@ -37,7 +37,7 @@ import { motion } from "framer-motion";
 import { PaymentDetailModal, PaymentModal } from "@/components/manage/marketing/contract-payment";
 import { toast } from "sonner";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 5;
 
 const CONTRACT_PAYMENT_STATUS_LABELS: Record<string, string> = {
   PENDING: "Pending",
@@ -184,7 +184,7 @@ const ContractPaymentBrandPage: React.FC = () => {
     dispatch(
       fetchBrands({
         page: brandPage,
-        limit: 10,
+        limit: 5,
         status: "ACTIVE",
         ...(debouncedBrandSearch ? { keywords: debouncedBrandSearch } : {}),
       }),

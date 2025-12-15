@@ -47,7 +47,7 @@ const Category = () => {
   const [selectedParentFilter, setSelectedParentFilter] = useState("ALL");
   const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
   const [categoryToAssign, setCategoryToAssign] = useState<string | null>(null);
-  const [params, setParams] = useState({ page: 1, limit: 10 });
+  const [params, setParams] = useState({ page: 1, limit: 5 });
 
   useEffect(() => {
     dispatch(getAllCategoriesThunk(params));

@@ -27,8 +27,7 @@ import { useSelector } from "react-redux";
 import type { TransactionData, TransactionParams } from "@/libs/types/transaction";
 import { PaginationTable } from "@/components/global";
 import TransactionDetails from "../../../../components/manage/sale/transaction/TransactionDetails";
-import { format } from "date-fns";
-import { convertNumberToCurrency } from "@/libs/helper/helper";
+import { convertNumberToCurrency, formatDate } from "@/libs/helper/helper";
 
 const Transaction: React.FC<{ type: "ORDER" | "PREORDER" }> = ({ type }) => {
   const dispatch = useAppDispatch();
@@ -89,14 +88,6 @@ const Transaction: React.FC<{ type: "ORDER" | "PREORDER" }> = ({ type }) => {
         {method?.replace(/_/g, " ")}
       </Badge>
     );
-  };
-
-  const formatDate = (dateString: string) => {
-    try {
-      return format(new Date(dateString), "dd/MM/yyyy HH:mm");
-    } catch {
-      return dateString;
-    }
   };
 
   return (
@@ -209,20 +200,6 @@ const Transaction: React.FC<{ type: "ORDER" | "PREORDER" }> = ({ type }) => {
                     </TableCell>
 
                     <TableCell className="py-4">{getMethodBadge(transaction.method)}</TableCell>
-
-                    {/* <TableCell className="py-4">
-                      {transaction.reference_type === "ORDER" ? (
-                        <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200 hover:bg-indigo-200">
-                          ORDER
-                        </Badge>
-                      ) : transaction.reference_type === "PREORDER" ? (
-                        <Badge className="bg-teal-100 text-teal-800 border-teal-200 hover:bg-teal-200">
-                          PREORDER
-                        </Badge>
-                      ) : (
-                        <Badge className="bg-gray-100 text-gray-800">Other</Badge>
-                      )}
-                    </TableCell> */}
 
                     <TableCell className="py-4">{getStatusBadge(transaction.status)}</TableCell>
 

@@ -35,6 +35,7 @@ import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 import { DeleteModal } from "@/components/modal/DeleteModal";
 import { PaginationTable } from "@/components/global";
+import { formatDate } from "@/libs/helper/helper";
 
 const Category = () => {
   const dispatch = useAppDispatch();
@@ -200,7 +201,7 @@ const Category = () => {
                       <div className="flex items-center">{category.description || "N/A"}</div>
                     </TableCell>
                     <TableCell>{category.parent_category?.name || "N/A"}</TableCell>
-                    <TableCell>{new Date(category.create_at).toLocaleDateString()}</TableCell>
+                    <TableCell>{formatDate(category.create_at)}</TableCell>
                     <TableCell className="flex items-center gap-2">
                       <Button
                         size="icon"

@@ -13,6 +13,7 @@ import {
   Star,
   Weight,
   RulerDimensionLine,
+  ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -122,7 +123,21 @@ const ProductDetail: React.FC = () => {
   return (
     <div className="min-h-fit p-4 sm:p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl sm:text-2xl font-semibold">Product Details</h1>
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            className="bg-white"
+            size="sm"
+            onClick={() => navigate("/manage/sale/product")}
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Products
+          </Button>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-semibold">View Product Details</h1>
+            <p className="text-sm text-gray-600 mt-1">{productDetail?.data?.name}</p>
+          </div>
+        </div>
         {(product as LimitedProductData).type === "LIMITED" &&
           new Date((product as LimitedProductData).limited_product?.availability_start_date || "") >
             new Date() && (
@@ -636,7 +651,7 @@ const ProductDetail: React.FC = () => {
           <Button variant={"outline"} size={"sm"} onClick={() => navigate("/manage/sale/product")}>
             Back To Products
           </Button>
-          <Button size={"sm"}>Edit Product</Button>
+          {/* <Button size={"sm"} onClick={() => navigate(`/manage/sale/product/${product?.id}/edit`)}>Edit Product</Button> */}
         </div>
       </div>
     </div>

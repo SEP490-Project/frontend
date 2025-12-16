@@ -19,16 +19,30 @@ export const AdditionalInfoForm = ({ form }: AdditionalInfoFormProps) => {
 
   // Load existing product data once on mount
   useEffect(() => {
-    const existingProduct = getItem<LimitedProductData>("currentProduct");
-    if (existingProduct && existingProduct.id) {
-      form.reset({
+    const existingProduct = getItem<any>("currentProduct");
+    const productData = existingProduct?.data as LimitedProductData;
+    console.log("Existing Product in AdditionalInfoForm:", productData?.limited_product);
+
+    if (productData?.id && productData.limited_product) {
+      // Convert datetime strings to date-only format (YYYY-MM-DD)
+      const formatDate = (dateStr: string) => {
+        if (!dateStr) return "";
+        const formatted = new Date(dateStr).toISOString().split("T")[0];
+        console.log("Formatting date:", dateStr, "=>", formatted);
+        return formatted;
+      };
+
+      const formData = {
         limited_attribute: {
-          achievable_quantity: existingProduct.limited_product?.achievable_quantity || 1,
-          premiere_date: existingProduct.limited_product?.premiere_date || "",
-          availability_start_date: existingProduct.limited_product?.availability_start_date || "",
-          availability_end_date: existingProduct.limited_product?.availability_end_date || "",
+          achievable_quantity: productData.limited_product.achievable_quantity || 1,
+          premiere_date: formatDate(productData.limited_product.premiere_date),
+          availability_start_date: formatDate(productData.limited_product.availability_start_date),
+          availability_end_date: formatDate(productData.limited_product.availability_end_date),
         },
-      } as any);
+      };
+
+      console.log("Resetting form with:", formData);
+      form.reset(formData as any);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

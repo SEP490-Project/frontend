@@ -12,7 +12,7 @@ const manageProduct = {
   createStandardProduct: (data: CreateProductPayload) => api.post("products/standard", data),
   createLimitedProduct: (data: CreateProductPayload) => api.post("products/limited", data),
   addConceptToLimitedProduct: (productId: string, conceptId: string) =>
-    api.post(`products/limited/${productId}/concept/${conceptId}`),
+    api.post(`products/limited/${productId}/concept?concept-id=${conceptId}`),
   createProductVariants: (data: any, productId: string) =>
     api.post(`products/${productId}/variants`, data),
   createVariantsImage: (variant_id: string, payload: CreateVariantImagePayload) =>
@@ -21,6 +21,7 @@ const manageProduct = {
         "Content-Type": "multipart/form-data",
       },
     }),
+  deleteVariantImage: (image_id: string) => api.delete(`products/variants/images/${image_id}`),
   updateProductState: (productId: string, status: string) =>
     api.patch(`products/${productId}/state`, { state: status }),
   updateProductVisibility: (productId: string, isActive: boolean) =>

@@ -24,6 +24,8 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Task } from "@/libs/types/task";
 import type { ProductVariant } from "@/libs/types/product";
+import { updateProductStateThunk } from "@/libs/stores/stateManager/thunk";
+import UpdateConceptSection from "@/components/manage/sale/product/update-section/UpdateConceptSection";
 
 const updateProductBasicInfoSchema = yup.object({
   brand_id: yup.string().required("Brand is required"),
@@ -92,25 +94,23 @@ const EditProduct = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { state } = useLocation();
-  const { id, task, formType, productType } = state as {
+  const { id, task } = state as {
     id: string;
     task: Task;
     formType: string;
     productType: string;
   };
-  const { brands } = useBrand();
+  const { brands, loading: brandsLoading } = useBrand();
 
   const { productDetail, isLoading } = useSelector((state: RootState) => state.manageProduct);
   const { categories, loading: categoriesLoading } = useSelector(
     (state: RootState) => state.manageCategory,
   );
 
-  console.log("Product Detail:", task);
-
   const [params] = useState({ page: 1, limit: 100 });
 
   const isLimitedProduct = productDetail?.data?.type === "LIMITED";
-  const productId = id || task?.product_ids?.[0]?.id || null;
+  const productId = id || task?.product_id || null;
 
   const standardBasicInfoForm = useForm({
     resolver: yupResolver(updateProductBasicInfoSchema),
@@ -187,6 +187,7 @@ const EditProduct = () => {
   }, [productDetail, isLimitedProduct, limitedBasicInfoForm, standardBasicInfoForm]);
 
   const handleUpdateBasicInfo = async (data: any, isLimited: boolean) => {
+    if (!productId) return;
     try {
       if (isLimited) {
         await dispatch(updateLimitedProductBasicInfoThunk({ productId: id, data })).unwrap();
@@ -201,6 +202,7 @@ const EditProduct = () => {
   };
 
   const handleUpdateVariant = async (variantId: string, isLimited: boolean, data: any) => {
+    if (!productId) return;
     try {
       if (isLimited) {
         await dispatch(updateLimitedProductVariantThunk({ variantId, data })).unwrap();
@@ -214,6 +216,7 @@ const EditProduct = () => {
   };
 
   const handleCreateVariant = async (data: ProductVariant) => {
+    if (!productId) return;
     try {
       await dispatch(
         createVariantProductThunk({
@@ -228,7 +231,26 @@ const EditProduct = () => {
     }
   };
 
-  if ((isLoading && !productDetail) || categoriesLoading) {
+  const handleConceptUpdated = async () => {
+    if (productId) {
+      dispatch(getProductDetailThunk(productId));
+    }
+  };
+
+  const handleReSubmitToBrand = async () => {
+    if (!productId) return;
+    const result = await dispatch(
+      updateProductStateThunk({ productId: productId, newState: "SUBMITTED" }),
+    );
+    if (result.meta.requestStatus === "fulfilled") {
+      toast.success("Product submitted for review successfully");
+    } else {
+      toast.error("Failed to submit product for review");
+    }
+    navigate("/manage/sale/product");
+  };
+
+  if ((isLoading && !productDetail) || categoriesLoading || brandsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -239,6 +261,19 @@ const EditProduct = () => {
     );
   }
 
+  const handleSaveDraft = async () => {
+    if (!productId) return;
+    const result = await dispatch(
+      updateProductStateThunk({ productId: productId, newState: "DRAFT" }),
+    );
+    if (result.meta.requestStatus === "fulfilled") {
+      toast.success("Product saved as draft successfully");
+    } else {
+      toast.error("Failed to save product as draft");
+    }
+    window.location.reload();
+  };
+
   return (
     <div className="min-h-screen p-4 sm:p-6">
       <div className="flex items-center justify-between mb-6">
@@ -247,7 +282,11 @@ const EditProduct = () => {
             variant="outline"
             className="bg-white"
             size="sm"
-            onClick={() => navigate("/manage/sale/product")}
+            onClick={() =>
+              productDetail?.data.type === "STANDARD"
+                ? navigate("/manage/sale/product")
+                : navigate("/manage/sale/product/limited")
+            }
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Products
@@ -259,7 +298,7 @@ const EditProduct = () => {
         </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4">
         <UpdateBasicInfoSection
           form={isLimitedProduct ? limitedBasicInfoForm : standardBasicInfoForm}
           brands={brands}
@@ -267,18 +306,32 @@ const EditProduct = () => {
           onSubmit={handleUpdateBasicInfo}
         />
 
+        {productDetail?.data?.type === "LIMITED" && (
+          <UpdateConceptSection
+            conceptId={(productDetail?.data as any)?.concept?.id || null}
+            productId={productId || ""}
+            onConceptUpdated={handleConceptUpdated}
+          />
+        )}
         <UpdateVariantSection
           form={isLimitedProduct ? limitedVariantForm : standardVariantForm}
           onSubmit={handleUpdateVariant}
           onCreateVariant={handleCreateVariant}
         />
-        {formType === "EDIT" && task && productType === "LIMITED" && (
-          <div className="bg-white p-3 flex justify-end absolute bottom-0 right-0 w-full border-t">
-            <Button variant="default" onClick={() => {}}>
-              Re-submit for Approval
-            </Button>
-          </div>
-        )}
+        {productDetail?.data.type === "LIMITED" &&
+          ["REVISION", "DRAFT"].includes(productDetail?.data?.status || "") && (
+            <div className="bg-white p-3 flex justify-end absolute bottom-0 right-0 w-full border-t">
+              {productDetail?.data?.status === "DRAFT" ? (
+                <Button variant="default" onClick={handleReSubmitToBrand}>
+                  Submit for Approval
+                </Button>
+              ) : (
+                <Button variant="default" onClick={handleSaveDraft}>
+                  Save Draft
+                </Button>
+              )}
+            </div>
+          )}
       </div>
     </div>
   );

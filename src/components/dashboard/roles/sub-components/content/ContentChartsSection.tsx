@@ -116,14 +116,13 @@ export const ContentChartsSection: React.FC<ContentChartsSectionProps> = ({
                 <LineChartWidget
                   title=""
                   data={engagementChartData}
-                  xAxisKey="month"
-                  lines={[
-                    { dataKey: "engagements", color: "#ef4444", name: "Engagement" },
-                    { dataKey: "likes", color: "#3b82f6", name: "Likes" },
-                    { dataKey: "comments", color: "#10b981", name: "Comments" },
-                    { dataKey: "shares", color: "#f59e0b", name: "Shares" },
-                    { dataKey: "views", color: "#8b5cf6", name: "Views" },
-                  ]}
+                  lineConfig={{
+                    engagements: { label: "Engagement", color: "#ef4444" },
+                    likes: { label: "Likes", color: "#3b82f6" },
+                    comments: { label: "Comments", color: "#10b981" },
+                    shares: { label: "Shares", color: "#f59e0b" },
+                    views: { label: "Views", color: "#8b5cf6" },
+                  }}
                 />
               </motion.div>
             ) : (

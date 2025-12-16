@@ -212,15 +212,8 @@ const CampaignPage: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {campaigns.map((campaign: CampaignData, index) => (
-                    <motion.tr
-                      key={campaign.id}
-                      layout="position"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="border-b hover:bg-gray-50"
-                    >
+                  {campaigns.map((campaign: CampaignData) => (
+                    <TableRow key={campaign.id} className="border-b hover:bg-gray-50">
                       <TableCell className="py-4">
                         <div>
                           <div className="font-semibold text-gray-900">{campaign.name}</div>
@@ -281,7 +274,7 @@ const CampaignPage: React.FC = () => {
                           </Tooltip>
                         </div>
                       </TableCell>
-                    </motion.tr>
+                    </TableRow>
                   ))}
                 </TableBody>
               </Table>

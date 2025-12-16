@@ -489,6 +489,7 @@ const BrandDashboard: React.FC = () => {
               title="Top Rating Products"
               data={topRatingProductsChartData}
               unit="★"
+              maxValue={5}
               tooltip="Products with the highest customer ratings, indicating customer satisfaction and product quality"
             />
           )}
@@ -640,9 +641,13 @@ const BrandDashboard: React.FC = () => {
               title=""
               data={revenueTrendData}
               unit="VND"
+              lineConfig={{
+                value: {
+                  label: "Brand Revenue",
+                  color: "#6366f1",
+                },
+              }}
               tooltip="Revenue trend showing how your brand's earnings have changed over the selected time period from all partnership activities"
-              xAxisKey="month"
-              lines={[{ dataKey: "revenue", color: "#6366f1", name: "Brand Revenue" }]}
             />
           )}
         </div>

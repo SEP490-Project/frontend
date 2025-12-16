@@ -40,8 +40,6 @@ const ProductApprovalPage: React.FC = () => {
   const pagination = products?.pagination;
   const error = null; // useProduct hook should handle errors internally
 
-  console.log(productsData);
-
   useEffect(() => {
     dispatch(getAllProductsThunk(params));
   }, [dispatch, params]);
@@ -51,7 +49,6 @@ const ProductApprovalPage: React.FC = () => {
   };
 
   const getStatusBadge = (status: string) => {
-    console.log(status);
     const statusColors: Record<string, string> = {
       DRAFT: "bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200",
       SUBMITTED: "bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200",

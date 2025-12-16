@@ -7,9 +7,10 @@ interface Props {
   data: { name: string; value: number }[];
   unit?: string;
   tooltip?: string;
+  maxValue?: number;
 }
 
-function BarChartWidget({ title, data, unit, tooltip }: Props) {
+function BarChartWidget({ title, data, unit, tooltip, maxValue }: Props) {
   if (!Array.isArray(data) || !data.length || !data[0]?.name || !data[0]?.value) return null;
 
   const formatTick = (tickItem: string) => {
@@ -67,21 +68,24 @@ function BarChartWidget({ title, data, unit, tooltip }: Props) {
             <YAxis
               type="number"
               tick={{ fontSize: "12px" }}
-              tickCount={11}
+              tickCount={maxValue ? Math.min(maxValue + 1, 11) : 11}
               domain={[
                 0,
-                (dataMax: number) => {
-                  if (dataMax <= 10) return 20;
-                  if (dataMax <= 50) return Math.ceil(dataMax / 10) * 10;
-                  if (dataMax <= 100) return Math.ceil(dataMax / 20) * 20;
-                  return Math.ceil(dataMax / 100) * 100;
-                },
+                maxValue ||
+                  ((dataMax: number) => {
+                    if (dataMax <= 10) return 20;
+                    if (dataMax <= 50) return Math.ceil(dataMax / 10) * 10;
+                    if (dataMax <= 100) return Math.ceil(dataMax / 20) * 20;
+                    return Math.ceil(dataMax / 100) * 100;
+                  }),
               ]}
               tickFormatter={(value) =>
-                new Intl.NumberFormat("en-US", {
-                  notation: "compact",
-                  compactDisplay: "short",
-                }).format(value)
+                maxValue && unit === "★"
+                  ? value.toString()
+                  : new Intl.NumberFormat("en-US", {
+                      notation: "compact",
+                      compactDisplay: "short",
+                    }).format(value)
               }
               tickMargin={5}
               unit={unit ? ` ${unit}` : undefined}

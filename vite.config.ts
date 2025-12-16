@@ -53,70 +53,21 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes("node_modules")) {
-            // --- 1. HEAVY SPECIFIC LIBS (Check these FIRST) ---
+          if (!id.includes("node_modules")) return;
 
-            // PDF Generation (Very heavy, usually 1MB+)
-            if (
-              id.includes("@react-pdf") ||
-              id.includes("pdfkit") ||
-              id.includes("fontkit") ||
-              id.includes("png-js")
-            ) {
-              return "pdf-vendor";
-            }
-
-            // Video Player
-            if (id.includes("hls.js") || id.includes("plyr")) {
-              return "video-vendor";
-            }
-
-            // Text Editor
-            if (id.includes("@tiptap") || id.includes("prosemirror") || id.includes("lowlight")) {
-              return "editor-vendor";
-            }
-
-            // Charts
-            if (id.includes("recharts") || id.includes("d3") || id.includes("victory")) {
-              return "charts-vendor";
-            }
-
-            // Excel / File Processing
-            if (id.includes("xlsx") || id.includes("exceljs") || id.includes("crypto-js")) {
-              return "file-proc-vendor";
-            }
-
-            // --- 2. GENERIC LIBS (Check these LAST) ---
-
-            // React Core (Stable, small)
-            if (
-              id.includes("react") ||
-              id.includes("react-dom") ||
-              id.includes("react-router-dom") ||
-              id.includes("redux")
-            ) {
-              return "react-vendor";
-            }
-
-            // UI Libraries
-            if (
-              id.includes("@radix-ui") ||
-              id.includes("framer-motion") ||
-              id.includes("lucide") ||
-              id.includes("clsx") ||
-              id.includes("tailwind")
-            ) {
-              return "ui-vendor";
-            }
-
-            // Utilities
-            if (id.includes("axios") || id.includes("date-fns") || id.includes("lodash")) {
-              return "utils-vendor";
-            }
-
-            // Anything else left over
-            return "vendor-misc";
+          if (id.includes("@react-pdf") || id.includes("pdfkit") || id.includes("fontkit")) {
+            return "pdf-vendor";
           }
+
+          if (id.includes("@tiptap") || id.includes("prosemirror")) {
+            return "editor-vendor";
+          }
+
+          if (id.includes("hls.js") || id.includes("plyr")) {
+            return "video-vendor";
+          }
+
+          return "vendor";
         },
       },
     },

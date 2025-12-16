@@ -37,7 +37,7 @@ interface Partner extends Brands {
   isActive: boolean;
 }
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 5;
 
 const isEmpty = (value: string | null | undefined): boolean => {
   return !value || value.trim() === "";

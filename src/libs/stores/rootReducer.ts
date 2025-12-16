@@ -30,6 +30,7 @@ import { manageBrandAnalyticReducer } from "./brandAnalyticManager/slice";
 import { manageSalesAnalyticReducer } from "./salesAnalyticManager/slice";
 import { manageContentAnalyticReducer } from "./contentAnalyticManager/slice";
 import { reviewManagerReducers } from "./reviewManager/slice";
+import contentDashboardReducer from "./contentDashboardManager/slice";
 
 export const rootReducer = combineReducers({
   manageAuthen: manageAuthenReducer,
@@ -64,4 +65,5 @@ export const rootReducer = combineReducers({
   manageSalesAnalytic: manageSalesAnalyticReducer,
   manageContentAnalytic: manageContentAnalyticReducer,
   manageReview: reviewManagerReducers,
+  contentDashboard: contentDashboardReducer,
 });

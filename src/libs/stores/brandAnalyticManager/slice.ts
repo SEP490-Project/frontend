@@ -6,6 +6,7 @@ import {
   brandContracts,
   brandRevenueTrend,
   brandTopProduct,
+  brandDashboard,
 } from "./thunk";
 
 interface stateType {
@@ -15,12 +16,14 @@ interface stateType {
   loadingContracts: boolean;
   loadingRevenueTrend: boolean;
   loadingTopProducts: boolean;
+  loadingDashboard: boolean;
   affiliates: any;
   campaigns: any;
   content: any;
   contracts: any;
   revenueTrend: any;
   topProducts: any;
+  dashboard: any;
 }
 
 const initialState: stateType = {
@@ -30,12 +33,14 @@ const initialState: stateType = {
   loadingContracts: false,
   loadingRevenueTrend: false,
   loadingTopProducts: false,
+  loadingDashboard: false,
   affiliates: null,
   campaigns: null,
   content: null,
   contracts: null,
   revenueTrend: null,
   topProducts: null,
+  dashboard: null,
 };
 
 export const manageBrandAnalyticSlice = createSlice({
@@ -108,6 +113,17 @@ export const manageBrandAnalyticSlice = createSlice({
       })
       .addCase(brandTopProduct.rejected, (state) => {
         state.loadingTopProducts = false;
+      })
+
+      .addCase(brandDashboard.pending, (state) => {
+        state.loadingDashboard = true;
+      })
+      .addCase(brandDashboard.fulfilled, (state, action) => {
+        state.loadingDashboard = false;
+        state.dashboard = action.payload.data;
+      })
+      .addCase(brandDashboard.rejected, (state) => {
+        state.loadingDashboard = false;
       });
   },
 });

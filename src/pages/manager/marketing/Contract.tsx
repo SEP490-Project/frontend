@@ -78,7 +78,7 @@ const ContractPage: React.FC = () => {
   useEffect(() => {
     const params: any = {
       page,
-      limit: PAGE_SIZE,
+      limit: 5,
       sort_by: sortBy,
       sort_order: sortOrder,
       ...(debouncedSearchTerm && { keyword: debouncedSearchTerm }),

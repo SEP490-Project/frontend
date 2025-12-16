@@ -31,6 +31,7 @@ export const manageBrandAnalytic = {
   getBrandRevenueTrend: (params: any) =>
     api.get("/analytics/brand-partner/revenue-trend", { params }),
   getBrandTopProduct: (params: any) => api.get("/analytics/brand-partner/top-products", { params }),
+  getBrandDashboard: (params: any) => api.get("/analytics/brand-partner/dashboard", { params }),
 };
 
 export const manageSalesAnalytic = {
@@ -49,4 +50,82 @@ export const manageContentAnalytic = {
   getContentStatus: (params: any) => api.get("/analytics/content/status", { params }),
   getContentTop: (params: any) => api.get("/analytics/content/top", { params }),
   getContentTrend: (params: any) => api.get("/analytics/content/trend", { params }),
+};
+
+// New Content Dashboard API (fresh implementation)
+export const manageContentDashboard = {
+  getDashboard: (params: {
+    period?: string;
+    start_date?: string;
+    end_date?: string;
+    campaign_id?: string;
+    brand_id?: string;
+  }) => api.get("/analytics/contents/dashboard", { params }),
+
+  // Get detailed metrics for a specific channel
+  getChannelDetails: (
+    channelId: string,
+    params: {
+      period?: string;
+      start_date?: string;
+      end_date?: string;
+    },
+  ) => api.get(`/analytics/contents/channels/${channelId}`, { params }),
+};
+
+// Content Scheduling API
+export const manageContentSchedule = {
+  getSchedules: (params: {
+    page?: number;
+    page_size?: number;
+    status?: string;
+    content_id?: string;
+    channel_id?: string;
+  }) => api.get("/content-schedules", { params }),
+  getScheduleById: (id: string) => api.get(`/content-schedules/${id}`),
+  createSchedule: (data: { content_id: string; channel_id: string; scheduled_at: string }) =>
+    api.post("/content-schedules", data),
+  updateSchedule: (id: string, data: { scheduled_at: string }) =>
+    api.put(`/content-schedules/${id}`, data),
+  deleteSchedule: (id: string) => api.delete(`/content-schedules/${id}`),
+
+  // Batch schedule content to multiple channels
+  batchScheduleContent: (
+    contentId: string,
+    data: {
+      channels: Array<{
+        channel_id: string;
+        scheduled_at: string;
+        auto_post?: boolean;
+      }>;
+    },
+  ) => api.post(`/contents/${contentId}/schedules/batch`, data),
+};
+
+// Alerts API
+export const manageAlerts = {
+  getAlerts: (params: {
+    page?: number;
+    page_size?: number;
+    severity?: string;
+    category?: string;
+    status?: string;
+  }) => api.get("/alerts", { params }),
+  getAlertById: (id: string) => api.get(`/alerts/${id}`),
+  getAlertStats: () => api.get("/alerts/stats"),
+  getUnacknowledgedCount: () => api.get("/alerts/unacknowledged/count"),
+  acknowledgeAlert: (id: string, data: { notes?: string }) =>
+    api.post(`/alerts/${id}/acknowledge`, data),
+  resolveAlert: (id: string, data: { resolution?: string }) =>
+    api.post(`/alerts/${id}/resolve`, data),
+};
+
+// Social Media Sync API - Triggers cron job for fetching metrics from Facebook and TikTok
+export const manageSocialMediaSync = {
+  // Trigger content metrics poller job (syncs Facebook and TikTok metrics)
+  triggerContentMetricsPoller: (async_mode: boolean = false) =>
+    api.post(`/jobs/content-metrics-poller?async=${async_mode}`),
+  // Legacy endpoint (deprecated)
+  triggerSync: () => api.post("/jobs/content-metrics-poller?async=false"),
+  getSyncStatus: () => api.get("/jobs/content-metrics-poller/status"),
 };

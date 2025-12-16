@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import {
   Table,
   TableHeader,
@@ -29,6 +30,7 @@ import { PaginationTable } from "@/components/global";
 import TransactionDetails from "./TransactionDetails";
 import { format } from "date-fns";
 import { getItem } from "@/libs/local-storage";
+import { Loader2 } from "lucide-react";
 
 const PaymentTransactionPage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -50,7 +52,7 @@ const PaymentTransactionPage: React.FC = () => {
 
   const [params, setParams] = useState<TransactionParams>({
     page: 1,
-    limit: 10,
+    limit: 5,
     reference_type: "CONTRACT_PAYMENT",
     payer_id: user?.id,
   });
@@ -92,6 +94,21 @@ const PaymentTransactionPage: React.FC = () => {
     );
   };
 
+  const getTypeBadge = (isDeposit?: boolean) => {
+    const deposit = !!isDeposit;
+    return (
+      <Badge
+        className={
+          deposit
+            ? "bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-200"
+            : "bg-indigo-100 text-indigo-800 border-indigo-200 hover:bg-indigo-200"
+        }
+      >
+        {deposit ? "Deposit" : "Payment"}
+      </Badge>
+    );
+  };
+
   const formatCurrency = (amount: string) => {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
@@ -107,14 +124,46 @@ const PaymentTransactionPage: React.FC = () => {
     }
   };
 
+  const itemVariants = {
+    hidden: { opacity: 0, y: 12 },
+    visible: { opacity: 1, y: 0 },
+  };
+
+  const headerVariants = {
+    hidden: { opacity: 0, y: -16 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.45 } },
+  };
+
+  const filterVariants = {
+    hidden: { opacity: 0, x: -12 },
+    visible: { opacity: 1, x: 0, transition: { duration: 0.35 } },
+  };
+
   return (
     <div className="min-h-fit p-4 sm:p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl sm:text-2xl font-semibold">Payment Transactions</h1>
-      </div>
+      <motion.div
+        className="flex justify-between items-center mb-6"
+        variants={headerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <div>
+          <motion.h1 className="text-xl sm:text-2xl font-semibold" variants={itemVariants}>
+            Payment Transactions
+          </motion.h1>
+          <motion.p className="text-gray-600 mt-1" variants={itemVariants}>
+            Manage and track payment transactions for brands
+          </motion.p>
+        </div>
+      </motion.div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow mb-4 p-4">
+      <motion.div
+        className="bg-white rounded-lg shadow mb-4 p-4"
+        variants={filterVariants}
+        initial="hidden"
+        animate="visible"
+      >
         <div className="flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-2">
             <FaFilter className="text-gray-500" />
@@ -178,7 +227,7 @@ const PaymentTransactionPage: React.FC = () => {
             </Select>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Table */}
       <div className="bg-white rounded-lg overflow-hidden shadow">
@@ -190,6 +239,7 @@ const PaymentTransactionPage: React.FC = () => {
                 <TableHead className="font-semibold">Reference ID</TableHead>
                 <TableHead className="font-semibold">Amount</TableHead>
                 <TableHead className="font-semibold">Method</TableHead>
+                <TableHead className="font-semibold">Type</TableHead>
                 <TableHead className="font-semibold">Status</TableHead>
                 <TableHead className="font-semibold">Date</TableHead>
                 <TableHead className="font-semibold">Actions</TableHead>
@@ -198,29 +248,32 @@ const PaymentTransactionPage: React.FC = () => {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
-                    <div className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                  <TableCell colSpan={8} className="text-center py-8">
+                    <div className="flex items-center justify-center py-16">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
                       <span className="ml-2">Loading transactions...</span>
                     </div>
                   </TableCell>
                 </TableRow>
               ) : error ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-red-600">
+                  <TableCell colSpan={8} className="text-center py-8 text-red-600">
                     Error: {error?.message || "Failed to load transactions"}
                   </TableCell>
                 </TableRow>
               ) : !transactions || transactions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                  <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                     No transactions found
                   </TableCell>
                 </TableRow>
               ) : (
                 transactions.map((transaction, index) => (
-                  <TableRow
+                  <motion.tr
                     key={transaction.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.03 }}
                     className={`border-b hover:bg-gray-50 ${
                       index % 2 === 0 ? "bg-white" : "bg-gray-25"
                     }`}
@@ -238,6 +291,10 @@ const PaymentTransactionPage: React.FC = () => {
                     </TableCell>
 
                     <TableCell className="py-4">{getMethodBadge(transaction.method)}</TableCell>
+
+                    <TableCell className="py-4">
+                      {getTypeBadge(transaction.reference_info?.is_deposit)}
+                    </TableCell>
 
                     <TableCell className="py-4">{getStatusBadge(transaction.status)}</TableCell>
 
@@ -259,7 +316,7 @@ const PaymentTransactionPage: React.FC = () => {
                         <FaEye className="text-blue-600" />
                       </Button>
                     </TableCell>
-                  </TableRow>
+                  </motion.tr>
                 ))
               )}
             </TableBody>
@@ -285,10 +342,14 @@ const PaymentTransactionPage: React.FC = () => {
             <div className="text-center py-8 text-gray-500">No transactions found</div>
           ) : (
             transactions.map((transaction) => (
-              <div
+              <motion.div
                 key={transaction.id}
                 className="bg-white border rounded-lg p-4 space-y-3 cursor-pointer hover:shadow-md transition-shadow"
                 onClick={() => handleViewDetails(transaction.id)}
+                variants={itemVariants}
+                initial="hidden"
+                animate="visible"
+                transition={{ duration: 0.28 }}
               >
                 <div className="flex justify-between items-start">
                   <div>
@@ -309,6 +370,14 @@ const PaymentTransactionPage: React.FC = () => {
                     <p className="text-xs text-gray-500">Method</p>
                     {getMethodBadge(transaction.method)}
                   </div>
+                </div>
+
+                <div className="flex justify-between">
+                  <div>
+                    <p className="text-xs text-gray-500">Type</p>
+                    {getTypeBadge(transaction.reference_info?.is_deposit)}
+                  </div>
+                  <div></div>
                 </div>
 
                 <div>
@@ -332,7 +401,7 @@ const PaymentTransactionPage: React.FC = () => {
                     View Details
                   </Button>
                 </div>
-              </div>
+              </motion.div>
             ))
           )}
         </div>

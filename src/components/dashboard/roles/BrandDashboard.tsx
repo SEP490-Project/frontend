@@ -13,6 +13,7 @@ import {
   FaBullhorn,
   FaFileContract,
   FaTriangleExclamation,
+  FaBox,
 } from "react-icons/fa6";
 import { useAppDispatch } from "@/libs/stores";
 import {
@@ -22,6 +23,7 @@ import {
   brandContracts,
   brandTopProduct,
   brandRevenueTrend,
+  brandDashboard,
 } from "@/libs/stores/brandAnalyticManager/thunk";
 import { useBrandAnalytic } from "@/libs/hooks/useBrandAnalytic";
 import { Card } from "@/components/ui/card";
@@ -34,7 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
+import { Loader2, ShoppingCart, CreditCard } from "lucide-react";
 import DatePicker from "@/components/date-picker";
 
 const formatCurrency = (value: number | null | undefined) =>
@@ -73,13 +75,20 @@ const BrandDashboard: React.FC = () => {
     loadingContracts,
     loadingRevenueTrend,
     loadingTopProducts,
+    loadingDashboard,
     affiliates,
     campaigns,
     content,
     contracts,
     revenueTrend,
     topProducts,
+    dashboard,
   } = useBrandAnalytic();
+
+  const [dashboardFilter, setDashboardFilter] = useState({
+    year: new Date().getFullYear(),
+    month: new Date().getMonth() + 1,
+  });
 
   const [affiliateContentFilter, setAffiliateContentFilter] = useState({
     start_date: "",
@@ -116,6 +125,10 @@ const BrandDashboard: React.FC = () => {
     end_date: "",
     granularity: "MONTH" as "DAY" | "WEEK" | "MONTH",
   });
+
+  const fetchDashboard = () => {
+    dispatch(brandDashboard(dashboardFilter));
+  };
 
   const fetchAffiliatesAndContent = () => {
     const filter: any = {};
@@ -156,6 +169,10 @@ const BrandDashboard: React.FC = () => {
     if (revenueTrendFilter.end_date) filter.end_date = revenueTrendFilter.end_date;
     dispatch(brandRevenueTrend(filter));
   };
+
+  useEffect(() => {
+    fetchDashboard();
+  }, [dispatch, dashboardFilter]);
 
   useEffect(() => {
     fetchAffiliatesAndContent();
@@ -199,30 +216,50 @@ const BrandDashboard: React.FC = () => {
 
   const campaignsTableData = Array.isArray(campaigns)
     ? campaigns.map((c: any) => ({
+        id: c.campaign_id,
         name: c.campaign_name,
-        status: c.status,
-        "start date": new Date(c.start_date).toLocaleDateString(),
-        "end date": new Date(c.end_date).toLocaleDateString(),
-        milestones: c.milestone_count,
-        tasks: `${c.completed_tasks}/${c.task_count}`,
-        completion: `${c.completion_rate}%`,
-        content: c.content_count,
-        views: c.total_views.toLocaleString(),
-        engagements: c.total_engagements.toLocaleString(),
+        status: {
+          type: "badge",
+          value: c.status,
+          variant: "campaignStatus",
+        },
+        duration: `${new Date(c.start_date).toLocaleDateString()} → ${new Date(
+          c.end_date,
+        ).toLocaleDateString()}`,
+        progress: `${c.completed_tasks}/${c.task_count} (${c.completion_rate}%)`,
+        action: {
+          type: "action",
+          label: "View",
+          href: `/manage/brand/campaigns/${c.campaign_id}`,
+        },
       }))
     : [];
 
   const contractsTableData = Array.isArray(contracts)
     ? contracts.map((c: any) => ({
+        id: c.contract_id,
         number: c.contract_number,
-        type: c.type,
-        status: c.status,
+        type: {
+          type: "badge",
+          value: c.type,
+          variant: "contractType",
+        },
+        status: {
+          type: "badge",
+          value: c.status,
+          variant: "contractStatus",
+        },
         value: formatCurrency(c.total_value),
         paid: formatCurrency(c.paid_amount),
         pending: formatCurrency(c.pending_amount),
-        "start date": new Date(c.start_date).toLocaleDateString(),
-        "end date": new Date(c.end_date).toLocaleDateString(),
-        campaigns: c.campaign_count,
+        duration: `${new Date(c.start_date).toLocaleDateString()} → ${new Date(
+          c.end_date,
+        ).toLocaleDateString()}`,
+        action: {
+          type: "action",
+          label: "View",
+          href: `/manage/brand/contracts/${c.contract_id}`,
+        },
       }))
     : [];
 
@@ -240,25 +277,54 @@ const BrandDashboard: React.FC = () => {
       }))
     : [];
 
-  const totalCampaigns = Array.isArray(campaigns) ? campaigns.length : 0;
-  const runningCampaigns = Array.isArray(campaigns)
-    ? campaigns.filter((c: any) => c.status === "RUNNING").length
-    : 0;
-  const totalContracts = Array.isArray(contracts) ? contracts.length : 0;
-  const activeContracts = Array.isArray(contracts)
-    ? contracts.filter((c: any) => c.status === "ACTIVE").length
-    : 0;
-  const totalRevenue = Array.isArray(revenueTrend)
-    ? revenueTrend.reduce((sum: number, r: any) => sum + r.revenue, 0)
-    : 0;
-
   const isAnyLoading =
+    loadingDashboard ||
     loadingAffiliates ||
     loadingCampaigns ||
     loadingContent ||
     loadingContracts ||
     loadingRevenueTrend ||
     loadingTopProducts;
+
+  const generateYearOptions = () => {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    for (let year = currentYear; year >= 2020; year--) {
+      years.push(year);
+    }
+    return years;
+  };
+
+  const generateMonthOptions = () => {
+    return [
+      { value: 1, label: "January" },
+      { value: 2, label: "February" },
+      { value: 3, label: "March" },
+      { value: 4, label: "April" },
+      { value: 5, label: "May" },
+      { value: 6, label: "June" },
+      { value: 7, label: "July" },
+      { value: 8, label: "August" },
+      { value: 9, label: "September" },
+      { value: 10, label: "October" },
+      { value: 11, label: "November" },
+      { value: 12, label: "December" },
+    ];
+  };
+
+  const overviewData = dashboard?.overview || {};
+  const topSoldProducts = dashboard?.top_sold_products || [];
+  const topRatingProducts = dashboard?.top_rating_products || [];
+
+  const topSoldProductsChartData = topSoldProducts.map((p: any) => ({
+    name: p.product_name,
+    value: p.total_revenue,
+  }));
+
+  const topRatingProductsChartData = topRatingProducts.map((p: any) => ({
+    name: p.product_name,
+    value: p.average_rating,
+  }));
 
   return (
     <div className="p-2 sm:p-6 w-full flex flex-col gap-6 relative">
@@ -271,46 +337,163 @@ const BrandDashboard: React.FC = () => {
         </div>
       )}
 
-      <h1 className="text-xl sm:text-2xl font-semibold">Brand Partner Dashboard</h1>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 className="text-xl sm:text-2xl font-semibold">Brand Partner Dashboard</h1>
+        <div className="flex gap-2 items-center">
+          <Select
+            value={dashboardFilter.year.toString()}
+            onValueChange={(value) =>
+              setDashboardFilter((prev) => ({ ...prev, year: parseInt(value) }))
+            }
+          >
+            <SelectTrigger className="w-[100px] h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {generateYearOptions().map((year) => (
+                <SelectItem key={year} value={year.toString()}>
+                  {year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={dashboardFilter.month.toString()}
+            onValueChange={(value) =>
+              setDashboardFilter((prev) => ({ ...prev, month: parseInt(value) }))
+            }
+          >
+            <SelectTrigger className="w-[120px] h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {generateMonthOptions().map((month) => (
+                <SelectItem key={month.value} value={month.value.toString()}>
+                  {month.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              setDashboardFilter({
+                year: new Date().getFullYear(),
+                month: new Date().getMonth() + 1,
+              })
+            }
+            className="h-8 text-xs"
+          >
+            Reset
+          </Button>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPIWidget
           title="Total Campaigns"
           data={{
-            value: totalCampaigns,
-            statusText: `${runningCampaigns} running`,
+            value: overviewData.total_campaigns || 0,
+            statusText: `${overviewData.active_campaigns || 0} active`,
           }}
           icon={<FaBullhorn size={20} />}
           iconColor="text-purple-600"
           iconBg="bg-purple-100"
+          tooltip="Total number of marketing campaigns your brand is involved in, including active and completed campaigns"
         />
         <KPIWidget
           title="Total Contracts"
           data={{
-            value: totalContracts,
-            statusText: `${activeContracts} active`,
+            value: overviewData.total_contracts || 0,
+            statusText: `${overviewData.active_contracts || 0} active`,
           }}
           icon={<FaFileContract size={20} />}
           iconColor="text-blue-600"
           iconBg="bg-blue-100"
+          tooltip="Total number of contracts your brand has signed, showing how many are currently active and generating business"
         />
         <KPIWidget
-          title="Total Content"
-          data={contentKPIData}
-          icon={<FaFile size={20} />}
+          title="Total Products"
+          data={{
+            value: overviewData.total_products || 0,
+            statusText: "Products",
+          }}
+          icon={<FaBox size={20} />}
           iconColor="text-green-600"
           iconBg="bg-green-100"
+          tooltip="Total number of products in your brand portfolio available for sale and promotion"
+        />
+        <KPIWidget
+          title="Total Orders"
+          data={{
+            value: overviewData.total_orders || 0,
+            statusText: "Orders",
+          }}
+          icon={<ShoppingCart size={20} />}
+          iconColor="text-orange-600"
+          iconBg="bg-orange-100"
+          tooltip="Total number of orders received for your products across all sales channels"
         />
         <KPIWidget
           title="Total Revenue"
           data={{
-            value: totalRevenue,
+            value: overviewData.total_revenue || 0,
             statusText: "Total earned",
           }}
+          mode="currency"
           icon={<FaMoneyBillWave size={20} />}
           iconColor="text-indigo-600"
           iconBg="bg-indigo-100"
+          tooltip="Total revenue generated from your brand partnerships, product sales, and marketing activities"
         />
+        <KPIWidget
+          title="Pending Payments"
+          data={{
+            value: overviewData.pending_payments || 0,
+            statusText: "Pending",
+          }}
+          mode="currency"
+          icon={<CreditCard size={20} />}
+          iconColor="text-red-600"
+          iconBg="bg-red-100"
+          tooltip="Total amount of payments pending to be received from completed transactions and contracts"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="p-4">
+          {isEmptyData(topSoldProductsChartData) ? (
+            <div className="flex flex-col">
+              <h2 className="text-lg font-semibold mb-4">Top Sold Products</h2>
+              <NoDataMessage message="No sold products data available" />
+            </div>
+          ) : (
+            <BarChartWidget
+              title="Top Sold Products"
+              data={topSoldProductsChartData}
+              unit="VND"
+              tooltip="Top performing products by total revenue generated, showing which products contribute most to your business income"
+            />
+          )}
+        </Card>
+
+        <Card className="p-4">
+          {isEmptyData(topRatingProductsChartData) ? (
+            <div className="flex flex-col">
+              <h2 className="text-lg font-semibold mb-4">Top Rating Products</h2>
+              <NoDataMessage message="No rating products data available" />
+            </div>
+          ) : (
+            <BarChartWidget
+              title="Top Rating Products"
+              data={topRatingProductsChartData}
+              unit="★"
+              maxValue={5}
+              tooltip="Products with the highest customer ratings, indicating customer satisfaction and product quality"
+            />
+          )}
+        </Card>
       </div>
 
       <Card className="p-4">
@@ -362,6 +545,7 @@ const BrandDashboard: React.FC = () => {
               icon={<FaLink size={20} />}
               iconColor="text-blue-600"
               iconBg="bg-blue-100"
+              tooltip="Total number of affiliate links created for your brand, showing how many are currently active and driving traffic"
             />
             <KPIWidget
               title="Total Clicks"
@@ -369,6 +553,7 @@ const BrandDashboard: React.FC = () => {
               icon={<FaChartLine size={20} />}
               iconColor="text-green-600"
               iconBg="bg-green-100"
+              tooltip="Total number of clicks received on all your affiliate links, indicating customer engagement and interest"
             />
             <KPIWidget
               title="Content Created"
@@ -376,6 +561,7 @@ const BrandDashboard: React.FC = () => {
               icon={<FaFile size={20} />}
               iconColor="text-purple-600"
               iconBg="bg-purple-100"
+              tooltip="Total content pieces created for your brand including posts, articles, videos, and other marketing materials"
             />
             <KPIWidget
               title="Engagement Rate"
@@ -383,6 +569,7 @@ const BrandDashboard: React.FC = () => {
               icon={<FaChartLine size={20} />}
               iconColor="text-amber-600"
               iconBg="bg-amber-100"
+              tooltip="Average engagement rate across all your content showing likes, comments, shares, and other interactions as a percentage"
             />
           </div>
         </div>
@@ -450,7 +637,18 @@ const BrandDashboard: React.FC = () => {
           {isEmptyData(revenueTrendData) ? (
             <NoDataMessage message="No revenue data available for the selected time period" />
           ) : (
-            <LineChartWidget title="" data={revenueTrendData} />
+            <LineChartWidget
+              title=""
+              data={revenueTrendData}
+              unit="VND"
+              lineConfig={{
+                value: {
+                  label: "Brand Revenue",
+                  color: "#6366f1",
+                },
+              }}
+              tooltip="Revenue trend showing how your brand's earnings have changed over the selected time period from all partnership activities"
+            />
           )}
         </div>
       </Card>
@@ -514,7 +712,12 @@ const BrandDashboard: React.FC = () => {
           {isEmptyData(topProductsData) ? (
             <NoDataMessage message="No product revenue data available for the selected period" />
           ) : (
-            <BarChartWidget title="" data={topProductsData} />
+            <BarChartWidget
+              title=""
+              data={topProductsData}
+              unit="VND"
+              tooltip="Ranking of your products by revenue generated, helping identify which products are performing best in the market"
+            />
           )}
         </div>
       </Card>
@@ -595,7 +798,7 @@ const BrandDashboard: React.FC = () => {
           {isEmptyData(campaignsTableData) ? (
             <NoDataMessage message="No campaign data available" />
           ) : (
-            <TableWidget title="" data={campaignsTableData} />
+            <TableWidget title="" data={campaignsTableData as any} />
           )}
         </div>
       </Card>
@@ -642,7 +845,7 @@ const BrandDashboard: React.FC = () => {
           {isEmptyData(contractsTableData) ? (
             <NoDataMessage message="No contract data available" />
           ) : (
-            <TableWidget title="" data={contractsTableData} />
+            <TableWidget title="" data={contractsTableData as any} />
           )}
         </div>
       </Card>

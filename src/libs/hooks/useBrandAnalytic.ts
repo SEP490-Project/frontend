@@ -9,12 +9,14 @@ export const useBrandAnalytic = () => {
     loadingContracts,
     loadingRevenueTrend,
     loadingTopProducts,
+    loadingDashboard,
     affiliates,
     campaigns,
     content,
     contracts,
     revenueTrend,
     topProducts,
+    dashboard,
   } = useSelector((state: RootState) => state.manageBrandAnalytic);
   return {
     loadingAffiliates,
@@ -23,11 +25,13 @@ export const useBrandAnalytic = () => {
     loadingContracts,
     loadingRevenueTrend,
     loadingTopProducts,
+    loadingDashboard,
     affiliates,
     campaigns,
     content,
     contracts,
     revenueTrend,
     topProducts,
+    dashboard,
   };
 };

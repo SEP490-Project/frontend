@@ -37,7 +37,7 @@ const Review = () => {
   const [selectedReview, setSelectedReview] = useState<ReviewData | null>(null);
   const [params, setParams] = useState<ProductParams>({
     page: 1,
-    limit: 10,
+    limit: 5,
   });
 
   useEffect(() => {

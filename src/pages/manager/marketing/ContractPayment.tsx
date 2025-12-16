@@ -104,7 +104,7 @@ const ContractPaymentPage: React.FC = () => {
     dispatch(
       fetchBrands({
         page: brandPage,
-        limit: 10,
+        limit: 5,
         status: "ACTIVE",
         ...(debouncedBrandSearch ? { keywords: debouncedBrandSearch } : {}),
       }),

@@ -30,7 +30,7 @@ import { useDebounce } from "@/libs/hooks/useDebounce";
 import { formatDate } from "@/libs/helper/helper";
 import { motion } from "framer-motion";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 5;
 
 const CAMPAIGN_STATUS_LABELS: Record<string, string> = {
   RUNNING: "Running",

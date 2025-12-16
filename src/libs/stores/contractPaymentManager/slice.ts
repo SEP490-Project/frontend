@@ -9,6 +9,7 @@ import type { ContractPayment, PaymentLink } from "@/libs/types/contract-payment
 
 interface stateType {
   loading: boolean;
+  detailLoading: boolean;
   contractPayments: ContractPayment[];
   contractPaymentBrand: ContractPayment[];
   contractPaymentDetail: ContractPayment | null;
@@ -26,6 +27,7 @@ interface stateType {
 
 const initialState: stateType = {
   loading: false,
+  detailLoading: false,
   contractPayments: [],
   contractPaymentBrand: [],
   contractPaymentDetail: null,
@@ -76,14 +78,14 @@ export const manageContractPaymentSlice = createSlice({
       })
 
       .addCase(getContractPaymentDetail.pending, (state) => {
-        state.loading = true;
+        state.detailLoading = true;
       })
       .addCase(getContractPaymentDetail.fulfilled, (state, action) => {
-        state.loading = false;
+        state.detailLoading = false;
         state.contractPaymentDetail = action.payload.data || null;
       })
       .addCase(getContractPaymentDetail.rejected, (state) => {
-        state.loading = false;
+        state.detailLoading = false;
       });
   },
 });

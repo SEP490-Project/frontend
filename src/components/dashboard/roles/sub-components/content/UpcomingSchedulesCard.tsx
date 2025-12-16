@@ -19,14 +19,14 @@ interface UpcomingSchedulesCardProps {
 export const UpcomingSchedulesCardSkeleton: React.FC = () => {
   return (
     <Card className="rounded-2xl shadow-sm">
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-4 px-6 pt-6">
         <div className="flex items-center gap-2">
           <Skeleton className="h-5 w-5" />
           <Skeleton className="h-6 w-36" />
         </div>
         <Skeleton className="h-4 w-40" />
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-6 pb-6">
         <div className="space-y-3">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
@@ -57,14 +57,14 @@ export const UpcomingSchedulesCard: React.FC<UpcomingSchedulesCardProps> = ({
   return (
     <motion.div variants={itemVariants} initial="hidden" animate="visible">
       <Card className="rounded-2xl shadow-sm">
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-4 px-6 pt-6">
           <CardTitle className="text-lg font-medium flex items-center gap-2">
             <FaClock className="text-blue-600" />
             Upcoming Schedules
           </CardTitle>
           <p className="text-sm text-gray-500">Next scheduled publications</p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-6 pb-6">
           {upcomingSchedule.length > 0 ? (
             <motion.div
               variants={containerVariants}

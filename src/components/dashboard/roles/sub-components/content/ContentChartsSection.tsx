@@ -20,15 +20,15 @@ interface ContentChartsSectionProps {
 // Skeleton component
 export const ContentChartsSectionSkeleton: React.FC = () => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
       {[...Array(2)].map((_, i) => (
         <Card key={i} className="rounded-2xl shadow-sm">
-          <CardHeader className="pb-3">
-            <Skeleton className="h-6 w-32 mb-1" />
+          <CardHeader className="pb-4">
+            <Skeleton className="h-6 w-32 mb-2" />
             <Skeleton className="h-4 w-40" />
           </CardHeader>
           <CardContent>
-            <Skeleton className="h-48 w-full rounded-lg" />
+            <Skeleton className="h-64 w-full rounded-lg" />
           </CardContent>
         </Card>
       ))}
@@ -66,19 +66,19 @@ export const ContentChartsSection: React.FC<ContentChartsSectionProps> = ({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="grid grid-cols-1 md:grid-cols-2 gap-6"
+      className="grid grid-cols-1 xl:grid-cols-2 gap-8"
     >
       {/* Channel Distribution */}
       <motion.div variants={itemVariants}>
         <Card className="rounded-2xl shadow-sm h-full">
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-4 px-6 pt-6">
             <CardTitle className="text-lg font-medium">
               Content by Channel
               <HelpTooltip>{METRIC_HELP_TEXT.CHANNEL_DISTRIBUTION}</HelpTooltip>
             </CardTitle>
             <p className="text-sm text-gray-500">Distribution of posts across channels</p>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-6 pb-6">
             {channelData.length > 0 ? (
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -88,7 +88,7 @@ export const ContentChartsSection: React.FC<ContentChartsSectionProps> = ({
                 <PieChartWidget title="" data={channelData} />
               </motion.div>
             ) : (
-              <div className="h-48 flex items-center justify-center text-gray-400">
+              <div className="h-64 flex items-center justify-center text-gray-400">
                 No data available
               </div>
             )}
@@ -99,14 +99,14 @@ export const ContentChartsSection: React.FC<ContentChartsSectionProps> = ({
       {/* Engagement Trend */}
       <motion.div variants={itemVariants}>
         <Card className="rounded-2xl shadow-sm h-full">
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-4 px-6 pt-6">
             <CardTitle className="text-lg font-medium">
               Engagement Trend
               <HelpTooltip>{METRIC_HELP_TEXT.ENGAGEMENT_TREND}</HelpTooltip>
             </CardTitle>
             <p className="text-sm text-gray-500">Total engagement over time</p>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-6 pb-6">
             {engagementChartData.length > 0 ? (
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -126,7 +126,7 @@ export const ContentChartsSection: React.FC<ContentChartsSectionProps> = ({
                 />
               </motion.div>
             ) : (
-              <div className="h-48 flex items-center justify-center text-gray-400">
+              <div className="h-64 flex items-center justify-center text-gray-400">
                 No data available
               </div>
             )}

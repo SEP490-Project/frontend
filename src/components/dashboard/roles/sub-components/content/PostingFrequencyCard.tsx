@@ -37,11 +37,11 @@ interface PostingFrequencyCardProps {
 export const PostingFrequencyCardSkeleton: React.FC = () => {
   return (
     <Card className="rounded-2xl shadow-sm">
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-4 px-6 pt-6">
         <Skeleton className="h-6 w-36 mb-1" />
         <Skeleton className="h-4 w-28" />
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-6 pb-6">
         <div className="flex items-center justify-between mb-3">
           <Skeleton className="h-9 w-12" />
           <Skeleton className="h-5 w-24" />
@@ -72,7 +72,7 @@ export const PostingFrequencyCard: React.FC<PostingFrequencyCardProps> = ({
   return (
     <motion.div variants={itemVariants} initial="hidden" animate="visible">
       <Card className="rounded-2xl shadow-sm h-full">
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-4 px-6 pt-6">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg font-medium">
               Posting Frequency
@@ -81,7 +81,7 @@ export const PostingFrequencyCard: React.FC<PostingFrequencyCardProps> = ({
           </div>
           <p className="text-sm text-gray-500">Progress toward target</p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-6 pb-6">
           <div className="flex items-center justify-between mb-3">
             <motion.span
               className="text-3xl font-bold text-gray-900"

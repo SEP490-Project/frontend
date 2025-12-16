@@ -12,6 +12,10 @@ import {
   FaFileContract,
   FaBullhorn,
   FaTriangleExclamation,
+  FaLayerGroup,
+  FaShareNodes,
+  FaEnvelope,
+  FaWifi,
 } from "react-icons/fa6";
 import { Loader2 } from "lucide-react";
 import { useAdminAnalytic } from "@/libs/hooks/useAdminAnalytic";
@@ -23,6 +27,7 @@ import {
   adminRevenue,
   adminUserGrowth,
   adminUserOverview,
+  adminSystemOverview,
 } from "@/libs/stores/adminAnalyticManager/thunk";
 import {
   Select,
@@ -97,12 +102,14 @@ const AdminDashboard: React.FC = () => {
     loadingRevenue,
     loadingUserGrowth,
     loadingUserOverview,
+    loadingSystemOverview,
     campaigns,
     contracts,
     health,
     revenue,
     userGrowth,
     userOverview,
+    systemOverview,
   } = useAdminAnalytic();
 
   const [revenueFilter, setRevenueFilter] = useState<RevenueFilter>({
@@ -122,6 +129,7 @@ const AdminDashboard: React.FC = () => {
     dispatch(adminCampaigns());
     dispatch(adminContracts());
     dispatch(adminHealth());
+    dispatch(adminSystemOverview());
   }, [dispatch]);
 
   useEffect(() => {
@@ -265,6 +273,54 @@ const AdminDashboard: React.FC = () => {
     }));
   }, [rawRoleData, roleChartMode]);
 
+  // System Overview Data
+  const queueSummaryData = useMemo(() => {
+    if (!systemOverview?.queue_summary) return [];
+    const qs = systemOverview.queue_summary;
+    const data = [
+      { type: "Main Queues", value: Number(qs.main_queues) },
+      { type: "Retry Queues", value: Number(qs.retry_queues) },
+      { type: "Dead Letter Queues", value: Number(qs.dead_letter_queues) },
+      { type: "Delayed Queues", value: Number(qs.delayed_queues) },
+    ];
+    return data.filter((item) => item.value > 0);
+  }, [systemOverview?.queue_summary]);
+
+  const messageDistributionData = useMemo(() => {
+    if (!systemOverview) return [];
+    const data = [
+      { type: "Ready Messages", value: Number(systemOverview.total_messages_ready) },
+      { type: "Unacked Messages", value: Number(systemOverview.total_messages_unacked) },
+    ];
+    return data.filter((item) => item.value > 0);
+  }, [systemOverview]);
+
+  const exchangeListData = useMemo(() => {
+    if (!systemOverview?.configured_topology?.exchange_names) return [];
+    return systemOverview.configured_topology.exchange_names.map((name: string, index: number) => ({
+      id: index,
+      name: name,
+      type: name.includes("delayed")
+        ? "Delayed"
+        : name.includes("schedule")
+          ? "Schedule"
+          : "Standard",
+    }));
+  }, [systemOverview?.configured_topology?.exchange_names]);
+
+  const systemMetricsTableData = useMemo(() => {
+    if (!systemOverview) return [];
+    return [
+      { metric: "Total Queues", value: systemOverview.total_queues },
+      { metric: "Total Exchanges", value: systemOverview.total_exchanges },
+      { metric: "Total Messages", value: systemOverview.total_messages },
+      { metric: "Messages Ready", value: systemOverview.total_messages_ready },
+      { metric: "Messages Unacked", value: systemOverview.total_messages_unacked },
+      { metric: "Connection Status", value: systemOverview.connection_status },
+      { metric: "DLQ Messages", value: systemOverview.queue_summary?.total_dlq_messages || 0 },
+    ];
+  }, [systemOverview]);
+
   const campaignsTableData = useMemo(
     () =>
       campaigns
@@ -352,7 +408,8 @@ const AdminDashboard: React.FC = () => {
     [health],
   );
 
-  const isAnyLoading = loading || loadingRevenue || loadingUserGrowth || loadingUserOverview;
+  const isAnyLoading =
+    loading || loadingRevenue || loadingUserGrowth || loadingUserOverview || loadingSystemOverview;
 
   return (
     <div className="p-2 sm:p-6 w-full flex flex-col gap-6 relative">
@@ -774,6 +831,125 @@ const AdminDashboard: React.FC = () => {
             )}
           </div>
         </Card>
+      </div>
+
+      {/* System Overview Section */}
+      <div className="mt-8">
+        <h1 className="text-xl sm:text-2xl font-semibold mb-6">System Overview</h1>
+
+        {/* System Overview KPIs */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <KPIWidget
+            title="Total Queues"
+            data={{
+              value: systemOverview?.total_queues || 0,
+              statusText: `${systemOverview?.queue_summary?.main_queues || 0} main queues`,
+            }}
+            icon={<FaLayerGroup size={20} />}
+            iconColor="text-orange-600"
+            iconBg="bg-orange-100"
+            tooltip="Total number of message queues in the system including main, retry, and dead letter queues"
+          />
+          <KPIWidget
+            title="Total Exchanges"
+            data={{
+              value: systemOverview?.total_exchanges || 0,
+              statusText: `${systemOverview?.configured_topology?.exchange_count || 0} configured`,
+            }}
+            icon={<FaShareNodes size={20} />}
+            iconColor="text-cyan-600"
+            iconBg="bg-cyan-100"
+            tooltip="Total number of message exchanges configured in the messaging system"
+          />
+          <KPIWidget
+            title="Total Messages"
+            data={{
+              value: systemOverview?.total_messages || 0,
+              statusText: `${systemOverview?.total_messages_ready || 0} ready`,
+            }}
+            icon={<FaEnvelope size={20} />}
+            iconColor="text-emerald-600"
+            iconBg="bg-emerald-100"
+            tooltip="Total number of messages in all queues, including ready and unacknowledged messages"
+          />
+          <KPIWidget
+            title="Connection Status"
+            data={{
+              value: systemOverview?.connection_status || "unknown",
+              status: systemOverview?.connection_status === "connected" ? "up" : "down",
+              statusText: systemOverview?.connection_status === "connected" ? "Online" : "Offline",
+            }}
+            icon={<FaWifi size={20} />}
+            iconColor="text-green-600"
+            iconBg="bg-green-100"
+            tooltip="Current connection status to the messaging system"
+          />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card className="p-4 relative">
+            <div className="flex flex-col gap-4">
+              <h2 className="text-lg font-semibold">Queue Distribution</h2>
+              {isEmptyData(queueSummaryData) ? (
+                <NoDataMessage message="No queue distribution data available" />
+              ) : (
+                <PieChartWidget
+                  title=""
+                  data={queueSummaryData}
+                  mode="count"
+                  tooltip="Distribution of different types of queues in the messaging system"
+                />
+              )}
+            </div>
+          </Card>
+
+          <Card className="p-4 relative">
+            <div className="flex flex-col gap-4">
+              <h2 className="text-lg font-semibold">Message Status</h2>
+              {isEmptyData(messageDistributionData) ? (
+                <NoDataMessage message="No message distribution data available" />
+              ) : (
+                <PieChartWidget
+                  title=""
+                  data={messageDistributionData}
+                  mode="count"
+                  tooltip="Distribution of message status: ready to process vs unacknowledged"
+                />
+              )}
+            </div>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card className="p-4 relative">
+            <div className="flex flex-col gap-4">
+              <h2 className="text-lg font-semibold">System Metrics</h2>
+              {isEmptyData(systemMetricsTableData) ? (
+                <NoDataMessage message="No system metrics data available" />
+              ) : (
+                <TableWidget
+                  title=""
+                  data={systemMetricsTableData}
+                  tooltip="Key metrics for the messaging system including queues, exchanges, and messages"
+                />
+              )}
+            </div>
+          </Card>
+
+          <Card className="p-4 relative">
+            <div className="flex flex-col gap-4">
+              <h2 className="text-lg font-semibold">Exchange List</h2>
+              {isEmptyData(exchangeListData) ? (
+                <NoDataMessage message="No exchange list data available" />
+              ) : (
+                <TableWidget
+                  title=""
+                  data={exchangeListData}
+                  tooltip="List of all configured exchanges in the messaging system"
+                />
+              )}
+            </div>
+          </Card>
+        </div>
       </div>
     </div>
   );

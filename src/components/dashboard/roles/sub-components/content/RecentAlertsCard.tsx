@@ -55,7 +55,7 @@ const getSeverityVariant = (
 export const RecentAlertsCardSkeleton: React.FC = () => {
   return (
     <Card className="rounded-2xl shadow-sm h-full">
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-4 px-6 pt-6">
         <div className="flex items-center gap-2">
           <Skeleton className="h-5 w-5" />
           <Skeleton className="h-6 w-28" />
@@ -63,7 +63,7 @@ export const RecentAlertsCardSkeleton: React.FC = () => {
         </div>
         <Skeleton className="h-4 w-32" />
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-6 pb-6">
         <div className="space-y-3">
           {[...Array(3)].map((_, i) => (
             <div key={i} className="p-3 rounded-lg border bg-gray-50">
@@ -238,7 +238,7 @@ export const RecentAlertsCard: React.FC<RecentAlertsCardProps> = ({
   return (
     <motion.div variants={itemVariants} initial="hidden" animate="visible">
       <Card className="rounded-2xl shadow-sm h-full flex flex-col">
-        <CardHeader className="pb-3 flex-shrink-0">
+        <CardHeader className="pb-4 px-6 pt-6 flex-shrink-0">
           <CardTitle className="text-base sm:text-lg font-medium flex items-center gap-2 flex-wrap">
             <FaBell className="text-yellow-600 flex-shrink-0" />
             <span>Recent Alerts</span>
@@ -257,7 +257,7 @@ export const RecentAlertsCard: React.FC<RecentAlertsCardProps> = ({
           <p className="text-xs sm:text-sm text-gray-500">System notifications and warnings</p>
         </CardHeader>
 
-        <CardContent className="flex-1 overflow-hidden">
+        <CardContent className="flex-1 overflow-hidden px-6 pb-6">
           {alerts.length > 0 ? (
             <motion.div
               variants={containerVariants}

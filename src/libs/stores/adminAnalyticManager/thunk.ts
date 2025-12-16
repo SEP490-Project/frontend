@@ -67,3 +67,16 @@ export const adminUserOverview = createAsyncThunk(
     }
   },
 );
+
+export const adminSystemOverview = createAsyncThunk(
+  "/system-overview",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await manageAdminAnalytic.getAdminSystemOverview();
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Thất bại");
+    }
+  },
+);

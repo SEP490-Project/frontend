@@ -6,6 +6,7 @@ import {
   adminRevenue,
   adminUserGrowth,
   adminUserOverview,
+  adminSystemOverview,
 } from "./thunk";
 
 interface stateType {
@@ -13,12 +14,14 @@ interface stateType {
   loadingRevenue: boolean;
   loadingUserGrowth: boolean;
   loadingUserOverview: boolean;
+  loadingSystemOverview: boolean;
   campaigns: any;
   contracts: any;
   health: any;
   revenue: any;
   userGrowth: any;
   userOverview: any;
+  systemOverview: any;
 }
 
 const initialState: stateType = {
@@ -26,12 +29,14 @@ const initialState: stateType = {
   loadingRevenue: false,
   loadingUserGrowth: false,
   loadingUserOverview: false,
+  loadingSystemOverview: false,
   campaigns: null,
   contracts: null,
   health: null,
   revenue: null,
   userGrowth: null,
   userOverview: null,
+  systemOverview: null,
 };
 
 export const manageAdminAnalyticSlice = createSlice({
@@ -104,6 +109,17 @@ export const manageAdminAnalyticSlice = createSlice({
       })
       .addCase(adminUserOverview.rejected, (state) => {
         state.loadingUserOverview = false;
+      })
+
+      .addCase(adminSystemOverview.pending, (state) => {
+        state.loadingSystemOverview = true;
+      })
+      .addCase(adminSystemOverview.fulfilled, (state, action) => {
+        state.loadingSystemOverview = false;
+        state.systemOverview = action.payload.data;
+      })
+      .addCase(adminSystemOverview.rejected, (state) => {
+        state.loadingSystemOverview = false;
       });
   },
 });

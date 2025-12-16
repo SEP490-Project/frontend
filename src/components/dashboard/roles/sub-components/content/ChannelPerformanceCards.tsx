@@ -16,7 +16,7 @@ interface ChannelPerformanceCardsProps {
 // Skeleton component
 export const ChannelPerformanceCardsSkeleton: React.FC = () => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
       {[...Array(3)].map((_, i) => (
         <Card key={i} className="rounded-2xl shadow-sm">
           <CardHeader className="pb-4">
@@ -78,7 +78,7 @@ export const ChannelPerformanceCards: React.FC<ChannelPerformanceCardsProps> = (
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="grid grid-cols-1 md:grid-cols-3 gap-4"
+      className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"
     >
       {channelMetrics.map((channel, index) => {
         const reachGrowth = getGrowthIndicator(
@@ -97,7 +97,7 @@ export const ChannelPerformanceCards: React.FC<ChannelPerformanceCardsProps> = (
             className={onChannelClick ? "cursor-pointer" : ""}
           >
             <Card className="rounded-2xl shadow-sm h-full hover:shadow-md transition-shadow duration-200 group">
-              <CardHeader className="pb-4">
+              <CardHeader className="pb-4 px-6 pt-6">
                 <CardTitle className="text-base font-semibold flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     {getChannelIcon(channel.channel_code)}
@@ -112,7 +112,7 @@ export const ChannelPerformanceCards: React.FC<ChannelPerformanceCardsProps> = (
                 </CardTitle>
                 <p className="text-sm text-gray-500 mt-1">{channel.post_count} posts this period</p>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-5 px-6 pb-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-xs text-gray-500 mb-1">Reach</p>

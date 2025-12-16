@@ -18,11 +18,11 @@ interface TopContentCardProps {
 export const TopContentCardSkeleton: React.FC = () => {
   return (
     <Card className="rounded-2xl shadow-sm">
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-4 px-6 pt-6">
         <Skeleton className="h-6 w-40 mb-1" />
         <Skeleton className="h-4 w-36" />
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-6 pb-6">
         <div className="space-y-3">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
@@ -58,11 +58,11 @@ export const TopContentCard: React.FC<TopContentCardProps> = ({
   return (
     <motion.div variants={itemVariants} initial="hidden" animate="visible">
       <Card className="rounded-2xl shadow-sm">
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-4 px-6 pt-6">
           <CardTitle className="text-lg font-medium">Top Performing Content</CardTitle>
           <p className="text-sm text-gray-500">Best performance this period</p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-6 pb-6">
           {topContent.length > 0 ? (
             <motion.div
               variants={containerVariants}

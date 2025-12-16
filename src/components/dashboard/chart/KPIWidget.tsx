@@ -3,7 +3,6 @@ import { ArrowUpRight, ArrowDownRight, HelpCircle } from "lucide-react";
 import { useRef, useEffect } from "react";
 import { convertNumberToCurrency } from "@/libs/helper/helper";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { HelpTooltip } from "@/components/ui/help-tooltip";
 
 interface KPIData {
   value: string | number;
@@ -70,10 +69,6 @@ function KPIWidget({
             </Tooltip>
           )}
         </div>
-        <CardTitle className="text-base font-medium text-gray-500 flex items-center gap-1.5">
-          {title}
-          {tooltip && <HelpTooltip>{tooltip}</HelpTooltip>}
-        </CardTitle>
         {icon && (
           <div
             className={`w-12 h-12 flex items-center justify-center rounded-lg ${iconBg} ${iconColor}`}

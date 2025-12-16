@@ -113,6 +113,19 @@ const createVariantImageThunk = createAsyncThunk(
   },
 );
 
+const deleteVariantImageThunk = createAsyncThunk(
+  "products/deleteVariantImage",
+  async (imageId: string, { rejectWithValue }) => {
+    try {
+      const response = await manageProduct.deleteVariantImage(imageId);
+      return response.data;
+    } catch (error: AxiosError | unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Failed to delete variant image");
+    }
+  },
+);
+
 const updateProductStateThunk = createAsyncThunk(
   "products/updateState",
   async ({ productId, status }: { productId: string; status: string }, { rejectWithValue }) => {
@@ -240,4 +253,5 @@ export {
   updateProductVariantThunk,
   updateLimitedProductVariantThunk,
   openEarlyPreorderProductDeliveryThunk,
+  deleteVariantImageThunk,
 };

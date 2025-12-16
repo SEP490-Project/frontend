@@ -648,7 +648,15 @@ const ProductDetail: React.FC = () => {
 
       <div className="border-gray-200 absolute min-w-full bottom-0 left-0 bg-white min-h-fit border-t flex justify-end items-center px-4 py-2 gap-2">
         <div className="space-x-2">
-          <Button variant={"outline"} size={"sm"} onClick={() => navigate("/manage/sale/product")}>
+          <Button
+            variant={"outline"}
+            size={"sm"}
+            onClick={() =>
+              productDetail?.data.type === "STANDARD"
+                ? navigate("/manage/sale/product")
+                : navigate("/manage/sale/product/limited")
+            }
+          >
             Back To Products
           </Button>
           {/* <Button size={"sm"} onClick={() => navigate(`/manage/sale/product/${product?.id}/edit`)}>Edit Product</Button> */}

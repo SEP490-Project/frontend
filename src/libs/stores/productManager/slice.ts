@@ -14,6 +14,8 @@ import {
   updateProductVariantThunk,
   updateLimitedProductVariantThunk,
   openEarlyPreorderProductDeliveryThunk,
+  deleteVariantImageThunk,
+  createVariantImageThunk,
 } from "./thunk";
 import { setItem } from "@/libs/local-storage";
 import { toast } from "sonner";
@@ -217,6 +219,34 @@ const productManagerSlice = createSlice({
       .addCase(openEarlyPreorderProductDeliveryThunk.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message || "Failed to open early preorder product delivery";
+        toast.error(state.error);
+      })
+      .addCase(deleteVariantImageThunk.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(deleteVariantImageThunk.fulfilled, (state) => {
+        state.isLoading = false;
+        state.error = null;
+        toast.success("Variant image deleted successfully");
+      })
+      .addCase(deleteVariantImageThunk.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || "Failed to delete variant image";
+        toast.error(state.error);
+      })
+      .addCase(createVariantImageThunk.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(createVariantImageThunk.fulfilled, (state) => {
+        state.isLoading = false;
+        state.error = null;
+        toast.success("Variant image uploaded successfully");
+      })
+      .addCase(createVariantImageThunk.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || "Failed to upload variant image";
         toast.error(state.error);
       });
   },

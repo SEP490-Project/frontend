@@ -26,6 +26,7 @@ export interface Task {
   updated_by_name?: string;
   content_ids?: string[];
   product_ids?: any[];
+  product_id?: string;
   child_status?: string;
 }
 

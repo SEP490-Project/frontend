@@ -5,7 +5,6 @@ import {
   Calendar,
   Info,
   Star,
-  DollarSign,
   FileText,
   Clock,
   ShoppingCart,
@@ -26,6 +25,9 @@ import {
   updateProductVisibilityThunk,
 } from "@/libs/stores/productManager/thunk";
 import { useProduct } from "@/libs/hooks/useProduct";
+import { convertNumberToCurrency, formatDate } from "@/libs/helper/helper";
+import { FaMoneyBill } from "react-icons/fa6";
+import type { LimitedProductData, ProductAttribute, ProductVariant } from "@/libs/types/product";
 
 const BrandProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -59,7 +61,7 @@ const BrandProductDetail: React.FC = () => {
         updateProductVisibilityThunk({ productId: product.id, isActive: status === "ACTIVED" }),
       );
     }
-    await dispatch(getProductDetailThunk(product.id));
+    navigate("/manage/brand/product-approval");
   };
 
   if (isLoading) {
@@ -99,6 +101,16 @@ const BrandProductDetail: React.FC = () => {
       .replace(/\b\w/g, (l) => l.toUpperCase());
   };
 
+  const calculateTotalStock = () => {
+    if (!isLimited) return "N/A";
+    let totalStock = 0;
+    (product as LimitedProductData).variants?.forEach((variant) => {
+      if (!variant.current_stock) return;
+      totalStock += variant.current_stock;
+    });
+    return totalStock;
+  };
+
   const getDispenserTypeLabel = (type: string) => {
     return type
       .replace(/_/g, " ")
@@ -122,6 +134,122 @@ const BrandProductDetail: React.FC = () => {
 
       <div className="lg:col-span-2">
         <div className="bg-white rounded-lg shadow mb-3">
+          {isLimited && (product as LimitedProductData).concept && (
+            <div className="p-6">
+              <h2 className="flex items-center gap-2 text-lg font-semibold mb-4">
+                <Star className="h-5 w-5" />
+                Concept Information
+              </h2>
+              <div className="space-y-4">
+                <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg border border-purple-200">
+                  <p className="text-sm text-purple-700 mb-1">Concept Name</p>
+                  <p className="text-xl font-bold text-purple-900">
+                    {(product as LimitedProductData).concept?.name || "N/A"}
+                  </p>
+                </div>
+
+                {(product as LimitedProductData).concept?.description && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-500 mb-2">Description</p>
+                    <p className="text-gray-900">
+                      {(product as LimitedProductData).concept?.description}
+                    </p>
+                  </div>
+                )}
+
+                <div className="grid md:grid-cols-2 grid-cols-1 gap-4">
+                  {(product as LimitedProductData).concept?.status && (
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-500 mb-2">Status</p>
+                      <Badge
+                        className={
+                          (product as LimitedProductData).concept?.status === "ACTIVE"
+                            ? "bg-green-100 text-green-800 border border-green-200"
+                            : "bg-gray-100 text-gray-800 border border-gray-200"
+                        }
+                      >
+                        {(product as LimitedProductData).concept?.status}
+                      </Badge>
+                    </div>
+                  )}
+
+                  {(product as LimitedProductData).concept?.start_date && (
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-500 mb-2">Concept Start Date</p>
+                      <p className="font-semibold text-gray-900">
+                        {new Date(
+                          (product as LimitedProductData).concept?.start_date || "",
+                        ).toLocaleDateString()}
+                      </p>
+                    </div>
+                  )}
+
+                  {(product as LimitedProductData).concept?.end_date && (
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-500 mb-2">Concept End Date</p>
+                      <p className="font-semibold text-gray-900">
+                        {new Date(
+                          (product as LimitedProductData).concept?.end_date || "",
+                        ).toLocaleDateString()}
+                      </p>
+                    </div>
+                  )}
+
+                  {(product as LimitedProductData).concept?.created_at && (
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-500 mb-2">Created At</p>
+                      <p className="font-semibold text-gray-900">
+                        {formatDate((product as LimitedProductData).concept?.created_at || "")}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {(product as LimitedProductData).concept?.video_thumbnail && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-500 mb-2">Concept Video</p>
+                    <video
+                      controls
+                      className="w-full rounded-lg border border-gray-200"
+                      style={{ maxHeight: "400px" }}
+                    >
+                      <source
+                        src={(product as LimitedProductData).concept?.video_thumbnail}
+                        type="video/mp4"
+                      />
+                      Your browser does not support the video tag.
+                    </video>
+                  </div>
+                )}
+
+                {(product as LimitedProductData).concept?.banner_url && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-500 mb-2">Concept Banners</p>
+                    <div className="grid md:grid-cols-3 grid-cols-1 gap-4">
+                      {(product as LimitedProductData).concept?.banner_url
+                        .split(",")
+                        .map((url: string, index: number) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={url.trim()}
+                              alt={`Concept Banner ${index + 1}`}
+                              className="w-full h-48 object-cover rounded-lg border border-gray-200 hover:opacity-90 transition-opacity cursor-pointer"
+                              onClick={() => window.open(url.trim(), "_blank")}
+                            />
+                            <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-10 transition-all rounded-lg flex items-center justify-center">
+                              <p className="text-white opacity-0 group-hover:opacity-100 text-sm font-medium">
+                                Click to view full size
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="p-6">
             <h2 className="flex items-center gap-2 text-lg font-semibold mb-4">
               <Info className="h-5 w-5" />
@@ -149,19 +277,6 @@ const BrandProductDetail: React.FC = () => {
                       }
                     >
                       {product.is_active ? "Active" : "Inactive"}
-                    </Badge>
-                    <Badge
-                      className={
-                        product.status === "SUBMITTED"
-                          ? "bg-yellow-100 text-yellow-800 border border-yellow-200"
-                          : product.status === "APPROVED"
-                            ? "bg-green-100 text-green-800 border border-green-200"
-                            : product.status === "REJECTED" || product.status === "REVISION"
-                              ? "bg-purple-100 text-purple-800 border border-purple-200"
-                              : "bg-gray-100 text-gray-800 border border-gray-200"
-                      }
-                    >
-                      {product.status}
                     </Badge>
                   </div>
                 </div>
@@ -202,29 +317,29 @@ const BrandProductDetail: React.FC = () => {
                     Created At
                   </p>
                   <p className="font-semibold text-gray-900 text-sm">
-                    {product.created_at ? new Date(product.created_at).toLocaleString() : "N/A"}
+                    {formatDate(product.created_at.toString())}
                   </p>
                 </div>
               </div>
             </div>
           </div>
+
           {isLimited && (
-            <div className="px-6 pb-6">
+            <div className="p-6">
               <h2 className="flex items-center gap-2 text-lg font-semibold mb-4">
                 <Info className="h-5 w-5" />
                 Additional Information
               </h2>
-              <div className="grid md:grid-cols-2 grid-cols-1 gap-2">
+              <div className="grid md:grid-cols-2 grid-cols-1 gap-4">
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-500 mb-2">Max Stock</p>
-                  <p className="font-semibold text-gray-900">
-                    {isLimited ? product.limited_product?.max_stock || "N/A" : "N/A"} items
-                  </p>
+                  <p className="text-sm text-gray-500 mb-2">Stock</p>
+                  <p className="font-semibold text-gray-900">{calculateTotalStock()} items</p>
                 </div>
-                <div className="bg-gray-50 p-4 rounded-lg mt-4 md:mt-0">
-                  <p className="text-sm text-gray-500 mb-2">Bought Limit</p>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-500 mb-2">Achivable Limit</p>
                   <p className="font-semibold text-gray-900">
-                    {isLimited ? product.limited_product?.bought_limit || "N/A" : "N/A"}
+                    {(product as LimitedProductData).limited_product?.achievable_quantity || "N/A"}{" "}
+                    items per user
                   </p>
                 </div>
               </div>
@@ -232,43 +347,29 @@ const BrandProductDetail: React.FC = () => {
                 <div className="bg-gray-50 p-4 rounded-lg mt-4">
                   <p className="text-sm text-gray-500 mb-2">Premiere Date</p>
                   <p className="font-semibold text-gray-900">
-                    {isLimited ? product.limited_product?.premiere_date || "N/A" : "N/A"}
+                    {formatDate(
+                      (product as LimitedProductData).limited_product?.premiere_date as string,
+                    )}
                   </p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg mt-4">
                   <p className="text-sm text-gray-500 mb-2">Start Date</p>
                   <p className="font-semibold text-gray-900">
-                    {isLimited ? product.limited_product?.availability_start_date || "N/A" : "N/A"}
+                    {formatDate(
+                      (product as LimitedProductData).limited_product
+                        ?.availability_start_date as string,
+                    )}
                   </p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg mt-4">
                   <p className="text-sm text-gray-500 mb-2">End Date</p>
                   <p className="font-semibold text-gray-900">
-                    {isLimited ? product.limited_product?.availability_end_date || "N/A" : "N/A"}
+                    {formatDate(
+                      (product as LimitedProductData).limited_product
+                        ?.availability_end_date as string,
+                    )}
                   </p>
                 </div>
-              </div>
-            </div>
-          )}
-          {isLimited && product.concept && (
-            <div className="px-6 pb-6">
-              <h2 className="flex items-center gap-2 text-lg font-semibold mb-4">
-                <Star className="h-5 w-5" />
-                Concept Information
-              </h2>
-              <div className="space-y-4">
-                <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg border border-purple-200">
-                  <p className="text-sm text-purple-700 mb-1">Concept Name</p>
-                  <p className="text-xl font-bold text-purple-900">
-                    {product.concept?.name || "N/A"}
-                  </p>
-                </div>
-                {product.concept?.description && (
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-500 mb-2">Description</p>
-                    <p className="text-gray-900">{product.concept?.description}</p>
-                  </div>
-                )}
               </div>
             </div>
           )}
@@ -291,6 +392,7 @@ const BrandProductDetail: React.FC = () => {
                   className="w-full h-full object-contain"
                 />
               </div>
+
               {Array.isArray(displayImages) && displayImages.length > 1 && (
                 <div className="grid grid-cols-4 gap-2 w-full">
                   {displayImages.map((img: any, index: number) => (
@@ -315,6 +417,7 @@ const BrandProductDetail: React.FC = () => {
             </div>
           </div>
         </div>
+
         <div className="lg:col-span-2 border-l border-gray-200">
           {product.variants && product.variants.length > 0 && (
             <div>
@@ -325,7 +428,7 @@ const BrandProductDetail: React.FC = () => {
                 </h2>
                 <Tabs defaultValue={selectedVariant?.id || product.variants[0]?.id}>
                   <TabsList className="w-full flex-wrap h-auto gap-2">
-                    {product.variants.map((variant: any) => (
+                    {product.variants.map((variant: ProductVariant) => (
                       <TabsTrigger
                         key={variant.id}
                         value={variant.id || ""}
@@ -344,19 +447,21 @@ const BrandProductDetail: React.FC = () => {
                       </TabsTrigger>
                     ))}
                   </TabsList>
-                  {product.variants.map((variant: any) => (
+
+                  {product.variants.map((variant: ProductVariant) => (
                     <TabsContent key={variant.id} value={variant.id || ""} className="mt-4">
                       <div className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                           <div className="p-4 rounded-lg border border-gray-200">
                             <p className="text-sm text-gray-600 mb-1 flex items-center gap-1">
-                              <DollarSign className="h-4 w-4" />
+                              <FaMoneyBill className="h-4 w-4" />
                               Price
                             </p>
                             <p className="font-semibold">
-                              {variant.price?.toLocaleString() || "N/A"}đ
+                              {convertNumberToCurrency(variant.price?.toString() || "0")}
                             </p>
                           </div>
+
                           <div className="p-4 rounded-lg border border-gray-200">
                             <p className="text-sm text-gray-600 mb-1 flex items-center gap-1">
                               <Droplet className="h-4 w-4" />
@@ -366,6 +471,7 @@ const BrandProductDetail: React.FC = () => {
                               {variant.capacity || "N/A"} {variant.capacity_unit || ""}
                             </p>
                           </div>
+
                           <div className="p-4 rounded-lg border border-gray-200">
                             <p className="text-sm text-gray-600 mb-1 flex items-center gap-1">
                               <Box className="h-4 w-4" />
@@ -375,6 +481,7 @@ const BrandProductDetail: React.FC = () => {
                               {getContainerTypeLabel(variant.container_type)}
                             </p>
                           </div>
+
                           <div className="p-4 rounded-lg border border-gray-200">
                             <p className="text-sm text-gray-600 mb-1 flex items-center gap-1">
                               <Zap className="h-4 w-4" />
@@ -384,6 +491,7 @@ const BrandProductDetail: React.FC = () => {
                               {getDispenserTypeLabel(variant.dispenser_type)}
                             </p>
                           </div>
+
                           <div className="p-4 rounded-lg border border-gray-200">
                             <p className="text-sm text-gray-600 mb-1 flex items-center gap-1">
                               <Weight className="h-4 w-4" />
@@ -391,6 +499,7 @@ const BrandProductDetail: React.FC = () => {
                             </p>
                             <p className="font-semibold text-gray-900">{variant.weight} g</p>
                           </div>
+
                           <div className="p-4 rounded-lg border border-gray-200">
                             <p className="text-sm text-gray-600 mb-1 flex items-center gap-1">
                               <MdHeight className="h-4 w-4" />
@@ -398,6 +507,7 @@ const BrandProductDetail: React.FC = () => {
                             </p>
                             <p className="font-semibold text-gray-900">{variant.height} cm</p>
                           </div>
+
                           <div className="p-4 rounded-lg border border-gray-200">
                             <p className="text-sm text-gray-600 mb-1 flex items-center gap-1">
                               <MdWidthNormal className="h-4 w-4" />
@@ -405,6 +515,7 @@ const BrandProductDetail: React.FC = () => {
                             </p>
                             <p className="font-semibold text-gray-900">{variant.width} cm</p>
                           </div>
+
                           <div className="p-4 rounded-lg border border-gray-200">
                             <p className="text-sm text-gray-600 mb-1 flex items-center gap-1">
                               <RulerDimensionLine className="h-4 w-4" />
@@ -412,6 +523,7 @@ const BrandProductDetail: React.FC = () => {
                             </p>
                             <p className="font-semibold text-gray-900">{variant.length} cm</p>
                           </div>
+
                           {variant.manufacturing_date && (
                             <div className="p-4 rounded-lg border border-gray-200">
                               <p className="text-sm text-gray-600 mb-1 flex items-center gap-1">
@@ -419,11 +531,11 @@ const BrandProductDetail: React.FC = () => {
                                 Manufactured Date
                               </p>
                               <p className="font-semibold text-gray-900">
-                                {new Date(variant?.manufacturing_date).toLocaleDateString() ||
-                                  "N/A"}
+                                {formatDate(variant.manufacturing_date) || "N/A"}
                               </p>
                             </div>
                           )}
+
                           {variant.expiry_date && (
                             <div className="p-4 rounded-lg border border-gray-200">
                               <p className="text-sm text-gray-600 mb-1 flex items-center gap-1">
@@ -431,11 +543,12 @@ const BrandProductDetail: React.FC = () => {
                                 Expiry Date
                               </p>
                               <p className=" font-semibold text-gray-900">
-                                {new Date(variant.expiry_date).toLocaleDateString()}
+                                {formatDate(variant.expiry_date)}
                               </p>
                             </div>
                           )}
-                          {selectedVariant?.current_stock && isLimited && (
+
+                          {isLimited && (
                             <div className="p-4 rounded-lg border border-orange-200 bg-yellow-50">
                               <p className="text-sm text-orange-700 font-medium mb-1 flex items-center gap-1">
                                 <ShoppingCart className="h-4 w-4" />
@@ -447,7 +560,8 @@ const BrandProductDetail: React.FC = () => {
                             </div>
                           )}
                         </div>
-                        {selectedVariant?.current_stock && isLimited && (
+
+                        {isLimited && (
                           <div className="p-4 rounded-lg border border-orange-200 bg-yellow-50">
                             <p className="text-sm text-orange-700 font-medium mb-2 flex items-center gap-1">
                               <span>
@@ -458,6 +572,7 @@ const BrandProductDetail: React.FC = () => {
                             <p className="text-gray-900">{variant.story || "Test"}</p>
                           </div>
                         )}
+
                         {variant.description && (
                           <div className="p-4 rounded-lg border border-gray-200">
                             <p className="text-sm text-gray-600 font-medium mb-2 flex items-center gap-1">
@@ -467,6 +582,7 @@ const BrandProductDetail: React.FC = () => {
                             <p className="text-gray-900">{variant.description}</p>
                           </div>
                         )}
+
                         {variant.instructions && (
                           <div className="p-4 rounded-lg border border-gray-200">
                             <p className="text-sm text-gray-600 font-medium mb-2">
@@ -475,12 +591,14 @@ const BrandProductDetail: React.FC = () => {
                             <p className="text-gray-900">{variant.instructions}</p>
                           </div>
                         )}
+
                         {variant.uses && (
                           <div className="p-4 rounded-lg border border-gray-200">
                             <p className="text-sm text-gray-600 font-medium mb-2">Uses</p>
                             <p className="text-gray-900">{variant.uses}</p>
                           </div>
                         )}
+
                         {variant.attributes && variant.attributes.length > 0 && (
                           <div>
                             <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
@@ -488,7 +606,7 @@ const BrandProductDetail: React.FC = () => {
                               Attributes
                             </h4>
                             <div className="flex gap-2">
-                              {variant.attributes.map((attr: any, idx: number) => (
+                              {variant.attributes.map((attr: ProductAttribute, idx: number) => (
                                 <div key={idx} className="rounded-lg border p-2 border-gray-200">
                                   <div className="flex justify-between items-start gap-2">
                                     {attr.ingredient && (

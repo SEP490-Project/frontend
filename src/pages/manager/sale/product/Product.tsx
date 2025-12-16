@@ -55,7 +55,7 @@ const Product: React.FC<{ type: "STANDARD" | "LIMITED" }> = ({ type }) => {
   const error = useSelector((state: any) => state?.manageProduct?.error);
   const [params, setParams] = useState<ProductParams>({
     page: 1,
-    limit: 5,
+    limit: 10,
     type: type || " ",
   });
 

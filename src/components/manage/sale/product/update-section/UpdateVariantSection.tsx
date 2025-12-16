@@ -30,14 +30,19 @@ import { Controller, useForm } from "react-hook-form";
 import { useSelector } from "react-redux";
 import { useAppDispatch, type RootState } from "@/libs/stores";
 import { Badge } from "@/components/ui/badge";
-import { Package } from "lucide-react";
+import { Package, Upload, Trash2, ImagePlus } from "lucide-react";
 import { convertNumberToCurrency } from "@/libs/helper/helper";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { FaMoneyBill } from "react-icons/fa6";
 import type { VariantWithImage, ProductVariant } from "@/libs/types/product";
 import { VariationForm } from "../form/VariationForm";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { productVariantSchema } from "@/libs/validation/productValidation";
+import {
+  deleteVariantImageThunk,
+  createVariantImageThunk,
+} from "@/libs/stores/productManager/thunk";
+import { getProductDetailThunk } from "@/libs/stores/productManager/thunk";
 
 interface UpdateVariantSectionProps {
   form: UseFormReturn<any>;
@@ -56,6 +61,8 @@ export const UpdateVariantSection = ({
   const variants = productDetail?.data?.variants || [];
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const newVariantForm = useForm<ProductVariant>({
     resolver: yupResolver(productVariantSchema),
@@ -131,6 +138,57 @@ export const UpdateVariantSection = ({
     }
   };
 
+  const handleDeleteImage = async (imageId: string) => {
+    try {
+      await dispatch(deleteVariantImageThunk(imageId)).unwrap();
+      if (productDetail?.data?.id) {
+        await dispatch(getProductDetailThunk(productDetail.data.id));
+      }
+    } catch (error) {
+      console.error("Failed to delete image:", error);
+    }
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0 || !selectedVariantId) return;
+
+    const currentVariant = variants.find((v) => v.id === selectedVariantId);
+    if (!currentVariant) return;
+
+    setUploadingImage(true);
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const formData = new FormData();
+        formData.append("file", files[i], files[i].name);
+        formData.append("is_primary", i === 0 ? "true" : "false");
+        formData.append(
+          "alt_text",
+          currentVariant.name ? `${currentVariant.name} image` : "Product variant image",
+        );
+
+        await dispatch(
+          createVariantImageThunk({
+            variantId: selectedVariantId,
+            payload: formData,
+          }),
+        ).unwrap();
+      }
+
+      if (productDetail?.data?.id) {
+        await dispatch(getProductDetailThunk(productDetail.data.id));
+      }
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    } catch (error) {
+      console.error("Failed to upload images:", error);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   return (
     <Card className="mb-10">
       <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -181,10 +239,81 @@ export const UpdateVariantSection = ({
                   {/* Variant Update Form */}
                   {selectedVariantId && (
                     <form onSubmit={handleSubmit(handleFormSubmit, onError)} className="space-y-6">
+                      {/* Variant Images */}
+                      <div className="border-b pb-6">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-semibold">Variant Images</h3>
+                          <div>
+                            <input
+                              ref={fileInputRef}
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              onChange={handleImageUpload}
+                              className="hidden"
+                              id="image-upload"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => fileInputRef.current?.click()}
+                              disabled={uploadingImage}
+                              className="gap-2"
+                            >
+                              <ImagePlus className="w-4 h-4" />
+                              {uploadingImage ? "Uploading..." : "Add Images"}
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          {(() => {
+                            const currentVariant = variants.find(
+                              (v) => v.id === selectedVariantId,
+                            ) as VariantWithImage;
+                            const images = currentVariant?.images || [];
+
+                            if (images.length === 0) {
+                              return (
+                                <div className="col-span-full text-center py-8 text-gray-400 border-2 border-dashed rounded-lg">
+                                  <Upload className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                                  <p>No images uploaded yet</p>
+                                  <p className="text-sm">Click "Add Images" to upload</p>
+                                </div>
+                              );
+                            }
+
+                            return images.map((image, idx) => (
+                              <div key={image.id} className="relative group">
+                                <img
+                                  src={image.image_url}
+                                  alt={image.alt_text || `Variant image ${idx + 1}`}
+                                  className="w-full h-32 object-cover rounded-lg border"
+                                />
+                                {image.is_primary && (
+                                  <Badge className="absolute top-2 left-2 bg-blue-500 text-white">
+                                    Primary
+                                  </Badge>
+                                )}
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  size="icon"
+                                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+                                  onClick={() => handleDeleteImage(image.id)}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            ));
+                          })()}
+                        </div>
+                      </div>
+
                       {/* Basic Information */}
                       <div className="border-b pb-6">
                         <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-4">
                           {/* Price */}
                           <div className="space-y-2">
                             <Label htmlFor="price">

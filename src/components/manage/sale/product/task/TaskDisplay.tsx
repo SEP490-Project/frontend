@@ -153,7 +153,7 @@ export const TaskList = () => {
       selectedTask?.child_status?.toLowerCase() === "draft" ||
       selectedTask?.child_status?.toLowerCase() === "revision"
     ) {
-      navigate(`/manage/sale/product/${selectedTask.product_ids?.[0]?.id}/edit`, {
+      navigate(`/manage/sale/product/${selectedTask.product_id}/edit`, {
         state: { formType: "EDIT", productType: "LIMITED", task: selectedTask },
       });
       return;

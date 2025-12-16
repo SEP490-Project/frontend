@@ -116,14 +116,14 @@ const BasicInfoStep = () => {
           description: productData.description || null,
           task_id: (productData as any).task_id || "",
           limited_attribute: {
-            achievable_quantity: (productData as any).limited_attribute?.achievable_quantity || 1,
-            premiere_date: (productData as any).limited_attribute?.premiere_date || "",
+            achievable_quantity: (productData as any).limited_product?.achievable_quantity || 1,
+            premiere_date: (productData as any).limited_product?.premiere_date || "",
             availability_start_date:
-              (productData as any).limited_attribute?.availability_start_date || "",
+              (productData as any).limited_product?.availability_start_date || "",
             availability_end_date:
-              (productData as any).limited_attribute?.availability_end_date || "",
-            is_free_shipping: (productData as any).limited_attribute?.is_free_shipping ?? true,
-            concept_id: (productData as any).limited_attribute?.concept_id || undefined,
+              (productData as any).limited_product?.availability_end_date || "",
+            is_free_shipping: (productData as any).limited_product?.is_free_shipping ?? true,
+            concept_id: (productData as any).limited_product?.concept_id || undefined,
           },
         });
       } else {

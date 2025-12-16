@@ -7,6 +7,8 @@ const manageCategories = {
   deleteCategory: (categoryId: string) => api.delete(`categories/${categoryId}`),
   assignParentCategory: (categoryId: string, parentCategoryId: string) =>
     api.patch(`categories/${categoryId}/parent?parent_id=${parentCategoryId}`),
+  updateCategory: (categoryId: string, data: createCategoryPayload) =>
+    api.patch(`categories/${categoryId}`, data),
 };
 
 export default manageCategories;

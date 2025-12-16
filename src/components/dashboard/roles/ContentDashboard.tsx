@@ -193,7 +193,7 @@ const ContentDashboard: React.FC = () => {
 
   return (
     <motion.div
-      className="p-6 w-full flex flex-col gap-6"
+      className="p-4 sm:p-6 lg:p-8 w-full flex flex-col gap-8"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -213,32 +213,39 @@ const ContentDashboard: React.FC = () => {
         onSync={handleSync}
       />
 
+      {/* KPI Cards Section - Full Width */}
+      <motion.section variants={slideInLeftVariants} initial="hidden" animate="visible">
+        <KPICards quickStats={quickStats} period={period} isLoading={isLoading} />
+      </motion.section>
+
+      {/* Quick Stats Row - Posting Frequency & Pending Content */}
+      <motion.section
+        className="grid grid-cols-1 xl:grid-cols-2 gap-6"
+        variants={slideInLeftVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <PostingFrequencyCard
+          postingFrequency={quickStats?.posting_frequency}
+          isLoading={isLoading}
+        />
+        <PendingContentCard
+          pendingCount={quickStats?.pending_content || 0}
+          compareLabel={period?.compare_label || ""}
+          isLoading={isLoading}
+        />
+      </motion.section>
+
       {/* Main Grid Layout */}
-      <div className="grid grid-cols-12 gap-6">
-        {/* Left Column - Main Content */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+        {/* Left Column - Charts and Performance */}
         <motion.div
-          className="col-span-12 lg:col-span-8 space-y-6"
+          className="xl:col-span-9 space-y-8"
           variants={slideInLeftVariants}
           initial="hidden"
           animate="visible"
         >
-          {/* KPI Cards */}
-          <KPICards quickStats={quickStats} period={period} isLoading={isLoading} />
-
-          {/* Posting Frequency & Pending Content Row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <PostingFrequencyCard
-              postingFrequency={quickStats?.posting_frequency}
-              isLoading={isLoading}
-            />
-            <PendingContentCard
-              pendingCount={quickStats?.pending_content || 0}
-              compareLabel={period?.compare_label || ""}
-              isLoading={isLoading}
-            />
-          </div>
-
-          {/* Charts Row */}
+          {/* Charts Section */}
           <ContentChartsSection
             channelDistribution={channelDistribution}
             trendData={trendData}
@@ -255,7 +262,7 @@ const ContentDashboard: React.FC = () => {
 
         {/* Right Column - Sidebar */}
         <motion.div
-          className="col-span-12 lg:col-span-4 space-y-6"
+          className="xl:col-span-3 space-y-6"
           variants={slideInRightVariants}
           initial="hidden"
           animate="visible"

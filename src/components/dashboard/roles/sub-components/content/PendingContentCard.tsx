@@ -15,11 +15,11 @@ interface PendingContentCardProps {
 export const PendingContentCardSkeleton: React.FC = () => {
   return (
     <Card className="rounded-2xl shadow-sm">
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-4 px-6 pt-6">
         <Skeleton className="h-6 w-32 mb-1" />
         <Skeleton className="h-4 w-40" />
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-6 pb-6">
         <div className="flex items-center gap-4">
           <Skeleton className="w-16 h-16 rounded-full" />
           <div>
@@ -44,14 +44,14 @@ export const PendingContentCard: React.FC<PendingContentCardProps> = ({
   return (
     <motion.div variants={itemVariants} initial="hidden" animate="visible">
       <Card className="rounded-2xl shadow-sm h-full">
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-4 px-6 pt-6">
           <CardTitle className="text-lg font-medium">
             Pending Content
             <HelpTooltip>{METRIC_HELP_TEXT.PENDING_CONTENT}</HelpTooltip>
           </CardTitle>
           <p className="text-sm text-gray-500">Awaiting review or publishing</p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-6 pb-6">
           <div className="flex items-center gap-4">
             <motion.div
               className="w-16 h-16 rounded-full bg-yellow-100 flex items-center justify-center"

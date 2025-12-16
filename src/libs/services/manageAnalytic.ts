@@ -21,6 +21,7 @@ export const manageAdminAnalytic = {
   getAdminRevenue: (params: any) => api.get("/analytics/admin/revenue", { params }),
   getAdminUserGrowth: (params: any) => api.get("/analytics/admin/user-growth", { params }),
   getAdminUsersOverview: (params: any) => api.get("/analytics/admin/users", { params }),
+  getAdminSystemOverview: () => api.get("/admin/rabbitmq/overview"),
 };
 
 export const manageBrandAnalytic = {

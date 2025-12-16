@@ -16,11 +16,11 @@ interface KPICardsProps {
 // Skeleton component for KPI cards
 export const KPICardsSkeleton: React.FC = () => {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
       {[...Array(4)].map((_, i) => (
-        <div key={i} className="rounded-2xl bg-white shadow-sm p-4">
-          <div className="flex items-center justify-between mb-3">
-            <Skeleton className="h-10 w-10 rounded-full" />
+        <div key={i} className="rounded-2xl bg-white shadow-sm p-6">
+          <div className="flex items-center justify-between mb-4">
+            <Skeleton className="h-12 w-12 rounded-full" />
             <Skeleton className="h-4 w-16" />
           </div>
           <Skeleton className="h-8 w-20 mb-2" />
@@ -92,7 +92,7 @@ export const KPICards: React.FC<KPICardsProps> = ({ quickStats, period, isLoadin
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="grid grid-cols-2 md:grid-cols-4 gap-4"
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
     >
       {kpiData.map((kpi, index) => (
         <motion.div key={index} variants={itemVariants}>

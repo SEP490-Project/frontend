@@ -489,6 +489,7 @@ const BrandDashboard: React.FC = () => {
               title="Top Rating Products"
               data={topRatingProductsChartData}
               unit="★"
+              maxValue={5}
               tooltip="Products with the highest customer ratings, indicating customer satisfaction and product quality"
             />
           )}

@@ -1,3 +1,5 @@
+import { Tooltip as ShadcnTooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { HelpCircle } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -8,8 +10,6 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { Tooltip as ShadcnTooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { HelpCircle } from "lucide-react";
 
 interface Props {
   title: string;

@@ -8,31 +8,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createCategoryThunk } from "@/libs/stores/categoryManager/thunk";
+import { updateCategoryThunk } from "@/libs/stores/categoryManager/thunk";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
-import { useAppDispatch } from "@/libs/stores";
-import type { CategoryResponse } from "@/libs/types/category";
 import manageCategories from "@/libs/services/manageCategories";
+import { useAppDispatch } from "@/libs/stores";
+import type { CategoryResponse, ProductCategory } from "@/libs/types/category";
 import { AxiosError } from "axios";
 
-interface AddCategoryFormProps {
+interface EditCategoryFormProps {
+  category: ProductCategory;
   onSuccess?: () => void;
   loading?: boolean;
 }
 
-export const AddCategoryForm = ({ onSuccess, loading }: AddCategoryFormProps) => {
+export const EditCategoryForm = ({ category, onSuccess, loading }: EditCategoryFormProps) => {
   const dispatch = useAppDispatch();
-
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    parent_category_id: "",
-  });
   const [allCategories, setAllCategories] = useState<CategoryResponse>({} as CategoryResponse);
 
-  const filteredParentCategories = allCategories?.data?.filter((cat) => !cat.parent_category);
+  const [formData, setFormData] = useState({
+    name: category.name,
+    description: category.description || "",
+    parent_category_id: category.parent_category?.id || "",
+  });
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -49,6 +48,10 @@ export const AddCategoryForm = ({ onSuccess, loading }: AddCategoryFormProps) =>
 
     fetchCategories();
   }, []);
+
+  const filteredParentCategories = allCategories?.data?.filter(
+    (cat) => !cat.parent_category && cat.id !== category.id,
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,12 +74,11 @@ export const AddCategoryForm = ({ onSuccess, loading }: AddCategoryFormProps) =>
     }
 
     try {
-      await dispatch(createCategoryThunk(payload)).unwrap();
-      toast.success("Category created successfully!");
-      setFormData({ name: "", description: "", parent_category_id: "" });
+      await dispatch(updateCategoryThunk({ categoryId: category.id, data: payload })).unwrap();
+      toast.success("Category updated successfully!");
       onSuccess?.();
     } catch (error) {
-      toast.error(String(error) || "Failed to create category");
+      toast.error(String(error) || "Failed to update category");
     }
   };
 
@@ -122,7 +124,7 @@ export const AddCategoryForm = ({ onSuccess, loading }: AddCategoryFormProps) =>
         </Select>
       </div>
       <Button type="submit" className="w-full" disabled={loading}>
-        {loading ? "Creating..." : "Create Category"}
+        {loading ? "Updating..." : "Update Category"}
       </Button>
     </form>
   );

@@ -1,4 +1,5 @@
 import { AddCategoryForm } from "@/components/manage/sale/category/AddCategoryForm";
+import { EditCategoryForm } from "@/components/manage/sale/category/EditCategoryForm";
 import { AssignParentCategoryForm } from "@/components/manage/sale/category/AssignParentCategoryForm";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,7 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2 } from "lucide-react";
+import { Edit, Plus, Trash2 } from "lucide-react";
 import { FaFilter } from "react-icons/fa6";
 import { useAppDispatch } from "@/libs/stores";
 import { useSelector } from "react-redux";
@@ -43,10 +44,12 @@ const Category = () => {
     (state: RootState) => state.manageCategory,
   );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedParentFilter, setSelectedParentFilter] = useState("ALL");
   const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
+  const [categoryToEdit, setCategoryToEdit] = useState<string | null>(null);
   const [categoryToAssign, setCategoryToAssign] = useState<string | null>(null);
   const [params, setParams] = useState({ page: 1, limit: 5 });
 
@@ -95,6 +98,12 @@ const Category = () => {
     dispatch(getAllCategoriesThunk(params));
   };
 
+  const handleEditSuccess = () => {
+    setIsEditDialogOpen(false);
+    setCategoryToEdit(null);
+    dispatch(getAllCategoriesThunk(params));
+  };
+
   const handleAssignSuccess = () => {
     setIsAssignDialogOpen(false);
     setCategoryToAssign(null);
@@ -111,6 +120,11 @@ const Category = () => {
     if (!categoryToAssign || !categories?.data) return undefined;
     return categories.data.find((cat) => cat.id === categoryToAssign);
   }, [categoryToAssign, categories]);
+
+  const categoryToEditData = useMemo(() => {
+    if (!categoryToEdit || !categories?.data) return undefined;
+    return categories.data.find((cat) => cat.id === categoryToEdit);
+  }, [categoryToEdit, categories]);
 
   return (
     <div className="min-h-fit p-4 sm:p-6">
@@ -217,6 +231,17 @@ const Category = () => {
                       <Button
                         size="icon"
                         variant="ghost"
+                        className="hover:bg-yellow-100"
+                        onClick={() => {
+                          setCategoryToEdit(category.id);
+                          setIsEditDialogOpen(true);
+                        }}
+                      >
+                        <Edit className="w-4 h-4 text-yellow-500" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
                         className="hover:bg-red-100"
                         onClick={() => setCategoryToDelete(category.id)}
                       >
@@ -243,6 +268,22 @@ const Category = () => {
         <DeleteModal name={categoryToDeleteName} onDelete={handleDeleteCategory} />
       </Dialog>
 
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Category</DialogTitle>
+            <DialogDescription>Update the category information below.</DialogDescription>
+          </DialogHeader>
+          {categoryToEditData && (
+            <EditCategoryForm
+              category={categoryToEditData}
+              onSuccess={handleEditSuccess}
+              loading={loading}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -255,7 +296,6 @@ const Category = () => {
           </DialogHeader>
           <AssignParentCategoryForm
             onSuccess={handleAssignSuccess}
-            categories={categories?.data}
             loading={loading}
             currentCategory={categoryToAssignData}
           />

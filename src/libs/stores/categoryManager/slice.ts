@@ -1,5 +1,12 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { getAllCategoriesNoParamsThunk, getAllCategoriesThunk } from "./thunk";
+import {
+  getAllCategoriesNoParamsThunk,
+  getAllCategoriesThunk,
+  updateCategoryThunk,
+  assignParentCategoryThunk,
+  createCategoryThunk,
+  deleteCategoryThunk,
+} from "./thunk";
 import type { CategoryResponse } from "@/libs/types/category";
 import type { Pagination } from "@/libs/types/common";
 
@@ -36,10 +43,55 @@ const CategoryManagerSlice = createSlice({
       state.allCategories = action.payload;
       state.pagination = action.payload.pagination;
     });
-    builder.addCase(getAllCategoriesNoParamsThunk.rejected, (state) => {
-      state.loading = false;
-      state.error = null;
-    });
+    builder
+      .addCase(getAllCategoriesNoParamsThunk.rejected, (state) => {
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(updateCategoryThunk.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateCategoryThunk.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(updateCategoryThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(createCategoryThunk.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(createCategoryThunk.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(createCategoryThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(deleteCategoryThunk.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteCategoryThunk.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(deleteCategoryThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(assignParentCategoryThunk.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(assignParentCategoryThunk.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(assignParentCategoryThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      });
   },
 });
 

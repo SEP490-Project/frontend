@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePostedContent } from "@/libs/hooks/useContentPosted";
 import { useAppDispatch } from "@/libs/stores";
 import { postedContentDetail } from "@/libs/stores/contentPostedManager/thunk";
@@ -9,16 +9,24 @@ import { ArrowLeft, Loader2, Tag, Calendar, User, Clock } from "lucide-react";
 import { tiptapJsonToHtml } from "@/libs/helper/tiptapHelper";
 import type { ListContent } from "@/libs/types/content";
 import { HlsPlyrHydrator } from "@/components/hls-video-hydrator";
+import { ReactionButton } from "@/components/blog/ReactionButton";
+import { CommentSection } from "@/components/blog/CommentSection";
+import { manageEngagement } from "@/libs/services/manageEngagement";
+import type { WebsiteEngagementSummary } from "@/libs/types/engagement";
 
 const BlogDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { postedContent: content, loading } = usePostedContent();
+  const [engagementSummary, setEngagementSummary] = useState<
+    WebsiteEngagementSummary | undefined
+  >();
 
   useEffect(() => {
     if (id) {
       dispatch(postedContentDetail(id));
+      manageEngagement.getEngagementSummary(id).then(setEngagementSummary).catch(console.error);
     }
   }, [id, dispatch]);
 
@@ -168,6 +176,15 @@ const BlogDetail = () => {
                 <HlsPlyrHydrator />
               </div>
 
+              {/* Reaction Button */}
+              {id && (
+                <ReactionButton
+                  contentId={id}
+                  initialSummary={engagementSummary}
+                  onSummaryUpdate={setEngagementSummary}
+                />
+              )}
+
               {/* Additional Content Info */}
               {content.blog?.excerpt && (
                 <div className="mt-12 pt-8 border-t border-gray-100">
@@ -191,6 +208,15 @@ const BlogDetail = () => {
                     </div>
                   </div>
                 </div>
+              )}
+
+              {/* Comment Section */}
+              {id && (
+                <CommentSection
+                  contentId={id}
+                  comments={engagementSummary?.comments || []}
+                  onCommentsUpdate={setEngagementSummary}
+                />
               )}
 
               {/* Back to Blog CTA */}

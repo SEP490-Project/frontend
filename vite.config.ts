@@ -49,27 +49,4 @@ export default defineConfig({
   preview: {
     allowedHosts: true,
   },
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (!id.includes("node_modules")) return;
-
-          if (id.includes("@react-pdf") || id.includes("pdfkit") || id.includes("fontkit")) {
-            return "pdf-vendor";
-          }
-
-          if (id.includes("@tiptap") || id.includes("prosemirror")) {
-            return "editor-vendor";
-          }
-
-          if (id.includes("hls.js") || id.includes("plyr")) {
-            return "video-vendor";
-          }
-
-          return "vendor";
-        },
-      },
-    },
-  },
 });

@@ -9,7 +9,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { motion, AnimatePresence } from "framer-motion";
+import { DataSelector } from "@/components/global";
 import type { TaskListMarketing } from "@/libs/types/task";
+import type { ContractBase } from "@/libs/types/contract";
 
 const daysOfWeekShort = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -26,6 +28,17 @@ const taskTypes = [
   { name: "OTHER", label: "Other", color: "#9976ff", icon: <FaGlobe className="h-4 w-4" /> },
 ];
 
+const ContractItem = ({ contract }: { contract: ContractBase }) => (
+  <div className="flex items-center justify-between w-full p-2">
+    <div>
+      <span className="font-medium">{contract.title}</span>
+    </div>
+    <Badge variant="secondary" className="capitalize">
+      {contract.type.toLowerCase().replace("_", " ")}
+    </Badge>
+  </div>
+);
+
 interface CalendarProps {
   currentDate: Date;
   setCurrentDate: (date: Date) => void;
@@ -34,6 +47,14 @@ interface CalendarProps {
   activeFilter: string;
   onFilterChange: (type: string) => void;
   taskCounts: Record<string, number>;
+  // Contract filtering props
+  contracts: ContractBase[];
+  selectedContract: ContractBase | null;
+  onContractSelect: (contract: ContractBase | null) => void;
+  contractSearch: string;
+  onContractSearch: (search: string) => void;
+  contractLoading: boolean;
+  onContractLoadMore?: () => void;
 }
 
 function Calendar({
@@ -44,6 +65,13 @@ function Calendar({
   activeFilter,
   onFilterChange,
   taskCounts,
+  contracts,
+  selectedContract,
+  onContractSelect,
+  contractSearch,
+  onContractSearch,
+  contractLoading,
+  onContractLoadMore,
 }: CalendarProps) {
   const today = new Date();
   const year = currentDate.getFullYear();
@@ -168,7 +196,27 @@ function Calendar({
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Filter */}
+          {/* Contract Filter */}
+          <div className="w-64">
+            <DataSelector
+              data={contracts}
+              selectedId={selectedContract?.id || null}
+              onSelect={(contractId) => {
+                const contract = contracts.find((c) => c.id === contractId);
+                onContractSelect(contract || null);
+              }}
+              renderItem={(contract) => <ContractItem contract={contract} />}
+              getLabel={(contract) => contract.title}
+              title="Filter by Contract"
+              placeholder={selectedContract ? selectedContract.title : "All Contracts"}
+              onSearch={onContractSearch}
+              searchValue={contractSearch}
+              onScrollEnd={onContractLoadMore}
+              loading={contractLoading}
+            />
+          </div>
+
+          {/* Task Type Filter */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="gap-2">

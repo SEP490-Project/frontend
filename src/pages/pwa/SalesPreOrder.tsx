@@ -10,13 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   FaMagnifyingGlass as FaSearch,
@@ -29,16 +23,11 @@ import {
   FaEnvelope,
   FaCalendar as FaCalendarAlt,
   FaBox,
-  FaCheck,
-  FaXmark as FaTimes,
 } from "react-icons/fa6";
 import { Loader2 } from "lucide-react";
 import { useAppDispatch, type RootState } from "@/libs/stores";
 import { useSelector } from "react-redux";
-import {
-  getPreOrdersForSaleStaffThunk,
-  approvePreOrderThunk,
-} from "@/libs/stores/orderManager/thunk";
+import { getPreOrdersForSaleStaffThunk } from "@/libs/stores/orderManager/thunk";
 import type { PreOrderData } from "@/libs/types/pre-order";
 import type { OrderRequestQuery } from "@/libs/types/order";
 import MobilePreOrderDetail from "@/components/pwa/MobilePreOrderDetail";
@@ -64,10 +53,8 @@ const SalesPreOrder: React.FC = () => {
   });
   const [selectedPreOrder, setSelectedPreOrder] = useState<PreOrderData | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [isApproveOpen, setIsApproveOpen] = useState(false);
   const [isStatusUpdateOpen, setIsStatusUpdateOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const queryParams: OrderRequestQuery = {
@@ -107,6 +94,7 @@ const SalesPreOrder: React.FC = () => {
     const statusMap: Record<string, string> = {
       pending: "bg-sky-50 text-sky-700 border border-sky-200",
       paid: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+      pre_ordered: "bg-purple-50 text-purple-700 border border-purple-200",
       confirmed: "bg-emerald-50 text-emerald-700 border border-emerald-200",
       awaiting_pickup: "bg-sky-50 text-sky-700 border border-sky-200",
       cancelled: "bg-rose-50 text-rose-700 border border-rose-200",
@@ -124,11 +112,6 @@ const SalesPreOrder: React.FC = () => {
   const handleViewPreOrder = (preOrder: PreOrderData) => {
     setSelectedPreOrder(preOrder);
     setIsDetailOpen(true);
-  };
-
-  const handleApprovePreOrder = (preOrder: PreOrderData) => {
-    setSelectedPreOrder(preOrder);
-    setIsApproveOpen(true);
   };
 
   const handleStatusUpdate = (preOrder: PreOrderData) => {
@@ -160,35 +143,21 @@ const SalesPreOrder: React.FC = () => {
     }
   };
 
-  const confirmApprove = async () => {
-    if (!selectedPreOrder) return;
-
-    setIsSubmitting(true);
-    try {
-      await dispatch(approvePreOrderThunk({ id: selectedPreOrder.id })).unwrap();
-      toast.success("Pre-order approved successfully!");
-      setIsApproveOpen(false);
-      handleRefresh();
-    } catch (error: any) {
-      toast.error("Failed to approve pre-order", {
-        description: error?.message || "Please try again.",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handlePageChange = (newPage: number) => {
     setParams((prev) => ({ ...prev, page: newPage }));
   };
 
-  const canApprove = (preOrder: PreOrderData) => {
-    return preOrder.status.toUpperCase() === "PAID";
-  };
-
   const canUpdateStatus = (preOrder: PreOrderData) => {
     const status = preOrder.status.toUpperCase();
-    return !["PENDING", "CANCELLED", "REFUNDED", "RECEIVED", "COMPENSATED"].includes(status);
+    // Allow status updates for all states except final states
+    return ![
+      "CANCELLED",
+      "REFUNDED",
+      "RECEIVED",
+      "COMPENSATED",
+      "PRE_ORDERED",
+      "DELIVERED",
+    ].includes(status);
   };
 
   return (
@@ -242,6 +211,7 @@ const SalesPreOrder: React.FC = () => {
                     <SelectItem value=" ">All Status</SelectItem>
                     <SelectItem value="PENDING">Pending</SelectItem>
                     <SelectItem value="PAID">Paid</SelectItem>
+                    <SelectItem value="PRE_ORDERED">Pre-Ordered</SelectItem>
                     <SelectItem value="CONFIRMED">Confirmed</SelectItem>
                     <SelectItem value="AWAITING_PICKUP">Awaiting Pickup</SelectItem>
                     <SelectItem value="IN_TRANSIT">In Transit</SelectItem>
@@ -398,18 +368,6 @@ const SalesPreOrder: React.FC = () => {
                       View details
                     </Button>
 
-                    {canApprove(preOrder) && (
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="flex-1 h-9 rounded-xl text-xs bg-emerald-600 hover:bg-emerald-700"
-                        onClick={() => handleApprovePreOrder(preOrder)}
-                      >
-                        <FaCheck className="w-3 h-3 mr-2" />
-                        Approve
-                      </Button>
-                    )}
-
                     {canUpdateStatus(preOrder) && (
                       <Button
                         variant="outline"
@@ -418,7 +376,7 @@ const SalesPreOrder: React.FC = () => {
                         onClick={() => handleStatusUpdate(preOrder)}
                       >
                         <FaPen className="w-3 h-3 mr-2" />
-                        Update
+                        Update status
                       </Button>
                     )}
                   </div>
@@ -462,76 +420,6 @@ const SalesPreOrder: React.FC = () => {
           </div>
         </SheetContent>
       </Sheet>
-
-      <Dialog open={isApproveOpen} onOpenChange={setIsApproveOpen}>
-        <DialogContent className="w-[95vw] max-w-md rounded-3xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base">
-              <FaCheck className="w-5 h-5 text-emerald-600" />
-              Approve Pre-Order
-            </DialogTitle>
-            <DialogDescription className="text-xs">
-              Approving this pre-order will move it to{" "}
-              <span className="font-semibold">PRE_ORDERED</span> status.
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedPreOrder && (
-            <div className="space-y-4">
-              <Card className="border-slate-200">
-                <CardContent className="p-3">
-                  <div className="text-sm space-y-1 text-slate-700">
-                    <div>
-                      Pre-Order ID:{" "}
-                      <span className="font-mono">#{selectedPreOrder.id.slice(0, 8)}</span>
-                    </div>
-                    <div>Customer: {selectedPreOrder.full_name}</div>
-                    <div>
-                      Product: {selectedPreOrder.capacity} {selectedPreOrder.capacity_unit} •{" "}
-                      {selectedPreOrder.container_type}
-                    </div>
-                    <div>
-                      Total:{" "}
-                      <span className="font-semibold text-emerald-600">
-                        {formatCurrency(selectedPreOrder.total_amount)}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  className="flex-1 h-9 rounded-xl"
-                  onClick={() => setIsApproveOpen(false)}
-                  disabled={isSubmitting}
-                >
-                  <FaTimes className="w-4 h-4 mr-2" />
-                  Cancel
-                </Button>
-                <Button
-                  className="flex-1 h-9 rounded-xl bg-emerald-600 hover:bg-emerald-700"
-                  onClick={confirmApprove}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                      Approving...
-                    </>
-                  ) : (
-                    <>
-                      <FaCheck className="w-4 h-4 mr-2" />
-                      Approve
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={isStatusUpdateOpen} onOpenChange={setIsStatusUpdateOpen}>
         <DialogContent className="w-[95vw] max-w-md max-h-[90vh] overflow-y-auto rounded-3xl">

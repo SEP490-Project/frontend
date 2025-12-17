@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import type { OrderData } from "@/libs/types/order";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +20,8 @@ import {
   FaReceipt,
   FaCreditCard,
   FaImage,
+  FaStore,
+  FaTag,
 } from "react-icons/fa6";
 
 interface MobileOrderDetailProps {
@@ -27,11 +29,22 @@ interface MobileOrderDetailProps {
 }
 
 const MobileOrderDetail: React.FC<MobileOrderDetailProps> = ({ order }) => {
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
       currency: "VND",
     }).format(amount);
+  };
+
+  const handleImageError = (imageId: string) => {
+    setImageErrors((prev) => new Set(prev).add(imageId));
+  };
+
+  const getPrimaryImage = (images: any[]) => {
+    if (!images || images.length === 0) return null;
+    return images.find((img) => img.is_primary) || images[0];
   };
 
   const formatDate = (dateString: string) => {
@@ -78,7 +91,7 @@ const MobileOrderDetail: React.FC<MobileOrderDetailProps> = ({ order }) => {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center justify-between text-lg">
-            <span className="font-mono">#{order.id.slice(0, 8)}</span>
+            <span className="font-mono text-sm">#{order.id.slice(0, 8)}...</span>
             <Badge className={getStatusBadgeClass(order.status)}>
               {order.status.toUpperCase()}
             </Badge>
@@ -198,7 +211,9 @@ const MobileOrderDetail: React.FC<MobileOrderDetailProps> = ({ order }) => {
 
           <div className="flex items-center justify-between">
             <span className="text-sm">Transaction ID</span>
-            <span className="text-sm font-mono">{order.payment_transaction.gateway_ref}</span>
+            <span className="text-sm font-mono text-right flex-1 ml-2 truncate">
+              {order.payment_transaction.gateway_id || order.payment_transaction.gateway_ref}
+            </span>
           </div>
 
           <div className="flex items-center justify-between">
@@ -208,15 +223,15 @@ const MobileOrderDetail: React.FC<MobileOrderDetailProps> = ({ order }) => {
             </span>
           </div>
 
-          {order.user_bank_account && (
+          {order.bank_account && (
             <>
               <Separator />
               <div className="space-y-1">
                 <div className="text-sm font-medium">Bank Account</div>
                 <div className="text-sm text-gray-600">
-                  <div>{order.user_bank_account_holder}</div>
+                  <div>{order.bank_account_holder}</div>
                   <div>
-                    {order.user_bank_account} - {order.user_bank_name}
+                    {order.bank_account} - {order.bank_name}
                   </div>
                 </div>
               </div>
@@ -234,48 +249,125 @@ const MobileOrderDetail: React.FC<MobileOrderDetailProps> = ({ order }) => {
         </CardHeader>
         <CardContent className="pt-0">
           <div className="space-y-3">
-            {order.order_items?.map((item, index) => (
-              <div key={item.id} className="border rounded-lg p-3 space-y-2">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="font-medium text-sm">
-                      {item.capacity} {item.capacity_unit} - {item.container_type}
-                    </div>
-                    <div className="text-xs text-gray-600">
-                      {item.dispenser_type} • {item.uses}
-                    </div>
-                  </div>
-                  <Badge className="text-xs" variant="secondary">
-                    x{item.quantity}
-                  </Badge>
-                </div>
+            {order.order_items?.map((item, index) => {
+              const primaryImage = getPrimaryImage(item.images);
+              const imageKey = `item-${item.id || index}`;
 
-                <div className="text-xs text-gray-600 space-y-1">
-                  <div>Unit Price: {formatCurrency(item.unit_price)}</div>
-                  <div className="font-medium">Subtotal: {formatCurrency(item.subtotal)}</div>
-                </div>
-
-                <Accordion type="single" collapsible className="w-full">
-                  <AccordionItem value={`item-${index}`} className="border-none">
-                    <AccordionTrigger className="text-xs py-2">View Details</AccordionTrigger>
-                    <AccordionContent className="text-xs text-gray-600 space-y-1">
-                      <div>Expiry Date: {new Date(item.expiry_date).toLocaleDateString()}</div>
-                      {item.manufacturing_date && (
-                        <div>
-                          Manufacturing Date:{" "}
-                          {new Date(item.manufacturing_date).toLocaleDateString()}
+              return (
+                <div key={item.id || index} className="border rounded-lg overflow-hidden">
+                  <div className="p-3 space-y-2">
+                    <div className="flex gap-3">
+                      {primaryImage && (
+                        <div className="flex-shrink-0">
+                          {!imageErrors.has(imageKey) ? (
+                            <img
+                              src={primaryImage.image_url}
+                              alt={primaryImage.alt_text || item.product_name}
+                              className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                              onError={() => handleImageError(imageKey)}
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="w-16 h-16 flex items-center justify-center bg-gray-200 rounded-lg border border-gray-200">
+                              <FaBox className="w-4 h-4 text-gray-400" />
+                            </div>
+                          )}
                         </div>
                       )}
-                      <div>Instructions: {item.instructions}</div>
-                      <div>
-                        Dimensions: {item.length} × {item.width} × {item.height} cm
+
+                      <div className="flex-1 space-y-1">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="font-medium text-sm text-gray-900">
+                              {item.product_name}
+                            </div>
+                            <div className="text-xs text-gray-600 mt-1">
+                              {item.capacity} {item.capacity_unit} - {item.container_type}
+                            </div>
+                            {item.description && (
+                              <div className="text-xs text-gray-500 mt-1 line-clamp-2">
+                                {item.description}
+                              </div>
+                            )}
+                          </div>
+                          <Badge className="text-xs ml-2" variant="secondary">
+                            x{item.quantity}
+                          </Badge>
+                        </div>
                       </div>
-                      <div>Weight: {item.weight} kg</div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              </div>
-            ))}
+                    </div>
+
+                    {item.brand && (
+                      <div className="flex items-center gap-1.5 text-xs">
+                        <FaStore className="w-3 h-3 text-gray-400" />
+                        <span className="text-gray-600">{item.brand.name}</span>
+                      </div>
+                    )}
+
+                    {item.category && (
+                      <div className="flex items-center gap-1.5 text-xs">
+                        <FaTag className="w-3 h-3 text-gray-400" />
+                        <span className="text-gray-600">{item.category.name}</span>
+                      </div>
+                    )}
+
+                    <div className="text-xs text-gray-600 space-y-1">
+                      <div>Unit Price: {formatCurrency(item.unit_price)}</div>
+                      <div className="font-medium text-gray-900">
+                        Subtotal: {formatCurrency(item.subtotal)}
+                      </div>
+                    </div>
+
+                    <Accordion type="single" collapsible className="w-full">
+                      <AccordionItem value={`item-${index}`} className="border-none">
+                        <AccordionTrigger className="text-xs py-2">View Details</AccordionTrigger>
+                        <AccordionContent className="text-xs text-gray-600 space-y-2">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>Expiry: {new Date(item.expiry_date).toLocaleDateString()}</div>
+                            {item.manufacturing_date && (
+                              <div>
+                                Mfg: {new Date(item.manufacturing_date).toLocaleDateString()}
+                              </div>
+                            )}
+                          </div>
+
+                          {item.dispenser_type && <div>Dispenser: {item.dispenser_type}</div>}
+
+                          {item.uses && <div>Uses: {item.uses}</div>}
+
+                          {item.instructions && <div>Instructions: {item.instructions}</div>}
+
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              Dimensions: {item.length}×{item.width}×{item.height}cm
+                            </div>
+                            <div>Weight: {item.weight}kg</div>
+                          </div>
+
+                          {item.attributes_description &&
+                            item.attributes_description.length > 0 && (
+                              <div className="mt-2">
+                                <div className="font-medium mb-1">Ingredients:</div>
+                                <div className="space-y-1">
+                                  {item.attributes_description.map((attr, attrIndex) => (
+                                    <div key={attrIndex} className="text-xs bg-gray-50 p-2 rounded">
+                                      <div className="font-medium">
+                                        {attr.ingredient} ({attr.value}
+                                        {attr.unit})
+                                      </div>
+                                      <div className="text-gray-500">{attr.description}</div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
@@ -309,32 +401,32 @@ const MobileOrderDetail: React.FC<MobileOrderDetailProps> = ({ order }) => {
         </CardContent>
       </Card>
 
-      {order.confirmation_image && (
+      {(order.confirmation_image || order.staff_resource) && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <FaImage className="w-4 h-4" />
-              Confirmation Image
+              {order.confirmation_image ? "Confirmation Image" : "Staff Resource"}
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="rounded-lg overflow-hidden">
-              <img
-                src={order.confirmation_image}
-                alt="Order confirmation"
-                className="w-full h-auto"
-                loading="lazy"
-              />
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {order.staff_resource && (
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-sm text-gray-600">
-              Handled by: <span className="font-medium">{order.staff_resource}</span>
+            <div className="border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-2">
+              {!imageErrors.has("confirmation") ? (
+                <img
+                  src={order.confirmation_image || order.staff_resource}
+                  alt={order.confirmation_image ? "Order confirmation" : "Staff resource"}
+                  className="w-full h-40 object-cover rounded-md"
+                  onError={() => handleImageError("confirmation")}
+                  loading="lazy"
+                />
+              ) : (
+                <div className="w-full h-40 flex items-center justify-center bg-gray-200 rounded-md">
+                  <div className="text-center text-gray-500">
+                    <FaImage className="w-8 h-8 mx-auto mb-2" />
+                    <p className="text-sm">Image not available</p>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

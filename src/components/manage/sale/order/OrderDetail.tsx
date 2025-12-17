@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import type { OrderData } from "@/libs/types/order";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -8,17 +8,29 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { FaBox, FaStore, FaTag, FaImage } from "react-icons/fa6";
 
 interface OrderDetailProps {
   order: OrderData;
 }
 
 const OrderDetail: React.FC<OrderDetailProps> = ({ order }) => {
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
       currency: "VND",
     }).format(amount);
+  };
+
+  const handleImageError = (imageId: string) => {
+    setImageErrors((prev) => new Set(prev).add(imageId));
+  };
+
+  const getPrimaryImage = (images: any[]) => {
+    if (!images || images.length === 0) return null;
+    return images.find((img) => img.is_primary) || images[0];
   };
 
   const formatDate = (dateString: string) => {
@@ -86,7 +98,7 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order }) => {
           <div className="space-y-2">
             <div>
               <span className="text-sm text-gray-500">Order ID:</span>
-              <span className="ml-2 font-mono text-sm font-medium">#{order.id}</span>
+              <span className="ml-2 font-mono text-sm font-medium">#{order.id.slice(0, 8)}...</span>
             </div>
             {order.ghn_order_code && (
               <div>
@@ -134,21 +146,19 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order }) => {
               <span className="text-sm text-gray-500">Phone:</span>
               <span className="ml-2 text-sm">{order.phone_number}</span>
             </div>
-            {order.user_bank_name && (
+            {order.bank_name && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <span className="text-sm text-gray-500">Bank Name:</span>
-                  <p className="text-sm font-medium text-gray-900">{order.user_bank_name}</p>
+                  <p className="text-sm font-medium text-gray-900">{order.bank_name}</p>
                 </div>
                 <div>
                   <span className="text-sm text-gray-500">Account Holder:</span>
-                  <p className="text-sm font-medium text-gray-900">
-                    {order.user_bank_account_holder}
-                  </p>
+                  <p className="text-sm font-medium text-gray-900">{order.bank_account_holder}</p>
                 </div>
                 <div>
                   <span className="text-sm text-gray-500">Account Number:</span>
-                  <p className="text-sm font-mono text-gray-900">{order.user_bank_account}</p>
+                  <p className="text-sm font-mono text-gray-900">{order.bank_account}</p>
                 </div>
               </div>
             )}
@@ -205,49 +215,69 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order }) => {
           <Separator />
           <h3 className="text-sm font-medium text-gray-500 mb-3">Proof Images</h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {order.confirmation_image && (
               <div className="col-span-1">
-                <span className="text-sm text-gray-500">Delivery Proofs:</span>
-                <a href={order.user_resource} target="_blank" rel="noopener noreferrer">
-                  <div className="mt-2 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-2">
-                    <img
-                      src={order.confirmation_image}
-                      alt="Delivery proof"
-                      className="w-full max-w-md rounded-md"
-                    />
+                <span className="text-sm text-gray-500 block mb-2">Delivery Proofs:</span>
+                <a href={order.confirmation_image} target="_blank" rel="noopener noreferrer">
+                  <div className="border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-2 hover:bg-gray-100 transition-colors">
+                    {!imageErrors.has("confirmation") ? (
+                      <img
+                        src={order.confirmation_image}
+                        alt="Delivery proof"
+                        className="w-full h-32 object-cover rounded-md"
+                        onError={() => handleImageError("confirmation")}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-32 flex items-center justify-center bg-gray-200 rounded-md">
+                        <FaImage className="w-8 h-8 text-gray-400" />
+                      </div>
+                    )}
                   </div>
                 </a>
               </div>
             )}
             {order.staff_resource && (
               <div className="col-span-1">
-                <span className="text-sm text-gray-500">
-                  Staff Proofs (refund, compensate bills or other reasons):
-                </span>
+                <span className="text-sm text-gray-500 block mb-2">Staff Proofs:</span>
                 <a href={order.staff_resource} target="_blank" rel="noopener noreferrer">
-                  <div className="mt-2 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-2">
-                    <img
-                      src={order.staff_resource}
-                      alt="Staff proof"
-                      className="w-full max-w-md rounded-md"
-                    />
+                  <div className="border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-2 hover:bg-gray-100 transition-colors">
+                    {!imageErrors.has("staff") ? (
+                      <img
+                        src={order.staff_resource}
+                        alt="Staff proof"
+                        className="w-full h-32 object-cover rounded-md"
+                        onError={() => handleImageError("staff")}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-32 flex items-center justify-center bg-gray-200 rounded-md">
+                        <FaImage className="w-8 h-8 text-gray-400" />
+                      </div>
+                    )}
                   </div>
                 </a>
               </div>
             )}
             {order.user_resource && (
               <div className="col-span-1">
-                <span className="text-sm text-gray-500">
-                  Customer Proofs (refund, compensate bills or other reasons):
-                </span>
+                <span className="text-sm text-gray-500 block mb-2">Customer Proofs:</span>
                 <a href={order.user_resource} target="_blank" rel="noopener noreferrer">
-                  <div className="mt-2 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-2">
-                    <img
-                      src={order.user_resource}
-                      alt="Customer proof"
-                      className="w-full max-w-md rounded-md"
-                    />
+                  <div className="border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-2 hover:bg-gray-100 transition-colors">
+                    {!imageErrors.has("user") ? (
+                      <img
+                        src={order.user_resource}
+                        alt="Customer proof"
+                        className="w-full h-32 object-cover rounded-md"
+                        onError={() => handleImageError("user")}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-32 flex items-center justify-center bg-gray-200 rounded-md">
+                        <FaImage className="w-8 h-8 text-gray-400" />
+                      </div>
+                    )}
                   </div>
                 </a>
               </div>
@@ -273,11 +303,15 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order }) => {
               >
                 <AccordionTrigger className="px-4 hover:bg-gray-50 hover:no-underline">
                   <div className="flex items-center justify-between w-full pr-4">
-                    <div className="flex items-center gap-3">
-                      <span className="font-semibold text-base text-gray-900">
-                        Item #{index + 1}
-                      </span>
-                      <span className="text-sm text-gray-600">Qty: {item.quantity}</span>
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className="flex-1">
+                        <div className="font-semibold text-base text-gray-900 text-left">
+                          {item.product_name || `Item #${index + 1}`}
+                        </div>
+                        <div className="text-sm text-gray-600 text-left">
+                          Qty: {item.quantity} • {item.capacity} {item.capacity_unit}
+                        </div>
+                      </div>
                     </div>
                     <div className="text-right">
                       <div className="font-semibold text-base text-primary">
@@ -291,9 +325,58 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order }) => {
                 </AccordionTrigger>
                 <AccordionContent className="px-4 pb-4">
                   <div className="pt-3 space-y-4">
-                    {/* Variant ID */}
-                    <div className="text-xs text-gray-500 font-mono bg-gray-50 px-2 py-1 rounded inline-block">
-                      Variant ID: {item.variant_id}
+                    {/* Product Image and Basic Info */}
+                    <div className="flex gap-4">
+                      {(() => {
+                        const primaryImage = getPrimaryImage(item.images);
+                        const imageKey = `item-${item.id || index}`;
+                        return primaryImage ? (
+                          <div className="flex-shrink-0">
+                            {!imageErrors.has(imageKey) ? (
+                              <img
+                                src={primaryImage.image_url}
+                                alt={primaryImage.alt_text || item.product_name}
+                                className="w-20 h-20 object-cover rounded-lg border border-gray-200"
+                                onError={() => handleImageError(imageKey)}
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className="w-20 h-20 flex items-center justify-center bg-gray-200 rounded-lg border border-gray-200">
+                                <FaBox className="w-6 h-6 text-gray-400" />
+                              </div>
+                            )}
+                          </div>
+                        ) : null;
+                      })()}
+
+                      <div className="flex-1 space-y-2">
+                        {item.product_name && (
+                          <div>
+                            <span className="text-sm font-semibold text-gray-900">
+                              {item.product_name}
+                            </span>
+                          </div>
+                        )}
+
+                        {item.description && (
+                          <div className="text-sm text-gray-600">{item.description}</div>
+                        )}
+
+                        <div className="flex gap-4">
+                          {item.brand && (
+                            <div className="flex items-center gap-1 text-xs text-gray-600">
+                              <FaStore className="w-3 h-3" />
+                              <span>{item.brand.name}</span>
+                            </div>
+                          )}
+                          {item.category && (
+                            <div className="flex items-center gap-1 text-xs text-gray-600">
+                              <FaTag className="w-3 h-3" />
+                              <span>{item.category.name}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
                     <Separator />
@@ -397,27 +480,29 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order }) => {
                       </>
                     )}
 
-                    {/* Attributes */}
+                    {/* Ingredients */}
                     {item.attributes_description && item.attributes_description.length > 0 && (
                       <>
                         <Separator />
                         <div>
                           <div className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">
-                            Attributes
+                            Ingredients
                           </div>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                          <div className="space-y-2">
                             {item.attributes_description.map((attr, attrIndex) => (
                               <div
                                 key={attrIndex}
-                                className="bg-gray-50 rounded-md px-3 py-2 text-xs border border-gray-200"
+                                className="bg-gray-50 rounded-md p-3 border border-gray-200"
                               >
-                                <span className="text-gray-600">
-                                  {attr.ingredient || "Attribute"}:
-                                </span>{" "}
-                                <span className="font-medium text-gray-900">
-                                  {attr.value}
-                                  {attr.unit}
-                                </span>
+                                <div className="font-medium text-sm text-gray-900">
+                                  {attr.ingredient} ({attr.value}
+                                  {attr.unit})
+                                </div>
+                                {attr.description && (
+                                  <div className="text-xs text-gray-600 mt-1">
+                                    {attr.description}
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -445,8 +530,10 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order }) => {
 
           <div className="space-y-2">
             <div>
-              <span className="text-sm text-gray-500">Payment ID:</span>
-              <span className="mx-2 text-sm font-mono">{order.payment_transaction.id}</span>
+              <span className="text-sm text-gray-500">Gateway Reference:</span>
+              <span className="mx-2 text-sm font-mono">
+                {order.payment_transaction.gateway_id || order.payment_transaction.gateway_ref}
+              </span>
             </div>
 
             <div>

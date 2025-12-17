@@ -7,12 +7,14 @@ import { Badge } from "@/components/ui/badge";
 
 import { FaCheck, FaXmark as FaTimes, FaImage, FaSpinner } from "react-icons/fa6";
 import MobileFileUploader from "./MobileFileUploader";
+import MobilePreOrderCompensateRequest from "./MobilePreOrderCompensateRequest";
 import { toast } from "sonner";
 import { useAppDispatch } from "@/libs/stores";
 import {
   approvePreOrderThunk,
   receivedSelfPickupPreOrderThunk,
   deliveredSelfDeliveryPreOrderThunk,
+  obligateRefundAPreOrderThunk,
 } from "@/libs/stores/orderManager/thunk";
 
 interface MobileChangePreOrderStatusModalProps {
@@ -31,6 +33,17 @@ const MobileChangePreOrderStatusModal: React.FC<MobileChangePreOrderStatusModalP
   const [notes, setNotes] = useState("");
   const [proofFiles, setProofFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCancelForm, setShowCancelForm] = useState(false);
+
+  if (preOrder.status === "COMPENSATE_REQUEST") {
+    return (
+      <MobilePreOrderCompensateRequest
+        preOrder={preOrder}
+        onSuccess={onSuccess}
+        onCancel={onCancel}
+      />
+    );
+  }
 
   const getAvailableActions = () => {
     const currentStatus = preOrder.status.toUpperCase();
@@ -41,8 +54,14 @@ const MobileChangePreOrderStatusModal: React.FC<MobileChangePreOrderStatusModalP
         case "PAID":
           actions.push({
             action: "CONFIRM",
-            label: "Approve Pre-Order",
+            label: "Confirm Pre-Order",
             variant: "default" as const,
+          });
+          actions.push({
+            action: "CANCEL",
+            label: "Cancel Pre-Order",
+            variant: "destructive" as const,
+            requiresReason: true,
           });
           break;
         case "CONFIRMED":
@@ -66,11 +85,25 @@ const MobileChangePreOrderStatusModal: React.FC<MobileChangePreOrderStatusModalP
         case "PAID":
           actions.push({
             action: "CONFIRM",
-            label: "Approve Pre-Order",
+            label: "Confirm Pre-Order",
             variant: "default" as const,
+          });
+          actions.push({
+            action: "CANCEL",
+            label: "Cancel Pre-Order",
+            variant: "destructive" as const,
+            requiresReason: true,
           });
           break;
         case "CONFIRMED":
+          actions.push({
+            action: "DELIVERED",
+            label: "Mark as Delivered",
+            variant: "default" as const,
+            requiresProof: true,
+          });
+          break;
+        case "IN_TRANSIT":
           actions.push({
             action: "DELIVERED",
             label: "Mark as Delivered",
@@ -119,11 +152,20 @@ const MobileChangePreOrderStatusModal: React.FC<MobileChangePreOrderStatusModalP
     return ["DELIVERED", "RECEIVED"].includes(action);
   };
 
+  const requiresReason = (action: string) => {
+    return action === "CANCEL";
+  };
+
   const handleFilesCapture = (files: File[]) => {
     setProofFiles(files);
   };
 
   const handleAction = async (action: string) => {
+    if (requiresReason(action) && !notes.trim()) {
+      toast.error("Please provide a reason");
+      return;
+    }
+
     if (isProofRequired(action) && proofFiles.length === 0) {
       toast.error("Proof image is required for this action");
       return;
@@ -134,8 +176,18 @@ const MobileChangePreOrderStatusModal: React.FC<MobileChangePreOrderStatusModalP
     try {
       if (action === "CONFIRM") {
         await dispatch(approvePreOrderThunk({ id: preOrder.id })).unwrap();
+      } else if (action === "CANCEL") {
+        const formData = new FormData();
+        if (proofFiles.length > 0) {
+          proofFiles.forEach((file) => {
+            formData.append("file", file);
+          });
+        }
+        formData.append("reason", notes.trim());
+
+        await dispatch(obligateRefundAPreOrderThunk({ id: preOrder.id, file: formData })).unwrap();
       } else if (action === "AWAITING_PICKUP") {
-        toast.info("Pre-order marked as ready for pickup");
+        toast.success("Pre-order marked as ready for pickup!");
         onSuccess();
         return;
       } else if (action === "DELIVERED") {
@@ -173,6 +225,7 @@ const MobileChangePreOrderStatusModal: React.FC<MobileChangePreOrderStatusModalP
     } finally {
       setIsSubmitting(false);
       setSelectedAction(null);
+      setShowCancelForm(false);
     }
   };
 
@@ -207,21 +260,33 @@ const MobileChangePreOrderStatusModal: React.FC<MobileChangePreOrderStatusModalP
               {availableActions.map((actionItem) => (
                 <Button
                   key={actionItem.action}
-                  variant={actionItem.variant}
+                  variant={actionItem.variant === "destructive" ? "destructive" : "default"}
                   onClick={() => {
-                    if (actionItem.requiresProof) {
+                    if (actionItem.action === "CANCEL") {
+                      setShowCancelForm(true);
+                      setSelectedAction(actionItem.action);
+                    } else if (actionItem.requiresProof || actionItem.requiresReason) {
                       setSelectedAction(actionItem.action);
                     } else {
                       handleAction(actionItem.action);
                     }
                   }}
                   disabled={isSubmitting}
-                  className="w-full justify-start"
+                  className={`w-full justify-start ${
+                    actionItem.variant !== "destructive"
+                      ? "bg-green-600 hover:bg-green-700 text-white"
+                      : ""
+                  }`}
                 >
                   {actionItem.label}
                   {actionItem.requiresProof && (
-                    <Badge variant="outline" className="ml-auto text-xs">
+                    <Badge variant="outline" className="ml-auto text-xs text-white">
                       Proof Required
+                    </Badge>
+                  )}
+                  {actionItem.requiresReason && (
+                    <Badge variant="outline" className="ml-auto text-xs text-white">
+                      Reason Required
                     </Badge>
                   )}
                 </Button>
@@ -232,20 +297,6 @@ const MobileChangePreOrderStatusModal: React.FC<MobileChangePreOrderStatusModalP
               No actions available for this pre-order
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Notes (Optional)</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <Textarea
-            placeholder="Add notes about this status change..."
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            className="min-h-[80px] resize-none"
-          />
         </CardContent>
       </Card>
 
@@ -309,6 +360,76 @@ const MobileChangePreOrderStatusModal: React.FC<MobileChangePreOrderStatusModalP
         </Card>
       )}
 
+      {showCancelForm && (
+        <Card className="border-red-200">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base text-red-700">
+              <FaTimes className="w-4 h-4" />
+              Cancel Pre-Order
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="space-y-3">
+              <div className="text-sm text-red-600">
+                Please provide a reason for cancelling this pre-order.
+              </div>
+
+              <Textarea
+                placeholder="Enter cancellation reason..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="min-h-[80px] resize-none border-red-200 focus:border-red-300"
+              />
+
+              <MobileFileUploader
+                accept="image/*"
+                multiple={true}
+                maxFiles={1}
+                maxSize={10}
+                allowedTypes={["jpg", "jpeg", "png", "webp"]}
+                title="Upload Proof (Optional)"
+                onFilesChange={handleFilesCapture}
+              />
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowCancelForm(false);
+                    setSelectedAction(null);
+                    setNotes("");
+                    setProofFiles([]);
+                  }}
+                  disabled={isSubmitting}
+                  className="flex-1"
+                >
+                  <FaTimes className="w-4 h-4 mr-2" />
+                  Back
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => handleAction("CANCEL")}
+                  disabled={isSubmitting || !notes.trim()}
+                  className="flex-1"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <FaSpinner className="w-4 h-4 mr-2 animate-spin" />
+                      Cancelling...
+                    </>
+                  ) : (
+                    <>
+                      <FaTimes className="w-4 h-4 mr-2" />
+                      Cancel Pre-Order
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card className="border-gray-200">
         <CardContent className="p-3">
           <div className="text-xs text-gray-600 space-y-1">
@@ -326,7 +447,7 @@ const MobileChangePreOrderStatusModal: React.FC<MobileChangePreOrderStatusModalP
         </CardContent>
       </Card>
 
-      {!selectedAction && (
+      {!selectedAction && !showCancelForm && (
         <div className="pt-2">
           <Button
             type="button"

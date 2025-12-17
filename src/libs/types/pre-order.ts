@@ -32,13 +32,17 @@ export interface PreOrderData {
   dispenser_type: string;
   uses: string;
   manufacturing_date: string;
+  product_type: string;
   expiry_date: string;
   instructions: string;
   attributes_description: any;
+  product_name: string;
+  description: string;
   weight: number;
   height: number;
   length: number;
   width: number;
+  images: IMAGE[];
   is_self_picked_up: boolean;
   status: string;
   user_bank_account?: string;
@@ -48,9 +52,45 @@ export interface PreOrderData {
   updated_at: string;
   action_notes?: ActionNote[];
   PaymentTx: PaymentTx;
+  brand: Brand;
+  category: Category;
   confirmation_image: string;
   staff_resource?: string;
   user_resource?: string;
+  limited_properties: LimitedProperties;
+}
+
+export interface LimitedProperties {
+  premiere_date: string;
+  availability_start_date: string;
+  availability_end_date: string;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  description: string;
+}
+
+interface Brand {
+  id: string;
+  name: string;
+  description: string;
+  contact_email: string;
+  contact_phone: string;
+  address: string;
+  website: string;
+  logo_url: string;
+  tax_number: string;
+  representative_name: string;
+  representative_role: string;
+  representative_email: string;
+}
+
+interface IMAGE {
+  image_url: string;
+  alt_text: string;
+  is_primary: boolean;
 }
 
 export interface ActionNote {

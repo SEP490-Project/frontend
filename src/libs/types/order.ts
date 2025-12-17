@@ -28,9 +28,9 @@ export interface OrderData {
   order_items: OrderItem[];
   confirmation_image?: string;
   payment_transaction: PaymentTransaction;
-  user_bank_account?: string;
-  user_bank_name?: string;
-  user_bank_account_holder?: string;
+  bank_account?: string;
+  bank_name?: string;
+  bank_account_holder?: string;
   staff_resource?: string;
   user_resource?: string;
 }
@@ -60,6 +60,7 @@ export interface OrderItem {
   container_type: string;
   dispenser_type: string;
   uses: string;
+  images: IMAGE[];
   manufacturing_date?: string;
   expiry_date: string;
   instructions: string;
@@ -70,6 +71,40 @@ export interface OrderItem {
   height: number;
   length: number;
   width: number;
+  is_reviewed: boolean;
+  product_name: string;
+  description: string;
+  product_type: string;
+  limited_properties: any;
+  brand: Brand;
+  category: Category;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  description: string;
+}
+
+interface Brand {
+  id: string;
+  name: string;
+  description: string;
+  contact_email: string;
+  contact_phone: string;
+  address: string;
+  website: string;
+  logo_url: string;
+  tax_number: string;
+  representative_name: string;
+  representative_role: string;
+  representative_email: string;
+}
+
+interface IMAGE {
+  image_url: string;
+  alt_text: string;
+  is_primary: boolean;
 }
 
 export interface OrderResponse {

@@ -1,20 +1,41 @@
-import React from "react";
+import React, { useState } from "react";
 import type { PreOrderData } from "@/libs/types/pre-order";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Package, User, MapPin, CreditCard, Image } from "lucide-react";
+import {
+  Calendar,
+  Package,
+  User,
+  MapPin,
+  CreditCard,
+  Image,
+  Store,
+  Tag,
+  Clock,
+} from "lucide-react";
 
 interface PreOrderDetailProps {
   preOrder: PreOrderData;
 }
 
 const PreOrderDetail: React.FC<PreOrderDetailProps> = ({ preOrder }) => {
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
       currency: "VND",
     }).format(amount);
+  };
+
+  const handleImageError = (imageId: string) => {
+    setImageErrors((prev) => new Set(prev).add(imageId));
+  };
+
+  const getPrimaryImage = (images: any[]) => {
+    if (!images || images.length === 0) return null;
+    return images.find((img) => img.is_primary) || images[0];
   };
 
   const formatDate = (dateString: string) => {
@@ -81,11 +102,23 @@ const PreOrderDetail: React.FC<PreOrderDetailProps> = ({ preOrder }) => {
       {/* Header Section */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-gray-500 font-mono mt-1">ID: {preOrder.id}</p>
+          <h2 className="text-lg font-semibold text-gray-900">Pre-Order Details</h2>
+          <p className="text-sm text-gray-500 font-mono mt-1">#{preOrder.id.slice(0, 8)}...</p>
         </div>
-        <Badge className={getStatusBadgeClass(preOrder.status)}>
-          {preOrder.status.toUpperCase()}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge
+            className={
+              preOrder.product_type === "LIMITED"
+                ? "bg-amber-100 text-amber-800 border border-amber-200"
+                : "bg-blue-100 text-blue-800 border border-blue-200"
+            }
+          >
+            {preOrder.product_type}
+          </Badge>
+          <Badge className={getStatusBadgeClass(preOrder.status)}>
+            {preOrder.status.toUpperCase()}
+          </Badge>
+        </div>
       </div>
 
       <Separator />
@@ -191,49 +224,69 @@ const PreOrderDetail: React.FC<PreOrderDetailProps> = ({ preOrder }) => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {preOrder.confirmation_image && (
                 <div className="col-span-1">
-                  <span className="text-sm text-gray-500">Delivery Proofs:</span>
-                  <a href={preOrder.user_resource} target="_blank" rel="noopener noreferrer">
-                    <div className="mt-2 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-2">
-                      <img
-                        src={preOrder.confirmation_image}
-                        alt="Delivery proof"
-                        className="w-full max-w-md rounded-md"
-                      />
+                  <span className="text-sm text-gray-500 block mb-2">Delivery Proofs:</span>
+                  <a href={preOrder.confirmation_image} target="_blank" rel="noopener noreferrer">
+                    <div className="border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-2 hover:bg-gray-100 transition-colors">
+                      {!imageErrors.has("confirmation") ? (
+                        <img
+                          src={preOrder.confirmation_image}
+                          alt="Delivery proof"
+                          className="w-full h-32 object-cover rounded-md"
+                          onError={() => handleImageError("confirmation")}
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="w-full h-32 flex items-center justify-center bg-gray-200 rounded-md">
+                          <Image className="w-8 h-8 text-gray-400" />
+                        </div>
+                      )}
                     </div>
                   </a>
                 </div>
               )}
               {preOrder.staff_resource && (
                 <div className="col-span-1">
-                  <span className="text-sm text-gray-500">
-                    Staff Proofs (refund, compensate bills or other reasons):
-                  </span>
+                  <span className="text-sm text-gray-500 block mb-2">Staff Proofs:</span>
                   <a href={preOrder.staff_resource} target="_blank" rel="noopener noreferrer">
-                    <div className="mt-2 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-2">
-                      <img
-                        src={preOrder.staff_resource}
-                        alt="Staff proof"
-                        className="w-full max-w-md rounded-md"
-                      />
+                    <div className="border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-2 hover:bg-gray-100 transition-colors">
+                      {!imageErrors.has("staff") ? (
+                        <img
+                          src={preOrder.staff_resource}
+                          alt="Staff proof"
+                          className="w-full h-32 object-cover rounded-md"
+                          onError={() => handleImageError("staff")}
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="w-full h-32 flex items-center justify-center bg-gray-200 rounded-md">
+                          <Image className="w-8 h-8 text-gray-400" />
+                        </div>
+                      )}
                     </div>
                   </a>
                 </div>
               )}
               {preOrder.user_resource && (
                 <div className="col-span-1">
-                  <span className="text-sm text-gray-500">
-                    Customer Proofs (refund, compensate bills or other reasons):
-                  </span>
+                  <span className="text-sm text-gray-500 block mb-2">Customer Proofs:</span>
                   <a href={preOrder.user_resource} target="_blank" rel="noopener noreferrer">
-                    <div className="mt-2 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-2">
-                      <img
-                        src={preOrder.user_resource}
-                        alt="Customer proof"
-                        className="w-full max-w-md rounded-md"
-                      />
+                    <div className="border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-2 hover:bg-gray-100 transition-colors">
+                      {!imageErrors.has("user") ? (
+                        <img
+                          src={preOrder.user_resource}
+                          alt="Customer proof"
+                          className="w-full h-32 object-cover rounded-md"
+                          onError={() => handleImageError("user")}
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="w-full h-32 flex items-center justify-center bg-gray-200 rounded-md">
+                          <Image className="w-8 h-8 text-gray-400" />
+                        </div>
+                      )}
                     </div>
                   </a>
                 </div>
@@ -252,11 +305,65 @@ const PreOrderDetail: React.FC<PreOrderDetailProps> = ({ preOrder }) => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <span className="text-sm text-gray-500">Variant ID:</span>
-              <p className="text-sm font-mono text-gray-900">{preOrder.variant_id}</p>
+          {/* Product Image and Basic Info */}
+          <div className="flex gap-4">
+            {(() => {
+              const primaryImage = getPrimaryImage(preOrder.images);
+              const imageKey = "preorder-product";
+              return primaryImage ? (
+                <div className="flex-shrink-0">
+                  {!imageErrors.has(imageKey) ? (
+                    <img
+                      src={primaryImage.image_url}
+                      alt={primaryImage.alt_text || preOrder.product_name}
+                      className="w-24 h-24 object-cover rounded-lg border border-gray-200"
+                      onError={() => handleImageError(imageKey)}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 flex items-center justify-center bg-gray-200 rounded-lg border border-gray-200">
+                      <Package className="w-8 h-8 text-gray-400" />
+                    </div>
+                  )}
+                </div>
+              ) : null;
+            })()}
+
+            <div className="flex-1 space-y-2">
+              {preOrder.product_name && (
+                <div>
+                  <span className="text-sm text-gray-500">Product Name:</span>
+                  <p className="text-base font-semibold text-gray-900">{preOrder.product_name}</p>
+                </div>
+              )}
+
+              {preOrder.description && (
+                <div>
+                  <span className="text-sm text-gray-500">Description:</span>
+                  <p className="text-sm text-gray-700">{preOrder.description}</p>
+                </div>
+              )}
+
+              <div className="flex gap-4">
+                {preOrder.brand && (
+                  <div className="flex items-center gap-1 text-sm text-gray-600">
+                    <Store className="w-4 h-4" />
+                    <span>{preOrder.brand.name}</span>
+                  </div>
+                )}
+                {preOrder.category && (
+                  <div className="flex items-center gap-1 text-sm text-gray-600">
+                    <Tag className="w-4 h-4" />
+                    <span>{preOrder.category.name}</span>
+                  </div>
+                )}
+              </div>
             </div>
+          </div>
+
+          <Separator />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <span className="text-sm text-gray-500">Quantity:</span>
               <p className="text-sm font-medium text-gray-900">{preOrder.quantity} units</p>
@@ -273,7 +380,45 @@ const PreOrderDetail: React.FC<PreOrderDetailProps> = ({ preOrder }) => {
                 {formatCurrency(preOrder.total_amount)}
               </p>
             </div>
+            <div>
+              <span className="text-sm text-gray-500">Product Type:</span>
+              <Badge
+                className={
+                  preOrder.product_type === "LIMITED"
+                    ? "bg-amber-100 text-amber-800"
+                    : "bg-blue-100 text-blue-800"
+                }
+              >
+                {preOrder.product_type}
+              </Badge>
+            </div>
           </div>
+
+          {/* Limited Edition Properties */}
+          {preOrder.product_type === "LIMITED" && preOrder.limited_properties && (
+            <>
+              <Separator />
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <div className="flex items-center gap-2 text-amber-800 font-medium mb-2">
+                  <Clock className="w-4 h-4" />
+                  Limited Edition Details
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-amber-700">
+                  {preOrder.limited_properties.premiere_date && (
+                    <div>
+                      <span className="font-medium">Premiere:</span>{" "}
+                      {formatDate(preOrder.limited_properties.premiere_date)}
+                    </div>
+                  )}
+                  <div>
+                    <span className="font-medium">Available:</span>{" "}
+                    {formatDate(preOrder.limited_properties.availability_start_date)} -{" "}
+                    {formatDate(preOrder.limited_properties.availability_end_date)}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
 
           <Separator />
 
@@ -347,14 +492,24 @@ const PreOrderDetail: React.FC<PreOrderDetailProps> = ({ preOrder }) => {
             </>
           )}
 
-          {preOrder.attributes_description && (
+          {preOrder.attributes_description && preOrder.attributes_description.length > 0 && (
             <>
               <Separator />
               <div>
-                <span className="text-sm text-gray-500">Additional Attributes:</span>
-                <pre className="text-xs text-gray-700 mt-1 bg-gray-50 p-3 rounded-md overflow-auto">
-                  {JSON.stringify(preOrder.attributes_description, null, 2)}
-                </pre>
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">Ingredients</h4>
+                <div className="space-y-2">
+                  {preOrder.attributes_description.map((attr: any, index: any) => (
+                    <div key={index} className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                      <div className="font-medium text-sm text-gray-900">
+                        {attr.ingredient} ({attr.value}
+                        {attr.unit})
+                      </div>
+                      {attr.description && (
+                        <div className="text-xs text-gray-600 mt-1">{attr.description}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </>
           )}
@@ -415,8 +570,10 @@ const PreOrderDetail: React.FC<PreOrderDetailProps> = ({ preOrder }) => {
           <CardContent className="space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <span className="text-sm text-gray-500">Transaction ID:</span>
-                <p className="text-sm font-mono text-gray-900">{preOrder.PaymentTx.id}</p>
+                <span className="text-sm text-gray-500">Gateway Reference:</span>
+                <p className="text-sm font-mono text-gray-900">
+                  {preOrder.PaymentTx.gateway_id || preOrder.PaymentTx.gateway_ref || "N/A"}
+                </p>
               </div>
 
               <div>

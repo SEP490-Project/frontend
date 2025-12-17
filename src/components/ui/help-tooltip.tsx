@@ -43,11 +43,15 @@ const HelpTooltip: React.FC<HelpTooltipProps> = ({
         <TooltipTrigger asChild={asChild} className="cursor-help">
           <span className={cn("inline-flex items-center", className)}>
             <HelpCircle
-              className={cn("h-3.5 w-3.5 transition-colors", iconVariants[variant], iconClassName)}
+              className={cn(
+                "h-4 w-4 text-gray-400 hover:text-gray-600 transition-colors",
+                iconVariants[variant],
+                iconClassName,
+              )}
             />
           </span>
         </TooltipTrigger>
-        <TooltipContent side={side} align={align} className="max-w-xs text-sm">
+        <TooltipContent side={side} align={align} className="max-w-xs">
           {children}
         </TooltipContent>
       </Tooltip>

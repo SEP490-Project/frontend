@@ -255,40 +255,46 @@ const MobileOrderDetail: React.FC<MobileOrderDetailProps> = ({ order }) => {
 
               return (
                 <div key={item.id || index} className="border rounded-lg overflow-hidden">
-                  {primaryImage && (
-                    <div className="relative h-24 bg-gray-100">
-                      {!imageErrors.has(imageKey) ? (
-                        <img
-                          src={primaryImage.image_url}
-                          alt={primaryImage.alt_text || item.product_name}
-                          className="w-full h-full object-cover"
-                          onError={() => handleImageError(imageKey)}
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                          <FaBox className="w-6 h-6 text-gray-400" />
+                  <div className="p-3 space-y-2">
+                    <div className="flex gap-3">
+                      {primaryImage && (
+                        <div className="flex-shrink-0">
+                          {!imageErrors.has(imageKey) ? (
+                            <img
+                              src={primaryImage.image_url}
+                              alt={primaryImage.alt_text || item.product_name}
+                              className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                              onError={() => handleImageError(imageKey)}
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="w-16 h-16 flex items-center justify-center bg-gray-200 rounded-lg border border-gray-200">
+                              <FaBox className="w-4 h-4 text-gray-400" />
+                            </div>
+                          )}
                         </div>
                       )}
-                    </div>
-                  )}
 
-                  <div className="p-3 space-y-2">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="font-medium text-sm text-gray-900">{item.product_name}</div>
-                        <div className="text-xs text-gray-600 mt-1">
-                          {item.capacity} {item.capacity_unit} - {item.container_type}
-                        </div>
-                        {item.description && (
-                          <div className="text-xs text-gray-500 mt-1 line-clamp-2">
-                            {item.description}
+                      <div className="flex-1 space-y-1">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="font-medium text-sm text-gray-900">
+                              {item.product_name}
+                            </div>
+                            <div className="text-xs text-gray-600 mt-1">
+                              {item.capacity} {item.capacity_unit} - {item.container_type}
+                            </div>
+                            {item.description && (
+                              <div className="text-xs text-gray-500 mt-1 line-clamp-2">
+                                {item.description}
+                              </div>
+                            )}
                           </div>
-                        )}
+                          <Badge className="text-xs ml-2" variant="secondary">
+                            x{item.quantity}
+                          </Badge>
+                        </div>
                       </div>
-                      <Badge className="text-xs ml-2" variant="secondary">
-                        x{item.quantity}
-                      </Badge>
                     </div>
 
                     {item.brand && (
@@ -404,17 +410,17 @@ const MobileOrderDetail: React.FC<MobileOrderDetailProps> = ({ order }) => {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="rounded-lg overflow-hidden">
+            <div className="border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-2">
               {!imageErrors.has("confirmation") ? (
                 <img
                   src={order.confirmation_image || order.staff_resource}
                   alt={order.confirmation_image ? "Order confirmation" : "Staff resource"}
-                  className="w-full h-auto"
+                  className="w-full h-40 object-cover rounded-md"
                   onError={() => handleImageError("confirmation")}
                   loading="lazy"
                 />
               ) : (
-                <div className="w-full h-32 flex items-center justify-center bg-gray-200 rounded-lg">
+                <div className="w-full h-40 flex items-center justify-center bg-gray-200 rounded-md">
                   <div className="text-center text-gray-500">
                     <FaImage className="w-8 h-8 mx-auto mb-2" />
                     <p className="text-sm">Image not available</p>

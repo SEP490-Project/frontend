@@ -84,21 +84,21 @@ const RefundRequestOrder = ({ order, onHandle }: RefundRequestOrderProps) => {
             </div>
           </div>
 
-          {order.user_bank_account && (
+          {order.bank_account && (
             <div className="bg-gray-50 rounded-lg p-4 space-y-2">
               <p className="text-sm font-medium text-gray-700">Customer Bank Details</p>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>
                   <span className="text-gray-500">Bank:</span>
-                  <span className="ml-2 font-medium">{order.user_bank_name}</span>
+                  <span className="ml-2 font-medium">{order.bank_name}</span>
                 </div>
                 <div>
                   <span className="text-gray-500">Account:</span>
-                  <span className="ml-2 font-medium">{order.user_bank_account}</span>
+                  <span className="ml-2 font-medium">{order.bank_account}</span>
                 </div>
                 <div className="col-span-2">
                   <span className="text-gray-500">Account Holder:</span>
-                  <span className="ml-2 font-medium">{order.user_bank_account_holder}</span>
+                  <span className="ml-2 font-medium">{order.bank_account_holder}</span>
                 </div>
               </div>
             </div>

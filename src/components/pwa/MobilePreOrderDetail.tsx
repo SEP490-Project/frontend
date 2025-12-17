@@ -103,7 +103,7 @@ const MobilePreOrderDetail: React.FC<MobilePreOrderDetailProps> = ({ preOrder })
             </Badge>
 
             <Badge
-              variant={preOrder.product_type === "LIMITED" ? "destructive" : "secondary"}
+              variant={preOrder.product_type === "LIMITED" ? "default" : "secondary"}
               className="text-xs"
             >
               {preOrder.product_type}
@@ -242,45 +242,51 @@ const MobilePreOrderDetail: React.FC<MobilePreOrderDetailProps> = ({ preOrder })
         </CardHeader>
         <CardContent className="pt-0 space-y-3">
           <div className="border rounded-lg overflow-hidden">
-            {(() => {
-              const primaryImage = getPrimaryImage(preOrder.images);
-              const imageKey = "preorder-product";
-
-              return primaryImage ? (
-                <div className="relative h-32 bg-gray-100">
-                  {!imageErrors.has(imageKey) ? (
-                    <img
-                      src={primaryImage.image_url}
-                      alt={primaryImage.alt_text || preOrder.product_name}
-                      className="w-full h-full object-cover"
-                      onError={() => handleImageError(imageKey)}
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                      <FaBox className="w-8 h-8 text-gray-400" />
-                    </div>
-                  )}
-                </div>
-              ) : null;
-            })()}
-
             <div className="p-3 space-y-3">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="font-medium text-sm text-gray-900">{preOrder.product_name}</div>
-                  <div className="text-xs text-gray-600 mt-1">
-                    {preOrder.capacity} {preOrder.capacity_unit} - {preOrder.container_type}
-                  </div>
-                  {preOrder.description && (
-                    <div className="text-xs text-gray-500 mt-1 line-clamp-2">
-                      {preOrder.description}
+              <div className="flex gap-3">
+                {(() => {
+                  const primaryImage = getPrimaryImage(preOrder.images);
+                  const imageKey = "preorder-product";
+
+                  return primaryImage ? (
+                    <div className="flex-shrink-0">
+                      {!imageErrors.has(imageKey) ? (
+                        <img
+                          src={primaryImage.image_url}
+                          alt={primaryImage.alt_text || preOrder.product_name}
+                          className="w-20 h-20 object-cover rounded-lg border border-gray-200"
+                          onError={() => handleImageError(imageKey)}
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="w-20 h-20 flex items-center justify-center bg-gray-200 rounded-lg border border-gray-200">
+                          <FaBox className="w-6 h-6 text-gray-400" />
+                        </div>
+                      )}
                     </div>
-                  )}
+                  ) : null;
+                })()}
+
+                <div className="flex-1 space-y-2">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="font-medium text-sm text-gray-900">
+                        {preOrder.product_name}
+                      </div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        {preOrder.capacity} {preOrder.capacity_unit} - {preOrder.container_type}
+                      </div>
+                      {preOrder.description && (
+                        <div className="text-xs text-gray-500 mt-1 line-clamp-2">
+                          {preOrder.description}
+                        </div>
+                      )}
+                    </div>
+                    <Badge className="text-xs ml-2" variant="secondary">
+                      x{preOrder.quantity}
+                    </Badge>
+                  </div>
                 </div>
-                <Badge className="text-xs ml-2" variant="secondary">
-                  x{preOrder.quantity}
-                </Badge>
               </div>
 
               {preOrder.brand && (
@@ -384,17 +390,17 @@ const MobilePreOrderDetail: React.FC<MobilePreOrderDetailProps> = ({ preOrder })
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="rounded-lg overflow-hidden">
+            <div className="border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-2">
               {!imageErrors.has("confirmation") ? (
                 <img
                   src={preOrder.confirmation_image}
                   alt="Pre-order confirmation"
-                  className="w-full h-auto"
+                  className="w-full h-40 object-cover rounded-md"
                   onError={() => handleImageError("confirmation")}
                   loading="lazy"
                 />
               ) : (
-                <div className="w-full h-32 flex items-center justify-center bg-gray-200 rounded-lg">
+                <div className="w-full h-40 flex items-center justify-center bg-gray-200 rounded-md">
                   <div className="text-center text-gray-500">
                     <FaImage className="w-8 h-8 mx-auto mb-2" />
                     <p className="text-sm">Image not available</p>

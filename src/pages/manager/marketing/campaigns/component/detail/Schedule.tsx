@@ -28,6 +28,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import TaskCalendar from "@/components/manage/marketing/task/Calendar";
 import TaskDetailSlider from "@/components/manage/marketing/task/TaskDetailSlider";
 import { formatDate } from "@/libs/helper/helper";
+import { format } from "date-fns";
 import type { TaskListMarketing } from "@/libs/types/task";
 
 interface ScheduleProps {
@@ -39,12 +40,7 @@ const Schedule: React.FC<ScheduleProps> = ({ campaignId }) => {
   const { id } = useParams<{ id: string }>();
   const currentCampaignId = campaignId || id;
 
-  const {
-    taskListMarketing,
-    loading: tasksLoading,
-    taskDetail,
-    detailLoading,
-  } = useTaskMarketing();
+  const { taskDetail, detailLoading } = useTaskMarketing();
   const { campaignDetail } = useCampaign();
   const { users, loading: usersLoading, pagination: usersPagination } = useUserManager();
 
@@ -53,6 +49,10 @@ const Schedule: React.FC<ScheduleProps> = ({ campaignId }) => {
   const [activeFilter, setActiveFilter] = useState<string>("ALL");
   const [showModal, setShowModal] = useState(false);
   const [showDetailSlider, setShowDetailSlider] = useState(false);
+
+  // Task loading states
+  const [monthTasks, setMonthTasks] = useState<TaskListMarketing[]>([]);
+  const [taskLoading, setTaskLoading] = useState(false);
 
   const [selectedTask, setSelectedTask] = useState<TaskListMarketing | null>(null);
   const [showTaskDetail, setShowTaskDetail] = useState(false);
@@ -63,17 +63,57 @@ const Schedule: React.FC<ScheduleProps> = ({ campaignId }) => {
   const [userPage, setUserPage] = useState(1);
   const [currentTaskType, setCurrentTaskType] = useState<string>("");
 
-  useEffect(() => {
-    if (currentCampaignId) {
-      dispatch(
-        getTaskList({
-          page: 1,
-          limit: 100,
+  // Fetch tasks for current month with pagination
+  const fetchMonthTasks = useCallback(async () => {
+    if (!currentCampaignId) return;
+
+    // Clear previous month data
+    setMonthTasks([]);
+    setTaskLoading(true);
+
+    try {
+      // Calculate current month date range
+      const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+      const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+      const fromDate = format(startOfMonth, "yyyy-MM-dd");
+      const toDate = format(endOfMonth, "yyyy-MM-dd");
+
+      let page = 1;
+      let monthTasksData: TaskListMarketing[] = [];
+      let hasNext = true;
+
+      while (hasNext) {
+        const params: any = {
+          page,
+          limit: 20,
           campaign_id: currentCampaignId,
-        }),
-      );
+          deadline_from_date: fromDate,
+          deadline_to_date: toDate,
+        };
+
+        if (activeFilter !== "ALL") {
+          params.type = activeFilter;
+        }
+
+        const response = await dispatch(getTaskList(params)).unwrap();
+        monthTasksData = [...monthTasksData, ...response.data];
+        hasNext = response.pagination?.has_next || false;
+        page++;
+      }
+
+      setMonthTasks(monthTasksData);
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+      setMonthTasks([]);
+    } finally {
+      setTaskLoading(false);
     }
-  }, [dispatch, currentCampaignId]);
+  }, [dispatch, currentCampaignId, activeFilter, currentDate]);
+
+  // Fetch tasks when filters change
+  useEffect(() => {
+    fetchMonthTasks();
+  }, [fetchMonthTasks]);
 
   // Get roles for task type as comma-separated string
   const getRolesForTaskType = useCallback((taskType: string): string => {
@@ -246,16 +286,25 @@ const Schedule: React.FC<ScheduleProps> = ({ campaignId }) => {
   };
 
   const getTasksForDate = (date: Date): TaskListMarketing[] => {
-    return (
-      taskListMarketing?.filter((task) => {
-        const taskDate = new Date(task.deadline);
-        return (
-          taskDate.getFullYear() === date.getFullYear() &&
-          taskDate.getMonth() === date.getMonth() &&
-          taskDate.getDate() === date.getDate()
-        );
-      }) || []
-    );
+    return monthTasks.filter((task) => {
+      const taskDate = new Date(task.deadline);
+      return (
+        taskDate.getFullYear() === date.getFullYear() &&
+        taskDate.getMonth() === date.getMonth() &&
+        taskDate.getDate() === date.getDate()
+      );
+    });
+  };
+
+  // Simplified task counts (not used for display anymore)
+  const getTaskCounts = () => {
+    return {
+      ALL: monthTasks.length,
+      PRODUCT: 0,
+      CONTENT: 0,
+      EVENT: 0,
+      OTHER: 0,
+    };
   };
 
   const itemVariants = {
@@ -263,7 +312,8 @@ const Schedule: React.FC<ScheduleProps> = ({ campaignId }) => {
     visible: { opacity: 1, y: 0 },
   };
 
-  if (tasksLoading) {
+  // Only show initial loading when no tasks exist
+  if (taskLoading && monthTasks.length === 0 && !currentCampaignId) {
     return (
       <div className="flex items-center justify-center py-16">
         <div className="flex flex-col items-center gap-2">
@@ -289,15 +339,33 @@ const Schedule: React.FC<ScheduleProps> = ({ campaignId }) => {
             </p>
           </CardHeader>
           <CardContent>
-            <TaskCalendar
-              currentDate={currentDate}
-              setCurrentDate={setCurrentDate}
-              tasks={taskListMarketing || []}
-              onDateClick={handleDateClick}
-              activeFilter={activeFilter}
-              onFilterChange={setActiveFilter}
-              taskCounts={{}}
-            />
+            {/* Calendar with Fade Animation */}
+            <motion.div
+              animate={{
+                opacity: taskLoading ? 0.4 : 1,
+              }}
+              transition={{
+                duration: 0.3,
+                ease: "easeInOut",
+              }}
+            >
+              <TaskCalendar
+                currentDate={currentDate}
+                setCurrentDate={setCurrentDate}
+                tasks={monthTasks}
+                onDateClick={handleDateClick}
+                activeFilter={activeFilter}
+                onFilterChange={setActiveFilter}
+                taskCounts={getTaskCounts()}
+                contracts={[]}
+                selectedContract={null}
+                onContractSelect={() => {}}
+                contractSearch=""
+                onContractSearch={() => {}}
+                contractLoading={false}
+                taskLoading={taskLoading}
+              />
+            </motion.div>
           </CardContent>
         </Card>
       </motion.div>

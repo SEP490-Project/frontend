@@ -1,13 +1,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { FaBox, FaFileLines, FaCalendarDays, FaGlobe, FaFilter } from "react-icons/fa6";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { motion, AnimatePresence } from "framer-motion";
 import { DataSelector } from "@/components/global";
 import type { TaskListMarketing } from "@/libs/types/task";
@@ -16,23 +9,16 @@ import type { ContractBase } from "@/libs/types/contract";
 const daysOfWeekShort = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 const taskTypes = [
-  { name: "ALL", label: "All Tasks", color: "#6b7280", icon: <FaFilter className="h-4 w-4" /> },
-  { name: "PRODUCT", label: "Product", color: "#f7c06d", icon: <FaBox className="h-4 w-4" /> },
-  {
-    name: "CONTENT",
-    label: "Content",
-    color: "#ff88fa",
-    icon: <FaFileLines className="h-4 w-4" />,
-  },
-  { name: "EVENT", label: "Event", color: "#6ad1ff", icon: <FaCalendarDays className="h-4 w-4" /> },
-  { name: "OTHER", label: "Other", color: "#9976ff", icon: <FaGlobe className="h-4 w-4" /> },
+  { name: "ALL", label: "All Tasks", color: "#6b7280" },
+  { name: "PRODUCT", label: "Product", color: "#f7c06d" },
+  { name: "CONTENT", label: "Content", color: "#ff88fa" },
+  { name: "EVENT", label: "Event", color: "#6ad1ff" },
+  { name: "OTHER", label: "Other", color: "#9976ff" },
 ];
 
 const ContractItem = ({ contract }: { contract: ContractBase }) => (
   <div className="flex items-center justify-between w-full p-2">
-    <div>
-      <span className="font-medium">{contract.title}</span>
-    </div>
+    <span className="font-medium">{contract.title}</span>
     <Badge variant="secondary" className="capitalize">
       {contract.type.toLowerCase().replace("_", " ")}
     </Badge>
@@ -47,7 +33,6 @@ interface CalendarProps {
   activeFilter: string;
   onFilterChange: (type: string) => void;
   taskCounts: Record<string, number>;
-  // Contract filtering props
   contracts: ContractBase[];
   selectedContract: ContractBase | null;
   onContractSelect: (contract: ContractBase | null) => void;
@@ -55,6 +40,7 @@ interface CalendarProps {
   onContractSearch: (search: string) => void;
   contractLoading: boolean;
   onContractLoadMore?: () => void;
+  taskLoading?: boolean;
 }
 
 function Calendar({
@@ -64,7 +50,6 @@ function Calendar({
   onDateClick,
   activeFilter,
   onFilterChange,
-  taskCounts,
   contracts,
   selectedContract,
   onContractSelect,
@@ -72,6 +57,7 @@ function Calendar({
   onContractSearch,
   contractLoading,
   onContractLoadMore,
+  taskLoading = false,
 }: CalendarProps) {
   const today = new Date();
   const year = currentDate.getFullYear();
@@ -85,16 +71,17 @@ function Calendar({
   const lastDayOfPrevMonth = new Date(year, month, 0);
   const daysInPrevMonth = lastDayOfPrevMonth.getDate();
 
-  const getTasksForDate = (date: Date): TaskListMarketing[] => {
-    return tasks.filter((task) => {
-      const taskDate = new Date(task.deadline);
+  const isToday = (date: Date) => date.toDateString() === today.toDateString();
+
+  const getTasksForDate = (date: Date) =>
+    tasks.filter((task) => {
+      const d = new Date(task.deadline);
       return (
-        taskDate.getFullYear() === date.getFullYear() &&
-        taskDate.getMonth() === date.getMonth() &&
-        taskDate.getDate() === date.getDate()
+        d.getFullYear() === date.getFullYear() &&
+        d.getMonth() === date.getMonth() &&
+        d.getDate() === date.getDate()
       );
     });
-  };
 
   const getTaskTypeColor = (type: string) => {
     switch (type) {
@@ -111,9 +98,14 @@ function Calendar({
     }
   };
 
-  const calendarDays = [];
+  const calendarDays: {
+    day: number;
+    isCurrentMonth: boolean;
+    date: Date;
+    key: string;
+  }[] = [];
 
-  // Previous month days
+  // Previous month
   for (let i = firstDayWeekday - 1; i >= 0; i--) {
     calendarDays.push({
       day: daysInPrevMonth - i,
@@ -123,7 +115,7 @@ function Calendar({
     });
   }
 
-  // Current month days
+  // Current month
   for (let day = 1; day <= daysInMonth; day++) {
     calendarDays.push({
       day,
@@ -133,9 +125,9 @@ function Calendar({
     });
   }
 
-  // Next month days
-  const remainingDays = 42 - calendarDays.length;
-  for (let day = 1; day <= remainingDays; day++) {
+  // Next month
+  const remaining = 42 - calendarDays.length;
+  for (let day = 1; day <= remaining; day++) {
     calendarDays.push({
       day,
       isCurrentMonth: false,
@@ -146,15 +138,9 @@ function Calendar({
 
   const navigateMonth = (direction: "prev" | "next") => {
     const newDate = new Date(currentDate);
-    if (direction === "prev") {
-      newDate.setMonth(newDate.getMonth() - 1);
-    } else {
-      newDate.setMonth(newDate.getMonth() + 1);
-    }
+    newDate.setMonth(direction === "prev" ? newDate.getMonth() - 1 : newDate.getMonth() + 1);
     setCurrentDate(newDate);
   };
-
-  const isToday = (date: Date) => date.toDateString() === today.toDateString();
 
   const monthYearKey = `${year}-${month}`;
 
@@ -163,51 +149,82 @@ function Calendar({
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border/20">
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigateMonth("prev")}
-            className="h-8 w-8 p-0 hover:bg-gray-100"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-
-          <AnimatePresence mode="wait">
-            <motion.h1
-              key={monthYearKey}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              transition={{ duration: 0.25 }}
-              className="text-xl font-semibold text-foreground"
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigateMonth("prev")}
+              className="h-8 w-8 p-0 hover:bg-gray-100"
             >
-              {currentDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
-            </motion.h1>
-          </AnimatePresence>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigateMonth("next")}
-            className="h-8 w-8 p-0 hover:bg-gray-100"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+            <AnimatePresence mode="wait">
+              <motion.h1
+                key={monthYearKey}
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 8 }}
+                transition={{ duration: 0.25 }}
+                className="text-xl font-semibold min-w-[200px] text-center"
+              >
+                {currentDate.toLocaleDateString("en-US", {
+                  month: "long",
+                  year: "numeric",
+                })}
+              </motion.h1>
+            </AnimatePresence>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigateMonth("next")}
+              className="h-8 w-8 p-0 hover:bg-gray-100"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Task Type Filter */}
+          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+            {taskTypes.map((type) => {
+              const isActive = activeFilter === type.name;
+
+              return (
+                <Button
+                  key={type.name}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onFilterChange(type.name)}
+                  className={`
+                    h-7 px-3 text-xs font-medium transition-all
+                    ${
+                      isActive
+                        ? "bg-white text-foreground shadow-sm"
+                        : "text-muted-foreground hover:bg-gray-200 hover:text-foreground"
+                    }
+                  `}
+                >
+                  <span
+                    className="w-2.5 h-2.5 rounded-full mr-2"
+                    style={{ backgroundColor: type.color }}
+                  />
+                  {type.name}
+                </Button>
+              );
+            })}
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Contract Filter */}
           <div className="w-64">
             <DataSelector
               data={contracts}
               selectedId={selectedContract?.id || null}
-              onSelect={(contractId) => {
-                const contract = contracts.find((c) => c.id === contractId);
-                onContractSelect(contract || null);
-              }}
-              renderItem={(contract) => <ContractItem contract={contract} />}
-              getLabel={(contract) => contract.title}
-              title="Filter by Contract"
+              onSelect={(id) => onContractSelect(contracts.find((c) => c.id === id) || null)}
+              renderItem={(c) => <ContractItem contract={c} />}
+              getLabel={(c) => c.title}
+              title="Contracts"
               placeholder={selectedContract ? selectedContract.title : "All Contracts"}
               onSearch={onContractSearch}
               searchValue={contractSearch}
@@ -216,135 +233,73 @@ function Calendar({
             />
           </div>
 
-          {/* Task Type Filter */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                {taskTypes.find((t) => t.name === activeFilter)?.icon}
-                <span>{taskTypes.find((t) => t.name === activeFilter)?.label}</span>
-                <Badge variant="secondary" className="ml-1">
-                  {taskCounts[activeFilter] || 0}
-                </Badge>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              {taskTypes.map((type) => (
-                <DropdownMenuItem
-                  key={type.name}
-                  onClick={() => onFilterChange(type.name)}
-                  className={`gap-3 ${activeFilter === type.name ? "bg-accent" : ""}`}
-                >
-                  <div
-                    className="w-4 h-4 rounded flex items-center justify-center text-white text-xs"
-                    style={{ backgroundColor: type.color }}
-                  >
-                    {type.icon}
-                  </div>
-                  <span className="flex-1">{type.label}</span>
-                  <Badge variant="outline" className="text-xs">
-                    {taskCounts[type.name] || 0}
-                  </Badge>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <Button
-            variant="default"
-            onClick={() => setCurrentDate(new Date())}
-            className="px-4 py-2"
-          >
-            Today
-          </Button>
+          <Button onClick={() => setCurrentDate(new Date())}>Today</Button>
         </div>
       </div>
 
-      {/* Days of Week */}
+      {/* Days */}
       <div className="grid grid-cols-7 border-b border-border/20">
-        {daysOfWeekShort.map((day) => (
-          <div key={day} className="p-2 text-center">
-            <div className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-              {day}
-            </div>
+        {daysOfWeekShort.map((d) => (
+          <div key={d} className="p-2 text-center text-sm font-medium text-muted-foreground">
+            {d}
           </div>
         ))}
       </div>
 
       {/* Calendar Grid */}
       <div className="flex-1 overflow-hidden px-6 py-4">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={monthYearKey}
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.02 }}
-            transition={{ duration: 0.3 }}
-            className="grid grid-cols-7 auto-rows-[80px]"
-          >
-            {calendarDays.map((dayObj) => {
-              const isTodayDate = isToday(dayObj.date);
-              const dayTasks = getTasksForDate(dayObj.date);
-              const displayTasks = dayTasks.slice(0, 4);
-              const hasMoreTasks = dayTasks.length > 4;
+        <motion.div
+          animate={{ opacity: taskLoading ? 0.5 : 1 }}
+          transition={{ duration: 0.2 }}
+          className={`grid grid-cols-7 auto-rows-[80px] ${
+            taskLoading ? "pointer-events-none select-none" : ""
+          }`}
+        >
+          {calendarDays.map((dayObj) => {
+            const dayTasks = getTasksForDate(dayObj.date);
+            const displayTasks = dayTasks.slice(0, 4);
 
-              return (
-                <div
-                  key={dayObj.key}
-                  className={`
-                    border-r border-b border-border/20 p-2 cursor-pointer transition-all duration-200 
-                    hover:bg-gray-50 flex flex-col justify-between overflow-hidden
-                    ${!dayObj.isCurrentMonth ? "bg-gray-50/50" : "bg-white"}
-                  `}
-                  onClick={() => {
-                    if (dayTasks.length > 0) onDateClick(dayObj.date);
-                  }}
+            return (
+              <div
+                key={dayObj.key}
+                onClick={() => dayTasks.length > 0 && onDateClick(dayObj.date)}
+                className={`
+                  border-r border-b border-border/20 p-2 cursor-pointer
+                  hover:bg-gray-50 flex flex-col justify-between
+                  ${!dayObj.isCurrentMonth ? "bg-gray-50/50" : "bg-white"}
+                `}
+              >
+                <span
+                  className={`text-sm font-medium ${
+                    isToday(dayObj.date)
+                      ? "bg-primary text-primary-foreground w-5 h-5 rounded-full flex items-center justify-center text-xs"
+                      : !dayObj.isCurrentMonth
+                        ? "text-muted-foreground/60"
+                        : "text-foreground"
+                  }`}
                 >
-                  {/* Day Number + More */}
-                  <div className="flex items-center justify-between">
-                    <span
-                      className={`text-sm font-medium ${
-                        isTodayDate
-                          ? "bg-primary text-primary-foreground w-5 h-5 rounded-full flex items-center justify-center text-xs"
-                          : !dayObj.isCurrentMonth
-                            ? "text-muted-foreground/60"
-                            : "text-foreground"
-                      }`}
-                    >
-                      {dayObj.day}
-                    </span>
-                    {hasMoreTasks && (
-                      <span className="text-[10px] text-muted-foreground font-medium">
-                        +{dayTasks.length - 4}
-                      </span>
-                    )}
-                  </div>
+                  {dayObj.day}
+                </span>
 
-                  {/* Task Dots */}
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {displayTasks.map((task, index) => (
-                      <motion.div
-                        key={task.id}
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ duration: 0.2, delay: index * 0.05 }}
-                        className="w-2 h-2 rounded-full shadow-sm"
-                        style={{ backgroundColor: getTaskTypeColor(task.type) }}
-                        title={task.name}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Task Preview */}
-                  {displayTasks.length > 0 && (
-                    <p className="text-[10px] text-muted-foreground line-clamp-1 mt-1 leading-tight">
-                      {displayTasks[0].name}
-                    </p>
-                  )}
+                <div className="flex gap-1 mt-1">
+                  {displayTasks.map((task) => (
+                    <div
+                      key={task.id}
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: getTaskTypeColor(task.type) }}
+                    />
+                  ))}
                 </div>
-              );
-            })}
-          </motion.div>
-        </AnimatePresence>
+
+                {displayTasks[0] && (
+                  <p className="text-[10px] text-muted-foreground line-clamp-1">
+                    {displayTasks[0].name}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </motion.div>
       </div>
     </div>
   );

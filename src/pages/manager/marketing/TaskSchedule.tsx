@@ -1,40 +1,125 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Calendar, TaskListModalWithDetail } from "@/components/manage/marketing/task";
 import { useAppDispatch } from "@/libs/stores";
 import { getTaskList, getTaskDetail } from "@/libs/stores/taskManager/thunk";
 import { clearTaskDetail } from "@/libs/stores/taskManager/slice";
 import { useTaskMarketing } from "@/libs/hooks/useTaskMarketing";
+import { useContract } from "@/libs/hooks/useContract";
+import { contract } from "@/libs/stores/contractManager/thunk";
+import { useDebounce } from "@/libs/hooks/useDebounce";
 import type { TaskListMarketing } from "@/libs/types/task";
+import type { ContractBase } from "@/libs/types/contract";
 import { motion } from "framer-motion";
+import { format } from "date-fns";
 
 const TaskSchedule: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [activeFilter, setActiveFilter] = useState("ALL");
-  const { taskListMarketing, detailLoading, taskDetail } = useTaskMarketing();
+
+  // Contract filtering states
+  const [selectedContract, setSelectedContract] = useState<ContractBase | null>(null);
+  const [contractSearch, setContractSearch] = useState("");
+  const [contractPage, setContractPage] = useState(1);
+  const [allContracts, setAllContracts] = useState<ContractBase[]>([]);
+
+  // Task loading states
+  const [monthTasks, setMonthTasks] = useState<TaskListMarketing[]>([]);
+  const [taskLoading, setTaskLoading] = useState(false);
+
+  const { detailLoading, taskDetail } = useTaskMarketing();
+  const { contracts, loading: contractLoading, pagination: contractPagination } = useContract();
   const dispatch = useAppDispatch();
+  const debouncedContractSearch = useDebounce(contractSearch, 500);
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 },
   };
 
+  // Reset contracts when search changes
   useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const params: any = { page: 1, limit: 100 }; // Increase limit to get all tasks for calendar view
+    setAllContracts([]);
+    setContractPage(1);
+  }, [debouncedContractSearch]);
+
+  // Load contracts for filtering
+  useEffect(() => {
+    dispatch(
+      contract({
+        page: contractPage,
+        limit: 10,
+        sort_by: "created_at",
+        status: "ACTIVE",
+        sort_order: "desc",
+        no_campaign: true,
+        ...(debouncedContractSearch ? { keyword: debouncedContractSearch } : {}),
+      }),
+    );
+  }, [dispatch, contractPage, debouncedContractSearch]);
+
+  // Append new contracts to list
+  useEffect(() => {
+    if (contractPage === 1) setAllContracts(contracts);
+    else setAllContracts((prev) => [...prev, ...contracts]);
+  }, [contracts, contractPage]);
+
+  const loadMoreContracts = useCallback(() => {
+    if (contractPagination?.has_next && !contractLoading) setContractPage((p) => p + 1);
+  }, [contractPagination, contractLoading]);
+
+  // Fetch tasks for current month with pagination
+  const fetchMonthTasks = useCallback(async () => {
+    // Clear previous month data
+    setMonthTasks([]);
+    setTaskLoading(true);
+
+    try {
+      // Calculate current month date range
+      const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+      const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+      const fromDate = format(startOfMonth, "yyyy-MM-dd");
+      const toDate = format(endOfMonth, "yyyy-MM-dd");
+
+      let page = 1;
+      let monthTasksData: TaskListMarketing[] = [];
+      let hasNext = true;
+
+      while (hasNext) {
+        const params: any = {
+          page,
+          limit: 20,
+          deadline_from_date: fromDate,
+          deadline_to_date: toDate,
+        };
+
         if (activeFilter !== "ALL") {
           params.type = activeFilter;
         }
-        await dispatch(getTaskList(params)).unwrap();
-      } catch (error) {
-        console.error("Error fetching tasks:", error);
-      }
-    };
+        if (selectedContract) {
+          params.contract_id = selectedContract.id;
+        }
 
-    fetchTasks();
-  }, [dispatch, activeFilter]);
+        const response = await dispatch(getTaskList(params)).unwrap();
+        monthTasksData = [...monthTasksData, ...response.data];
+        hasNext = response.pagination?.has_next || false;
+        page++;
+      }
+
+      setMonthTasks(monthTasksData);
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+      setMonthTasks([]);
+    } finally {
+      setTaskLoading(false);
+    }
+  }, [dispatch, activeFilter, selectedContract, currentDate]);
+
+  // Fetch tasks when filters change
+  useEffect(() => {
+    fetchMonthTasks();
+  }, [fetchMonthTasks]);
 
   const handleDateClick = (date: Date) => {
     const tasksForDate = getTasksForDate(date);
@@ -65,8 +150,16 @@ const TaskSchedule: React.FC = () => {
     setActiveFilter(type);
   };
 
+  const handleContractSelect = (contract: ContractBase | null) => {
+    setSelectedContract(contract);
+  };
+
+  const handleContractSearch = (search: string) => {
+    setContractSearch(search);
+  };
+
   const getTasksForDate = (date: Date): TaskListMarketing[] => {
-    return taskListMarketing.filter((task) => {
+    return monthTasks.filter((task) => {
       const taskDate = new Date(task.deadline);
       return (
         taskDate.getFullYear() === date.getFullYear() &&
@@ -76,16 +169,15 @@ const TaskSchedule: React.FC = () => {
     });
   };
 
+  // Simplified task counts (not used for display anymore)
   const getTaskCounts = () => {
-    const counts: Record<string, number> = {
-      ALL: taskListMarketing.length,
+    return {
+      ALL: monthTasks.length,
+      PRODUCT: 0,
+      CONTENT: 0,
+      EVENT: 0,
+      OTHER: 0,
     };
-
-    taskListMarketing.forEach((task) => {
-      counts[task.type] = (counts[task.type] || 0) + 1;
-    });
-
-    return counts;
   };
 
   const selectedDateTasks = selectedDate ? getTasksForDate(selectedDate) : [];
@@ -106,11 +198,19 @@ const TaskSchedule: React.FC = () => {
           <Calendar
             currentDate={currentDate}
             setCurrentDate={setCurrentDate}
-            tasks={taskListMarketing}
+            tasks={monthTasks}
             onDateClick={handleDateClick}
             activeFilter={activeFilter}
             onFilterChange={handleFilterChange}
             taskCounts={getTaskCounts()}
+            contracts={allContracts}
+            selectedContract={selectedContract}
+            onContractSelect={handleContractSelect}
+            contractSearch={contractSearch}
+            onContractSearch={handleContractSearch}
+            contractLoading={contractLoading}
+            onContractLoadMore={contractPagination?.has_next ? loadMoreContracts : undefined}
+            taskLoading={taskLoading}
           />
         </div>
       </div>

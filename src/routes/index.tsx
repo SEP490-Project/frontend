@@ -74,6 +74,7 @@ import AllConfigurations from "@/pages/manager/admin/configurations/AllConfigura
 import TermsOfService from "@/pages/manager/admin/configurations/TermsOfService";
 import Representative from "@/pages/manager/admin/configurations/Representative";
 import PrivacyPolicyAdmin from "@/pages/manager/admin/configurations/PrivacyPolicyAdmin";
+import GhnMock from "@/pages/manager/shared/GhnMock";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -126,6 +127,7 @@ const AppRoutes = () => (
           <Route index element={<Dashboard />} />
           <Route path="account" element={<Account />} />
           <Route path="notification" element={<Notification />} />
+          <Route path="ghn-mock" element={<GhnMock />} />
         </Route>
       </Route>
 

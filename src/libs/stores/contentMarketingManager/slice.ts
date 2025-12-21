@@ -6,7 +6,6 @@ import {
   marketingRejectContent,
 } from "./thunk";
 import type { ListContent } from "@/libs/types/content";
-import { toast } from "sonner";
 
 interface stateType {
   loading: boolean;
@@ -63,29 +62,29 @@ export const manageContentMarketingSlice = createSlice({
       .addCase(marketingApproveContent.pending, (state) => {
         state.loading = true;
       })
-      .addCase(marketingApproveContent.fulfilled, (state, action) => {
+      .addCase(marketingApproveContent.fulfilled, (state) => {
         state.loading = false;
-        const message = action.payload?.message || "Content approved successfully";
-        toast.success(message);
+        // const message = action.payload?.message || "Content approved successfully";
+        // toast.success(message);
       })
-      .addCase(marketingApproveContent.rejected, (state, action) => {
+      .addCase(marketingApproveContent.rejected, (state) => {
         state.loading = false;
-        const message = (action.payload as string) || "Failed to approve content";
-        toast.error(message);
+        // const message = (action.payload as string) || "Failed to approve content";
+        // toast.error(message);
       })
 
       .addCase(marketingRejectContent.pending, (state) => {
         state.loading = true;
       })
-      .addCase(marketingRejectContent.fulfilled, (state, action) => {
+      .addCase(marketingRejectContent.fulfilled, (state) => {
         state.loading = false;
-        const message = action.payload?.message || "Content rejected successfully";
-        toast.success(message);
+        // const message = action.payload?.message || "Content rejected successfully";
+        // toast.success(message);
       })
-      .addCase(marketingRejectContent.rejected, (state, action) => {
+      .addCase(marketingRejectContent.rejected, (state) => {
         state.loading = false;
-        const message = (action.payload as string) || "Failed to reject content";
-        toast.error(message);
+        // const message = (action.payload as string) || "Failed to reject content";
+        // toast.error(message);
       });
   },
 });

@@ -76,7 +76,7 @@ const GlobalHeader = () => {
           </button>
         </nav>
 
-        <div className="flex items-center space-x-6">
+        <div className="flex items-center space-x-6 z-10">
           {isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

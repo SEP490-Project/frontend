@@ -88,6 +88,22 @@ export function Calendar({ currentDate, setCurrentDate }: CalendarProps) {
     return date.toDateString() === currentDate.toDateString();
   };
 
+  // Get the start of the week (Sunday) for a given date
+  const getWeekStart = (date: Date) => {
+    const d = new Date(date);
+    const day = d.getDay();
+    d.setDate(d.getDate() - day);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  };
+
+  // Check if a date is in the same week as the selected date
+  const isInSelectedWeek = (date: Date) => {
+    const selectedWeekStart = getWeekStart(currentDate);
+    const dateWeekStart = getWeekStart(date);
+    return selectedWeekStart.getTime() === dateWeekStart.getTime();
+  };
+
   const monthYearKey = `${year}-${month}`;
 
   return (
@@ -140,25 +156,33 @@ export function Calendar({ currentDate, setCurrentDate }: CalendarProps) {
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 1.05 }}
           transition={{ duration: 0.3 }}
-          className="grid grid-cols-7 gap-1 place-items-center"
+          className="grid grid-cols-7 place-items-center"
         >
-          {calendarDays.map((dayObj) => {
+          {calendarDays.map((dayObj, index) => {
             const isTodayDate = isToday(dayObj.date);
             const isSelectedDate = isSelected(dayObj.date);
             const hasTasks = hasTasksOnDate(dayObj.date);
+            const inSelectedWeek = isInSelectedWeek(dayObj.date);
+            const isFirstInRow = index % 7 === 0;
+            const isLastInRow = index % 7 === 6;
 
             return (
               <div
                 key={dayObj.key}
                 className={`
-                  text-center cursor-pointer rounded-lg transition-all duration-10 ease-out relative h-10 w-10 mx-auto
+                  text-center cursor-pointer transition-all duration-10 ease-out relative h-10 w-full
                   flex flex-col items-center justify-center 
                   group
                   ${
+                    inSelectedWeek
+                      ? `bg-primary/10 ${isFirstInRow ? "rounded-l-lg" : ""} ${isLastInRow ? "rounded-r-lg" : ""}`
+                      : ""
+                  }
+                  ${
                     isSelectedDate
-                      ? "bg-primary text-primary-foreground font-medium shadow-md"
+                      ? "text-primary-foreground font-medium"
                       : isTodayDate
-                        ? "bg-accent text-accent-foreground font-medium"
+                        ? "text-accent-foreground font-medium"
                         : !dayObj.isCurrentMonth
                           ? "text-muted-foreground"
                           : "text-foreground"
@@ -167,9 +191,11 @@ export function Calendar({ currentDate, setCurrentDate }: CalendarProps) {
                 onClick={() => setCurrentDate(dayObj.date)}
               >
                 <span
-                  className={`text-sm leading-none relative transition-all duration-300 ease-out group-hover:font-bold ${
-                    isSelectedDate || isTodayDate ? "font-medium" : ""
-                  }`}
+                  className={`
+                    flex items-center justify-center h-8 w-8 rounded-lg text-sm leading-none relative transition-all duration-300 ease-out group-hover:font-bold
+                    ${isSelectedDate ? "bg-primary text-primary-foreground shadow-md font-medium" : ""}
+                    ${isTodayDate && !isSelectedDate ? "bg-accent font-medium" : ""}
+                  `}
                 >
                   {dayObj.day}
                   {hasTasks && (

@@ -58,13 +58,12 @@ export default function TaskManagement() {
   };
 
   const formatWeekRange = (date: Date) => {
-    // Get the start of the week (Monday)
+    // Get the start of the week (Sunday)
     const startOfWeek = new Date(date);
-    const dayOfWeek = startOfWeek.getDay();
-    const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-    startOfWeek.setDate(startOfWeek.getDate() - daysToMonday);
+    const dayOfWeek = startOfWeek.getDay(); // Sunday = 0
+    startOfWeek.setDate(startOfWeek.getDate() - dayOfWeek);
 
-    // Get the end of the week (Sunday)
+    // Get the end of the week (Saturday)
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(endOfWeek.getDate() + 6);
 

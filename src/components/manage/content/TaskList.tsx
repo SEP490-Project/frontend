@@ -1,3 +1,4 @@
+import { useRef, useEffect } from "react";
 import { Eye, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -42,12 +43,11 @@ export function TaskList({ currentDate, onViewTask, statusFilter = "ALL" }: Task
     onViewTask?.(taskId);
   };
 
-  // Get the week days
+  // Get the week days (starting from Sunday to match Calendar)
   const getWeekDays = () => {
     const startOfWeek = new Date(currentDate);
-    const dayOfWeek = startOfWeek.getDay();
-    const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-    startOfWeek.setDate(startOfWeek.getDate() - daysToMonday);
+    const dayOfWeek = startOfWeek.getDay(); // Sunday = 0
+    startOfWeek.setDate(startOfWeek.getDate() - dayOfWeek);
 
     const days = [];
     for (let i = 0; i < 7; i++) {
@@ -71,7 +71,21 @@ export function TaskList({ currentDate, onViewTask, statusFilter = "ALL" }: Task
   };
 
   const weekDays = getWeekDays();
-  const dayNames = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+  const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+  const dayRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  // Scroll to selected day when currentDate changes
+  useEffect(() => {
+    const selectedIndex = weekDays.findIndex(
+      (day) => day.toDateString() === currentDate.toDateString(),
+    );
+    if (selectedIndex !== -1 && dayRefs.current[selectedIndex]) {
+      dayRefs.current[selectedIndex]?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, [currentDate, weekDays]);
 
   return (
     <div className="h-[80vh]">
@@ -80,10 +94,14 @@ export function TaskList({ currentDate, onViewTask, statusFilter = "ALL" }: Task
         {weekDays.map((day, index) => {
           const dayTasks = getTasksForDate(day);
           const isToday = new Date().toDateString() === day.toDateString();
+          const isSelected = currentDate.toDateString() === day.toDateString();
 
           return (
             <motion.div
               key={day.toISOString()}
+              ref={(el) => {
+                dayRefs.current[index] = el;
+              }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}
@@ -95,10 +113,12 @@ export function TaskList({ currentDate, onViewTask, statusFilter = "ALL" }: Task
                   {dayNames[index]}
                 </div>
                 <div
-                  className={`text-2xl font-semibold ${
-                    isToday
-                      ? "text-primary bg-primary/10 w-10 h-10 rounded-full flex items-center justify-center"
-                      : "text-foreground"
+                  className={`text-2xl font-semibold flex items-center justify-center w-10 h-10 rounded-full ${
+                    isSelected
+                      ? "text-primary-foreground bg-primary"
+                      : isToday
+                        ? "text-primary bg-primary/10"
+                        : "text-foreground"
                   }`}
                 >
                   {day.getDate()}

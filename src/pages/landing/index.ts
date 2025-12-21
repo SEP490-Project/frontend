@@ -3,3 +3,4 @@ export { default as AboutApp } from "./AboutApp";
 export { default as AboutUs } from "./AboutUs";
 export { default as Blog } from "./Blog";
 export { default as BlogDetail } from "./BlogDetail";
+export { default as OrderTracking } from "./OrderTracking";

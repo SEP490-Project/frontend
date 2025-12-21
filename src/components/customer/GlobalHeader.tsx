@@ -33,12 +33,12 @@ const GlobalHeader = () => {
 
   return (
     <header className="bg-white px-4 py-4 shadow-sm sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
+      <div className="relative max-w-7xl mx-auto flex items-center justify-between">
         <button type="button" onClick={() => navigate("/")} className="flex items-center">
           <img src="/pink.png" alt="B-ShowSell Logo" className="h-16 w-auto" />
         </button>
 
-        <nav className="hidden md:flex items-center space-x-10">
+        <nav className="absolute hidden lg:flex items-center justify-center w-full space-x-10">
           <button
             type="button"
             onClick={() => navigate("/")}
@@ -66,6 +66,13 @@ const GlobalHeader = () => {
             className="text-[#383838] hover:text-[#fec6d4] transition-colors font-medium"
           >
             BLOG
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate("/order-tracking")}
+            className="text-[#383838] hover:text-[#fec6d4] transition-colors font-medium"
+          >
+            ORDER TRACKING
           </button>
         </nav>
 
@@ -128,7 +135,7 @@ const GlobalHeader = () => {
           )}
 
           <Sheet>
-            <SheetTrigger asChild className="md:hidden">
+            <SheetTrigger asChild className="lg:hidden">
               <Button variant="ghost" size="icon">
                 <FaBars className="w-6 h-6 text-[#383838]" />
               </Button>
@@ -162,6 +169,13 @@ const GlobalHeader = () => {
                   className="text-[#383838] hover:text-[#fec6d4] transition-colors font-medium text-lg"
                 >
                   Blog
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate("/order-tracking")}
+                  className="text-[#383838] hover:text-[#fec6d4] transition-colors font-medium text-lg"
+                >
+                  Order Tracking
                 </button>
                 {!isAuthenticated && (
                   <button

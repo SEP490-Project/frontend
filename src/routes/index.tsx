@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { Homepage, AboutApp, AboutUs, Blog, BlogDetail } from "@/pages/landing";
+import { Homepage, AboutApp, AboutUs, Blog, BlogDetail, OrderTracking } from "@/pages/landing";
 import NotFound from "@/pages/NotFound";
 import CancelPayment from "@/pages/CancelPayment";
 import SuccessPayment from "@/pages/SuccessPayment";
@@ -98,6 +98,7 @@ const AppRoutes = () => (
         <Route path="/blog/:id" element={<BlogDetail />} />
         <Route path="/terms-of-uses" element={<TermsOfUses />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/order-tracking" element={<OrderTracking />} />
       </Route>
 
       <Route element={<PublicRoute />}>

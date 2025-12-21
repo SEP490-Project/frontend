@@ -1,3 +1,4 @@
+import { useRef, useEffect } from "react";
 import { Eye, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -71,6 +72,20 @@ export function TaskList({ currentDate, onViewTask, statusFilter = "ALL" }: Task
 
   const weekDays = getWeekDays();
   const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+  const dayRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  // Scroll to selected day when currentDate changes
+  useEffect(() => {
+    const selectedIndex = weekDays.findIndex(
+      (day) => day.toDateString() === currentDate.toDateString(),
+    );
+    if (selectedIndex !== -1 && dayRefs.current[selectedIndex]) {
+      dayRefs.current[selectedIndex]?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, [currentDate]);
 
   return (
     <div className="h-[80vh]">
@@ -84,6 +99,9 @@ export function TaskList({ currentDate, onViewTask, statusFilter = "ALL" }: Task
           return (
             <motion.div
               key={day.toISOString()}
+              ref={(el) => {
+                dayRefs.current[index] = el;
+              }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}

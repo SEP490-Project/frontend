@@ -85,7 +85,7 @@ export function TaskList({ currentDate, onViewTask, statusFilter = "ALL" }: Task
         block: "center",
       });
     }
-  }, [currentDate]);
+  }, [currentDate, weekDays]);
 
   return (
     <div className="h-[80vh]">

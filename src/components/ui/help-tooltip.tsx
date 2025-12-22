@@ -43,11 +43,15 @@ const HelpTooltip: React.FC<HelpTooltipProps> = ({
         <TooltipTrigger asChild={asChild} className="cursor-help">
           <span className={cn("inline-flex items-center", className)}>
             <HelpCircle
-              className={cn("h-3.5 w-3.5 transition-colors", iconVariants[variant], iconClassName)}
+              className={cn(
+                "h-4 w-4 text-gray-400 hover:text-gray-600 transition-colors",
+                iconVariants[variant],
+                iconClassName,
+              )}
             />
           </span>
         </TooltipTrigger>
-        <TooltipContent side={side} align={align} className="max-w-xs text-sm">
+        <TooltipContent side={side} align={align} className="max-w-xs">
           {children}
         </TooltipContent>
       </Tooltip>
@@ -64,7 +68,7 @@ export const METRIC_HELP_TEXT = {
   TOTAL_VIEWS:
     "Total reach/impressions. For website: page views. For social: platform-reported reach.",
   TOTAL_ENGAGEMENT: "Sum of all interactions: likes, comments, and shares across all channels.",
-  CTR: "Click-Through Rate based on affiliate link clicks. Formula: (Clicks ÷ Unique Users) × 100%. Shows 'N/A' when no affiliate links exist.",
+  CTR: "Click-Through Rate based on affiliate link clicks. Formula: (Total Clicks ÷ Total Views) × 100%. Shows 'N/A' when no affiliate links exist.",
 
   // Posting Frequency
   POSTING_FREQUENCY:

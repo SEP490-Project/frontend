@@ -74,6 +74,7 @@ import AllConfigurations from "@/pages/manager/admin/configurations/AllConfigura
 import TermsOfService from "@/pages/manager/admin/configurations/TermsOfService";
 import Representative from "@/pages/manager/admin/configurations/Representative";
 import PrivacyPolicyAdmin from "@/pages/manager/admin/configurations/PrivacyPolicyAdmin";
+import SystemSpecs from "@/pages/manager/admin/SystemSpecs";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -141,6 +142,7 @@ const AppRoutes = () => (
             <Route path="terms-of-service" element={<TermsOfService />} />
             <Route path="privacy-policy" element={<PrivacyPolicyAdmin />} />
           </Route>
+          <Route path="system-specs" element={<SystemSpecs />} />
         </Route>
       </Route>
 

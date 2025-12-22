@@ -60,13 +60,29 @@ export function TaskList({ currentDate, onViewTask, statusFilter = "ALL" }: Task
 
   // Get tasks for a specific date (by created_at)
   const getTasksForDate = (date: Date): Task[] => {
-    const targetDate = new Date(date);
-    targetDate.setHours(0, 0, 0, 0);
+    // Format target date to YYYY-MM-DD
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const targetDateStr = `${year}-${month}-${day}`;
 
     return filteredTasks.filter((task) => {
-      const taskDate = new Date(task.created_at);
-      taskDate.setHours(0, 0, 0, 0);
-      return taskDate.getTime() === targetDate.getTime();
+      if (!task.created_at) return false;
+
+      // Convert API date string to YYYY-MM-DD
+      // We handle potential "space vs T" issues for Firefox/Zen
+      const isoString = task.created_at.replace(" ", "T");
+      const d = new Date(isoString);
+
+      // If the date is invalid, don't crash
+      if (isNaN(d.getTime())) return false;
+
+      const tYear = d.getFullYear();
+      const tMonth = String(d.getMonth() + 1).padStart(2, "0");
+      const tDay = String(d.getDate()).padStart(2, "0");
+      const taskDateStr = `${tYear}-${tMonth}-${tDay}`;
+
+      return taskDateStr === targetDateStr;
     });
   };
 

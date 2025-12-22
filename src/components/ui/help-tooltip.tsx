@@ -68,7 +68,7 @@ export const METRIC_HELP_TEXT = {
   TOTAL_VIEWS:
     "Total reach/impressions. For website: page views. For social: platform-reported reach.",
   TOTAL_ENGAGEMENT: "Sum of all interactions: likes, comments, and shares across all channels.",
-  CTR: "Click-Through Rate based on affiliate link clicks. Formula: (Clicks ÷ Unique Users) × 100%. Shows 'N/A' when no affiliate links exist.",
+  CTR: "Click-Through Rate based on affiliate link clicks. Formula: (Total Clicks ÷ Total Views) × 100%. Shows 'N/A' when no affiliate links exist.",
 
   // Posting Frequency
   POSTING_FREQUENCY:

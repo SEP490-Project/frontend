@@ -533,7 +533,7 @@ const PublishMessageDialog = ({ onPublish }: { onPublish: () => void }) => {
   const [formData, setFormData] = useState({
     exchange: "",
     routing_key: "",
-    payload: '{"test": "message"}',
+    payload: JSON.stringify({ test: "message" }),
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -545,7 +545,7 @@ const PublishMessageDialog = ({ onPublish }: { onPublish: () => void }) => {
       setOpen(false);
       onPublish();
       // Reset form slightly but keep exchange for convenience
-      setFormData((prev) => ({ ...prev, payload: '{"test": "message"}' }));
+      setFormData((prev) => ({ ...prev, payload: JSON.stringify({ test: "message" }) }));
     } catch {
       toast.error("Failed to publish message");
     } finally {

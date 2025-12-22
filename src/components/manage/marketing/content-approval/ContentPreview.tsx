@@ -69,6 +69,8 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
       } else {
         toast.error("Failed to approve content. Please try again.");
       }
+
+      window.location.reload();
     } catch {
       toast.error("Failed to approve content. Please try again.");
     } finally {
@@ -108,6 +110,8 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
       } else {
         toast.error("Failed to reject content. Please try again.");
       }
+
+      window.location.reload();
     } catch {
       toast.error("Failed to reject content. Please try again.");
     } finally {

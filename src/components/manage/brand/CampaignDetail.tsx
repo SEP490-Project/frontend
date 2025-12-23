@@ -249,7 +249,7 @@ export default function CampaignDetail({ campaign, loading }: CampaignDetailProp
                         {milestone.status.replace("_", " ")}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600 break-words">{milestone.description}</p>
+                    <p className="text-sm text-gray-600">{milestone.description}</p>
                   </div>
                 </div>
 
@@ -274,11 +274,11 @@ export default function CampaignDetail({ campaign, loading }: CampaignDetailProp
                         <div className="flex-1 bg-gray-200 rounded-full h-1.5 mr-2">
                           <div
                             className="bg-purple-600 h-1.5 rounded-full transition-all duration-300"
-                            style={{ width: `${milestone.completion_percentage}%` }}
+                            style={{ width: `${milestone.percentage_completed}%` }}
                           ></div>
                         </div>
                         <span className="text-xs font-medium text-gray-900">
-                          {milestone.completion_percentage}%
+                          {milestone.percentage_completed}%
                         </span>
                       </div>
                     </div>

@@ -35,7 +35,7 @@ import { formatDate } from "@/libs/helper/helper";
 import { motion } from "framer-motion";
 import { PaymentDetailModal } from "@/components/manage/marketing/contract-payment";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 5;
 
 const CONTRACT_PAYMENT_STATUS_LABELS: Record<string, string> = {
   PENDING: "Pending",
@@ -48,6 +48,13 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
   BANK_TRANSFER: "Bank Transfer",
   CASH: "Cash",
   CHECK: "Check",
+};
+
+const CONTRACT_TYPE_LABELS: Record<string, string> = {
+  BRAND_AMBASSADOR: "Brand Ambassador",
+  ADVERTISING: "Advertising",
+  CO_PRODUCING: "Co-Producing",
+  AFFILIATE: "Affiliate",
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -63,6 +70,31 @@ const PAYMENT_METHOD_COLORS: Record<string, string> = {
   CREDIT_CARD: "bg-purple-100 text-purple-800 border-purple-200",
   //   E_WALLET: "bg-orange-100 text-orange-800 border-orange-200",
 };
+
+const CONTRACT_TYPE_COLORS: Record<string, string> = {
+  BRAND_AMBASSADOR: "bg-indigo-100 text-indigo-800 border-indigo-200",
+  ADVERTISING: "bg-cyan-100 text-cyan-800 border-cyan-200",
+  CO_PRODUCING: "bg-violet-100 text-violet-800 border-violet-200",
+  AFFILIATE: "bg-pink-100 text-pink-800 border-pink-200",
+};
+
+const getPaymentType = (payment: ContractPayment) => {
+  if (payment.is_deposit) return "Deposit";
+  if (payment.contract_type === "BRAND_AMBASSADOR" || payment.contract_type === "ADVERTISING")
+    return "Scheduled";
+  if (payment.contract_type === "AFFILIATE" || payment.contract_type === "CO_PRODUCING")
+    return "Performance";
+  return "-";
+};
+
+const PayNowMark: React.FC = () => (
+  <span title="Pay Now" className="inline-block align-middle ml-1">
+    <span
+      className="inline-block w-2 h-2 rounded-full bg-rose-500 animate-pulse"
+      style={{ verticalAlign: "middle" }}
+    />
+  </span>
+);
 
 const ContractPaymentPage: React.FC = () => {
   const [page, setPage] = useState(1);
@@ -248,6 +280,17 @@ const ContractPaymentPage: React.FC = () => {
     }).format(amount);
   };
 
+  const formatAmount = (payment: ContractPayment) => {
+    const isPerformanceBased =
+      (payment.contract_type === "CO_PRODUCING" || payment.contract_type === "AFFILIATE") &&
+      payment.amount === 0;
+
+    if (isPerformanceBased) {
+      return <span className="text-sm italic text-gray-600">To be calculated by performance</span>;
+    }
+    return <span className="font-medium">{formatCurrency(payment.amount)}</span>;
+  };
+
   // Memoized Brand Card Component
   const BrandCard = useMemo(
     () =>
@@ -255,7 +298,7 @@ const ContractPaymentPage: React.FC = () => {
         if (!brand) return null;
         return (
           <div className="flex items-center gap-3 p-2">
-            <div className="flex-shrink-0 h-10 w-10 rounded-lg border border-slate-100 bg-white shadow-sm flex items-center justify-center">
+            <div className="h-10 w-10 rounded-lg border border-slate-100 bg-white shadow-sm flex items-center justify-center">
               {brand.logo_url ? (
                 <img
                   src={brand.logo_url}
@@ -278,35 +321,6 @@ const ContractPaymentPage: React.FC = () => {
       }),
     [],
   );
-
-  // Memoized Contract Card Component
-  //   const ContractCard = useMemo(() =>
-  //     React.memo(({ contract }: { contract: any }) => {
-  //       if (!contract) return null;
-  //       return (
-  //         <div className="flex items-center gap-3 p-2">
-  //           <div className="flex-1 min-w-0">
-  //             <div className="font-medium text-sm text-slate-900 truncate">
-  //               {contract.contract_number}
-  //             </div>
-  //             <div className="text-xs text-slate-500 truncate">
-  //               {contract.title}
-  //             </div>
-  //             {contract.brand_name && (
-  //               <div className="text-xs text-blue-600 truncate">
-  //                 {contract.brand_name}
-  //               </div>
-  //             )}
-  //           </div>
-  //           <div className="text-right">
-  //             <div className="text-xs text-slate-500">
-  //               {contract.type}
-  //             </div>
-  //           </div>
-  //         </div>
-  //       );
-  //     })
-  //   , []);
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -340,15 +354,6 @@ const ContractPaymentPage: React.FC = () => {
             Manage and track contract payment schedules
           </motion.p>
         </div>
-        {/* <motion.div variants={itemVariants}>
-          <Button
-            className="bg-primary hover:bg-[#f794a8] text-white flex items-center gap-2"
-            onClick={() => navigate("/manage/marketing/contract-payments/create")}
-          >
-            <FaPlus className="h-4 w-4" />
-            Create Payment
-          </Button>
-        </motion.div> */}
       </motion.div>
 
       {/* Filters */}
@@ -379,21 +384,6 @@ const ContractPaymentPage: React.FC = () => {
               loading={brandLoading}
             />
           </motion.div>
-          {/* <motion.div variants={itemVariants}>
-            <DataSelector
-              data={allContracts}
-              selectedId={selectedContractId}
-              onSelect={handleContractSelect}
-              renderItem={(contract) => <ContractCard contract={contract} />}
-              getLabel={(contract) => contract.contract_number}
-              title="Contracts"
-              placeholder="Select contract..."
-              onSearch={setContractSearch}
-              searchValue={contractSearch}
-              onScrollEnd={loadMoreContracts}
-              loading={contractLoading}
-            />
-          </motion.div> */}
           <motion.div variants={itemVariants}>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger>
@@ -501,7 +491,9 @@ const ContractPaymentPage: React.FC = () => {
                   <TableRow className="border-b bg-gray-50">
                     <TableHead className="font-semibold">Contract</TableHead>
                     <TableHead className="font-semibold">Brand</TableHead>
+                    <TableHead className="font-semibold">Type</TableHead>
                     <TableHead className="font-semibold">Amount</TableHead>
+                    <TableHead className="font-semibold">Payment</TableHead>
                     <TableHead className="font-semibold">Status</TableHead>
                     <TableHead className="font-semibold">Due Date</TableHead>
                     <TableHead className="font-semibold">Payment Method</TableHead>
@@ -521,8 +513,16 @@ const ContractPaymentPage: React.FC = () => {
                     >
                       <TableCell className="py-4">
                         <div>
-                          <div className="font-medium text-gray-900">{payment.contract_number}</div>
-                          <div className="text-sm text-gray-500 truncate max-w-[200px]">
+                          <div className="font-medium text-gray-900 flex items-center gap-2">
+                            {payment.contract_number}
+                            {payment.pay_now && <PayNowMark />}
+                            {payment.is_deposit && (
+                              <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-xs px-1.5 py-0.5">
+                                Deposit
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-sm text-gray-500 truncate">
                             {payment.contract_title}
                           </div>
                         </div>
@@ -531,7 +531,19 @@ const ContractPaymentPage: React.FC = () => {
                         <div className="text-sm font-medium">{payment.brand_name}</div>
                       </TableCell>
                       <TableCell className="py-4">
-                        <div className="font-medium">{formatCurrency(payment.amount)}</div>
+                        {payment.contract_type && (
+                          <Badge
+                            className={`border text-xs font-medium px-2 py-1 ${CONTRACT_TYPE_COLORS[payment.contract_type] || ""}`}
+                          >
+                            {CONTRACT_TYPE_LABELS[payment.contract_type] || payment.contract_type}
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <div>{formatAmount(payment)}</div>
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <span className="text-xs font-medium">{getPaymentType(payment)}</span>
                       </TableCell>
                       <TableCell className="py-4">
                         <Badge
@@ -597,8 +609,16 @@ const ContractPaymentPage: React.FC = () => {
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <div className="font-semibold text-gray-900">{payment.contract_number}</div>
-                        <div className="flex gap-2 mt-2">
+                        <div className="font-semibold text-gray-900 flex items-center gap-2 flex-wrap">
+                          {payment.contract_number}
+                          {payment.pay_now && <PayNowMark />}
+                          {payment.is_deposit && (
+                            <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-xs px-1.5 py-0.5">
+                              Deposit
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex gap-2 mt-2 flex-wrap">
                           <Badge
                             className={`border ${STATUS_COLORS[payment.status] || ""} text-xs font-medium px-2 py-1`}
                           >
@@ -610,11 +630,22 @@ const ContractPaymentPage: React.FC = () => {
                             {PAYMENT_METHOD_LABELS[payment.payment_method] ||
                               payment.payment_method}
                           </Badge>
+                          {payment.contract_type && (
+                            <Badge
+                              className={`border text-xs font-medium px-2 py-1 ${CONTRACT_TYPE_COLORS[payment.contract_type] || ""}`}
+                            >
+                              {CONTRACT_TYPE_LABELS[payment.contract_type] || payment.contract_type}
+                            </Badge>
+                          )}
                         </div>
                       </div>
                       <div className="text-right">
                         <div className="text-sm text-gray-500">Amount</div>
-                        <div className="text-sm font-medium">{formatCurrency(payment.amount)}</div>
+                        <div className="text-sm">{formatAmount(payment)}</div>
+                        <div className="text-xs mt-1">
+                          <span className="font-medium">Payment: </span>
+                          {getPaymentType(payment)}
+                        </div>
                       </div>
                     </div>
 

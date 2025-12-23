@@ -29,7 +29,6 @@ import {
   createPaymentLink,
 } from "@/libs/stores/contractPaymentManager/thunk";
 import { brand as fetchBrands } from "@/libs/stores/brandManager/thunk";
-import type { ContractPayment } from "@/libs/types/contract-payments";
 import { useDebounce } from "@/libs/hooks/useDebounce";
 import { DatePicker } from "@/components/date-picker";
 import { formatDate } from "@/libs/helper/helper";
@@ -63,6 +62,38 @@ const PAYMENT_METHOD_COLORS: Record<string, string> = {
   CASH: "bg-green-100 text-green-800 border-green-200",
   CREDIT_CARD: "bg-purple-100 text-purple-800 border-purple-200",
 };
+
+const CONTRACT_TYPE_LABELS: Record<string, string> = {
+  BRAND_AMBASSADOR: "Brand Ambassador",
+  ADVERTISING: "Advertising",
+  CO_PRODUCING: "Co-Producing",
+  AFFILIATE: "Affiliate",
+};
+
+const CONTRACT_TYPE_COLORS: Record<string, string> = {
+  BRAND_AMBASSADOR: "bg-indigo-100 text-indigo-800 border-indigo-200",
+  ADVERTISING: "bg-cyan-100 text-cyan-800 border-cyan-200",
+  CO_PRODUCING: "bg-violet-100 text-violet-800 border-violet-200",
+  AFFILIATE: "bg-pink-100 text-pink-800 border-pink-200",
+};
+
+const getPaymentType = (payment: any) => {
+  if (payment.is_deposit) return "Deposit";
+  if (payment.contract_type === "BRAND_AMBASSADOR" || payment.contract_type === "ADVERTISING")
+    return "Scheduled";
+  if (payment.contract_type === "AFFILIATE" || payment.contract_type === "CO_PRODUCING")
+    return "Performance";
+  return "-";
+};
+
+const PayNowMark: React.FC = () => (
+  <span title="Pay Now" className="inline-block align-middle ml-1">
+    <span
+      className="inline-block w-2 h-2 rounded-full bg-rose-500 animate-pulse"
+      style={{ verticalAlign: "middle" }}
+    />
+  </span>
+);
 
 const ContractPaymentBrandPage: React.FC = () => {
   const [page, setPage] = useState(1);
@@ -403,7 +434,7 @@ const ContractPaymentBrandPage: React.FC = () => {
         if (!brand) return null;
         return (
           <div className="flex items-center gap-3 p-2">
-            <div className="flex-shrink-0 h-10 w-10 rounded-lg border border-slate-100 bg-white shadow-sm flex items-center justify-center">
+            <div className="h-10 w-10 rounded-lg border border-slate-100 bg-white shadow-sm flex items-center justify-center">
               {brand.logo_url ? (
                 <img
                   src={brand.logo_url}
@@ -594,7 +625,9 @@ const ContractPaymentBrandPage: React.FC = () => {
                   <TableRow className="border-b bg-gray-50">
                     <TableHead className="font-semibold">Contract</TableHead>
                     <TableHead className="font-semibold">Brand</TableHead>
+                    <TableHead className="font-semibold">Type</TableHead>
                     <TableHead className="font-semibold">Amount</TableHead>
+                    <TableHead className="font-semibold">Payment</TableHead>
                     <TableHead className="font-semibold">Status</TableHead>
                     <TableHead className="font-semibold">Due Date</TableHead>
                     <TableHead className="font-semibold">Payment Method</TableHead>
@@ -603,7 +636,7 @@ const ContractPaymentBrandPage: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {contractPayments.map((payment: ContractPayment, index) => (
+                  {contractPayments.map((payment: any, index: number) => (
                     <motion.tr
                       key={payment.id}
                       layout="position"
@@ -614,8 +647,16 @@ const ContractPaymentBrandPage: React.FC = () => {
                     >
                       <TableCell className="py-4">
                         <div>
-                          <div className="font-medium text-gray-900">{payment.contract_number}</div>
-                          <div className="text-sm text-gray-500 truncate max-w-[200px]">
+                          <div className="font-medium text-gray-900 flex items-center gap-2">
+                            {payment.contract_number}
+                            {payment.pay_now && <PayNowMark />}
+                            {payment.is_deposit && (
+                              <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-xs px-1.5 py-0.5">
+                                Deposit
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-sm text-gray-500 truncate">
                             {payment.contract_title}
                           </div>
                         </div>
@@ -624,7 +665,19 @@ const ContractPaymentBrandPage: React.FC = () => {
                         <div className="text-sm font-medium">{payment.brand_name}</div>
                       </TableCell>
                       <TableCell className="py-4">
+                        {payment.contract_type && (
+                          <Badge
+                            className={`border text-xs font-medium px-2 py-1 ${CONTRACT_TYPE_COLORS[payment.contract_type] || ""}`}
+                          >
+                            {CONTRACT_TYPE_LABELS[payment.contract_type] || payment.contract_type}
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="py-4">
                         <div className="font-medium">{formatCurrency(payment.amount)}</div>
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <span className="text-xs font-medium">{getPaymentType(payment)}</span>
                       </TableCell>
                       <TableCell className="py-4">
                         <Badge
@@ -663,7 +716,7 @@ const ContractPaymentBrandPage: React.FC = () => {
                               <p>View Details</p>
                             </TooltipContent>
                           </Tooltip>
-                          {payment.status === "PENDING" && (
+                          {payment.status === "PENDING" && payment.pay_now && (
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
@@ -721,7 +774,7 @@ const ContractPaymentBrandPage: React.FC = () => {
                   },
                 }}
               >
-                {contractPayments.map((payment: ContractPayment) => (
+                {contractPayments.map((payment: any) => (
                   <motion.div
                     key={payment.id}
                     className="p-4 flex flex-col gap-3 bg-white"
@@ -729,8 +782,23 @@ const ContractPaymentBrandPage: React.FC = () => {
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <div className="font-semibold text-gray-900">{payment.contract_number}</div>
-                        <div className="flex gap-2 mt-2">
+                        <div className="font-semibold text-gray-900 flex items-center gap-2 flex-wrap">
+                          {payment.contract_number}
+                          {payment.pay_now && <PayNowMark />}
+                          {payment.is_deposit && (
+                            <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-xs px-1.5 py-0.5">
+                              Deposit
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex gap-2 mt-2 flex-wrap">
+                          {payment.contract_type && (
+                            <Badge
+                              className={`border text-xs font-medium px-2 py-1 ${CONTRACT_TYPE_COLORS[payment.contract_type] || ""}`}
+                            >
+                              {CONTRACT_TYPE_LABELS[payment.contract_type] || payment.contract_type}
+                            </Badge>
+                          )}
                           <Badge
                             className={`border ${STATUS_COLORS[payment.status] || ""} text-xs font-medium px-2 py-1`}
                           >
@@ -747,6 +815,10 @@ const ContractPaymentBrandPage: React.FC = () => {
                       <div className="text-right">
                         <div className="text-sm text-gray-500">Amount</div>
                         <div className="text-sm font-medium">{formatCurrency(payment.amount)}</div>
+                        <div className="text-xs mt-1">
+                          <span className="font-medium">Payment: </span>
+                          {getPaymentType(payment)}
+                        </div>
                       </div>
                     </div>
 
@@ -783,7 +855,7 @@ const ContractPaymentBrandPage: React.FC = () => {
                           <p>View Details</p>
                         </TooltipContent>
                       </Tooltip>
-                      {payment.status === "PENDING" && (
+                      {payment.status === "PENDING" && payment.pay_now && (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button

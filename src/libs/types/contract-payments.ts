@@ -47,4 +47,7 @@ export interface ContractPayment {
   note: string;
   created_at: string;
   updated_at: string;
+  is_deposit?: boolean;
+  pay_now?: boolean;
+  contract_type?: string;
 }

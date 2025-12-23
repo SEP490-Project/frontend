@@ -474,12 +474,12 @@ const BrandCampaignDetailPage: React.FC = () => {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-gray-700">
-                          Progress: {milestone.completion_percentage}%
+                          Progress: {milestone.percentage_completed}%
                         </span>
                         <FaClipboardCheck className="h-4 w-4 text-gray-400" />
                       </div>
 
-                      <Progress value={milestone.completion_percentage} className="h-2" />
+                      <Progress value={milestone.percentage_completed} className="h-2" />
                     </div>
                   </div>
                 ))}

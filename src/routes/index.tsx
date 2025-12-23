@@ -38,7 +38,13 @@ import { AuthenticationLayout } from "../layouts/AuthenticationLayout";
 import { ForgotPassword } from "@/pages/authentication/ForgotPassword";
 import { ResetPassword } from "@/pages/authentication/ResetPassword";
 import CustomerLayout from "@/layouts/CustomerLayout";
-import { AssignedTasks, ManageContent, ManageTags, ContentDetail } from "@/pages/manager/content";
+import {
+  AssignedTasks,
+  ManageContent,
+  ManageTags,
+  ContentDetail,
+  ScheduleManagement,
+} from "@/pages/manager/content";
 import PrivateRoute from "./private-route";
 import PublicRoute from "./public-route";
 import {
@@ -222,6 +228,7 @@ const AppRoutes = () => (
           <Route path="all-contents" element={<ManageContent />} />
           <Route path="all-contents/:id" element={<ContentDetail />} />
           <Route path="tag" element={<ManageTags />} />
+          <Route path="schedules" element={<ScheduleManagement />} />
         </Route>
       </Route>
 

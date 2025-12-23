@@ -1,10 +1,11 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { fetchPredictions } from "./thunk";
-import type { GoongPrediction } from "@/libs/types/goong";
+import { fetchPredictions, getDirections } from "./thunk";
+import type { GoongDirectionRes, GoongPrediction } from "@/libs/types/goong";
 
 interface GoongState {
   loading: boolean;
   predictions: GoongPrediction[];
+  direction?: GoongDirectionRes | null;
   error: string | null;
 }
 
@@ -34,6 +35,18 @@ export const manageGoongSlice = createSlice({
         state.predictions = action.payload;
       })
       .addCase(fetchPredictions.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(getDirections.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getDirections.fulfilled, (state, action) => {
+        state.loading = false;
+        state.direction = action.payload;
+      })
+      .addCase(getDirections.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });

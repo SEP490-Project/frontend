@@ -1,5 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { goongAutocompleteService } from "@/libs/services/manageGoong";
+import { goongAutocompleteService, goongDirectionsService } from "@/libs/services/manageGoong";
 import { AxiosError } from "axios";
 
 export const fetchPredictions = createAsyncThunk(
@@ -11,6 +11,23 @@ export const fetchPredictions = createAsyncThunk(
     } catch (error: unknown) {
       const err = error as AxiosError<{ error: { message: string } }>;
       return rejectWithValue(err.response?.data?.error?.message || "Autocomplete thất bại");
+    }
+  },
+);
+
+export const getDirections = createAsyncThunk(
+  "goong/getDirections",
+  async (params: { origin: string; destination: string; vehicle: string }, { rejectWithValue }) => {
+    try {
+      const res = await goongDirectionsService.getDirections(
+        params.origin,
+        params.destination,
+        params.vehicle,
+      );
+      return res.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ error: { message: string } }>;
+      return rejectWithValue(err.response?.data?.error?.message || "Lấy chỉ đường thất bại");
     }
   },
 );

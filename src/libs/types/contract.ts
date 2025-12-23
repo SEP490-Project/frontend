@@ -37,6 +37,8 @@ export interface ContractDetail {
   deposit_amount: number;
   deposit_percent: number;
   is_deposit_paid: boolean;
+  campaign_id?: string;
+  campaign_name?: string;
   brand: Brand;
   representative_name: string;
   representative_role: string;
@@ -147,6 +149,8 @@ export interface ContractBase {
   status: string;
   brand_id: string;
   brand_name: string;
+  campaign_id?: string;
+  campaign_name?: string;
   start_date: string;
   end_date: string;
   signed_date: string;

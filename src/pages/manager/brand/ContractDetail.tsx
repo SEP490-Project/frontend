@@ -25,6 +25,7 @@ import {
   FaFileContract,
   FaCheck,
   FaXmark,
+  FaArrowRight,
 } from "react-icons/fa6";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -128,6 +129,18 @@ export default function ContractDetailPage() {
         </div>
 
         <div className="flex gap-3 flex-wrap">
+          {/* Campaign Navigation */}
+          {contractDetail.campaign_id && (
+            <Button
+              onClick={() => navigate(`/manage/brand/campaigns/${contractDetail.campaign_id}`)}
+              variant="outline"
+              className="border-green-300 text-green-700 bg-white hover:bg-green-50 flex items-center"
+            >
+              <FaArrowRight className="h-4 w-4 mr-2" />
+              View Campaign: {contractDetail.campaign_name || "Campaign"}
+            </Button>
+          )}
+
           {/* Action Buttons - Approve/Reject */}
           {canTakeAction && (
             <>

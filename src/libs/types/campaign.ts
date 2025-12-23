@@ -4,7 +4,7 @@ export interface Milestone {
   due_date: string;
   completed_at?: string | null;
   status: string;
-  completion_percentage: number;
+  percentage_completed: number;
   number_of_tasks: number;
   behind_schedule: boolean;
 }
@@ -25,6 +25,37 @@ export interface CampaignData {
   milestones?: Milestone[];
   number_of_tasks?: number;
   percentage_completed?: number;
+  metrics_comparison?: MetricsComparison;
+}
+
+export interface MetricItem {
+  metric: string;
+  target: string;
+}
+
+export interface MetricsItem {
+  item_id: number;
+  item_name: string;
+  expected_metrics: MetricItem[];
+  realistic_metrics: Record<string, number>;
+}
+
+export interface MetricItem {
+  metric: string;
+  target: string;
+}
+
+export interface MetricsItem {
+  item_id: number;
+  item_name: string;
+  expected_metrics: MetricItem[];
+  realistic_metrics: Record<string, number>;
+}
+
+export interface MetricsComparison {
+  expected_metrics: Record<string, number>;
+  realistic_metrics: Record<string, number>;
+  items: MetricsItem[];
 }
 
 export type CampaignBase = CampaignData;

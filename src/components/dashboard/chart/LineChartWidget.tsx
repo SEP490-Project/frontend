@@ -93,9 +93,10 @@ function LineChartWidget({ title, data, unit, lineConfig, tooltip }: Props) {
               width={100}
             />
             <Tooltip
-              formatter={(value: number, name: string) => {
+              formatter={(value: number | undefined, name: string | undefined) => {
+                if (value === undefined || name === undefined) return ["", ""];
                 const displayName = lineConfig?.[name]?.label || name;
-                const formattedValue = value.toLocaleString();
+                const formattedValue = value?.toLocaleString() || "";
                 return [unit ? `${formattedValue} ${unit}` : formattedValue, displayName];
               }}
             />

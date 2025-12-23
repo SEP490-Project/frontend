@@ -73,8 +73,10 @@ export const ContentChartsSection: React.FC<ContentChartsSectionProps> = ({
         <Card className="rounded-2xl shadow-sm h-full">
           <CardHeader className="pb-4 px-6 pt-6">
             <CardTitle className="text-lg font-medium">
-              Content by Channel
-              <HelpTooltip>{METRIC_HELP_TEXT.CHANNEL_DISTRIBUTION}</HelpTooltip>
+              <div className="flex items-center gap-2">
+                Content by Channel
+                <HelpTooltip>{METRIC_HELP_TEXT.CHANNEL_DISTRIBUTION}</HelpTooltip>
+              </div>
             </CardTitle>
             <p className="text-sm text-gray-500">Distribution of posts across channels</p>
           </CardHeader>
@@ -101,8 +103,10 @@ export const ContentChartsSection: React.FC<ContentChartsSectionProps> = ({
         <Card className="rounded-2xl shadow-sm h-full">
           <CardHeader className="pb-4 px-6 pt-6">
             <CardTitle className="text-lg font-medium">
-              Engagement Trend
-              <HelpTooltip>{METRIC_HELP_TEXT.ENGAGEMENT_TREND}</HelpTooltip>
+              <div className="flex items-center gap-2">
+                Engagement Trend
+                <HelpTooltip>{METRIC_HELP_TEXT.ENGAGEMENT_TREND}</HelpTooltip>
+              </div>
             </CardTitle>
             <p className="text-sm text-gray-500">Total engagement over time</p>
           </CardHeader>

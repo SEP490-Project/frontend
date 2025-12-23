@@ -15,6 +15,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import { containerVariants, itemVariants, getAlertSeverityColor } from "./types";
 import type { AlertItem } from "@/libs/stores/contentDashboardManager/slice";
 import { getAlertTypeIcon, getCategoryIcon } from "./icons";
+import HelpTooltip, { METRIC_HELP_TEXT } from "@/components/ui/help-tooltip";
 
 interface RecentAlertsCardProps {
   alerts: AlertItem[];
@@ -240,19 +241,24 @@ export const RecentAlertsCard: React.FC<RecentAlertsCardProps> = ({
       <Card className="rounded-2xl shadow-sm h-full flex flex-col">
         <CardHeader className="pb-4 px-6 pt-6 flex-shrink-0">
           <CardTitle className="text-base sm:text-lg font-medium flex items-center gap-2 flex-wrap">
-            <FaBell className="text-yellow-600 flex-shrink-0" />
-            <span>Recent Alerts</span>
-            {unreadCount > 0 && (
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", stiffness: 300, damping: 15 }}
-              >
-                <Badge variant="destructive" className="text-xs text-white">
-                  {unreadCount} new
-                </Badge>
-              </motion.div>
-            )}
+            <div className="flex items-center gap-2">
+              <FaBell className="text-yellow-600 flex-shrink-0" />
+              <span>Recent Alerts</span>
+              {unreadCount > 0 && (
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                >
+                  <Badge variant="destructive" className="text-xs text-white">
+                    {unreadCount} new
+                  </Badge>
+                </motion.div>
+              )}
+              <HelpTooltip side="top" align="end">
+                {METRIC_HELP_TEXT.ALERTS}
+              </HelpTooltip>
+            </div>
           </CardTitle>
           <p className="text-xs sm:text-sm text-gray-500">System notifications and warnings</p>
         </CardHeader>

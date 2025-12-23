@@ -53,3 +53,99 @@ export interface GoongAutocompleteResponse {
   execution_time: string;
   status: string;
 }
+
+// Goong Directions Response Types
+export interface GoongDirectionRes {
+  geocoded_waypoints: any[];
+  routes: Route[];
+}
+
+export interface Root {
+  geocoded_waypoints: GeocodedWaypoint[];
+  routes: Route[];
+}
+
+export interface GeocodedWaypoint {
+  geocoder_status: string;
+  place_id: string;
+}
+
+export interface Route {
+  bounds: any;
+  legs: Leg[];
+  overview_polyline: OverviewPolyline;
+  summary: string;
+  warnings: any[];
+  waypoint_order: any[];
+}
+
+// export interface Bounds {}
+
+export interface Leg {
+  distance: Distance;
+  duration: Duration;
+  end_address: string;
+  end_location: EndLocation;
+  start_address: string;
+  start_location: StartLocation;
+  steps: Step[];
+}
+
+export interface Distance {
+  text: string;
+  value: number;
+}
+
+export interface Duration {
+  text: string;
+  value: number;
+}
+
+export interface EndLocation {
+  lat: number;
+  lng: number;
+}
+
+export interface StartLocation {
+  lat: number;
+  lng: number;
+}
+
+export interface Step {
+  distance: Distance2;
+  duration: Duration2;
+  end_location: EndLocation2;
+  html_instructions: string;
+  maneuver: string;
+  polyline: Polyline;
+  start_location: StartLocation2;
+  travel_mode: string;
+}
+
+export interface Distance2 {
+  text: string;
+  value: number;
+}
+
+export interface Duration2 {
+  text: string;
+  value: number;
+}
+
+export interface EndLocation2 {
+  lat: number;
+  lng: number;
+}
+
+export interface Polyline {
+  points: string;
+}
+
+export interface StartLocation2 {
+  lat: number;
+  lng: number;
+}
+
+export interface OverviewPolyline {
+  points: string;
+}

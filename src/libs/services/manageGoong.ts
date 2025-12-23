@@ -17,3 +17,14 @@ export const goongAutocompleteService = {
       },
     }),
 };
+
+export const goongDirectionsService = {
+  getDirections: (origin: string, destination: string, vehicle: string) =>
+    goongApi.get("/Direction", {
+      params: {
+        origin,
+        destination,
+        vehicle,
+      },
+    }),
+};

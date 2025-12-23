@@ -32,6 +32,7 @@ import { manageContentAnalyticReducer } from "./contentAnalyticManager/slice";
 import { reviewManagerReducers } from "./reviewManager/slice";
 import contentDashboardReducer from "./contentDashboardManager/slice";
 import { ghnManagerReducer } from "./ghnManager/slice";
+import { scheduleReducer } from "./scheduleManager/slice";
 
 export const rootReducer = combineReducers({
   manageAuthen: manageAuthenReducer,
@@ -68,4 +69,5 @@ export const rootReducer = combineReducers({
   manageReview: reviewManagerReducers,
   contentDashboard: contentDashboardReducer,
   manageGHN: ghnManagerReducer,
+  manageSchedule: scheduleReducer,
 });

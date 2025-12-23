@@ -34,6 +34,7 @@ import {
   Plus,
   Search,
   Calendar,
+  Clock,
   User,
   FileText,
   Video,
@@ -53,6 +54,7 @@ import {
 import { Dialog } from "@/components/ui/dialog";
 import { DeleteContentModal } from "@/components/modal/content/DeleteContentModal";
 import { RequestApprovalModal } from "@/components/modal/content/RequestApprovalModal";
+import { ScheduleContentModal } from "@/components/modal/content/ScheduleContentModal";
 import TaskSelectionDialog from "./TaskSelectionDialog";
 import type { Content } from "@/libs/types/content";
 import type { Task } from "@/libs/types/task";
@@ -88,6 +90,13 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
   const [contentToSubmit, setContentToSubmit] = useState<Content | null>(null);
   const [isSubmittingApproval, setIsSubmittingApproval] = useState(false);
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [contentToSchedule, setContentToSchedule] = useState<Content | null>(null);
+
+  const handleSchedule = (content: Content) => {
+    setContentToSchedule(content);
+    setShowScheduleModal(true);
+  };
 
   useEffect(() => {
     dispatch(contents(filters));
@@ -548,6 +557,16 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                               Post content
                             </DropdownMenuItem>
                           )}
+                          {content.status === "APPROVED" &&
+                            content.content_channels?.length > 0 && (
+                              <DropdownMenuItem
+                                onClick={() => handleSchedule(content)}
+                                className="text-purple-600 hover:text-purple-700"
+                              >
+                                <Clock className="w-4 h-4 mr-2" />
+                                Schedule publishing
+                              </DropdownMenuItem>
+                            )}
                           {/* Only show Delete for draft and rejected content */}
                           {(content.status === "DRAFT" || content.status === "REJECTED") && (
                             <DropdownMenuItem
@@ -650,6 +669,35 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
           onConfirm={handleConfirmRequestApproval}
           isLoading={isSubmittingApproval}
         />
+      </Dialog>
+
+      {/* Schedule Content Modal */}
+      <Dialog
+        open={showScheduleModal}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowScheduleModal(false);
+            setContentToSchedule(null);
+          }
+        }}
+      >
+        {contentToSchedule && (
+          <ScheduleContentModal
+            contentId={contentToSchedule.id}
+            contentTitle={contentToSchedule.title}
+            contentChannels={(contentToSchedule.content_channels || []).map((ch) => ({
+              id: ch.id,
+              channel_id: ch.channel_id,
+              channel_name: ch.channel_name,
+              auto_post_status: ch.auto_post_status,
+            }))}
+            onSuccess={() => {
+              setShowScheduleModal(false);
+              setContentToSchedule(null);
+              dispatch(contents(filters));
+            }}
+          />
+        )}
       </Dialog>
     </div>
   );

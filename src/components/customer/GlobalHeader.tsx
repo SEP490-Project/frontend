@@ -128,7 +128,7 @@ const GlobalHeader = () => {
             <button
               type="button"
               onClick={() => navigate("/login")}
-              className="text-[#383838] hover:text-[#fec6d4] transition-colors font-medium"
+              className="text-[#383838] hover:text-[#fec6d4] transition-colors font-medium hidden lg:inline-block"
             >
               LOGIN
             </button>
@@ -140,7 +140,7 @@ const GlobalHeader = () => {
                 <FaBars className="w-6 h-6 text-[#383838]" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[300px] sm:w-[400px] ml-2">
+            <SheetContent side="right" className="w-75 sm:w-100 ml-2">
               <nav className="flex flex-col space-y-6 mt-6">
                 <button
                   type="button"

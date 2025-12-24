@@ -389,6 +389,36 @@ const ContractPaymentBrandPage: React.FC = () => {
     }).format(amount);
   };
 
+  const formatAmount = (payment: any) => {
+    const isPerformanceBased =
+      (payment.contract_type === "CO_PRODUCING" || payment.contract_type === "AFFILIATE") &&
+      payment.amount === 0;
+
+    if (isPerformanceBased) {
+      return <span className="text-sm italic text-gray-600">To be calculated by performance</span>;
+    }
+
+    return (
+      <div className="flex flex-col">
+        <span className="font-medium">{formatCurrency(payment.amount)}</span>
+        {(payment.base_amount !== undefined || payment.performance_amount !== undefined) && (
+          <div className="mt-1 space-y-0.5">
+            {payment.base_amount !== undefined && (
+              <div className="text-xs text-gray-500">
+                Base: {formatCurrency(payment.base_amount)}
+              </div>
+            )}
+            {payment.performance_amount !== undefined && payment.performance_amount > 0 && (
+              <div className="text-xs text-gray-500">
+                Perf: {formatCurrency(payment.performance_amount)}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const isOverdue = (dueDate: string) => {
     if (!dueDate) return false;
 
@@ -673,9 +703,7 @@ const ContractPaymentBrandPage: React.FC = () => {
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell className="py-4">
-                        <div className="font-medium">{formatCurrency(payment.amount)}</div>
-                      </TableCell>
+                      <TableCell className="py-4">{formatAmount(payment)}</TableCell>
                       <TableCell className="py-4">
                         <span className="text-xs font-medium">{getPaymentType(payment)}</span>
                       </TableCell>
@@ -814,7 +842,7 @@ const ContractPaymentBrandPage: React.FC = () => {
                       </div>
                       <div className="text-right">
                         <div className="text-sm text-gray-500">Amount</div>
-                        <div className="text-sm font-medium">{formatCurrency(payment.amount)}</div>
+                        <div className="text-sm">{formatAmount(payment)}</div>
                         <div className="text-xs mt-1">
                           <span className="font-medium">Payment: </span>
                           {getPaymentType(payment)}

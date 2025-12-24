@@ -288,7 +288,26 @@ const ContractPaymentPage: React.FC = () => {
     if (isPerformanceBased) {
       return <span className="text-sm italic text-gray-600">To be calculated by performance</span>;
     }
-    return <span className="font-medium">{formatCurrency(payment.amount)}</span>;
+
+    return (
+      <div className="flex flex-col">
+        <span className="font-medium">{formatCurrency(payment.amount)}</span>
+        {(payment.base_amount !== undefined || payment.performance_amount !== undefined) && (
+          <div className="mt-1 space-y-0.5">
+            {payment.base_amount !== undefined && (
+              <div className="text-xs text-gray-500">
+                Base: {formatCurrency(payment.base_amount)}
+              </div>
+            )}
+            {payment.performance_amount !== undefined && payment.performance_amount > 0 && (
+              <div className="text-xs text-gray-500">
+                Perf: {formatCurrency(payment.performance_amount)}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
   };
 
   // Memoized Brand Card Component

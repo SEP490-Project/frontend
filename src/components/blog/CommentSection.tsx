@@ -11,6 +11,7 @@ import { Loader2, Send, Trash2, Edit2, X, Check } from "lucide-react";
 import { useAuth } from "@/libs/hooks/useAuth";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/libs/utils";
+import { WarningDialog } from "../global";
 
 interface CommentSectionProps {
   contentId: string;
@@ -34,6 +35,8 @@ export const CommentSection = ({ contentId, comments, onCommentsUpdate }: Commen
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
   const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
   const { user } = useAuth();
 
   const handleSubmit = async () => {
@@ -59,13 +62,18 @@ export const CommentSection = ({ contentId, comments, onCommentsUpdate }: Commen
     }
   };
 
-  const handleDelete = async (commentId: string) => {
-    if (!confirm("Are you sure you want to delete this comment?")) return;
+  const openDeleteDialog = (commentId: string) => {
+    setCommentToDelete(commentId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!commentToDelete) return;
 
     try {
       const response = await manageEngagement.recordEngagement(contentId, {
         action: EngagementAction.DELETE_COMMENT,
-        comment_id: commentId,
+        comment_id: commentToDelete,
       });
 
       if (response.success && response.metrics) {
@@ -74,6 +82,9 @@ export const CommentSection = ({ contentId, comments, onCommentsUpdate }: Commen
       }
     } catch {
       toast.error("Failed to delete comment");
+    } finally {
+      setDeleteDialogOpen(false);
+      setCommentToDelete(null);
     }
   };
 
@@ -142,37 +153,39 @@ export const CommentSection = ({ contentId, comments, onCommentsUpdate }: Commen
   return (
     <div className="mt-12 pt-8 border-t border-gray-100">
       <h3 className="text-2xl font-bold text-[#383838] mb-8">Comments ({comments.length})</h3>
-
       {/* Add Comment Form */}
-      <div className="flex gap-4 mb-10">
-        <Avatar className="w-10 h-10">
-          <AvatarImage src={user?.avatar_url} />
-          <AvatarFallback>{user?.username?.charAt(0) || "U"}</AvatarFallback>
-        </Avatar>
-        <div className="flex-1 space-y-4">
-          <Textarea
-            placeholder="Share your thoughts..."
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            className="min-h-[100px] resize-none focus-visible:ring-pink-500"
-          />
-          <div className="flex justify-end">
-            <Button
-              onClick={handleSubmit}
-              disabled={submitting || !newComment.trim()}
-              className="bg-pink-500 hover:bg-pink-600 text-white"
-            >
-              {submitting ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              ) : (
-                <Send className="w-4 h-4 mr-2" />
-              )}
-              Post Comment
-            </Button>
+      {user ? (
+        <div className="flex gap-4 mb-10">
+          <Avatar className="w-10 h-10">
+            <AvatarImage src={user?.avatar_url} />
+            <AvatarFallback>{user?.username?.charAt(0) || "U"}</AvatarFallback>
+          </Avatar>
+          <div className="flex-1 space-y-4">
+            <Textarea
+              placeholder="Share your thoughts..."
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              className="min-h-[100px] resize-none focus-visible:ring-pink-500"
+            />
+            <div className="flex justify-end">
+              <Button
+                onClick={handleSubmit}
+                disabled={submitting || !newComment.trim()}
+                className="bg-pink-500 hover:bg-pink-600 text-white"
+              >
+                {submitting ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <Send className="w-4 h-4 mr-2" />
+                )}
+                Post Comment
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
-
+      ) : (
+        ""
+      )}
       {/* Comments List */}
       <div className="space-y-8">
         {comments.map((comment) => (
@@ -236,7 +249,7 @@ export const CommentSection = ({ contentId, comments, onCommentsUpdate }: Commen
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleDelete(comment.id)}
+                      onClick={() => openDeleteDialog(comment.id)}
                       className="h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -251,20 +264,24 @@ export const CommentSection = ({ contentId, comments, onCommentsUpdate }: Commen
                   open={openPopoverId === comment.id}
                   onOpenChange={(open) => setOpenPopoverId(open ? comment.id : null)}
                 >
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className={cn(
-                        "h-6 px-2 text-xs font-medium hover:bg-transparent hover:text-pink-600",
-                        comment.user_reaction ? "text-pink-600" : "text-gray-500",
-                      )}
-                      onClick={() => handleDefaultReactionClick(comment)}
-                      onMouseEnter={() => setOpenPopoverId(comment.id)}
-                    >
-                      {comment.user_reaction ? REACTION_ICONS[comment.user_reaction] : "Like"}
-                    </Button>
-                  </PopoverTrigger>
+                  {user ? (
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={cn(
+                          "h-6 px-2 text-xs font-medium hover:bg-transparent hover:text-pink-600",
+                          comment.user_reaction ? "text-pink-600" : "text-gray-500",
+                        )}
+                        onClick={() => handleDefaultReactionClick(comment)}
+                        onMouseEnter={() => setOpenPopoverId(comment.id)}
+                      >
+                        {comment.user_reaction ? REACTION_ICONS[comment.user_reaction] : "Like"}
+                      </Button>
+                    </PopoverTrigger>
+                  ) : (
+                    ""
+                  )}
                   <PopoverContent
                     className="w-auto p-1 flex gap-1 rounded-full shadow-md"
                     onMouseLeave={() => setOpenPopoverId(null)}
@@ -308,6 +325,22 @@ export const CommentSection = ({ contentId, comments, onCommentsUpdate }: Commen
           </div>
         ))}
       </div>
+      {/* Delete Confirmation Dialog */}
+      <WarningDialog
+        isOpen={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete Comment"
+        description="Are you sure you want to delete this comment?"
+        warningMessage="This action cannot be undone."
+        onConfirm={handleDelete}
+        onCancel={() => {
+          setDeleteDialogOpen(false);
+          setCommentToDelete(null);
+        }}
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmButtonVariant="destructive"
+      />{" "}
     </div>
   );
 };

@@ -9,7 +9,14 @@ import { useAppDispatch } from "@/libs/stores";
 import { ContractPreviewModal } from "@/components/manage/marketing/contract/ContractPreviewModal";
 import { ContractPDF } from "@/components/manage/marketing/contract/ContractPreview";
 import { PDFDownloadLink } from "@react-pdf/renderer";
-import { FaEye, FaFileArrowDown, FaArrowLeft, FaFileContract, FaPencil } from "react-icons/fa6";
+import {
+  FaEye,
+  FaFileArrowDown,
+  FaArrowLeft,
+  FaFileContract,
+  FaPencil,
+  FaArrowRight,
+} from "react-icons/fa6";
 import { Loader2 } from "lucide-react";
 
 const ContractDetailPage: React.FC = () => {
@@ -83,6 +90,17 @@ const ContractDetailPage: React.FC = () => {
             <FaPencil className="h-4 w-4 mr-2" />
             Edit Contract
           </Button>
+
+          {contractDetail.campaign_id && (
+            <Button
+              onClick={() => navigate(`/manage/marketing/campaigns/${contractDetail.campaign_id}`)}
+              variant="outline"
+              className="border-green-300 text-green-700 bg-white hover:bg-green-50 flex items-center"
+            >
+              <FaArrowRight className="h-4 w-4 mr-2" />
+              View Campaign: {contractDetail.campaign_name || "Campaign"}
+            </Button>
+          )}
 
           <Button
             onClick={() => setIsPreviewModalOpen(true)}

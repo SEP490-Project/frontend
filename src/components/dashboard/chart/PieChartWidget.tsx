@@ -88,13 +88,13 @@ function PieChartWidget({ title, data, mode = "count", tooltip }: Props) {
               ))}
             </Pie>
             <Tooltip
-              formatter={(value: number, name: string) => [
+              formatter={(value: number | undefined, name: string | undefined) => [
                 mode === "percent"
                   ? `${value}%`
                   : mode === "currency"
                     ? convertNumberToCurrency(Number(value).toFixed(2))
-                    : value,
-                name,
+                    : (value ?? ""),
+                name ?? "",
               ]}
             />
             <Legend

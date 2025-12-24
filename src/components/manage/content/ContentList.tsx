@@ -8,7 +8,6 @@ import {
   publishContent,
   submitContent,
 } from "@/libs/stores/contentManager/thunk";
-import { updateTaskState } from "@/libs/stores/taskManager/thunk";
 import { manageContent } from "@/libs/services/manageContent";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -34,6 +33,7 @@ import {
   Plus,
   Search,
   Calendar,
+  Clock,
   User,
   FileText,
   Video,
@@ -53,6 +53,7 @@ import {
 import { Dialog } from "@/components/ui/dialog";
 import { DeleteContentModal } from "@/components/modal/content/DeleteContentModal";
 import { RequestApprovalModal } from "@/components/modal/content/RequestApprovalModal";
+import { ScheduleContentModal } from "@/components/modal/content/ScheduleContentModal";
 import TaskSelectionDialog from "./TaskSelectionDialog";
 import type { Content } from "@/libs/types/content";
 import type { Task } from "@/libs/types/task";
@@ -88,6 +89,13 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
   const [contentToSubmit, setContentToSubmit] = useState<Content | null>(null);
   const [isSubmittingApproval, setIsSubmittingApproval] = useState(false);
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [contentToSchedule, setContentToSchedule] = useState<Content | null>(null);
+
+  const handleSchedule = (content: Content) => {
+    setContentToSchedule(content);
+    setShowScheduleModal(true);
+  };
 
   useEffect(() => {
     dispatch(contents(filters));
@@ -199,7 +207,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
   const handlePublish = async (content: Content) => {
     try {
       await dispatch(publishContent({ id: content.id })).unwrap();
-      if (content.task_id) {
+      /* if (content.task_id) {
         try {
           const maxAttempts = 10;
           const pollInterval = 1500;
@@ -229,7 +237,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
         } catch (taskError) {
           console.warn("Failed to update task state:", taskError);
         }
-      }
+      } */
 
       dispatch(contents(filters));
       toast.success(`Content "${content.title}" has been published successfully.`);
@@ -548,6 +556,16 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                               Post content
                             </DropdownMenuItem>
                           )}
+                          {content.status === "APPROVED" &&
+                            content.content_channels?.length > 0 && (
+                              <DropdownMenuItem
+                                onClick={() => handleSchedule(content)}
+                                className="text-purple-600 hover:text-purple-700"
+                              >
+                                <Clock className="w-4 h-4 mr-2" />
+                                Schedule publishing
+                              </DropdownMenuItem>
+                            )}
                           {/* Only show Delete for draft and rejected content */}
                           {(content.status === "DRAFT" || content.status === "REJECTED") && (
                             <DropdownMenuItem
@@ -650,6 +668,35 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
           onConfirm={handleConfirmRequestApproval}
           isLoading={isSubmittingApproval}
         />
+      </Dialog>
+
+      {/* Schedule Content Modal */}
+      <Dialog
+        open={showScheduleModal}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowScheduleModal(false);
+            setContentToSchedule(null);
+          }
+        }}
+      >
+        {contentToSchedule && (
+          <ScheduleContentModal
+            contentId={contentToSchedule.id}
+            contentTitle={contentToSchedule.title}
+            contentChannels={(contentToSchedule.content_channels || []).map((ch) => ({
+              id: ch.id,
+              channel_id: ch.channel_id,
+              channel_name: ch.channel_name,
+              auto_post_status: ch.auto_post_status,
+            }))}
+            onSuccess={() => {
+              setShowScheduleModal(false);
+              setContentToSchedule(null);
+              dispatch(contents(filters));
+            }}
+          />
+        )}
       </Dialog>
     </div>
   );

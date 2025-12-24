@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { containerVariants, itemVariants, formatNumber } from "./types";
 import { getContentTypeIcon } from "./icons";
 import type { TopContentItem } from "@/libs/stores/contentDashboardManager/slice";
+import HelpTooltip, { METRIC_HELP_TEXT } from "@/components/ui/help-tooltip";
 
 interface TopContentCardProps {
   topContent: TopContentItem[];
@@ -59,7 +60,10 @@ export const TopContentCard: React.FC<TopContentCardProps> = ({
     <motion.div variants={itemVariants} initial="hidden" animate="visible">
       <Card className="rounded-2xl shadow-sm">
         <CardHeader className="pb-4 px-6 pt-6">
-          <CardTitle className="text-lg font-medium">Top Performing Content</CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-lg font-medium">Top Performing Content</CardTitle>
+            <HelpTooltip>{METRIC_HELP_TEXT.TOP_CONTENT}</HelpTooltip>
+          </div>
           <p className="text-sm text-gray-500">Best performance this period</p>
         </CardHeader>
         <CardContent className="px-6 pb-6">

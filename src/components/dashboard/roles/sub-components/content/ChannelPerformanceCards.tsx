@@ -6,6 +6,7 @@ import { FaEye, FaHeart, FaExternalLinkAlt, FaUsers, FaComment, FaShare } from "
 import { containerVariants, itemVariants, formatNumber, getGrowthIndicator } from "./types";
 import { getChannelIcon, getGrowthIcon } from "./icons";
 import type { ChannelMetrics } from "@/libs/stores/contentDashboardManager/slice";
+import HelpTooltip from "@/components/ui/help-tooltip";
 
 interface ChannelPerformanceCardsProps {
   channelMetrics: ChannelMetrics[];
@@ -102,6 +103,7 @@ export const ChannelPerformanceCards: React.FC<ChannelPerformanceCardsProps> = (
                   <div className="flex items-center gap-2">
                     {getChannelIcon(channel.channel_code)}
                     {channel.channel_name}
+                    <HelpTooltip>{`Metrics for ${channel.channel_name} channel`}</HelpTooltip>
                   </div>
                   {onChannelClick && (
                     <FaExternalLinkAlt

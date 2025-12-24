@@ -24,6 +24,7 @@ import {
   FaBox,
   FaUserTie,
   FaFileShield,
+  FaServer,
 } from "react-icons/fa6";
 import { useAuth } from "@/libs/hooks/useAuth";
 import { useAppDispatch } from "@/libs/stores";
@@ -281,6 +282,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         icon: <FaCalendarDays size={18} />,
       },
       { href: "/manage/content/all-contents", label: "Content", icon: <FaFilePen size={18} /> },
+      { href: "/manage/content/schedules", label: "Schedules", icon: <FaCalendarDays size={18} /> },
       { href: "/manage/content/tag", label: "Tag", icon: <FaHashtag size={18} /> },
     ],
     ADMIN: [
@@ -320,6 +322,11 @@ const Sidebar: React.FC<SidebarProps> = ({
             icon: <FaFileShield size={14} />,
           },
         ],
+      },
+      {
+        href: "/manage/admin/system-specs",
+        label: "System Specs",
+        icon: <FaServer size={18} />,
       },
     ],
   };

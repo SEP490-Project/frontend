@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { Homepage, AboutApp, AboutUs, Blog, BlogDetail } from "@/pages/landing";
+import { Homepage, AboutApp, AboutUs, Blog, BlogDetail, OrderTracking } from "@/pages/landing";
 import NotFound from "@/pages/NotFound";
 import CancelPayment from "@/pages/CancelPayment";
 import SuccessPayment from "@/pages/SuccessPayment";
@@ -38,7 +38,13 @@ import { AuthenticationLayout } from "../layouts/AuthenticationLayout";
 import { ForgotPassword } from "@/pages/authentication/ForgotPassword";
 import { ResetPassword } from "@/pages/authentication/ResetPassword";
 import CustomerLayout from "@/layouts/CustomerLayout";
-import { AssignedTasks, ManageContent, ManageTags, ContentDetail } from "@/pages/manager/content";
+import {
+  AssignedTasks,
+  ManageContent,
+  ManageTags,
+  ContentDetail,
+  ScheduleManagement,
+} from "@/pages/manager/content";
 import PrivateRoute from "./private-route";
 import PublicRoute from "./public-route";
 import {
@@ -75,6 +81,7 @@ import TermsOfService from "@/pages/manager/admin/configurations/TermsOfService"
 import Representative from "@/pages/manager/admin/configurations/Representative";
 import PrivacyPolicyAdmin from "@/pages/manager/admin/configurations/PrivacyPolicyAdmin";
 import GhnMock from "@/pages/manager/shared/GhnMock";
+import SystemSpecs from "@/pages/manager/admin/SystemSpecs";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -99,6 +106,7 @@ const AppRoutes = () => (
         <Route path="/blog/:id" element={<BlogDetail />} />
         <Route path="/terms-of-uses" element={<TermsOfUses />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/order-tracking" element={<OrderTracking />} />
       </Route>
 
       <Route element={<PublicRoute />}>
@@ -142,6 +150,7 @@ const AppRoutes = () => (
             <Route path="terms-of-service" element={<TermsOfService />} />
             <Route path="privacy-policy" element={<PrivacyPolicyAdmin />} />
           </Route>
+          <Route path="system-specs" element={<SystemSpecs />} />
         </Route>
       </Route>
 
@@ -221,6 +230,7 @@ const AppRoutes = () => (
           <Route path="all-contents" element={<ManageContent />} />
           <Route path="all-contents/:id" element={<ContentDetail />} />
           <Route path="tag" element={<ManageTags />} />
+          <Route path="schedules" element={<ScheduleManagement />} />
         </Route>
       </Route>
 

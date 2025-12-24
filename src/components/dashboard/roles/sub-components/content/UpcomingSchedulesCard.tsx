@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import { containerVariants, itemVariants } from "./types";
 import { getChannelIcon } from "./icons";
 import type { UpcomingScheduleItem } from "@/libs/stores/contentDashboardManager/slice";
+import HelpTooltip, { METRIC_HELP_TEXT } from "@/components/ui/help-tooltip";
 
 interface UpcomingSchedulesCardProps {
   upcomingSchedule: UpcomingScheduleItem[];
@@ -59,8 +60,11 @@ export const UpcomingSchedulesCard: React.FC<UpcomingSchedulesCardProps> = ({
       <Card className="rounded-2xl shadow-sm">
         <CardHeader className="pb-4 px-6 pt-6">
           <CardTitle className="text-lg font-medium flex items-center gap-2">
-            <FaClock className="text-blue-600" />
-            Upcoming Schedules
+            <div className="flex items-center gap-2">
+              <FaClock className="text-blue-600" />
+              Upcoming Schedules
+              <HelpTooltip>{METRIC_HELP_TEXT.UPCOMING_SCHEDULE}</HelpTooltip>
+            </div>
           </CardTitle>
           <p className="text-sm text-gray-500">Next scheduled publications</p>
         </CardHeader>

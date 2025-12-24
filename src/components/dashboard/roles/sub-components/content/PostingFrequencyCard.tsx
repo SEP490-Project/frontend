@@ -75,8 +75,10 @@ export const PostingFrequencyCard: React.FC<PostingFrequencyCardProps> = ({
         <CardHeader className="pb-4 px-6 pt-6">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg font-medium">
-              Posting Frequency
-              <HelpTooltip>{METRIC_HELP_TEXT.POSTING_FREQUENCY}</HelpTooltip>
+              <div className="flex items-center gap-2">
+                Posting Frequency
+                <HelpTooltip>{METRIC_HELP_TEXT.POSTING_FREQUENCY}</HelpTooltip>
+              </div>
             </CardTitle>
           </div>
           <p className="text-sm text-gray-500">Progress toward target</p>

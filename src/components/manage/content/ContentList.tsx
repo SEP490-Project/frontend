@@ -8,7 +8,6 @@ import {
   publishContent,
   submitContent,
 } from "@/libs/stores/contentManager/thunk";
-import { updateTaskState } from "@/libs/stores/taskManager/thunk";
 import { manageContent } from "@/libs/services/manageContent";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -208,7 +207,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
   const handlePublish = async (content: Content) => {
     try {
       await dispatch(publishContent({ id: content.id })).unwrap();
-      if (content.task_id) {
+      /* if (content.task_id) {
         try {
           const maxAttempts = 10;
           const pollInterval = 1500;
@@ -238,7 +237,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
         } catch (taskError) {
           console.warn("Failed to update task state:", taskError);
         }
-      }
+      } */
 
       dispatch(contents(filters));
       toast.success(`Content "${content.title}" has been published successfully.`);

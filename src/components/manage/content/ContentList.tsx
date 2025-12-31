@@ -372,6 +372,14 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-semibold">Recent contents</h2>
+
+        {/* Create New Button */}
+        <div className="flex justify-end">
+          <Button className="bg-[#FF9DB0] hover:bg-pink-600" onClick={handleOpenCreationModal}>
+            <Plus className="w-4 h-4 mr-2" />
+            Create New
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -406,14 +414,6 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
           </div>
         </CardContent>
       </Card>
-
-      {/* Create New Button */}
-      <div className="flex justify-end">
-        <Button className="bg-[#FF9DB0] hover:bg-pink-600" onClick={handleOpenCreationModal}>
-          <Plus className="w-4 h-4 mr-2" />
-          Create New
-        </Button>
-      </div>
 
       {/* Content Table */}
       <Card>

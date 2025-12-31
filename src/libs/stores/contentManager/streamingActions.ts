@@ -27,11 +27,20 @@ export const streamAIContentAction =
 
     try {
       abortControllerRef = await streamAIContent(data.prompt, data.model, data.json_mode, {
-        onMessage: (content, usage) => {
+        onMessage: (data: any) => {
+          const content = data.content || "";
+          const usage = data.usage;
           dispatch(appendStreamingContent({ content, usage }));
         },
         onComplete: (fullContent) => {
-          dispatch(completeStreaming({ content: fullContent, isStructured: false }));
+          if (fullContent == undefined) {
+            toast.warning("No content was generated.", {
+              description: "No content was generated.",
+              duration: 4000,
+            });
+            return;
+          }
+          dispatch(completeStreaming({ content: fullContent || "", isStructured: false }));
           toast.success("AI content generated!", {
             description: "Your content has been successfully generated.",
             duration: 4000,
@@ -77,11 +86,13 @@ export const streamStructuredContentAction =
         data.platform,
         data.tone,
         {
-          onMessage: (content, usage) => {
+          onMessage: (data: any) => {
+            const content = data.content || "";
+            const usage = data.usage;
             dispatch(appendStreamingContent({ content, usage }));
           },
           onComplete: (fullContent) => {
-            dispatch(completeStreaming({ content: fullContent, isStructured: true }));
+            dispatch(completeStreaming({ content: fullContent || "", isStructured: true }));
             toast.success("Structured content generated!", {
               description: "Your structured content has been successfully generated.",
               duration: 4000,

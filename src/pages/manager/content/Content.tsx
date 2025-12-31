@@ -139,7 +139,7 @@ const ManageContent = () => {
 
   return (
     <div className="min-h-fit p-4 sm:p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="mx-auto space-y-6">
         {/* Main Content */}
         {viewMode === "list" ? (
           /* Content List View */
@@ -148,14 +148,14 @@ const ManageContent = () => {
         currentContentType === "blog" ? (
           <BlogEditor
             editingContent={editingContent}
-            selectedTask={selectedTask}
+            initialTask={selectedTask}
             onSave={handleSave}
             onBack={handleBackToList}
           />
         ) : (
           <VideoEditor
             editingContent={editingContent}
-            selectedTask={selectedTask}
+            initialTask={selectedTask}
             onSave={handleSave}
             onBack={handleBackToList}
           />

@@ -49,4 +49,7 @@ export default defineConfig({
   preview: {
     allowedHosts: true,
   },
+  optimizeDeps: {
+    exclude: ["@ffmpeg/ffmpeg", "@ffmpeg/util"],
+  },
 });

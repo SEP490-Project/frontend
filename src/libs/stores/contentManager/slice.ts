@@ -481,18 +481,18 @@ export const manageContentSlice = createSlice({
       .addCase(getSupportedAIModels.fulfilled, (state, action) => {
         state.loading = false;
         state.aiModels = action.payload.data;
-        toast.success("AI models loaded!", {
-          description: "Available AI models have been loaded.",
-          duration: 4000,
-        });
+        // toast.success("AI models loaded!", {
+        //   description: "Available AI models have been loaded.",
+        //   duration: 4000,
+        // });
       })
       .addCase(getSupportedAIModels.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
-        toast.error("Failed to load AI models", {
-          description: "Please check your connection and try again.",
-          duration: 4000,
-        });
+        // toast.error("Failed to load AI models", {
+        //   description: "Please check your connection and try again.",
+        //   duration: 4000,
+        // });
       });
   },
 });

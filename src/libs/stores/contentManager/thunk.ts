@@ -10,6 +10,7 @@ import type {
   AIGenerateRequest,
   AIStructuredContentRequest,
 } from "@/libs/types/content";
+import { toast } from "sonner";
 
 export const contents = createAsyncThunk(
   "/contents",
@@ -192,6 +193,10 @@ export const getSupportedAIModels = createAsyncThunk(
       return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
+      toast.error("Failed to fetch AI models", {
+        description: err.response?.data?.message || "An error occurred while fetching AI models.",
+        duration: 4000,
+      });
       return rejectWithValue(err.response?.data?.message || "Failed to fetch AI models");
     }
   },

@@ -6,7 +6,7 @@ import tseslint from "typescript-eslint";
 import { globalIgnores } from "eslint/config";
 
 export default [
-  globalIgnores(["dist", "node_modules", "vite.config.ts", "tailwind.config.js"]),
+  globalIgnores(["dist", "node_modules", "vite.config.ts", "tailwind.config.js", "public/ffmpeg"]),
 
   //Base JS
   js.configs.recommended,

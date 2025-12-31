@@ -143,8 +143,9 @@ export const createAIStreamingConnection = async (
       // AI Logic: Extract 'content' field and usage
       if (parsed.content) {
         accumulatedContent += parsed.content;
-        callbacks.onMessage(parsed.content); // Pass string chunks
+        // callbacks.onMessage(parsed.content); // Pass string chunks
       }
+      callbacks.onMessage(parsed); // Pass string chunks
     },
     onOpen: callbacks.onOpen,
     onClose: callbacks.onClose,

@@ -113,7 +113,11 @@ const TaskDisplayForm = ({
             <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md border border-gray-200 min-h-[40px] whitespace-pre-wrap">
               {typeof task.description === "string"
                 ? task.description
-                : task.description?.details || "No description provided"}
+                : task.description?.description ||
+                  task.description?.product_description ||
+                  task.description?.product_name ||
+                  task.description?.event_name ||
+                  "No description provided"}
             </p>
           </div>
         </div>

@@ -2,7 +2,7 @@ import { useAppDispatch } from "@/libs/stores";
 import { getGHNInfoRaw, updateGHNOrderStatus } from "@/libs/stores/ghnManager/thunk";
 import type { GHNOrderInfo } from "@/libs/types/ghn";
 import { Loader2, Package, Search, Send } from "lucide-react"; // Added icons for better UI
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export const GhnMock = () => {
   const dispatch = useAppDispatch();
@@ -45,11 +45,23 @@ export const GhnMock = () => {
       return;
     }
 
+    const statusEl = document.getElementById("status-select") as HTMLSelectElement | null;
+    const currentStatus = statusEl?.value || updateStatusPayload.status;
+
+    console.log("Submitting Update Status with Payload:", {
+      ...updateStatusPayload,
+      status: currentStatus,
+    });
+
     setIsLoading(true);
     setResult("⏳ Đang gửi request...");
 
     try {
-      const response = await dispatch(updateGHNOrderStatus(updateStatusPayload));
+      const response = await dispatch(
+        updateGHNOrderStatus({ ...updateStatusPayload, status: currentStatus }),
+      )
+        .unwrap()
+        .then(() => fetchAvailableStates(updateStatusPayload.order_code));
       setResult("✅ Thành công: " + JSON.stringify(response, null, 2));
     } catch (err) {
       setResult("❌ Lỗi: " + (err as Error).toString());
@@ -58,6 +70,14 @@ export const GhnMock = () => {
     }
   };
 
+  useEffect(() => {
+    console.log("Available States Updated:", availableStates);
+  }, [availableStates]);
+
+  useEffect(() => {
+    console.log("updateStatusPayload Updated:", updateStatusPayload);
+  }, [updateStatusPayload]);
+
   const getOrderInfo = async (orderCode: string) => {
     setIsLoading(true);
 
@@ -65,7 +85,15 @@ export const GhnMock = () => {
       const response = await dispatch(getGHNInfoRaw(orderCode)).unwrap();
       console.log("GHN Order Info Response:", response);
       setOrderInfo(response?.data || null);
-      setAvailableStates(response?.data?.available_states || new Map());
+
+      const rawStates = response?.data?.available_states;
+
+      const statesMap =
+        rawStates && typeof rawStates === "object"
+          ? new Map<string, boolean>(Object.entries(rawStates))
+          : new Map<string, boolean>();
+
+      setAvailableStates(statesMap);
 
       // Set default status to first available happy case
       const states = response?.data?.available_states as Map<string, boolean>;
@@ -86,6 +114,22 @@ export const GhnMock = () => {
       setAvailableStates(new Map()); // Clear states on error
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchAvailableStates = async (orderCode: string) => {
+    try {
+      const response = await dispatch(getGHNInfoRaw(orderCode)).unwrap();
+      const rawStates = response?.data?.available_states;
+
+      const statesMap =
+        rawStates && typeof rawStates === "object"
+          ? new Map<string, boolean>(Object.entries(rawStates))
+          : new Map<string, boolean>();
+
+      setAvailableStates(statesMap);
+    } catch (err) {
+      console.error("Error fetching available states:", err);
     }
   };
 
@@ -177,6 +221,7 @@ export const GhnMock = () => {
               {availableStates && availableStates.size > 0 ? (
                 <select
                   name="status"
+                  id="status-select"
                   value={updateStatusPayload.status}
                   onChange={handlePayload}
                   className="w-full px-4 py-3 bg-orange-50 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:outline-none mb-4 text-gray-700"
@@ -257,7 +302,7 @@ export const GhnMock = () => {
                 </span>
               </div>
 
-              <div className="flex-1 bg-white border border-gray-200 rounded-2xl shadow-sm p-6 overflow-auto relative group max-h-[600px] custom-scrollbar">
+              <div className="flex-1 bg-white border border-gray-200 rounded-2xl shadow-sm p-6 overflow-auto relative group max-h-150 custom-scrollbar">
                 <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() =>

@@ -27,6 +27,7 @@ import {
 import { useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "@/libs/stores";
 import { getAllVariantAttributesThunk } from "@/libs/stores/attributeManager/thunk";
+import { fetchAllProductOptionTypesThunk } from "@/libs/stores/productOptionManager/thunk";
 
 interface VariationFormProps extends ProductFormProps<ProductVariant> {
   onSubmit?: (data: ProductVariant) => void;
@@ -37,21 +38,81 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
   const variantAttributes = useSelector(
     (state: RootState) => state?.manageAttribute?.attributes?.data,
   );
-  const capacityUnits = ["ML", "L", "G", "KG", "OZ"];
-  const containerTypes = [
-    "BOTTLE",
-    "TUBE",
-    "JAR",
-    "STICK",
-    "PENCIL",
-    "COMPACT",
-    "PALLETE",
-    "SACHET",
-    "VIAL",
-    "ROLLER_BOTTLE",
-  ];
-  const dispenserTypes = ["PUMP", "SPRAY", "DROPPER", "ROLL_ON", "TWIST_UP", "SQUEEZE", "NONE"];
-  const attributeUnits = ["%", "MG", "G", "ML", "L", "IU", "PPM", "NONE"];
+
+  // Get product options from Redux store
+  const productOptions = useSelector((state: RootState) => state?.manageProductOption);
+
+  // Map options to code arrays for backward compatibility
+  const capacityUnits =
+    productOptions?.capacityUnits?.length > 0
+      ? productOptions.capacityUnits.map((o) => {
+          return {
+            code: o.code,
+            name: `${o.code} (${o.name})`,
+          };
+        })
+      : [
+          { code: "ML", name: "Milliliter (ML)" },
+          { code: "L", name: "Liter (L)" },
+          { code: "G", name: "Gram (G)" },
+          { code: "KG", name: "Kilogram (KG)" },
+          { code: "OZ", name: "Ounce (OZ)" },
+        ];
+  const containerTypes =
+    productOptions?.containerTypes?.length > 0
+      ? productOptions.containerTypes.map((o) => {
+          return {
+            code: o.code,
+            name: o.name,
+          };
+        })
+      : [
+          { code: "BOTTLE", name: "Bottle" },
+          { code: "TUBE", name: "Tube" },
+          { code: "JAR", name: "Jar" },
+          { code: "STICK", name: "Stick" },
+          { code: "PENCIL", name: "Pencil" },
+          { code: "COMPACT", name: "Compact" },
+          { code: "PALLETE", name: "Palette" },
+          { code: "SACHET", name: "Sachet" },
+          { code: "VIAL", name: "Vial" },
+          { code: "ROLLER_BOTTLE", name: "Roller Bottle" },
+        ];
+  const dispenserTypes =
+    productOptions?.dispenserTypes?.length > 0
+      ? productOptions.dispenserTypes.map((o) => {
+          return {
+            code: o.code,
+            name: o.name,
+          };
+        })
+      : [
+          { code: "PUMP", name: "Pump" },
+          { code: "SPRAY", name: "Spray" },
+          { code: "DROPPER", name: "Dropper" },
+          { code: "ROLL_ON", name: "Roll On" },
+          { code: "TWIST_UP", name: "Twist Up" },
+          { code: "SQUEEZE", name: "Squeeze" },
+          { code: "NONE", name: "None" },
+        ];
+  const attributeUnits =
+    productOptions?.attributeUnits?.length > 0
+      ? productOptions.attributeUnits.map((o) => {
+          return {
+            code: o.code,
+            name: `${o.code} (${o.name})`,
+          };
+        })
+      : [
+          { code: "%", name: "Percentage (%)" },
+          { code: "MG", name: "Milligram (MG)" },
+          { code: "G", name: "Gram (G)" },
+          { code: "ML", name: "Milliliter (ML)" },
+          { code: "L", name: "Liter (L)" },
+          { code: "IU", name: "International Unit (IU)" },
+          { code: "PPM", name: "Parts Per Million (PPM)" },
+          { code: "NONE", name: "None" },
+        ];
 
   const { register, handleSubmit, control, watch, setError, clearErrors } = form;
 
@@ -103,6 +164,8 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
           limit: 100,
         }),
       );
+      // Fetch product options from database
+      dispatch(fetchAllProductOptionTypesThunk());
     }
   }, [dispatch]);
 
@@ -306,8 +369,8 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
                   </SelectTrigger>
                   <SelectContent>
                     {capacityUnits.map((unit) => (
-                      <SelectItem key={unit} value={unit}>
-                        {unit}
+                      <SelectItem key={unit.code} value={unit.code}>
+                        {unit.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -330,8 +393,8 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
                   </SelectTrigger>
                   <SelectContent>
                     {containerTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
+                      <SelectItem key={type.code} value={type.code}>
+                        {type.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -354,8 +417,8 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
                   </SelectTrigger>
                   <SelectContent>
                     {dispenserTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
+                      <SelectItem key={type.code} value={type.code}>
+                        {type.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -480,8 +543,8 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
                             </SelectTrigger>
                             <SelectContent>
                               {attributeUnits.map((unit) => (
-                                <SelectItem key={unit} value={unit}>
-                                  {unit}
+                                <SelectItem key={unit.code} value={unit.code}>
+                                  {unit.name}
                                 </SelectItem>
                               ))}
                             </SelectContent>

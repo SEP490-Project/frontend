@@ -63,7 +63,7 @@ import {
 } from "@/pages/manager/sale";
 import ContentPreviewPage from "@/pages/manager/marketing/content-approval/ContentPreviewPage";
 import AddProductStep from "@/components/manage/sale/product/AddProductStep";
-import { Channel, User, VariantAttribute } from "@/pages/manager/admin";
+import { Channel, User, VariantAttribute, ProductOptions } from "@/pages/manager/admin";
 import { CreateConceptStep } from "@/pages/manager/sale/product/add-product-step/CreateConceptStep";
 import SalesPwaLayout from "@/layouts/SalesPWALayout";
 import SalesPwaRoute from "./sales-pwa-route";
@@ -141,6 +141,7 @@ const AppRoutes = () => (
         <Route path="/manage/admin" element={<ManageLayout />}>
           <Route path="users" element={<User />} />
           <Route path="variant-attribute" element={<VariantAttribute />} />
+          <Route path="product-options" element={<ProductOptions />} />
           <Route path="channel" element={<Channel />} />
           <Route path="configurations">
             <Route index element={<AllConfigurations />} />

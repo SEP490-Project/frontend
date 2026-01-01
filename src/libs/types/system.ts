@@ -103,3 +103,120 @@ export interface RabbitMQPublishRequest {
   payload: string;
   content_type?: string;
 }
+
+// AsynQ Types
+export interface AsynqOverview {
+  status: string;
+  total_queues: number;
+  total_active: number;
+  total_pending: number;
+  total_scheduled: number;
+  total_retry: number;
+  total_archived: number;
+  total_completed: number;
+  total_processed: number;
+  queues: AsynqQueue[];
+}
+
+export interface AsynqQueue {
+  name: string;
+  size: number;
+  active: number;
+  pending: number;
+  scheduled: number;
+  retry: number;
+  archived: number;
+  completed: number;
+  processed: number;
+  paused: boolean;
+  timestamp: string;
+}
+
+export interface ActionAsynqQueueRequest {
+  queue: "default" | "critical" | "low";
+}
+
+export interface AsynQTaskQueries {
+  queue: "default" | "critical" | "low";
+  state: "scheduled" | "pending" | "active" | "retry" | "archived";
+  limit?: number; //default 20
+  page?: number; // default 1
+}
+
+export interface AsynqTaskResponse {
+  tasks: {
+    id: string;
+    type: string;
+    queue: string;
+    state: string;
+    max_retry: number;
+    retried: number;
+    next_process_at: string;
+    timeout: number;
+    deadline: string;
+    completed_at: string;
+  }[];
+}
+
+export interface AsynqQTaskDetail {
+  id: string;
+  type: string;
+  queue: string;
+  state: string;
+  max_retry: number;
+  retried: number;
+  next_process_at: string;
+  timeout: number;
+  deadline: string;
+  completed_at: string;
+  payload: Record<string, any>;
+}
+
+export interface AsynqDeleteTaskRequest {
+  queue: "default" | "critical" | "low";
+  state: "scheduled" | "pending" | "active" | "retry" | "archived";
+  task_id: string;
+}
+
+export interface AsynqAchieveTaskRequest {
+  queue: "default" | "critical" | "low";
+  task_id: string;
+}
+
+// Cache types
+export interface CacheOverview {
+  status: string;
+  version: string;
+  uptime: string;
+  connected_clients: string;
+  used_memory: string;
+  used_memory_peak: string;
+  total_keys: number;
+  total_connections_received: string;
+  total_commands_processed: string;
+  keyspace_hits: string;
+  keyspace_misses: string;
+  hit_rate: string;
+  evicted_keys: string;
+  expired_keys: string;
+}
+
+export interface CacheResponse {
+  keys: CacheKey[];
+  total_count: number;
+  pattern: string;
+}
+
+export interface CacheKey {
+  key: string;
+  type: string;
+  ttl: number;
+}
+
+// Job Type
+export type JobResponse = Record<string, JobStatus>;
+interface JobStatus {
+  enabled: boolean;
+  last_run: string; // or Date if you parse it
+  name: string;
+}

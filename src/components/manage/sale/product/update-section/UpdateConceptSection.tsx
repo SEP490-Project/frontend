@@ -22,12 +22,13 @@ import { useChunkUpload } from "@/libs/hooks/useChunkUpload";
 import { uploadFilesThunk } from "@/libs/stores/fileManager/thunk";
 import { useAuth } from "@/libs/hooks/useAuth";
 import { toast } from "sonner";
-import { Upload, Trash2, Video, Plus, X } from "lucide-react";
+import { Upload, Trash2, Video, Plus, X, Scissors, Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import manageConcept from "@/libs/services/manageConcept";
 import manageProduct from "@/libs/services/manageProduct";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/libs/stores";
+import FFmpegVideoEditor from "@/components/global/FFmpegVideoEditor";
 
 interface UpdateConceptSectionProps {
   conceptId?: string;
@@ -46,9 +47,16 @@ const UpdateConceptSection = ({
   const { productDetail } = useSelector((state: RootState) => state.manageProduct);
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [showAdvancedEditor, setShowAdvancedEditor] = useState(false);
+
+  // Video State
+  const [localFile, setLocalFile] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
+
+  // Banner State
   const [bannerPreviews, setBannerPreviews] = useState<string[]>([]);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+
   const [currentConcept, setCurrentConcept] = useState<ConceptData | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -105,7 +113,10 @@ const UpdateConceptSection = ({
     fetchConceptDetails();
   }, [conceptId, productDetail]);
 
-  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // --- Handlers ---
+
+  // 1. File Selection (No Upload Yet)
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -119,24 +130,41 @@ const UpdateConceptSection = ({
       return;
     }
 
+    setLocalFile(file);
+
+    // Revoke old URL if it was a blob
+    if (videoPreview && videoPreview.startsWith("blob:")) {
+      URL.revokeObjectURL(videoPreview);
+    }
+
     const previewUrl = URL.createObjectURL(file);
     setVideoPreview(previewUrl);
 
-    try {
-      toast.info("Uploading video...");
-      const response = await uploadFileInChunks(file);
-      if (response && response.data.HostURL) {
-        setValue("video_thumbnail", response.data.HostURL);
-        toast.success("Video uploaded successfully!");
-      } else {
-        toast.error("Failed to upload video");
-        setVideoPreview(null);
-      }
-    } catch (error) {
-      console.error("Video upload error:", error);
-      toast.error("Failed to upload video");
-      setVideoPreview(null);
+    // Clear the form value for now, we will fill it on submit
+    setValue("video_thumbnail", "");
+  };
+
+  // 2. Editor Save
+  const handleEditorSave = (editedFile: File) => {
+    setLocalFile(editedFile);
+
+    if (videoPreview && videoPreview.startsWith("blob:")) {
+      URL.revokeObjectURL(videoPreview);
     }
+
+    const newUrl = URL.createObjectURL(editedFile);
+    setVideoPreview(newUrl);
+    setShowAdvancedEditor(false);
+  };
+
+  // 3. Remove Video
+  const handleRemoveVideo = () => {
+    if (videoPreview && videoPreview.startsWith("blob:")) {
+      URL.revokeObjectURL(videoPreview);
+    }
+    setVideoPreview(null);
+    setLocalFile(null);
+    setValue("video_thumbnail", "");
   };
 
   const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -193,14 +221,6 @@ const UpdateConceptSection = ({
     setValue("banner_url", newPreviews.length === 1 ? newPreviews[0] : newPreviews.join(","));
   };
 
-  const handleRemoveVideo = () => {
-    if (videoPreview && videoPreview.startsWith("blob:")) {
-      URL.revokeObjectURL(videoPreview);
-    }
-    setVideoPreview(null);
-    setValue("video_thumbnail", "");
-  };
-
   const handleDeleteConcept = async () => {
     if (!currentConcept?.id) return;
 
@@ -211,6 +231,7 @@ const UpdateConceptSection = ({
       setCurrentConcept(null);
       setBannerPreviews([]);
       setVideoPreview(null);
+      setLocalFile(null);
       if (onConceptUpdated) {
         onConceptUpdated();
       }
@@ -222,19 +243,50 @@ const UpdateConceptSection = ({
     }
   };
 
+  // 4. Submit Handler (Handles Upload + Creation)
   const onSubmit = useCallback(
     async (payload: CreateConceptPayload) => {
       try {
-        const result = await dispatch(createConceptThunk(payload)).unwrap();
+        let finalVideoUrl = payload.video_thumbnail;
+
+        // Step A: Upload Video if we have a local file
+        if (localFile) {
+          try {
+            const response = await uploadFileInChunks(localFile);
+            if (response && response.data && response.data.HostURL) {
+              finalVideoUrl = response.data.HostURL;
+            } else {
+              throw new Error("Invalid upload response");
+            }
+          } catch (uploadError) {
+            console.error("Video upload failed:", uploadError);
+            toast.error("Video upload failed. Please try again.");
+            return; // Stop execution
+          }
+        }
+
+        if (!finalVideoUrl) {
+          toast.error("Please provide a video for the concept.");
+          return;
+        }
+
+        // Step B: Submit to API
+        const finalPayload = { ...payload, video_thumbnail: finalVideoUrl };
+
+        const result = await dispatch(createConceptThunk(finalPayload)).unwrap();
         if (result) {
           try {
             await manageProduct.addConceptToLimitedProduct(productId, result.id);
             toast.success("Concept created and linked to product successfully");
+
+            // Cleanup
             setIsCreateDialogOpen(false);
             reset();
             setBannerPreviews([]);
             setVideoPreview(null);
+            setLocalFile(null);
             setCurrentConcept(result);
+
             if (onConceptUpdated) {
               onConceptUpdated();
             }
@@ -247,7 +299,7 @@ const UpdateConceptSection = ({
         toast.error(error || "Failed to create concept");
       }
     },
-    [dispatch, productId, reset, onConceptUpdated],
+    [dispatch, productId, reset, onConceptUpdated, localFile, uploadFileInChunks],
   );
 
   const onError = useCallback((errors: any) => {
@@ -259,6 +311,7 @@ const UpdateConceptSection = ({
     reset();
     setBannerPreviews([]);
     setVideoPreview(null);
+    setLocalFile(null);
     setIsCreateDialogOpen(true);
   };
 
@@ -305,7 +358,7 @@ const UpdateConceptSection = ({
                 {videoPreview && (
                   <div>
                     <Label className="text-sm font-medium">Video Thumbnail</Label>
-                    <div className="relative aspect-video rounded-lg overflow-hidden border mt-2 max-w-md">
+                    <div className="relative aspect-video rounded-lg overflow-hidden border mt-2 max-w-md bg-black">
                       <video src={videoPreview} controls className="w-full h-full" />
                     </div>
                   </div>
@@ -350,6 +403,22 @@ const UpdateConceptSection = ({
         </CardContent>
       </Card>
 
+      {/* Advanced Editor Fullscreen Dialog */}
+      <Dialog open={showAdvancedEditor} onOpenChange={setShowAdvancedEditor}>
+        <DialogContent className="max-w-[95vw] h-[90vh] p-0 overflow-hidden flex flex-col bg-transparent border-none shadow-none [&>button]:hidden">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Video Editor</DialogTitle>
+          </DialogHeader>
+          {localFile && (
+            <FFmpegVideoEditor
+              file={localFile}
+              onSave={handleEditorSave}
+              onCancel={() => setShowAdvancedEditor(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Create Concept Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -360,12 +429,17 @@ const UpdateConceptSection = ({
             </DialogDescription>
           </DialogHeader>
 
+          {/* Uploading Overlay */}
           {(isUploading || isUploadingBanner) && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
               <div className="bg-white rounded-lg p-8 flex flex-col items-center gap-4 max-w-md">
-                <Upload className="w-12 h-12 animate-pulse text-primary" />
+                {isUploading ? (
+                  <Loader2 className="w-12 h-12 animate-spin text-primary" />
+                ) : (
+                  <Upload className="w-12 h-12 animate-pulse text-primary" />
+                )}
                 <p className="text-lg font-semibold">
-                  {isUploading ? "Uploading video..." : "Uploading images..."}
+                  {isUploading ? "Uploading video & Saving..." : "Uploading images..."}
                 </p>
                 <p className="text-sm text-gray-500 text-center">
                   Please wait while we upload your files
@@ -382,21 +456,56 @@ const UpdateConceptSection = ({
 
           <form onSubmit={handleSubmit(onSubmit, onError)} className="space-y-6">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-              {/* Video Preview Section */}
+              {/* Left Column (Video) */}
               {videoPreview && (
                 <div className="col-span-2 space-y-2">
                   <Label>Video Preview</Label>
-                  <div className="relative aspect-video rounded-lg overflow-hidden border">
+                  <div className="relative group aspect-video rounded-lg overflow-hidden border bg-black">
                     <video src={videoPreview} controls className="w-full h-full" />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      className="absolute top-2 right-2"
-                      onClick={handleRemoveVideo}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+
+                    {/* Control Overlay */}
+                    <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                      {localFile && (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setShowAdvancedEditor(true)}
+                          className="text-black bg-white/90 hover:bg-white"
+                        >
+                          <Scissors className="w-4 h-4 mr-2" /> Edit
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleRemoveVideo}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    {!isUploading && (
+                      <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <input
+                          id="video-replace"
+                          type="file"
+                          accept="video/*"
+                          className="hidden"
+                          onChange={handleFileChange}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => document.getElementById("video-replace")?.click()}
+                          className="bg-white/90 hover:bg-white"
+                        >
+                          Replace
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -434,7 +543,7 @@ const UpdateConceptSection = ({
                   )}
                 </div>
 
-                {videoPreview || bannerPreviews.length > 0 ? null : (
+                {!videoPreview && (
                   <div>
                     <Label htmlFor="video">
                       Video Thumbnail <span className="text-red-500">*</span>
@@ -442,27 +551,27 @@ const UpdateConceptSection = ({
                     <div className="mt-2">
                       <label
                         htmlFor="video-upload"
-                        className="flex items-center justify-center gap-2 border-2 border-dashed border-gray-300 rounded-lg p-4 cursor-pointer hover:border-primary transition-colors"
+                        className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-300 rounded-lg p-6 cursor-pointer hover:border-primary hover:bg-gray-50 transition-all"
                       >
-                        <Video className="h-5 w-5" />
-                        <span className="text-sm">
-                          {videoPreview ? "Change Video" : "Upload Video"}
-                        </span>
+                        <Video className="h-8 w-8 text-gray-400" />
+                        <span className="text-sm font-medium text-gray-600">Upload Video</span>
                         <input
                           id="video-upload"
                           type="file"
                           accept="video/*"
                           className="hidden"
-                          onChange={handleVideoUpload}
+                          onChange={handleFileChange}
                           disabled={isUploading}
                         />
                       </label>
                     </div>
-                    {errors.video_thumbnail && (
+                    {/* Custom Error Message if localFile is missing too */}
+                    {!localFile && errors.video_thumbnail && (
                       <p className="text-sm text-red-500 mt-1">{errors.video_thumbnail.message}</p>
                     )}
                   </div>
                 )}
+
                 <div>
                   <Label htmlFor="banner">
                     Banner Images <span className="text-red-500">*</span>
@@ -478,11 +587,12 @@ const UpdateConceptSection = ({
                       disabled={isUploadingBanner}
                     />
                     <Button
+                      type="button"
                       variant="outline"
                       size="sm"
                       onClick={() => document.getElementById("banner-upload")?.click()}
                       disabled={isUploadingBanner}
-                      className="mt-2"
+                      className="mt-2 w-full border-dashed"
                     >
                       <Upload className="h-4 w-4 mr-2" />
                       Upload Banners
@@ -539,7 +649,7 @@ const UpdateConceptSection = ({
                   !name ||
                   !description ||
                   !banner_url ||
-                  !video_thumbnail
+                  (!video_thumbnail && !localFile) // Allow if we have localFile
                 }
               >
                 Create Concept

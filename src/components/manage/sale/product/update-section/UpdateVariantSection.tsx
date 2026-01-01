@@ -32,8 +32,9 @@ import { useAppDispatch, type RootState } from "@/libs/stores";
 import { Badge } from "@/components/ui/badge";
 import { Package, Upload, Trash2, ImagePlus } from "lucide-react";
 import { convertNumberToCurrency } from "@/libs/helper/helper";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { FaMoneyBill } from "react-icons/fa6";
+import { fetchAllProductOptionTypesThunk } from "@/libs/stores/productOptionManager/thunk";
 import type { VariantWithImage, ProductVariant } from "@/libs/types/product";
 import { VariationForm } from "../form/VariationForm";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -57,8 +58,18 @@ export const UpdateVariantSection = ({
 }: UpdateVariantSectionProps) => {
   const dispatch = useAppDispatch();
   const { productDetail } = useSelector((state: RootState) => state.manageProduct);
+  const { capacityUnits, containerTypes, dispenserTypes } = useSelector(
+    (state: RootState) => state.manageProductOption,
+  );
   const isLimitedProduct = productDetail?.data?.type === "LIMITED";
   const variants = productDetail?.data?.variants || [];
+
+  // Fetch product options from API
+  useEffect(() => {
+    if (!capacityUnits || !containerTypes || !dispenserTypes) {
+      dispatch(fetchAllProductOptionTypesThunk());
+    }
+  }, [dispatch, capacityUnits, containerTypes, dispenserTypes]);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -467,11 +478,20 @@ export const UpdateVariantSection = ({
                                     <SelectValue placeholder="Select unit" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="ML">ML</SelectItem>
-                                    <SelectItem value="L">L</SelectItem>
-                                    <SelectItem value="G">G</SelectItem>
-                                    <SelectItem value="KG">KG</SelectItem>
-                                    <SelectItem value="OZ">OZ</SelectItem>
+                                    {(capacityUnits && capacityUnits.length > 0
+                                      ? capacityUnits
+                                      : [
+                                          { code: "ML", name: "ML" },
+                                          { code: "L", name: "L" },
+                                          { code: "G", name: "G" },
+                                          { code: "KG", name: "KG" },
+                                          { code: "OZ", name: "OZ" },
+                                        ]
+                                    ).map((unit) => (
+                                      <SelectItem key={unit.code} value={unit.code}>
+                                        {unit.name}
+                                      </SelectItem>
+                                    ))}
                                   </SelectContent>
                                 </Select>
                               )}
@@ -499,16 +519,25 @@ export const UpdateVariantSection = ({
                                     <SelectValue placeholder="Select container" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="BOTTLE">Bottle</SelectItem>
-                                    <SelectItem value="TUBE">Tube</SelectItem>
-                                    <SelectItem value="JAR">Jar</SelectItem>
-                                    <SelectItem value="STICK">Stick</SelectItem>
-                                    <SelectItem value="PENCIL">Pencil</SelectItem>
-                                    <SelectItem value="COMPACT">Compact</SelectItem>
-                                    <SelectItem value="PALLETE">Palette</SelectItem>
-                                    <SelectItem value="SACHET">Sachet</SelectItem>
-                                    <SelectItem value="VIAL">Vial</SelectItem>
-                                    <SelectItem value="ROLLER_BOTTLE">Roller Bottle</SelectItem>
+                                    {(containerTypes && containerTypes.length > 0
+                                      ? containerTypes
+                                      : [
+                                          { code: "BOTTLE", name: "Bottle" },
+                                          { code: "TUBE", name: "Tube" },
+                                          { code: "JAR", name: "Jar" },
+                                          { code: "STICK", name: "Stick" },
+                                          { code: "PENCIL", name: "Pencil" },
+                                          { code: "COMPACT", name: "Compact" },
+                                          { code: "PALLETE", name: "Palette" },
+                                          { code: "SACHET", name: "Sachet" },
+                                          { code: "VIAL", name: "Vial" },
+                                          { code: "ROLLER_BOTTLE", name: "Roller Bottle" },
+                                        ]
+                                    ).map((type) => (
+                                      <SelectItem key={type.code} value={type.code}>
+                                        {type.name}
+                                      </SelectItem>
+                                    ))}
                                   </SelectContent>
                                 </Select>
                               )}
@@ -536,13 +565,22 @@ export const UpdateVariantSection = ({
                                     <SelectValue placeholder="Select dispenser" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="PUMP">Pump</SelectItem>
-                                    <SelectItem value="SPRAY">Spray</SelectItem>
-                                    <SelectItem value="DROPPER">Dropper</SelectItem>
-                                    <SelectItem value="ROLL_ON">Roll On</SelectItem>
-                                    <SelectItem value="TWIST_UP">Twist Up</SelectItem>
-                                    <SelectItem value="SQUEEZE">Squeeze</SelectItem>
-                                    <SelectItem value="NONE">None</SelectItem>
+                                    {(dispenserTypes && dispenserTypes.length > 0
+                                      ? dispenserTypes
+                                      : [
+                                          { code: "PUMP", name: "Pump" },
+                                          { code: "SPRAY", name: "Spray" },
+                                          { code: "DROPPER", name: "Dropper" },
+                                          { code: "ROLL_ON", name: "Roll On" },
+                                          { code: "TWIST_UP", name: "Twist Up" },
+                                          { code: "SQUEEZE", name: "Squeeze" },
+                                          { code: "NONE", name: "None" },
+                                        ]
+                                    ).map((type) => (
+                                      <SelectItem key={type.code} value={type.code}>
+                                        {type.name}
+                                      </SelectItem>
+                                    ))}
                                   </SelectContent>
                                 </Select>
                               )}

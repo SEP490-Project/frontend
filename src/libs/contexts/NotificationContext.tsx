@@ -1,16 +1,16 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { fetchEventSource } from "@microsoft/fetch-event-source";
+import { subscribeToNotifications } from "@/libs/utils/sseService.ts";
 import api from "../api";
-import { getRaw } from "../local-storage";
-
-interface NotificationItem {
-  id: string;
-  title?: string;
-  body?: string;
-  data?: Record<string, any>;
-  created_at?: string;
-  read?: boolean;
-}
+import { useAppDispatch } from "@/libs/stores";
+import { manageNotificationActions } from "@/libs/stores/notificationManager/slice";
+import type {
+  NotificationItem,
+  Notifications,
+  NotificationSeverity,
+  NotificationType,
+} from "@/libs/types/notification";
+import { toast } from "sonner";
+import { NotificationToast, type NotificationPayload } from "@/components/global";
 
 interface NotificationContextValue {
   unreadCount: number;
@@ -23,8 +23,8 @@ interface NotificationContextValue {
   clearNotifications: () => void;
 }
 
-const noopLog = (name: string) => () =>
-  console.warn(`[NotificationContext] ${name} called before provider ready`);
+const noopLog = (name: string, args?: any) => () =>
+  console.warn(`[NotificationContext] ${name} called before provider ready`, args);
 
 const NotificationContext = createContext<NotificationContextValue>({
   unreadCount: 0,
@@ -33,21 +33,20 @@ const NotificationContext = createContext<NotificationContextValue>({
   sseUrl: null,
   reconnectSse: noopLog("reconnectSse"),
   fetchInitialUnreadCount: async () => {
-    console.warn("[NotificationContext] fetchInitialUnreadCount called before provider ready");
+    noopLog("fetchInitialUnreadCount")();
   },
-  markAsRead: (id: string) =>
-    console.warn("[NotificationContext] markAsRead called before provider ready", id),
-  clearNotifications: () =>
-    console.warn("[NotificationContext] clearNotifications called before provider ready"),
+  markAsRead: (id: string) => noopLog("markAsRead", id)(),
+  clearNotifications: () => noopLog("clearNotifications")(),
 });
 
-export const useNotification = () => useContext(NotificationContext);
+export const useNotificationContext = () => useContext(NotificationContext);
 
 export const NotificationProvider: React.FC<{
   children: React.ReactNode;
   ssePath?: string;
   isAuthenticated?: boolean;
 }> = ({ children, ssePath, isAuthenticated = false }) => {
+  const dispatch = useAppDispatch();
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [sseConnected, setSseConnected] = useState(false);
@@ -58,6 +57,7 @@ export const NotificationProvider: React.FC<{
   const backoffRef = useRef<number>(1000);
   const lastLocalIncrementRef = useRef<number | null>(null);
   const unreadRef = useRef<number>(0);
+  const watchdogTimerRef = useRef<number | null>(null);
 
   const isAuthenticatedRef = useRef<boolean>(isAuthenticated);
   useEffect(() => {
@@ -70,10 +70,7 @@ export const NotificationProvider: React.FC<{
 
   useEffect(() => {
     try {
-      const base = (api?.defaults?.baseURL ?? "").replace(/\/+$/, "");
-      const path = ssePath ?? "/notifications/sse";
-      const final = `${base}${path.startsWith("/") ? "" : "/"}${path}`;
-      setSseUrl(final);
+      setSseUrl(ssePath ?? "/notifications/sse");
     } catch (err) {
       console.warn("[NotificationContext] build sseUrl failed", err);
       setSseUrl(ssePath ?? null);
@@ -84,17 +81,24 @@ export const NotificationProvider: React.FC<{
     setNotifications((prev) => [n, ...prev].slice(0, 200));
   }, []);
 
-  const markAsRead = useCallback((id: string) => {
-    setNotifications((prev) => prev.map((x) => (x.id === id ? { ...x, read: true } : x)));
-    setUnreadCount((u) => {
-      const next = Math.max(0, u - 1);
-      unreadRef.current = next;
-      return next;
-    });
-    api.put(`/notifications/${id}/read`).catch((err) => {
-      console.warn("[NotificationContext] markAsRead API failed", err);
-    });
-  }, []);
+  const markAsRead = useCallback(
+    (id: string) => {
+      setNotifications((prev) => prev.map((x) => (x.id === id ? { ...x, is_read: true } : x)));
+
+      setUnreadCount((u) => {
+        const next = Math.max(0, u - 1);
+        unreadRef.current = next;
+        return next;
+      });
+
+      dispatch(manageNotificationActions.markAsReadLocally(id));
+
+      api.put(`/notifications/${id}/read`).catch((err) => {
+        console.warn("[NotificationContext] markAsRead API failed", err);
+      });
+    },
+    [dispatch],
+  );
 
   const clearNotifications = useCallback(() => {
     setNotifications([]);
@@ -123,35 +127,14 @@ export const NotificationProvider: React.FC<{
     }
   }, []);
 
-  const prepareAuthHeaders = useCallback(async (): Promise<Record<string, string>> => {
-    try {
-      const defaults: any = api?.defaults?.headers ?? {};
-      const cand =
-        (defaults?.common && (defaults.common.Authorization || defaults.common.authorization)) ||
-        defaults.Authorization ||
-        defaults.authorization;
-
-      if (cand) return { Authorization: String(cand) };
-
-      const token = await getRaw("access_token");
-      if (!token) return {};
-
-      const val =
-        typeof token === "string" && token.toLowerCase().startsWith("bearer ")
-          ? token
-          : `Bearer ${token}`;
-
-      return { Authorization: val };
-    } catch (err) {
-      console.warn("[NotificationContext] prepareAuthHeaders failed", err);
-      return {};
-    }
-  }, []);
-
   const disconnectSse = useCallback(() => {
     if (reconnectTimerRef.current) {
       clearTimeout(reconnectTimerRef.current);
       reconnectTimerRef.current = null;
+    }
+    if (watchdogTimerRef.current) {
+      clearTimeout(watchdogTimerRef.current);
+      watchdogTimerRef.current = null;
     }
     try {
       controllerRef.current?.abort();
@@ -163,10 +146,7 @@ export const NotificationProvider: React.FC<{
   }, []);
 
   const scheduleReconnect = useCallback(() => {
-    if (!isAuthenticatedRef.current) {
-      console.info("[NotificationContext] skip reconnect: not authenticated");
-      return;
-    }
+    if (!isAuthenticatedRef.current) return;
     if (reconnectTimerRef.current != null) return;
 
     const delay = Math.min(backoffRef.current, 30000);
@@ -175,23 +155,28 @@ export const NotificationProvider: React.FC<{
       backoffRef.current = Math.min(backoffRef.current * 1.8, 30000);
       if (isAuthenticatedRef.current) {
         connectSse();
-      } else {
-        console.info("[NotificationContext] cancelled reconnect: not authenticated anymore");
       }
     }, delay) as unknown as number;
   }, []);
 
+  const resetWatchdog = useCallback(() => {
+    if (watchdogTimerRef.current) {
+      clearTimeout(watchdogTimerRef.current);
+    }
+
+    // Set timeout for 60 seconds
+    // If no ping is received within this time, we reconnect.
+    watchdogTimerRef.current = globalThis.setTimeout(() => {
+      console.warn("[NotificationContext] No heartbeat received. Connection dead. Reconnecting...");
+      disconnectSse();
+      scheduleReconnect();
+    }, 60000) as unknown as number;
+  }, [disconnectSse, scheduleReconnect]);
+
   const connectSse = useCallback(async () => {
-    if (!sseUrl) {
-      console.info("[NotificationContext] connectSse skipped: no sseUrl");
-      return;
-    }
+    if (!sseUrl || !isAuthenticatedRef.current) return;
 
-    if (!isAuthenticatedRef.current) {
-      console.info("[NotificationContext] connectSse skipped: not authenticated");
-      return;
-    }
-
+    // Clean up existing controller
     if (controllerRef.current) {
       try {
         controllerRef.current.abort();
@@ -202,147 +187,167 @@ export const NotificationProvider: React.FC<{
     }
 
     try {
-      const headers = await prepareAuthHeaders();
+      setSseConnected(true); // Optimistic connected state
 
-      if (!headers.Authorization) {
-        console.info("[NotificationContext] connectSse skipped: no Authorization header");
-        return;
-      }
+      // 3. Use the Service
+      const controller = await subscribeToNotifications(sseUrl, {
+        onMessage: (payload) => {
+          if (!isAuthenticatedRef.current) return;
+          resetWatchdog();
+          console.log("[NotificationContext][SSE] message received", payload);
 
-      const controller = new AbortController();
-      controllerRef.current = controller;
-      setSseConnected(false);
-
-      backoffRef.current = 1000;
-
-      console.info(
-        "[NotificationContext] connectSse ->",
-        sseUrl,
-        "auth present:",
-        !!headers.Authorization,
-      );
-
-      await fetchEventSource(sseUrl, {
-        signal: controller.signal,
-        method: "GET",
-        headers: {
-          Accept: "text/event-stream",
-          ...headers,
-        },
-        async onopen(res) {
-          console.info("[NotificationContext][SSE] onopen", res.status);
-          if (!isAuthenticatedRef.current) {
-            console.info("[NotificationContext][SSE] onopen but not authenticated anymore");
-            controller.abort();
+          // Handle pure number (unread count update)
+          if (
+            typeof payload === "number" ||
+            (typeof payload === "string" && !isNaN(Number(payload)))
+          ) {
+            const cnt = Number(payload);
+            const local = unreadRef.current ?? 0;
+            const lastInc = lastLocalIncrementRef.current ?? 0;
+            const justInc = Date.now() - lastInc < 3000;
+            const final = justInc && local > cnt ? local : cnt;
+            setUnreadCount(final);
+            unreadRef.current = final;
             return;
           }
-          setSseConnected(true);
-          setTimeout(() => {
-            fetchInitialUnreadCount().catch((err) =>
-              console.warn("[NotificationContext] fetchInitialUnreadCount after open failed", err),
+
+          // Handle Object payload
+          // Backend keys: { title, message (or body), type, data, created_at, id }
+          const title = payload.title || payload.data?.title || payload.msg || "New Notification";
+          const body = payload.body || payload.message || payload.data?.body || payload.msg;
+          const data = payload.data || payload.payload || {};
+          const isNotif = Boolean(title || body || (data && Object.keys(data).length > 0));
+
+          if (isNotif) {
+            backoffRef.current = 1000; // Reset backoff on success
+
+            const id =
+              payload.id ??
+              payload.message_id ??
+              `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+            const now = new Date().toISOString();
+
+            // 4. Trigger Toast
+            const toastPayload: NotificationPayload = {
+              id,
+              title,
+              body,
+              type: payload.severity || "INFO",
+              created_at: now,
+              data: data,
+            };
+            toast.custom(
+              (t) => (
+                <NotificationToast
+                  t={t}
+                  payload={toastPayload}
+                  onNavigate={(notifId) => {
+                    console.log("Navigating to", notifId);
+                    window.location.href = "/manage/notification";
+                  }}
+                />
+              ),
+              {
+                duration: 5000,
+                unstyled: true,
+                classNames: {
+                  toast: "!bg-transparent !p-0 !border-0 !shadow-none",
+                },
+              },
             );
-          }, 600);
-        },
-        onmessage(msg) {
-          if (!isAuthenticatedRef.current) {
-            console.info("[NotificationContext][SSE] onmessage but not authenticated anymore");
-            return;
-          }
 
-          try {
-            const raw = (msg && (msg.data ?? "")) || "";
-            let payload: any;
-            try {
-              payload = raw ? JSON.parse(raw) : {};
-            } catch {
-              payload = raw;
-            }
+            // 1. Context Item
+            const n: NotificationItem = {
+              id,
+              user_id: payload.user_id,
+              title,
+              type: payload.type || "IN_APP",
+              severity: payload.severity || "INFO",
+              body,
+              data,
+              created_at: now,
+              is_read: false,
+            };
+            pushNotification(n);
 
-            if (
-              typeof payload === "number" ||
-              (typeof payload === "string" && !isNaN(Number(payload)))
-            ) {
-              const cnt = Number(payload);
-              const local = unreadRef.current ?? 0;
-              const lastInc = lastLocalIncrementRef.current ?? 0;
-              const justInc = Date.now() - lastInc < 3000;
-              const final = justInc && local > cnt ? local : cnt;
-              setUnreadCount(final);
-              unreadRef.current = final;
-              return;
-            }
+            // 2. Redux Item
+            const reduxItem: Notifications = {
+              id,
+              user_id: payload.user_id || "",
+              type: (payload.type || "IN_APP") as NotificationType,
+              severity: payload.severity as NotificationSeverity,
+              status: "SENT",
+              is_read: false,
+              content_data: {
+                title: title,
+                body: body,
+              },
+              created_at: now,
+              updated_at: now,
+            };
 
-            const title = payload.title ?? payload.data?.title ?? payload.msg ?? payload.message;
-            const body = payload.body ?? payload.data?.body ?? payload.message ?? payload.msg;
-            const data = payload.data ?? payload.payload ?? {};
-            const isNotif = Boolean(title || body || (data && Object.keys(data).length > 0));
-
-            if (isNotif) {
-              const id =
-                payload.id ??
-                payload.message_id ??
-                `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-              const n: NotificationItem = {
-                id,
-                title,
-                body,
-                data,
-                created_at: new Date().toISOString(),
-                read: false,
-              };
-              pushNotification(n);
-              if (typeof payload.unread_count !== "number") {
-                setUnreadCount((u) => {
-                  const next = u + 1;
-                  unreadRef.current = next;
-                  lastLocalIncrementRef.current = Date.now();
-                  return next;
-                });
-              }
-            }
-          } catch (err) {
-            console.warn("[NotificationContext][SSE] onmessage parse error", err);
+            dispatch(manageNotificationActions.addNotificationFromSSE(reduxItem));
           }
         },
-        onclose() {
+        onClose: () => {
           console.info("[NotificationContext][SSE] closed by server");
           setSseConnected(false);
           if (controller.signal.aborted) return;
           scheduleReconnect();
         },
-        onerror(err) {
-          console.warn("[NotificationContext][SSE] error", err);
+        onComplete: () => {
+          console.log("[NotificationContext][SSE] connection closed");
+          setSseConnected(false);
+          scheduleReconnect();
+        },
+        onError: (err) => {
+          console.error("[NotificationContext][SSE] onerror", err);
           setSseConnected(false);
           if (controller.signal.aborted) return;
           scheduleReconnect();
         },
+        onHeartbeat: () => {
+          setSseConnected(true);
+          resetWatchdog();
+        },
       });
+
+      controllerRef.current = controller;
+
+      // Fetch initial count shortly after connection
+      setTimeout(() => {
+        fetchInitialUnreadCount().catch((err) =>
+          console.warn("[NotificationContext] fetchInitialUnreadCount after open failed", err),
+        );
+      }, 600);
     } catch (err) {
       console.warn("[NotificationContext] connectSse failed", err);
       setSseConnected(false);
       scheduleReconnect();
     }
-  }, [sseUrl, prepareAuthHeaders, fetchInitialUnreadCount, pushNotification, scheduleReconnect]);
+  }, [
+    sseUrl,
+    fetchInitialUnreadCount,
+    pushNotification,
+    scheduleReconnect,
+    dispatch,
+    resetWatchdog,
+  ]);
 
   useEffect(() => {
     if (!sseUrl || !isAuthenticated) {
       disconnectSse();
       return;
     }
-
     connectSse();
-
     return () => {
       disconnectSse();
     };
   }, [sseUrl, isAuthenticated, connectSse, disconnectSse]);
 
   const reconnectSse = useCallback(() => {
-    // Nếu chưa login thì khỏi reconnect
-    if (!isAuthenticatedRef.current) {
-      console.info("[NotificationContext] reconnectSse called but not authenticated");
-      return;
-    }
+    if (!isAuthenticatedRef.current) return;
     disconnectSse();
     backoffRef.current = 1000;
     setTimeout(() => connectSse(), 300);

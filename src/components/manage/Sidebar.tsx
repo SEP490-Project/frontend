@@ -282,7 +282,11 @@ const Sidebar: React.FC<SidebarProps> = ({
         icon: <FaCalendarDays size={18} />,
       },
       { href: "/manage/content/all-contents", label: "Content", icon: <FaFilePen size={18} /> },
-      { href: "/manage/content/schedules", label: "Schedules", icon: <FaCalendarDays size={18} /> },
+      {
+        href: "/manage/content/schedules",
+        label: "Scheduled Contents",
+        icon: <FaCalendarDays size={18} />,
+      },
       { href: "/manage/content/tag", label: "Tag", icon: <FaHashtag size={18} /> },
     ],
     ADMIN: [
@@ -295,6 +299,11 @@ const Sidebar: React.FC<SidebarProps> = ({
         href: "/manage/admin/variant-attribute",
         label: "Attribute",
         icon: <FaHashtag size={18} />,
+      },
+      {
+        href: "/manage/admin/product-options",
+        label: "Product Options",
+        icon: <FaBoxOpen size={18} />,
       },
       {
         href: "/manage/admin/channel",

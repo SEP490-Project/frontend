@@ -4,27 +4,13 @@ import type { Pagination } from "./common";
 import type { ConceptData } from "./concept";
 
 export type ProductType = "STANDARD" | "LIMITED";
-export type CapacityUnit = "ML" | "L" | "G" | "KG" | "OZ";
-export type ContainerType =
-  | "BOTTLE"
-  | "TUBE"
-  | "JAR"
-  | "STICK"
-  | "PENCIL"
-  | "COMPACT"
-  | "PALLETE"
-  | "SACHET"
-  | "VIAL"
-  | "ROLLER_BOTTLE";
-export type DispenserType =
-  | "PUMP"
-  | "SPRAY"
-  | "DROPPER"
-  | "ROLL_ON"
-  | "TWIST_UP"
-  | "SQUEEZE"
-  | "NONE";
-export type AttributeUnit = "%" | "MG" | "G" | "ML" | "L" | "IU" | "PPM" | "NONE";
+
+// Product option types are now managed via database and fetched from API
+// These types remain as string for backward compatibility
+export type CapacityUnit = string;
+export type ContainerType = string;
+export type DispenserType = string;
+export type AttributeUnit = string;
 
 export interface ProductResponse<T> {
   success: boolean;

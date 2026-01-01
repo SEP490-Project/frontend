@@ -54,7 +54,10 @@ import { Dialog } from "@/components/ui/dialog";
 import { DeleteContentModal } from "@/components/modal/content/DeleteContentModal";
 import { RequestApprovalModal } from "@/components/modal/content/RequestApprovalModal";
 import { ScheduleContentModal } from "@/components/modal/content/ScheduleContentModal";
-import TaskSelectionDialog from "./TaskSelectionDialog";
+import {
+  ContentCreationModal,
+  type ContentType as CreationContentType,
+} from "@/components/modal/content/ContentCreationModal";
 import type { Content } from "@/libs/types/content";
 import type { Task } from "@/libs/types/task";
 
@@ -80,8 +83,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     actor: "",
   });
 
-  const [isTaskSelectionOpen, setIsTaskSelectionOpen] = useState(false);
-  const [selectedContentType, setSelectedContentType] = useState<ContentType>("blog");
+  const [isCreationModalOpen, setIsCreationModalOpen] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [contentToDelete, setContentToDelete] = useState<Content | null>(null);
   const [isDeletingContent, setIsDeletingContent] = useState(false);
@@ -247,18 +249,17 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     }
   };
 
-  const handleCreateNewClick = (contentType: ContentType) => {
-    setSelectedContentType(contentType);
-    setIsTaskSelectionOpen(true);
+  const handleOpenCreationModal = () => {
+    setIsCreationModalOpen(true);
   };
 
-  const handleTaskSelect = (task: Task) => {
-    setIsTaskSelectionOpen(false);
-    onCreateNew?.(selectedContentType, task);
+  const handleCreationConfirm = (contentType: CreationContentType, task?: Task) => {
+    setIsCreationModalOpen(false);
+    onCreateNew?.(contentType, task);
   };
 
-  const handleTaskSelectionClose = () => {
-    setIsTaskSelectionOpen(false);
+  const handleCreationModalClose = () => {
+    setIsCreationModalOpen(false);
   };
 
   const getStatusBadge = (status: string) => {
@@ -371,6 +372,14 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-semibold">Recent contents</h2>
+
+        {/* Create New Button */}
+        <div className="flex justify-end">
+          <Button className="bg-[#FF9DB0] hover:bg-pink-600" onClick={handleOpenCreationModal}>
+            <Plus className="w-4 h-4 mr-2" />
+            Create New
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -405,28 +414,6 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
           </div>
         </CardContent>
       </Card>
-
-      {/* Create New Button */}
-      <div className="flex justify-end">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button className="bg-[#FF9DB0] hover:bg-pink-600">
-              <Plus className="w-4 h-4 mr-2" />
-              Create New
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => handleCreateNewClick("blog")}>
-              <FileText className="w-4 h-4 mr-2" />
-              Create Blog
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleCreateNewClick("video")}>
-              <Video className="w-4 h-4 mr-2" />
-              Create Video
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
 
       {/* Content Table */}
       <Card>
@@ -629,11 +616,11 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
         </CardContent>
       </Card>
 
-      {/* Task Selection Dialog */}
-      <TaskSelectionDialog
-        isOpen={isTaskSelectionOpen}
-        onClose={handleTaskSelectionClose}
-        onTaskSelect={handleTaskSelect}
+      {/* Content Creation Modal */}
+      <ContentCreationModal
+        isOpen={isCreationModalOpen}
+        onClose={handleCreationModalClose}
+        onConfirm={handleCreationConfirm}
       />
 
       {/* Delete Confirmation Modal */}

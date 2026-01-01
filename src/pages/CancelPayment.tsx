@@ -82,7 +82,7 @@ const CancelPayment = () => {
     } catch {
       // intentionally left blank
     }
-  }, [code, txId, status, orderCode, amountParam, reason]);
+  }, [code, txId, status, orderCode, amountParam, reason, description]);
 
   const formatCurrency = (amount: number | null) => {
     if (amount === null || amount === undefined) return "N/A";

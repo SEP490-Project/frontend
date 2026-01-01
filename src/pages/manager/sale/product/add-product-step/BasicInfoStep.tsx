@@ -89,8 +89,8 @@ const BasicInfoStep = () => {
     limitedForm.reset({
       brand_id: taskData.brand_info?.id || "",
       category_id: "",
-      description: taskData.description?.details || null,
-      name: taskData.name || "",
+      description: taskData.description?.product_description || null,
+      name: taskData.description?.product_name || "",
       task_id: taskData.id || "",
       limited_attribute: {
         achievable_quantity: 1,

@@ -300,6 +300,11 @@ const Sidebar: React.FC<SidebarProps> = ({
         icon: <FaHashtag size={18} />,
       },
       {
+        href: "/manage/admin/product-options",
+        label: "Product Options",
+        icon: <FaBoxOpen size={18} />,
+      },
+      {
         href: "/manage/admin/channel",
         label: "Channel",
         icon: <FaFolderTree size={18} />,

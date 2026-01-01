@@ -629,7 +629,7 @@ const VideoEditor = ({ editingContent, initialTask, onSave, onBack }: VideoEdito
 
       {/* Advanced Editor Fullscreen Dialog */}
       <Dialog open={showAdvancedEditor} onOpenChange={setShowAdvancedEditor}>
-        <DialogContent className="max-w-[95vw] h-[90vh] p-0 overflow-hidden flex flex-col bg-transparent border-none shadow-none">
+        <DialogContent className="max-w-[95vw] h-[90vh] p-0 overflow-hidden flex flex-col bg-transparent border-none shadow-none [&>button]:hidden">
           <DialogHeader>
             <DialogTitle>Video Editor</DialogTitle>
           </DialogHeader>

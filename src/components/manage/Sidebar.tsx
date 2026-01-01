@@ -30,6 +30,7 @@ import { useAuth } from "@/libs/hooks/useAuth";
 import { useAppDispatch } from "@/libs/stores";
 import { logout } from "@/libs/stores/authentManager/thunk";
 import { Bolt } from "lucide-react";
+import { FaShippingFast } from "react-icons/fa";
 
 interface TabItem {
   href: string;
@@ -341,6 +342,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const otherTabs: TabItem[] = [
     { href: "/manage/account", label: "Account", icon: <FaRegUser size={18} /> },
+    { href: "/manage/ghn-mock", label: "GHN Mocking", icon: <FaShippingFast size={18} /> },
   ];
 
   return (

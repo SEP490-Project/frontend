@@ -1,11 +1,7 @@
 import * as yup from "yup";
 import type {
-  AttributeUnit,
-  CapacityUnit,
-  ContainerType,
   CreateProductPayload,
   CreateLimitedProductPayload,
-  DispenserType,
   ProductVariant,
 } from "../types/product";
 
@@ -69,9 +65,9 @@ export const productVariantSchema: yup.ObjectSchema<ProductVariant> = yup.object
     .min(1, "Capacity must be at least 1")
     .positive("Capacity must be a positive number")
     .required("Capacity is required"),
-  capacity_unit: yup.mixed<CapacityUnit>().required("Capacity unit is required"),
-  container_type: yup.mixed<ContainerType>().required("Container type is required"),
-  dispenser_type: yup.mixed<DispenserType>().required("Dispenser type is required"),
+  capacity_unit: yup.string().required("Capacity unit is required"),
+  container_type: yup.string().required("Container type is required"),
+  dispenser_type: yup.string().required("Dispenser type is required"),
   manufacturing_date: yup.date().nullable().default(null),
   expiry_date: yup.date().nullable().default(null),
   attributes: yup
@@ -79,7 +75,7 @@ export const productVariantSchema: yup.ObjectSchema<ProductVariant> = yup.object
     .of(
       yup.object({
         attribute_id: yup.string().required("Attribute ID is required"),
-        unit: yup.mixed<AttributeUnit>().required("Unit is required"),
+        unit: yup.string().required("Unit is required"),
         value: yup
           .number()
           .typeError("Value must be a number")

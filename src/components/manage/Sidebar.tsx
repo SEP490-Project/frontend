@@ -30,6 +30,7 @@ import { useAuth } from "@/libs/hooks/useAuth";
 import { useAppDispatch } from "@/libs/stores";
 import { logout } from "@/libs/stores/authentManager/thunk";
 import { Bolt } from "lucide-react";
+import { FaShippingFast } from "react-icons/fa";
 
 interface TabItem {
   href: string;
@@ -281,7 +282,11 @@ const Sidebar: React.FC<SidebarProps> = ({
         icon: <FaCalendarDays size={18} />,
       },
       { href: "/manage/content/all-contents", label: "Content", icon: <FaFilePen size={18} /> },
-      { href: "/manage/content/schedules", label: "Schedules", icon: <FaCalendarDays size={18} /> },
+      {
+        href: "/manage/content/schedules",
+        label: "Scheduled Contents",
+        icon: <FaCalendarDays size={18} />,
+      },
       { href: "/manage/content/tag", label: "Tag", icon: <FaHashtag size={18} /> },
     ],
     ADMIN: [
@@ -294,6 +299,11 @@ const Sidebar: React.FC<SidebarProps> = ({
         href: "/manage/admin/variant-attribute",
         label: "Attribute",
         icon: <FaHashtag size={18} />,
+      },
+      {
+        href: "/manage/admin/product-options",
+        label: "Product Options",
+        icon: <FaBoxOpen size={18} />,
       },
       {
         href: "/manage/admin/channel",
@@ -332,6 +342,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const otherTabs: TabItem[] = [
     { href: "/manage/account", label: "Account", icon: <FaRegUser size={18} /> },
+    { href: "/manage/ghn-mock", label: "GHN Mocking", icon: <FaShippingFast size={18} /> },
   ];
 
   return (

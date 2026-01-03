@@ -1,8 +1,7 @@
 import TiptapEditor from "@/components/global/Editor";
-import React, { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -13,61 +12,64 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
-import { X, Tag as TagIcon } from "lucide-react";
+import { Eye, EyeOff, Plus } from "lucide-react";
 
 import type { Content, CreateContentRequest, TipTapDocument } from "@/libs/types/content";
 import type { Channel } from "@/libs/types/channel";
+import type { Task } from "@/libs/types/task";
 import { ArrowLeft, Calendar } from "lucide-react";
 import { useAuth } from "@/libs/hooks/useAuth";
+import { useContent } from "@/libs/hooks/useContent";
 import { getBrandIdFromToken } from "@/libs/helper/helper";
 import { useNavigationBlocker } from "@/libs/hooks/useNavigationBlocker";
 import { useTag } from "@/libs/hooks/useTag";
 import { manageChannel } from "@/libs/services/manageChannel";
 import { tiptapToHtml } from "@/libs/utils/tiptapConverter";
 
-import type { Tag } from "@/libs/types/tag";
 import { HlsPlyrHydrator } from "@/components/hls-video-hydrator";
-import AIGeneratedContent from "./AIGeneratedContent";
-import TaskInfoSidebar from "./TaskInfoSidebar";
+import TaskInfoCard from "./TaskInfoCard";
+import TaskSelectionDialog from "./TaskSelectionDialog";
+import ChannelSidebar from "./ChannelSidebar";
+import AIGeneratedContentSidebar from "./AIGeneratedContentSidebar";
+import TagInput, { type TagOption } from "./TagInput";
 
 type ContentType = "blog" | "video";
 
 interface BlogEditorProps {
   editingContent?: Content | null;
-  selectedTask?: any;
+  initialTask?: Task | null;
   onSave: (content: CreateContentRequest, contentType: ContentType) => void;
   onBack: () => void;
 }
 
-const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditorProps) => {
+const BlogEditor = ({ editingContent, initialTask, onSave, onBack }: BlogEditorProps) => {
   const contentType = "blog";
   const [showPreview, setShowPreview] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [showNavigationDialog, setShowNavigationDialog] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
-  const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
+
+  // Local task state - allows changing/removing task
+  const [selectedTask, setSelectedTask] = useState<Task | null>(initialTask || null);
+  const [showTaskSelector, setShowTaskSelector] = useState(false);
 
   // Get user from auth state
   const { user } = useAuth();
 
-  // Get available tags from API
-  const { tags: availableTags, loading: tagsLoading, error: tagsError } = useTag();
+  // Get streaming content from Redux store
+  const { isStreaming, streamingContent } = useContent();
 
-  // Channel state - now supports multi-select
-  const [availableChannels, setAvailableChannels] = React.useState<Channel[]>([]);
-  const [selectedChannels, setSelectedChannels] = React.useState<string[]>([]);
-  const [channelLoading, setChannelLoading] = React.useState(true);
+  // Get available tags from API
+  const { tags: availableTags, loading: tagsLoading } = useTag();
+  const [localTags, setLocalTags] = useState<TagOption[]>([]);
+
+  // Channel state - now single-select
+  const [availableChannels, setAvailableChannels] = useState<Channel[]>([]);
+  const [selectedChannel, setSelectedChannel] = useState<string>("");
+  const [channelLoading, setChannelLoading] = useState(true);
 
   // Fetch channels on component mount
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchChannels = async () => {
       try {
         setChannelLoading(true);
@@ -82,21 +84,21 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
 
         setAvailableChannels(blogChannels);
 
-        // If editing, use the channels from editingContent
+        // If editing, use the channel from editingContent
         if (editingContent?.content_channels && editingContent.content_channels.length > 0) {
-          const existingChannelIds = editingContent.content_channels
-            .map((cc: any) => cc.channel_id)
-            .filter(Boolean);
-          setSelectedChannels(existingChannelIds);
+          const existingChannelId = editingContent.content_channels[0]?.channel_id;
+          if (existingChannelId) {
+            setSelectedChannel(existingChannelId);
+          }
         } else {
           // Set default selection to Website if available (for new content)
           const websiteChannel = blogChannels.find(
             (channel: Channel) => channel.name.toLowerCase() === "website",
           );
           if (websiteChannel) {
-            setSelectedChannels([websiteChannel.id]);
+            setSelectedChannel(websiteChannel.id);
           } else if (blogChannels.length > 0) {
-            setSelectedChannels([blogChannels[0].id]);
+            setSelectedChannel(blogChannels[0].id);
           }
         }
       } catch (error) {
@@ -109,27 +111,49 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
     fetchChannels();
   }, [editingContent]);
 
-  // Handle channel toggle for multi-select
-  const handleChannelToggle = useCallback((channelId: string) => {
-    setSelectedChannels((prev) => {
-      if (prev.includes(channelId)) {
-        // Don't allow deselecting if it's the last channel
-        if (prev.length === 1) return prev;
-        return prev.filter((id) => id !== channelId);
-      }
-      return [...prev, channelId];
-    });
+  // Handle channel change (single-select)
+  const handleChannelChange = useCallback((channelId: string) => {
+    setSelectedChannel(channelId);
   }, []);
 
-  // Initialize selected tags from editing content - memoized to avoid recalculation
-  const [selectedTags, setSelectedTags] = useState<Tag[]>(() => {
+  // Initialize selected tags from editing content - using IDs now
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>(() => {
     if (editingContent?.blog?.tags && availableTags.length > 0) {
       return editingContent.blog.tags
-        .map((tagName: string) => availableTags.find((tag) => tag.name === tagName))
-        .filter((tag): tag is Tag => tag !== undefined);
+        .map((tagName: string) => availableTags.find((tag) => tag.name === tagName)?.id)
+        .filter((id): id is string => id !== undefined);
     }
     return [];
   });
+
+  useEffect(() => {
+    if (editingContent?.blog?.tags && availableTags.length > 0 && selectedTagIds.length === 0) {
+      const tagIds = editingContent.blog.tags
+        .map((tagName: string) => availableTags.find((tag) => tag.name === tagName)?.id)
+        .filter((id): id is string => id !== undefined);
+
+      // If the post had tags that aren't in the global list,
+      // you might want to add them to localTags here as well.
+      setSelectedTagIds(tagIds);
+    }
+  }, [availableTags, editingContent?.blog?.tags, selectedTagIds]);
+
+  const allAvailableTagOptions = useMemo(() => {
+    const apiOptions = availableTags.map((tag) => ({ id: tag.id, name: tag.name }));
+    // Combine and remove duplicates just in case
+    const combined = [...apiOptions, ...localTags];
+    return combined;
+  }, [availableTags, localTags]);
+
+  const handleCreateTag = async (tagName: string): Promise<TagOption | null> => {
+    const newTag: TagOption = {
+      id: `new-${tagName}-${Date.now()}`,
+      name: tagName.trim(),
+    };
+
+    setLocalTags((prev) => [...prev, newTag]);
+    return newTag;
+  };
 
   // Memoized read time calculation
   const calculateReadTime = useCallback((htmlContent: string) => {
@@ -140,14 +164,14 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
     return readTime > 0 ? readTime : 1;
   }, []);
 
-  React.useEffect(() => {
-    if (editingContent?.blog?.tags && availableTags.length > 0 && selectedTags.length === 0) {
-      const tags = editingContent.blog.tags
-        .map((tagName: string) => availableTags.find((tag) => tag.name === tagName))
-        .filter((tag): tag is Tag => tag !== undefined);
-      setSelectedTags(tags);
+  useEffect(() => {
+    if (editingContent?.blog?.tags && availableTags.length > 0 && selectedTagIds.length === 0) {
+      const tagIds = editingContent.blog.tags
+        .map((tagName: string) => availableTags.find((tag) => tag.name === tagName)?.id)
+        .filter((id): id is string => id !== undefined);
+      setSelectedTagIds(tagIds);
     }
-  }, [availableTags, editingContent?.blog?.tags, selectedTags.length]);
+  }, [availableTags, editingContent?.blog?.tags, selectedTagIds.length]);
 
   const initialContentState = useMemo(() => {
     if (!editingContent) return null;
@@ -164,30 +188,24 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
     editingContent?.ai_generated_text || null,
   );
 
-  const [localTitle, setLocalTitle] = React.useState(editingContent?.title || "");
+  // AI Diff Preview state
+  const [showDiffPreview, setShowDiffPreview] = useState(false);
+  const [pendingAIContent, setPendingAIContent] = useState<{
+    html: string;
+    json?: TipTapDocument;
+  } | null>(null);
+
+  const [localTitle, setLocalTitle] = useState(editingContent?.title || "");
   const handleContentChange = useCallback((data: any) => {
     setContent(data);
   }, []);
 
-  // Memoized tag selection handlers
-  const handleTagSelect = useCallback((tag: Tag) => {
-    setSelectedTags((prev) => {
-      const isAlreadySelected = prev.some((t) => t.id === tag.id);
-      if (!isAlreadySelected) {
-        return [...prev, tag];
-      }
-      return prev;
-    });
-    setTagPopoverOpen(false);
-  }, []);
-
-  const handleTagRemove = useCallback((tagId: string) => {
-    setSelectedTags((prev) => prev.filter((tag) => tag.id !== tagId));
-  }, []);
-
-  const clearAllTags = useCallback(() => {
-    setSelectedTags([]);
-  }, []);
+  // Show diff preview when streaming starts
+  useEffect(() => {
+    if (isStreaming) {
+      setShowDiffPreview(true);
+    }
+  }, [isStreaming]);
 
   // Memoized save button disabled state
   const isSaveDisabled = useMemo(() => {
@@ -204,11 +222,11 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
       !localTitle.trim() ||
       localTitle.length < 3 ||
       localTitle.length > 200 ||
-      !selectedTags.length ||
+      !selectedTagIds.length ||
       channelLoading ||
-      selectedChannels.length === 0
+      !selectedChannel
     );
-  }, [content, localTitle, selectedTags.length, channelLoading, selectedChannels.length]);
+  }, [content, localTitle, selectedTagIds.length, channelLoading, selectedChannel]);
   // Memoized preview toggle handler
   const handlePreviewToggle = useCallback(() => {
     setShowPreview((prev) => !prev);
@@ -221,10 +239,15 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
 
   // Memoized form submission handler
   const handleFormSubmit = useCallback(() => {
-    if (content && localTitle.trim() && selectedChannels.length > 0) {
+    if (content && localTitle.trim() && selectedChannel) {
       // Create excerpt from content (first 150 characters of plain text)
       const plainText = content.html.replace(/<[^>]*>/g, "");
       const excerpt = plainText.substring(0, 150) + (plainText.length > 150 ? "..." : "");
+
+      // Get selected tag names from IDs
+      const selectedTagNames = selectedTagIds
+        .map((id) => allAvailableTagOptions.find((tag) => tag.id === id)?.name)
+        .filter((name): name is string => name !== undefined);
 
       const apiData: CreateContentRequest = {
         title: localTitle.trim(),
@@ -234,9 +257,9 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
           author_id: user?.id || getBrandIdFromToken() || "",
           excerpt: excerpt,
           read_time: calculateReadTime(content.html),
-          tags: selectedTags.map((tag) => tag.name),
+          tags: selectedTagNames,
         },
-        channels: selectedChannels, // Now supports multiple channels
+        channels: [selectedChannel], // Now single channel in array
         task_id: selectedTask?.id?.toString() || null,
         affiliate_link: null,
         ai_generated_text: aiGeneratedText || null,
@@ -247,8 +270,9 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
   }, [
     content,
     localTitle,
-    selectedChannels,
-    selectedTags,
+    selectedChannel,
+    selectedTagIds,
+    allAvailableTagOptions,
     user?.id,
     selectedTask?.id,
     onSave,
@@ -323,10 +347,6 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
   // AI Content Integration Handlers
   const handleAIContentGenerated = useCallback(
     (generatedContent: string, tiptapJson?: TipTapDocument) => {
-      // Track AI-generated text (store plain text for tracking)
-      const plainTextContent = generatedContent.replace(/<[^>]*>/g, "");
-      setAiGeneratedText((prev) => (prev ? `${prev}\n\n${plainTextContent}` : plainTextContent));
-
       // Determine the HTML content to use
       let htmlContent = generatedContent;
       let jsonContent = tiptapJson;
@@ -337,46 +357,74 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
         jsonContent = tiptapJson;
       }
 
-      if (content) {
-        // Append AI content to existing content
-        const separator =
-          content.html.trim() &&
-          content.html !== "<p></p>" &&
-          content.html !== "<p>Start typing...</p>"
-            ? "<br><br>"
-            : "";
-        const newHTML = content.html + separator + htmlContent;
-
-        // Merge JSON content if we have TipTap JSON
-        let mergedJson = content.json;
-        if (jsonContent && content.json?.type === "doc" && content.json?.content) {
-          // Merge the content arrays
-          mergedJson = {
-            type: "doc",
-            content: [...content.json.content, ...(jsonContent.content || [])],
-          };
-        }
-
-        // Update content state and force editor re-render
-        setContent({
-          html: newHTML,
-          json: mergedJson,
-        });
-        setEditorKey((prev) => prev + 1);
-      } else {
-        // If no existing content, set AI content as the initial content
-        setContent({
-          html: htmlContent,
-          json: jsonContent || {
-            type: "doc",
-            content: [{ type: "paragraph", content: [{ type: "text", text: htmlContent }] }],
-          },
-        });
-        setEditorKey((prev) => prev + 1);
-      }
+      // Store pending AI content and show diff preview
+      setPendingAIContent({
+        html: htmlContent,
+        json: jsonContent,
+      });
+      setShowDiffPreview(true);
     },
-    [content],
+    [],
   );
+
+  // Handle applying AI content from diff preview
+  const handleApplyAIContent = useCallback(() => {
+    if (!pendingAIContent) return;
+
+    // Track AI-generated text (store plain text for tracking)
+    const plainTextContent = pendingAIContent.html.replace(/<[^>]*>/g, "");
+    setAiGeneratedText((prev) => (prev ? `${prev}\n\n${plainTextContent}` : plainTextContent));
+
+    const htmlContent = pendingAIContent.html;
+    const jsonContent = pendingAIContent.json;
+
+    // Check if there's existing content worth keeping
+    const hasExistingContent =
+      content &&
+      content.html.trim() &&
+      content.html !== "<p></p>" &&
+      content.html !== "<p>Start typing...</p>" &&
+      content.html.replace(/<[^>]*>/g, "").trim().length > 0;
+
+    if (hasExistingContent) {
+      // Append AI content to existing content
+      const newHTML = content.html + "<br><br>" + htmlContent;
+
+      // Merge JSON content if we have TipTap JSON
+      let mergedJson = content.json;
+      if (jsonContent && content.json?.type === "doc" && content.json?.content) {
+        mergedJson = {
+          type: "doc",
+          content: [...content.json.content, ...(jsonContent.content || [])],
+        };
+      }
+
+      setContent({
+        html: newHTML,
+        json: mergedJson,
+      });
+    } else {
+      // Replace with AI content
+      setContent({
+        html: htmlContent,
+        json: jsonContent || {
+          type: "doc",
+          content: [{ type: "paragraph", content: [{ type: "text", text: htmlContent }] }],
+        },
+      });
+    }
+
+    // Force editor re-render and close diff preview
+    setEditorKey((prev) => prev + 1);
+    setShowDiffPreview(false);
+    setPendingAIContent(null);
+  }, [content, pendingAIContent]);
+
+  // Handle discarding AI content
+  const handleDiscardAIContent = useCallback(() => {
+    setShowDiffPreview(false);
+    setPendingAIContent(null);
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -397,16 +445,73 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
             </h2>
           </div>
         </div>
-        <Button
-          onClick={handleFormSubmit}
-          className="bg-[#FF9DB0] hover:bg-pink-600"
-          disabled={isSaveDisabled}
-        >
-          {editingContent ? "Update Content" : "Save Content"}
-        </Button>
+        <div className="flex items-center gap-3">
+          {/* Preview Button - Now in header */}
+          <Button
+            variant="outline"
+            onClick={handlePreviewToggle}
+            disabled={isPreviewDisabled}
+            className="flex items-center gap-2"
+          >
+            {showPreview ? (
+              <>
+                <EyeOff className="w-4 h-4" />
+                Hide Preview
+              </>
+            ) : (
+              <>
+                <Eye className="w-4 h-4" />
+                Show Preview
+              </>
+            )}
+          </Button>
+          <Button
+            onClick={handleFormSubmit}
+            className="bg-[#FF9DB0] hover:bg-pink-600"
+            disabled={isSaveDisabled}
+          >
+            {editingContent ? "Update Content" : "Save Content"}
+          </Button>
+        </div>
       </div>
 
-      {/* Two-Column Layout */}
+      {/* Task Info Section - Above Editor */}
+      <div className="space-y-3">
+        {selectedTask ? (
+          <div className="animate-in fade-in-0 slide-in-from-top-2 duration-300">
+            <TaskInfoCard
+              task={selectedTask}
+              onChangeTask={() => setShowTaskSelector(true)}
+              onRemoveTask={() => setSelectedTask(null)}
+            />
+          </div>
+        ) : (
+          <Card className="border-dashed border-2 border-gray-200 bg-gray-50/50 hover:bg-gray-100/50 hover:border-gray-300 transition-all duration-200 hover:shadow-sm group">
+            <CardContent className="p-4">
+              <Button
+                variant="ghost"
+                className="w-full h-auto py-3 flex items-center justify-center gap-2 text-gray-500 hover:text-gray-700 transition-all duration-200"
+                onClick={() => setShowTaskSelector(true)}
+              >
+                <Plus className="h-5 w-5 transition-transform duration-200 group-hover:rotate-90" />
+                <span>Link to a Task (Optional)</span>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* Task Selection Dialog */}
+      <TaskSelectionDialog
+        isOpen={showTaskSelector}
+        onClose={() => setShowTaskSelector(false)}
+        onTaskSelect={(task) => {
+          setSelectedTask(task);
+          setShowTaskSelector(false);
+        }}
+      />
+
+      {/* Three-Column Layout */}
       <div className="flex gap-6">
         {/* Left Column - Main Editor */}
         <div className="flex-1 min-w-0 space-y-6">
@@ -432,117 +537,16 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
 
               {/* Tag Selection */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Tags *</Label>
-                  {selectedTags.length > 0 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={clearAllTags}
-                      className="text-muted-foreground hover:text-foreground"
-                    >
-                      Clear all
-                    </Button>
-                  )}
-                </div>
-
-                {/* Selected Tags Display */}
-                <div className="flex flex-wrap gap-2 min-h-[2rem]">
-                  {selectedTags.map((tag) => (
-                    <Badge
-                      key={tag.id}
-                      className="flex items-center gap-1 px-3 py-1 bg-[#FF9DB0] hover:bg-pink-600 text-white border-0"
-                    >
-                      <TagIcon className="h-3 w-3" />
-                      {tag.name}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-4 w-4 p-0 hover:bg-white/20 text-white"
-                        onClick={() => handleTagRemove(tag.id)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </Badge>
-                  ))}
-
-                  {/* Add Tag Button - Always Show */}
-                  <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
-                    <PopoverTrigger asChild>
-                      {selectedTags.length > 0 ? (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="default"
-                          className="h-10 w-10 border-[#FF9DB0] text-[#FF9DB0] hover:bg-[#FF9DB0] hover:text-white transition-colors flex items-center justify-center"
-                        >
-                          <span className="text-2xl font-bold leading-none">+</span>
-                        </Button>
-                      ) : (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="justify-start gap-2 text-muted-foreground border-dashed hover:border-[#FF9DB0] hover:text-[#FF9DB0] transition-colors"
-                        >
-                          <TagIcon className="h-4 w-4" />
-                          Add tags...
-                        </Button>
-                      )}
-                    </PopoverTrigger>
-                    <PopoverContent className="w-full p-0 bg-white border" align="start">
-                      <Command className="bg-white">
-                        <CommandInput
-                          placeholder="Search tags..."
-                          className="border-0 focus:ring-0"
-                        />
-                        {tagsLoading ? (
-                          <div className="p-4 text-center text-sm text-muted-foreground">
-                            Loading tags...
-                          </div>
-                        ) : tagsError ? (
-                          <div className="p-4 text-center text-sm text-red-500">
-                            Error loading tags: {tagsError}
-                          </div>
-                        ) : (
-                          <>
-                            <CommandEmpty>No tags found.</CommandEmpty>
-                            <CommandGroup className="max-h-64 overflow-auto">
-                              {availableTags
-                                .filter(
-                                  (tag) => !selectedTags.some((selected) => selected.id === tag.id),
-                                )
-                                .map((tag) => (
-                                  <CommandItem
-                                    key={tag.id}
-                                    value={tag.name}
-                                    onSelect={() => handleTagSelect(tag)}
-                                    className="cursor-pointer hover:bg-[#FF9DB0]/10 data-[selected]:bg-[#FFFFFF]/20"
-                                  >
-                                    <div className="flex items-center space-x-2 flex-1">
-                                      <TagIcon className="h-4 w-4 text-[#FF9DB0]" />
-                                      <div className="flex-1">
-                                        <div className="font-medium">{tag.name}</div>
-                                        {tag.description && (
-                                          <div className="text-sm text-muted-foreground">
-                                            {tag.description}
-                                          </div>
-                                        )}
-                                      </div>
-                                      <div className="text-xs text-muted-foreground bg-[#FF9DB0]/10 px-2 py-1 rounded-full">
-                                        {tag.usage_count} uses
-                                      </div>
-                                    </div>
-                                  </CommandItem>
-                                ))}
-                            </CommandGroup>
-                          </>
-                        )}
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                </div>
+                <Label>Tags *</Label>
+                <TagInput
+                  availableTags={allAvailableTagOptions} // Use the combined list
+                  selectedTags={selectedTagIds}
+                  onTagsChange={setSelectedTagIds}
+                  onCreateTag={handleCreateTag} // Pass the creation handler
+                  placeholder="Select or create tags..."
+                  allowCreate={true} // Set to true
+                />
+                {tagsLoading && <p className="text-sm text-muted-foreground">Loading tags...</p>}
               </div>
 
               {/* Content Editor */}
@@ -563,30 +567,14 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
                           : "")
                   }
                   onChange={handleContentChange}
+                  diffMode={showDiffPreview && (isStreaming || !!pendingAIContent)}
+                  diffContent={isStreaming ? streamingContent : pendingAIContent?.html || ""}
+                  onDiffAccept={handleApplyAIContent}
+                  onDiffReject={handleDiscardAIContent}
                 />
               </div>
-
-              {/* AI Content Generator */}
-              <AIGeneratedContent
-                onContentGenerated={handleAIContentGenerated}
-                selectedPlatform={
-                  availableChannels.find((ch) => selectedChannels.includes(ch.id))?.name || ""
-                }
-              />
             </CardContent>
           </Card>
-
-          {/* Preview Toggle Button */}
-          <div className="flex justify-center">
-            <Button
-              variant="default"
-              onClick={handlePreviewToggle}
-              className="w-[200px]"
-              disabled={isPreviewDisabled}
-            >
-              {showPreview ? "Hide Preview" : "Show Preview"}
-            </Button>
-          </div>
 
           {/* Preview Section - Memoized */}
           {useMemo(() => {
@@ -619,16 +607,22 @@ const BlogEditor = ({ editingContent, selectedTask, onSave, onBack }: BlogEditor
           }, [showPreview, content, localTitle, calculateReadTime])}
         </div>
 
-        {/* Right Column - Task Info Sidebar */}
-        <div className="w-80 flex-shrink-0">
-          <TaskInfoSidebar
-            task={selectedTask}
+        {/* Right Sidebar - Channel Selection + AI Generator */}
+        <div className="w-110 flex-shrink-0 space-y-4">
+          {/* Channel Selection */}
+          <ChannelSidebar
             channels={availableChannels}
-            selectedChannels={selectedChannels}
-            onChannelToggle={handleChannelToggle}
-            isLoadingChannels={channelLoading}
+            selectedChannel={selectedChannel}
+            onChannelChange={handleChannelChange}
+            isLoading={channelLoading}
             allowedChannelTypes={["website", "facebook"]}
-            contentType="blog"
+          />
+
+          {/* AI Content Generator Sidebar */}
+          <AIGeneratedContentSidebar
+            onContentGenerated={handleAIContentGenerated}
+            selectedPlatform={availableChannels.find((ch) => ch.id === selectedChannel)?.name || ""}
+            currentContent={content?.json || ""}
           />
         </div>
       </div>

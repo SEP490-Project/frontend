@@ -123,7 +123,9 @@ const Channel = () => {
                     </span>
                   </div>
 
-                  {(channelData?.name.toLowerCase() === "tiktok" ||
+                  {((channelData?.name.toLowerCase() === "tiktok" &&
+                    currentDate >
+                      new Date(channelData?.token_info?.access_token_expires_at as string)) ||
                     (channelData?.name.toLowerCase() === "facebook" &&
                       currentDate >
                         new Date(channelData?.token_info?.access_token_expires_at as string))) && (

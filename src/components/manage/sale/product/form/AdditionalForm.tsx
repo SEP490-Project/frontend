@@ -1,7 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { Controller, type UseFormReturn } from "react-hook-form";
 import type { CreateLimitedProductPayload, LimitedProductData } from "@/libs/types/product";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { getItem } from "@/libs/local-storage";
 import { DatePicker } from "@/components/date-picker";
 
@@ -41,7 +41,6 @@ export const AdditionalInfoForm = ({ form }: AdditionalInfoFormProps) => {
         },
       };
 
-      console.log("Resetting form with:", formData);
       form.reset(formData as any);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -77,6 +76,19 @@ export const AdditionalInfoForm = ({ form }: AdditionalInfoFormProps) => {
     }
   }, [premiereDate, startSaleDate, endSaleDate, setError, clearErrors]);
 
+  const preventNegativeInput = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "-" || e.key === "e") {
+      e.preventDefault();
+    }
+  }, []);
+
+  const preventNegativePaste = useCallback((e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pastedData = e.clipboardData.getData("text");
+    if (pastedData.includes("-") || parseFloat(pastedData) < 0) {
+      e.preventDefault();
+    }
+  }, []);
+
   return (
     <div className="bg-white p-6 rounded-lg mt-6 shadow-md mb-12">
       <h2 className="text-lg font-semibold mb-4">Additional Information</h2>
@@ -102,6 +114,8 @@ export const AdditionalInfoForm = ({ form }: AdditionalInfoFormProps) => {
               value={field.value || ""}
               onChange={field.onChange}
               onBlur={field.onBlur}
+              onKeyDown={preventNegativeInput}
+              onPaste={preventNegativePaste}
             />
           )}
         />

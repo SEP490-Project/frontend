@@ -4,7 +4,7 @@ export interface CreateConceptPayload {
   banner_url: string;
   description: string;
   name: string;
-  video_thumbnail: string;
+  video_thumbnail?: string;
 }
 
 export interface ConceptResponse<T> {

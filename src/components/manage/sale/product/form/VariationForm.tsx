@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Controller, useFieldArray } from "react-hook-form";
 import { DatePicker } from "@/components/date-picker";
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import {
   Select,
   SelectContent,
@@ -115,6 +115,20 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
         ];
 
   const { register, handleSubmit, control, watch, setError, clearErrors } = form;
+
+  // Prevent negative number input
+  const preventNegativeInput = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "-" || e.key === "e") {
+      e.preventDefault();
+    }
+  }, []);
+
+  const preventNegativePaste = useCallback((e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pastedData = e.clipboardData.getData("text");
+    if (pastedData.includes("-") || parseFloat(pastedData) < 0) {
+      e.preventDefault();
+    }
+  }, []);
 
   const manufactureDate = watch("manufacturing_date");
   const expiryDate = watch("expiry_date");
@@ -249,6 +263,8 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
               placeholder="Price must be at least 1000"
               className=" col-span-3"
               autoComplete="off"
+              onKeyDown={preventNegativeInput}
+              onPaste={preventNegativePaste}
               {...register("price")}
             />
           </div>
@@ -276,7 +292,15 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
               <Label htmlFor="input_stock" className="text-sm font-medium">
                 Stock
               </Label>
-              <Input id="input_stock" type="number" {...register("input_stock")} placeholder="1" />
+              <Input
+                id="input_stock"
+                type="number"
+                min={0}
+                onKeyDown={preventNegativeInput}
+                onPaste={preventNegativePaste}
+                {...register("input_stock")}
+                placeholder="1"
+              />
             </div>
 
             <div className="space-y-2">
@@ -286,6 +310,9 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
               <Input
                 id="pre_order_limit"
                 type="number"
+                min={0}
+                onKeyDown={preventNegativeInput}
+                onPaste={preventNegativePaste}
                 {...register("pre_order_limit")}
                 placeholder="e.g., 10"
               />
@@ -312,28 +339,64 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
             <Label htmlFor="weight" className="text-sm font-medium">
               Weight (g) <span className="text-red-500">*</span>
             </Label>
-            <Input id="weight" type="number" step="0.1" {...register("weight")} placeholder="1" />
+            <Input
+              id="weight"
+              type="number"
+              step="0.1"
+              min={0}
+              onKeyDown={preventNegativeInput}
+              onPaste={preventNegativePaste}
+              {...register("weight")}
+              placeholder="1"
+            />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="height" className="text-sm font-medium">
               Height (cm) <span className="text-red-500">*</span>
             </Label>
-            <Input id="height" type="number" step="0.1" {...register("height")} placeholder="1" />
+            <Input
+              id="height"
+              type="number"
+              step="0.1"
+              min={0}
+              onKeyDown={preventNegativeInput}
+              onPaste={preventNegativePaste}
+              {...register("height")}
+              placeholder="1"
+            />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="width" className="text-sm font-medium">
               Width (cm) <span className="text-red-500">*</span>
             </Label>
-            <Input id="width" type="number" step="0.1" {...register("width")} placeholder="1" />
+            <Input
+              id="width"
+              type="number"
+              step="0.1"
+              min={0}
+              onKeyDown={preventNegativeInput}
+              onPaste={preventNegativePaste}
+              {...register("width")}
+              placeholder="1"
+            />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="length" className="text-sm font-medium">
               Length (cm) <span className="text-red-500">*</span>
             </Label>
-            <Input id="length" type="number" step="0.1" {...register("length")} placeholder="1" />
+            <Input
+              id="length"
+              type="number"
+              step="0.1"
+              min={0}
+              onKeyDown={preventNegativeInput}
+              onPaste={preventNegativePaste}
+              {...register("length")}
+              placeholder="1"
+            />
           </div>
         </div>
       </div>
@@ -350,6 +413,9 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
               id="capacity"
               type="number"
               step="0.1"
+              min={0}
+              onKeyDown={preventNegativeInput}
+              onPaste={preventNegativePaste}
               {...register("capacity")}
               placeholder="1"
             />
@@ -450,7 +516,7 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
                       : field.value || ""
                   }
                   onChange={field.onChange}
-                  maxDate={state.productType === "LIMITED" ? expiryDateStr || undefined : today}
+                  maxDate={state?.productType === "LIMITED" ? expiryDateStr || undefined : today}
                   placeholder="Select manufacturing date"
                 />
               )}
@@ -556,6 +622,9 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
                       <Input
                         type="number"
                         step="0.01"
+                        min={0}
+                        onKeyDown={preventNegativeInput}
+                        onPaste={preventNegativePaste}
                         {...register(`attributes.${index}.value`, { valueAsNumber: true })}
                         placeholder="0"
                         className="min-w-[100px]"

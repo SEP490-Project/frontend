@@ -50,6 +50,8 @@ const VariantsStep = () => {
     setIsDisabled: React.Dispatch<React.SetStateAction<boolean>>;
   }>();
 
+  console.log("Product Type in VariantsStep:", state?.productType);
+
   const form = useForm<ProductVariant>({
     resolver: yupResolver(productVariantSchema),
     defaultValues: {

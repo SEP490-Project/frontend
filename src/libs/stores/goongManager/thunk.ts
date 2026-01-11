@@ -10,7 +10,7 @@ export const fetchPredictions = createAsyncThunk(
       return res.data.predictions; // trả về danh sách gợi ý
     } catch (error: unknown) {
       const err = error as AxiosError<{ error: { message: string } }>;
-      return rejectWithValue(err.response?.data?.error?.message || "Autocomplete thất bại");
+      return rejectWithValue(err.response?.data?.error?.message || "Autocomplete Failed");
     }
   },
 );
@@ -27,7 +27,7 @@ export const getDirections = createAsyncThunk(
       return res.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ error: { message: string } }>;
-      return rejectWithValue(err.response?.data?.error?.message || "Lấy chỉ đường thất bại");
+      return rejectWithValue(err.response?.data?.error?.message || "Lấy chỉ đường Failed");
     }
   },
 );

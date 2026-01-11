@@ -708,6 +708,9 @@ const ContractPaymentBrandPage: React.FC = () => {
                         <span className="text-xs font-medium">{getPaymentType(payment)}</span>
                       </TableCell>
                       <TableCell className="py-4">
+                        <span className="text-xs font-medium">{getPaymentType(payment)}</span>
+                      </TableCell>
+                      <TableCell className="py-4">
                         <Badge
                           className={`border ${STATUS_COLORS[payment.status] || ""} text-xs font-medium px-2 py-1`}
                         >

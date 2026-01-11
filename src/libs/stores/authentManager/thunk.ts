@@ -16,7 +16,7 @@ export const login = createAsyncThunk("auth/login", async (req: Login, { rejectW
     return data;
   } catch (error: unknown) {
     const err = error as AxiosError<{ message?: string }>;
-    return rejectWithValue(err.response?.data?.message || "Đăng nhập thất bại");
+    return rejectWithValue(err.response?.data?.message || "Failed");
   }
 });
 
@@ -28,7 +28,7 @@ export const register = createAsyncThunk(
       return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message?: string }>;
-      return rejectWithValue(err.response?.data?.message || "Đăng ký thất bại");
+      return rejectWithValue(err.response?.data?.message || "Failed");
     }
   },
 );
@@ -45,7 +45,7 @@ export const refresh = createAsyncThunk("auth/refresh", async (_, { rejectWithVa
     return data;
   } catch (error: unknown) {
     const err = error as AxiosError<{ message?: string }>;
-    return rejectWithValue(err.response?.data?.message || "Làm mới token thất bại");
+    return rejectWithValue(err.response?.data?.message || "Failed");
   }
 });
 
@@ -73,7 +73,7 @@ export const forgotPassword = createAsyncThunk(
       return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message?: string }>;
-      return rejectWithValue(err.response?.data?.message || "Yêu cầu đặt lại mật khẩu thất bại");
+      return rejectWithValue(err.response?.data?.message || "Failed");
     }
   },
 );
@@ -86,7 +86,7 @@ export const resetPassword = createAsyncThunk(
       return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message?: string }>;
-      return rejectWithValue(err.response?.data?.message || "Đặt lại mật khẩu thất bại");
+      return rejectWithValue(err.response?.data?.message || "Failed");
     }
   },
 );
@@ -99,7 +99,7 @@ export const changePasswordThunk = createAsyncThunk(
       return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message?: string }>;
-      return rejectWithValue(err.response?.data?.message || "Đổi mật khẩu thất bại");
+      return rejectWithValue(err.response?.data?.message || "Failed");
     }
   },
 );

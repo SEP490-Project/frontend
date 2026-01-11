@@ -10,7 +10,7 @@ export const brandAffiliates = createAsyncThunk(
       return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
-      return rejectWithValue(err.response?.data?.message || "Thất bại");
+      return rejectWithValue(err.response?.data?.message || "Failed");
     }
   },
 );
@@ -23,7 +23,7 @@ export const brandCampaigns = createAsyncThunk(
       return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
-      return rejectWithValue(err.response?.data?.message || "Thất bại");
+      return rejectWithValue(err.response?.data?.message || "Failed");
     }
   },
 );
@@ -34,7 +34,7 @@ export const brandContent = createAsyncThunk("/content", async (req: any, { reje
     return response.data;
   } catch (error: unknown) {
     const err = error as AxiosError<{ message: string }>;
-    return rejectWithValue(err.response?.data?.message || "Thất bại");
+    return rejectWithValue(err.response?.data?.message || "Failed");
   }
 });
 
@@ -46,7 +46,7 @@ export const brandContracts = createAsyncThunk(
       return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
-      return rejectWithValue(err.response?.data?.message || "Thất bại");
+      return rejectWithValue(err.response?.data?.message || "Failed");
     }
   },
 );
@@ -59,7 +59,7 @@ export const brandRevenueTrend = createAsyncThunk(
       return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
-      return rejectWithValue(err.response?.data?.message || "Thất bại");
+      return rejectWithValue(err.response?.data?.message || "Failed");
     }
   },
 );
@@ -72,7 +72,7 @@ export const brandTopProduct = createAsyncThunk(
       return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
-      return rejectWithValue(err.response?.data?.message || "Thất bại");
+      return rejectWithValue(err.response?.data?.message || "Failed");
     }
   },
 );
@@ -85,7 +85,7 @@ export const brandDashboard = createAsyncThunk(
       return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
-      return rejectWithValue(err.response?.data?.message || "Thất bại");
+      return rejectWithValue(err.response?.data?.message || "Failed");
     }
   },
 );

@@ -10,7 +10,7 @@ export const contentCampaign = createAsyncThunk(
       return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
-      return rejectWithValue(err.response?.data?.message || "Thất bại");
+      return rejectWithValue(err.response?.data?.message || "Failed");
     }
   },
 );
@@ -23,7 +23,7 @@ export const contentChannel = createAsyncThunk(
       return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
-      return rejectWithValue(err.response?.data?.message || "Thất bại");
+      return rejectWithValue(err.response?.data?.message || "Failed");
     }
   },
 );
@@ -36,7 +36,7 @@ export const contentPlatform = createAsyncThunk(
       return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
-      return rejectWithValue(err.response?.data?.message || "Thất bại");
+      return rejectWithValue(err.response?.data?.message || "Failed");
     }
   },
 );
@@ -47,7 +47,7 @@ export const contentStatus = createAsyncThunk("/status", async (req: any, { reje
     return response.data;
   } catch (error: unknown) {
     const err = error as AxiosError<{ message: string }>;
-    return rejectWithValue(err.response?.data?.message || "Thất bại");
+    return rejectWithValue(err.response?.data?.message || "Failed");
   }
 });
 
@@ -57,7 +57,7 @@ export const contentTop = createAsyncThunk("/top", async (req: any, { rejectWith
     return response.data;
   } catch (error: unknown) {
     const err = error as AxiosError<{ message: string }>;
-    return rejectWithValue(err.response?.data?.message || "Thất bại");
+    return rejectWithValue(err.response?.data?.message || "Failed");
   }
 });
 
@@ -67,6 +67,6 @@ export const contentTrend = createAsyncThunk("/trend", async (req: any, { reject
     return response.data;
   } catch (error: unknown) {
     const err = error as AxiosError<{ message: string }>;
-    return rejectWithValue(err.response?.data?.message || "Thất bại");
+    return rejectWithValue(err.response?.data?.message || "Failed");
   }
 });

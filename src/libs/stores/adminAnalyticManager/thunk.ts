@@ -8,7 +8,7 @@ export const adminCampaigns = createAsyncThunk("/campaigns", async (_, { rejectW
     return response.data;
   } catch (error: unknown) {
     const err = error as AxiosError<{ message: string }>;
-    return rejectWithValue(err.response?.data?.message || "Thất bại");
+    return rejectWithValue(err.response?.data?.message || "Failed");
   }
 });
 
@@ -18,7 +18,7 @@ export const adminContracts = createAsyncThunk("/contracts", async (_, { rejectW
     return response.data;
   } catch (error: unknown) {
     const err = error as AxiosError<{ message: string }>;
-    return rejectWithValue(err.response?.data?.message || "Thất bại");
+    return rejectWithValue(err.response?.data?.message || "Failed");
   }
 });
 
@@ -28,7 +28,7 @@ export const adminHealth = createAsyncThunk("/health", async (_, { rejectWithVal
     return response.data;
   } catch (error: unknown) {
     const err = error as AxiosError<{ message: string }>;
-    return rejectWithValue(err.response?.data?.message || "Thất bại");
+    return rejectWithValue(err.response?.data?.message || "Failed");
   }
 });
 
@@ -38,7 +38,7 @@ export const adminRevenue = createAsyncThunk("/revenue", async (req: any, { reje
     return response.data;
   } catch (error: unknown) {
     const err = error as AxiosError<{ message: string }>;
-    return rejectWithValue(err.response?.data?.message || "Thất bại");
+    return rejectWithValue(err.response?.data?.message || "Failed");
   }
 });
 
@@ -50,7 +50,7 @@ export const adminUserGrowth = createAsyncThunk(
       return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
-      return rejectWithValue(err.response?.data?.message || "Thất bại");
+      return rejectWithValue(err.response?.data?.message || "Failed");
     }
   },
 );
@@ -63,7 +63,7 @@ export const adminUserOverview = createAsyncThunk(
       return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
-      return rejectWithValue(err.response?.data?.message || "Thất bại");
+      return rejectWithValue(err.response?.data?.message || "Failed");
     }
   },
 );
@@ -76,7 +76,7 @@ export const adminSystemOverview = createAsyncThunk(
       return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
-      return rejectWithValue(err.response?.data?.message || "Thất bại");
+      return rejectWithValue(err.response?.data?.message || "Failed");
     }
   },
 );

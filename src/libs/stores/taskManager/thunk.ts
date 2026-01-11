@@ -44,7 +44,7 @@ export const getTaskList = createAsyncThunk(
       return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
-      return rejectWithValue(err.response?.data?.message || "Thất bại");
+      return rejectWithValue(err.response?.data?.message || "Failed");
     }
   },
 );
@@ -57,7 +57,7 @@ export const getTaskDetail = createAsyncThunk(
       return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
-      return rejectWithValue(err.response?.data?.message || "Thất bại");
+      return rejectWithValue(err.response?.data?.message || "Failed");
     }
   },
 );
@@ -70,7 +70,7 @@ export const assignTask = createAsyncThunk(
       return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
-      return rejectWithValue(err.response?.data?.message || "Thất bại");
+      return rejectWithValue(err.response?.data?.message || "Failed");
     }
   },
 );
@@ -83,7 +83,7 @@ export const getTaskDetailById = createAsyncThunk(
       return response.data as SingleTaskResponse;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
-      return rejectWithValue(err.response?.data?.message || "Thất bại");
+      return rejectWithValue(err.response?.data?.message || "Failed");
     }
   },
 );
@@ -96,7 +96,7 @@ export const updateTaskState = createAsyncThunk(
       return { taskId: req.taskId, state: req.state, response: response.data };
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
-      return rejectWithValue(err.response?.data?.message || "Thất bại");
+      return rejectWithValue(err.response?.data?.message || "Failed");
     }
   },
 );

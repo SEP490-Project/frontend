@@ -13,7 +13,7 @@ export const getGHNInfoRaw = createAsyncThunk(
     } catch (error) {
       console.error("Error fetching GHN order info:", error);
       const err = error as AxiosError<{ message: string }>;
-      return rejectWithValue(err.response?.data?.message || "Thất bại");
+      return rejectWithValue(err.response?.data?.message || "Failed");
     }
   },
 );
@@ -27,7 +27,7 @@ export const updateGHNOrderStatus = createAsyncThunk(
     } catch (error) {
       console.error("Error updating GHN order status:", error);
       const err = error as AxiosError<{ message: string }>;
-      return rejectWithValue(err.response?.data?.message || "Thất bại");
+      return rejectWithValue(err.response?.data?.message || "Failed");
     }
   },
 );

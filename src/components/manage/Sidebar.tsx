@@ -222,7 +222,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       },
       {
         href: "/manage/marketing/contents-approval",
-        label: "Review Contents",
+        label: "Content Approval",
         icon: <FaFileSignature size={18} />,
       },
       {

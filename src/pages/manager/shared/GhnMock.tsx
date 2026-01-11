@@ -146,7 +146,7 @@ export const GhnMock = () => {
   const accentColor = "#FF6A00";
 
   return (
-    <div className="bg-gray-50 min-h-screen flex items-center justify-center p-6 transition-all duration-500">
+    <div className="fixed inset-0 flex items-center justify-center p-6 transition-all duration-500">
       {/* 
                 Main Container 
                 - Transitions width based on orderInfo presence 

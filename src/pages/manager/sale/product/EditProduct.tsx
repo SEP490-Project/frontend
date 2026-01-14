@@ -275,63 +275,93 @@ const EditProduct = () => {
   };
 
   return (
-    <div className="min-h-screen p-4 sm:p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            className="bg-white"
-            size="sm"
-            onClick={() =>
-              productDetail?.data.type === "STANDARD"
-                ? navigate("/manage/sale/product")
-                : navigate("/manage/sale/product/limited")
-            }
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Products
-          </Button>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-semibold">Edit Product</h1>
-            <p className="text-sm text-gray-600 mt-1">{productDetail?.data?.name}</p>
+    <div className="min-h-screen">
+      {/* Header Section */}
+
+      <div className="mx-auto px-4 sm:px-6 py-2 mt-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="default"
+              size="lg"
+              onClick={() =>
+                productDetail?.data.type === "STANDARD"
+                  ? navigate("/manage/sale/product")
+                  : navigate("/manage/sale/product/limited")
+              }
+            >
+              <ArrowLeft className="w-16 h-16 mr-2" />
+              Back
+            </Button>
+            <div className="h-8 w-px bg-slate-200" />
+            <div>
+              <div className="flex items-center gap-3">
+                <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Edit Product</h1>
+                {productDetail?.data?.type === "LIMITED" && (
+                  <span className="px-2.5 py-1 text-xs font-semibold bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-full shadow-sm">
+                    Limited Edition
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-slate-500 mt-0.5">{productDetail?.data?.name}</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="space-y-4">
-        <UpdateBasicInfoSection
-          form={isLimitedProduct ? limitedBasicInfoForm : standardBasicInfoForm}
-          brands={brands}
-          categories={categories?.data || []}
-          onSubmit={handleUpdateBasicInfo}
-        />
-
-        {productDetail?.data?.type === "LIMITED" && (
-          <UpdateConceptSection
-            conceptId={(productDetail?.data as any)?.concept?.id || null}
-            productId={productId || ""}
-            onConceptUpdated={handleConceptUpdated}
+      {/* Main Content */}
+      <div className="mx-auto px-4 sm:px-6 py-4">
+        <div className="space-y-4">
+          <UpdateBasicInfoSection
+            form={isLimitedProduct ? limitedBasicInfoForm : standardBasicInfoForm}
+            brands={brands}
+            categories={categories?.data || []}
+            onSubmit={handleUpdateBasicInfo}
           />
-        )}
-        <UpdateVariantSection
-          form={isLimitedProduct ? limitedVariantForm : standardVariantForm}
-          onSubmit={handleUpdateVariant}
-          onCreateVariant={handleCreateVariant}
-        />
-        {productDetail?.data.type === "LIMITED" &&
-          ["REVISION", "DRAFT"].includes(productDetail?.data?.status || "") && (
-            <div className="bg-white p-3 flex justify-end absolute bottom-0 right-0 w-full border-t">
-              {productDetail?.data?.status === "DRAFT" ? (
-                <Button variant="default" onClick={handleReSubmitToBrand}>
-                  Submit for Approval
-                </Button>
-              ) : (
-                <Button variant="default" onClick={handleSaveDraft}>
-                  Save Draft
-                </Button>
-              )}
-            </div>
+
+          {productDetail?.data?.type === "LIMITED" && (
+            <UpdateConceptSection
+              conceptId={(productDetail?.data as any)?.concept?.id || null}
+              productId={productId || ""}
+              onConceptUpdated={handleConceptUpdated}
+            />
           )}
+          <UpdateVariantSection
+            form={isLimitedProduct ? limitedVariantForm : standardVariantForm}
+            onSubmit={handleUpdateVariant}
+            onCreateVariant={handleCreateVariant}
+          />
+          {productDetail?.data.type === "LIMITED" &&
+            ["REVISION", "DRAFT"].includes(productDetail?.data?.status || "") && (
+              <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t shadow-lg z-20">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`w-2 h-2 rounded-full ${productDetail?.data?.status === "DRAFT" ? "bg-yellow-500" : "bg-blue-500"}`}
+                    />
+                    <span className="text-sm font-medium text-slate-600">
+                      Status: <span className="text-slate-900">{productDetail?.data?.status}</span>
+                    </span>
+                  </div>
+                  {productDetail?.data?.status === "DRAFT" ? (
+                    <Button
+                      onClick={handleReSubmitToBrand}
+                      className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/25"
+                    >
+                      Submit for Approval
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={handleSaveDraft}
+                      className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/25"
+                    >
+                      Save Draft
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+        </div>
       </div>
     </div>
   );

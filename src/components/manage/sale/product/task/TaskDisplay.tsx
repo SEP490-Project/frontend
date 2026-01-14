@@ -22,7 +22,6 @@ const getStatusColor = (status: string) => {
   switch (statusLower) {
     case "completed":
       return "bg-green-100 text-green-800 border-green-200";
-    case "in-progress":
     case "in_progress":
       return "bg-blue-100 text-blue-800 border-blue-200";
     case "pending":
@@ -91,11 +90,6 @@ const TaskCard = ({
         >
           <Clock className="h-4 w-4" />
           <span>Deadline: {formatDate(task.deadline)}</span>
-          {isOverdue && (
-            <Badge variant="destructive" className="text-xs ml-auto">
-              Overdue
-            </Badge>
-          )}
         </div>
       </CardContent>
     </Card>
@@ -167,18 +161,20 @@ export const TaskList = () => {
   return (
     <div className="space-y-4">
       <div
-        className="h-[70vh] overflow-y-scroll overflow-x-hidden scroll"
+        className={`h-[70vh] ${filterIncompleteTasks(tasks).length > 3 ? "overflow-y-scroll scroll" : ""} overflow-x-hidden `}
         style={{ scrollbarWidth: "thin" }}
       >
-        {filterIncompleteTasks(tasks).map((task) => (
-          <TaskCard
-            key={task.id}
-            task={task}
-            onClick={() => setSelectedTask(task)}
-            isSelected={selectedTask === task}
-            setOnOpenTaskDetail={setOnOpenTaskDetail}
-          />
-        ))}
+        <div className="mr-4">
+          {filterIncompleteTasks(tasks).map((task) => (
+            <TaskCard
+              key={task.id}
+              task={task}
+              onClick={() => setSelectedTask(task)}
+              isSelected={selectedTask === task}
+              setOnOpenTaskDetail={setOnOpenTaskDetail}
+            />
+          ))}
+        </div>
       </div>
       <div className="flex justify-end">
         <Button variant={"default"} size={"default"} onClick={handleChooseTask}>

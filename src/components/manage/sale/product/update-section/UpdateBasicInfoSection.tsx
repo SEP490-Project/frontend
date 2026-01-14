@@ -48,21 +48,41 @@ export const UpdateBasicInfoSection = ({
   };
 
   return (
-    <Card className="mb-6">
-      <CardHeader>
-        <CardTitle className="text-xl font-semibold">
-          Basic Information - {isLimitedProduct ? "Limited Edition" : "Standard Product"}
-        </CardTitle>
+    <Card className="overflow-hidden border-0 shadow-lg shadow-slate-200/50 bg-white">
+      <CardHeader className="bg-gradient-to-r from-slate-50 to-white border-b px-6 py-5">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-primary/10 rounded-xl">
+            <svg
+              className="w-5 h-5 text-primary"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+          </div>
+          <div>
+            <CardTitle className="text-xl font-bold text-slate-900">Basic Information</CardTitle>
+            <p className="text-sm text-slate-500 mt-0.5">
+              {isLimitedProduct ? "Limited Edition Product Details" : "Standard Product Details"}
+            </p>
+          </div>
+        </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-6">
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
           {/* Product Name */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 items-start">
             <Label
               htmlFor="name"
-              className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end"
+              className="text-sm font-semibold text-slate-700 sm:text-right flex items-center gap-1 sm:justify-end pt-2.5"
             >
-              <span className="text-red-600">*</span>
+              <span className="text-red-500">*</span>
               Product Name
             </Label>
             <div className="col-span-3">
@@ -70,21 +90,30 @@ export const UpdateBasicInfoSection = ({
                 id="name"
                 placeholder="Enter product name"
                 {...register("name")}
-                className={errors.name ? "border-red-500" : ""}
+                className={`h-11 bg-slate-50/50 border-slate-200 focus:bg-white transition-colors ${errors.name ? "border-red-500 focus:ring-red-500" : "focus:border-primary focus:ring-primary"}`}
               />
               {errors.name && (
-                <p className="text-sm text-red-500 mt-1">{errors.name.message as string}</p>
+                <p className="text-sm text-red-500 mt-1.5 flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  {errors.name.message as string}
+                </p>
               )}
             </div>
           </div>
 
           {/* Category */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 items-start">
             <Label
               htmlFor="category_id"
-              className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end"
+              className="text-sm font-semibold text-slate-700 sm:text-right flex items-center gap-1 sm:justify-end pt-2.5"
             >
-              <span className="text-red-600">*</span>
+              <span className="text-red-500">*</span>
               Category
             </Label>
             <div className="col-span-3">
@@ -93,7 +122,9 @@ export const UpdateBasicInfoSection = ({
                 control={control}
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger className={errors.category_id ? "border-red-500" : ""}>
+                    <SelectTrigger
+                      className={`h-11 bg-slate-50/50 border-slate-200 ${errors.category_id ? "border-red-500" : "focus:border-primary"}`}
+                    >
                       <SelectValue placeholder="Select a category" />
                     </SelectTrigger>
                     <SelectContent className="max-h-70">
@@ -107,18 +138,27 @@ export const UpdateBasicInfoSection = ({
                 )}
               />
               {errors.category_id && (
-                <p className="text-sm text-red-500 mt-1">{errors.category_id.message as string}</p>
+                <p className="text-sm text-red-500 mt-1.5 flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  {errors.category_id.message as string}
+                </p>
               )}
             </div>
           </div>
 
           {/* Brand */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 items-start">
             <Label
               htmlFor="brand_id"
-              className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end"
+              className="text-sm font-semibold text-slate-700 sm:text-right flex items-center gap-1 sm:justify-end pt-2.5"
             >
-              <span className="text-red-600">*</span>
+              <span className="text-red-500">*</span>
               Brand
             </Label>
             <div className="col-span-3">
@@ -129,7 +169,7 @@ export const UpdateBasicInfoSection = ({
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger
                       disabled={true}
-                      className={errors.brand_id ? "border-red-500" : ""}
+                      className={`h-11 bg-slate-100 border-slate-200 ${errors.brand_id ? "border-red-500" : ""}`}
                     >
                       <SelectValue placeholder="Select a brand" />
                     </SelectTrigger>
@@ -144,16 +184,25 @@ export const UpdateBasicInfoSection = ({
                 )}
               />
               {errors.brand_id && (
-                <p className="text-sm text-red-500 mt-1">{errors.brand_id.message as string}</p>
+                <p className="text-sm text-red-500 mt-1.5 flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  {errors.brand_id.message as string}
+                </p>
               )}
             </div>
           </div>
 
           {/* Description */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 items-start">
             <Label
               htmlFor="description"
-              className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end"
+              className="text-sm font-semibold text-slate-700 sm:text-right pt-2.5"
             >
               Description
             </Label>
@@ -163,6 +212,7 @@ export const UpdateBasicInfoSection = ({
                 placeholder="Enter product description"
                 rows={4}
                 {...register("description")}
+                className="bg-slate-50/50 border-slate-200 focus:bg-white focus:border-primary transition-colors resize-none"
               />
             </div>
           </div>
@@ -170,10 +220,28 @@ export const UpdateBasicInfoSection = ({
           {/* Limited Product Fields */}
           {isLimitedProduct && (
             <>
-              <div className="border-t pt-6 mt-6">
-                <h3 className="text-lg font-semibold mb-4 text-yellow-900">
-                  Limited Edition Information
-                </h3>
+              <div className="relative pt-8 mt-6">
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-300 to-transparent" />
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 bg-gradient-to-br from-amber-100 to-orange-100 rounded-lg">
+                    <svg
+                      className="w-5 h-5 text-amber-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+                    Limited Edition Information
+                  </h3>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
@@ -278,16 +346,21 @@ export const UpdateBasicInfoSection = ({
           )}
 
           {/* Action Buttons */}
-          <div className="flex justify-end gap-3 pt-4 border-t">
+          <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-slate-100">
             <Button
               type="button"
               variant="outline"
               onClick={() => form.reset()}
               disabled={!isDirty}
+              className="px-6 border-slate-200 hover:bg-slate-50"
             >
               Reset Changes
             </Button>
-            <Button type="submit" className="bg-primary hover:bg-primary/90" disabled={!isDirty}>
+            <Button
+              type="submit"
+              className="px-6 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/25"
+              disabled={!isDirty}
+            >
               Update Information
             </Button>
           </div>

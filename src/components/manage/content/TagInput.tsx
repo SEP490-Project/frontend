@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { X, Plus, Check, Tag } from "lucide-react";
 import { cn } from "@/libs/utils";
@@ -139,8 +138,7 @@ const TagInput: React.FC<TagInputProps> = ({
         {selectedTags.map((tagId) => (
           <Badge
             key={tagId}
-            variant="secondary"
-            className="flex items-center gap-1 px-2 py-0.5 text-sm"
+            className="flex items-center gap-1 px-2 py-0.5 text-sm bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Tag className="h-3 w-3" />
             {getTagName(tagId)}
@@ -150,13 +148,13 @@ const TagInput: React.FC<TagInputProps> = ({
                 e.stopPropagation();
                 removeTag(tagId);
               }}
-              className="ml-1 rounded-full hover:bg-muted p-0.5"
+              className="ml-1 rounded-full hover:bg-primary-foreground/20 p-0.5"
             >
               <X className="h-3 w-3" />
             </button>
           </Badge>
         ))}
-        <Input
+        <input
           ref={inputRef}
           type="text"
           value={inputValue}
@@ -164,7 +162,7 @@ const TagInput: React.FC<TagInputProps> = ({
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder={selectedTags.length === 0 ? placeholder : ""}
-          className="flex-1 min-w-[120px] border-0 p-0 h-6 focus-visible:ring-0 focus-visible:ring-offset-0 text-sm"
+          className="flex-1 min-w-[120px] border-0 bg-transparent p-0 h-6 text-sm outline-none"
           disabled={maxTags ? selectedTags.length >= maxTags : false}
         />
       </div>

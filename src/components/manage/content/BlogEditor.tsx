@@ -12,12 +12,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Eye, EyeOff, Plus } from "lucide-react";
+import { ArrowLeft, Calendar, Eye, EyeOff, Plus } from "lucide-react";
 
 import type { Content, CreateContentRequest, TipTapDocument } from "@/libs/types/content";
 import type { Channel } from "@/libs/types/channel";
 import type { Task } from "@/libs/types/task";
-import { ArrowLeft, Calendar } from "lucide-react";
 import { useAuth } from "@/libs/hooks/useAuth";
 import { useContent } from "@/libs/hooks/useContent";
 import { getBrandIdFromToken } from "@/libs/helper/helper";
@@ -47,7 +46,6 @@ const BlogEditor = ({ editingContent, initialTask, onSave, onBack }: BlogEditorP
   const [showPreview, setShowPreview] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [showNavigationDialog, setShowNavigationDialog] = useState(false);
-  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
 
   // Local task state - allows changing/removing task
   const [selectedTask, setSelectedTask] = useState<Task | null>(initialTask || null);
@@ -111,7 +109,6 @@ const BlogEditor = ({ editingContent, initialTask, onSave, onBack }: BlogEditorP
     fetchChannels();
   }, [editingContent]);
 
-  // Handle channel change (single-select)
   const handleChannelChange = useCallback((channelId: string) => {
     setSelectedChannel(channelId);
   }, []);
@@ -126,24 +123,20 @@ const BlogEditor = ({ editingContent, initialTask, onSave, onBack }: BlogEditorP
     return [];
   });
 
+  // Sync tags from editing content when available tags are loaded
   useEffect(() => {
     if (editingContent?.blog?.tags && availableTags.length > 0 && selectedTagIds.length === 0) {
       const tagIds = editingContent.blog.tags
         .map((tagName: string) => availableTags.find((tag) => tag.name === tagName)?.id)
         .filter((id): id is string => id !== undefined);
-
-      // If the post had tags that aren't in the global list,
-      // you might want to add them to localTags here as well.
       setSelectedTagIds(tagIds);
     }
   }, [availableTags, editingContent?.blog?.tags, selectedTagIds]);
 
-  const allAvailableTagOptions = useMemo(() => {
-    const apiOptions = availableTags.map((tag) => ({ id: tag.id, name: tag.name }));
-    // Combine and remove duplicates just in case
-    const combined = [...apiOptions, ...localTags];
-    return combined;
-  }, [availableTags, localTags]);
+  const allAvailableTagOptions = useMemo(
+    () => [...availableTags.map((tag) => ({ id: tag.id, name: tag.name })), ...localTags],
+    [availableTags, localTags],
+  );
 
   const handleCreateTag = async (tagName: string): Promise<TagOption | null> => {
     const newTag: TagOption = {
@@ -155,23 +148,12 @@ const BlogEditor = ({ editingContent, initialTask, onSave, onBack }: BlogEditorP
     return newTag;
   };
 
-  // Memoized read time calculation
+  // Calculate read time from HTML content
   const calculateReadTime = useCallback((htmlContent: string) => {
     const textContent = htmlContent.replace(/<[^>]*>/g, "");
-    const wordsPerMinute = 200;
     const wordCount = textContent.trim().split(/\s+/).length;
-    const readTime = Math.ceil(wordCount / wordsPerMinute);
-    return readTime > 0 ? readTime : 1;
+    return Math.max(1, Math.ceil(wordCount / 200));
   }, []);
-
-  useEffect(() => {
-    if (editingContent?.blog?.tags && availableTags.length > 0 && selectedTagIds.length === 0) {
-      const tagIds = editingContent.blog.tags
-        .map((tagName: string) => availableTags.find((tag) => tag.name === tagName)?.id)
-        .filter((id): id is string => id !== undefined);
-      setSelectedTagIds(tagIds);
-    }
-  }, [availableTags, editingContent?.blog?.tags, selectedTagIds.length]);
 
   const initialContentState = useMemo(() => {
     if (!editingContent) return null;
@@ -293,7 +275,10 @@ const BlogEditor = ({ editingContent, initialTask, onSave, onBack }: BlogEditorP
     [editingContent],
   );
 
-  // Optimized unsaved changes detection
+  // Bypass flag to disable blocker when user confirms navigation
+  const [bypassBlocker, setBypassBlocker] = useState(false);
+
+  // Detect unsaved changes
   const hasUnsavedChanges = useMemo(() => {
     const titleChanged = localTitle !== (editingContent?.title || "");
     if (!content) return titleChanged;
@@ -305,16 +290,15 @@ const BlogEditor = ({ editingContent, initialTask, onSave, onBack }: BlogEditorP
     return titleChanged || contentChanged;
   }, [content, initialContent, localTitle, editingContent?.title]);
 
-  // Block browser navigation when there are unsaved changes
+  // Block navigation when there are unsaved changes
   useNavigationBlocker({
-    when: hasUnsavedChanges,
-    onNavigationAttempt: (destinationUrl) => {
-      setPendingNavigation(destinationUrl);
+    when: hasUnsavedChanges && !bypassBlocker,
+    onNavigationAttempt: () => {
       setShowNavigationDialog(true);
     },
   });
 
-  // Memoized navigation handlers
+  // Navigation handlers
   const handleBackClick = useCallback(() => {
     if (hasUnsavedChanges) {
       setShowUnsavedDialog(true);
@@ -325,6 +309,7 @@ const BlogEditor = ({ editingContent, initialTask, onSave, onBack }: BlogEditorP
 
   const handleDiscardChanges = useCallback(() => {
     setShowUnsavedDialog(false);
+    setBypassBlocker(true);
     onBack();
   }, [onBack]);
 
@@ -334,77 +319,51 @@ const BlogEditor = ({ editingContent, initialTask, onSave, onBack }: BlogEditorP
 
   const handleStayOnPage = useCallback(() => {
     setShowNavigationDialog(false);
-    setPendingNavigation(null);
   }, []);
 
   const handleProceedNavigation = useCallback(() => {
     setShowNavigationDialog(false);
-    if (pendingNavigation) {
-      window.location.href = pendingNavigation;
-    }
-  }, [pendingNavigation]);
+    setBypassBlocker(true);
+  }, []);
 
-  // AI Content Integration Handlers
+  // AI Content handlers
   const handleAIContentGenerated = useCallback(
     (generatedContent: string, tiptapJson?: TipTapDocument) => {
-      // Determine the HTML content to use
       let htmlContent = generatedContent;
       let jsonContent = tiptapJson;
 
-      // If we have a TipTap JSON document, convert it to HTML
-      if (tiptapJson && tiptapJson.type === "doc") {
+      if (tiptapJson?.type === "doc") {
         htmlContent = tiptapToHtml(tiptapJson);
         jsonContent = tiptapJson;
       }
 
-      // Store pending AI content and show diff preview
-      setPendingAIContent({
-        html: htmlContent,
-        json: jsonContent,
-      });
+      setPendingAIContent({ html: htmlContent, json: jsonContent });
       setShowDiffPreview(true);
     },
     [],
   );
 
-  // Handle applying AI content from diff preview
   const handleApplyAIContent = useCallback(() => {
     if (!pendingAIContent) return;
 
-    // Track AI-generated text (store plain text for tracking)
     const plainTextContent = pendingAIContent.html.replace(/<[^>]*>/g, "");
     setAiGeneratedText((prev) => (prev ? `${prev}\n\n${plainTextContent}` : plainTextContent));
 
-    const htmlContent = pendingAIContent.html;
-    const jsonContent = pendingAIContent.json;
+    const { html: htmlContent, json: jsonContent } = pendingAIContent;
 
-    // Check if there's existing content worth keeping
     const hasExistingContent =
-      content &&
-      content.html.trim() &&
+      content?.html?.trim() &&
       content.html !== "<p></p>" &&
-      content.html !== "<p>Start typing...</p>" &&
       content.html.replace(/<[^>]*>/g, "").trim().length > 0;
 
-    if (hasExistingContent) {
-      // Append AI content to existing content
-      const newHTML = content.html + "<br><br>" + htmlContent;
+    if (hasExistingContent && content) {
+      const mergedJson =
+        jsonContent && content.json?.type === "doc" && content.json?.content
+          ? { type: "doc", content: [...content.json.content, ...(jsonContent.content || [])] }
+          : content.json;
 
-      // Merge JSON content if we have TipTap JSON
-      let mergedJson = content.json;
-      if (jsonContent && content.json?.type === "doc" && content.json?.content) {
-        mergedJson = {
-          type: "doc",
-          content: [...content.json.content, ...(jsonContent.content || [])],
-        };
-      }
-
-      setContent({
-        html: newHTML,
-        json: mergedJson,
-      });
+      setContent({ html: content.html + "<br><br>" + htmlContent, json: mergedJson });
     } else {
-      // Replace with AI content
       setContent({
         html: htmlContent,
         json: jsonContent || {
@@ -414,13 +373,11 @@ const BlogEditor = ({ editingContent, initialTask, onSave, onBack }: BlogEditorP
       });
     }
 
-    // Force editor re-render and close diff preview
     setEditorKey((prev) => prev + 1);
     setShowDiffPreview(false);
     setPendingAIContent(null);
   }, [content, pendingAIContent]);
 
-  // Handle discarding AI content
   const handleDiscardAIContent = useCallback(() => {
     setShowDiffPreview(false);
     setPendingAIContent(null);
@@ -511,10 +468,10 @@ const BlogEditor = ({ editingContent, initialTask, onSave, onBack }: BlogEditorP
         }}
       />
 
-      {/* Three-Column Layout */}
-      <div className="flex gap-6">
+      {/* Two-Column Layout */}
+      <div className="flex gap-4">
         {/* Left Column - Main Editor */}
-        <div className="flex-1 min-w-0 space-y-6">
+        <div className="flex-1 min-w-0 space-y-4">
           {/* Editor Card */}
           <Card>
             <CardHeader>
@@ -608,7 +565,7 @@ const BlogEditor = ({ editingContent, initialTask, onSave, onBack }: BlogEditorP
         </div>
 
         {/* Right Sidebar - Channel Selection + AI Generator */}
-        <div className="w-110 flex-shrink-0 space-y-4">
+        <div className="w-80 shrink-0 space-y-4">
           {/* Channel Selection */}
           <ChannelSidebar
             channels={availableChannels}
@@ -629,7 +586,7 @@ const BlogEditor = ({ editingContent, initialTask, onSave, onBack }: BlogEditorP
 
       {/* Unsaved Changes Dialog */}
       <Dialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Unsaved Changes</DialogTitle>
             <DialogDescription>
@@ -648,9 +605,9 @@ const BlogEditor = ({ editingContent, initialTask, onSave, onBack }: BlogEditorP
         </DialogContent>
       </Dialog>
 
-      {/* Navigation Blocker Dialog - for in-app navigation */}
+      {/* Navigation Blocker Dialog */}
       <Dialog open={showNavigationDialog} onOpenChange={setShowNavigationDialog}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Leave Page?</DialogTitle>
             <DialogDescription>

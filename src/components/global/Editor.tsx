@@ -763,8 +763,8 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
       </CardHeader>
 
       <CardContent className="p-0">
-        <ScrollArea className="h-[600px]">
-          <div className="p-6">
+        <ScrollArea className="min-h-[200px] max-h-[400px]">
+          <div className="p-4">
             {diffMode && diffContent ? (
               // Diff Mode: Side-by-side comparison like IDE
               <div className="space-y-4">

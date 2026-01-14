@@ -11,25 +11,6 @@ interface UseNavigationBlockerProps {
  * @param onNavigationAttempt - Callback when user tries to navigate away with destination URL
  */
 export function useNavigationBlocker({ when, onNavigationAttempt }: UseNavigationBlockerProps) {
-  // Handle browser navigation (refresh, close tab, etc.)
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (when) {
-        e.preventDefault();
-        e.returnValue = ""; // Required for Chrome
-        return ""; // For older browsers
-      }
-    };
-
-    if (when) {
-      window.addEventListener("beforeunload", handleBeforeUnload);
-    }
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, [when]);
-
   // Handle in-app navigation (clicking links)
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {

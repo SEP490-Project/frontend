@@ -30,7 +30,7 @@ import { Controller, useForm } from "react-hook-form";
 import { useSelector } from "react-redux";
 import { useAppDispatch, type RootState } from "@/libs/stores";
 import { Badge } from "@/components/ui/badge";
-import { Package, Upload, Trash2, ImagePlus } from "lucide-react";
+import { Package, Upload, Trash2, ImagePlus, Plus } from "lucide-react";
 import { convertNumberToCurrency } from "@/libs/helper/helper";
 import { useState, useRef, useEffect } from "react";
 import { FaMoneyBill } from "react-icons/fa6";
@@ -201,59 +201,106 @@ export const UpdateVariantSection = ({
   };
 
   return (
-    <Card className="mb-10">
-      <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <CardTitle className="text-xl font-semibold">Product Variants</CardTitle>
-        <Button variant="outline" onClick={() => setIsCreateDialogOpen(true)}>
-          Create New Variant
-        </Button>
+    <Card className="overflow-hidden border-0 shadow-lg shadow-slate-200/50 bg-white mb-10">
+      <CardHeader className="bg-gradient-to-r from-emerald-50 to-white border-b px-6 py-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-emerald-100 rounded-xl">
+              <Package className="h-5 w-5 text-emerald-600" />
+            </div>
+            <div>
+              <CardTitle className="text-xl font-bold text-slate-900">Product Variants</CardTitle>
+              <p className="text-sm text-slate-500 mt-0.5">
+                Manage different versions of your product
+              </p>
+            </div>
+          </div>
+          <Button
+            onClick={() => setIsCreateDialogOpen(true)}
+            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/25"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Create New Variant
+          </Button>
+        </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-6">
         {/* Variant Selection */}
-        <div className="mb-6">
-          <Accordion type="single" collapsible className="w-full">
+        <div>
+          <Accordion type="single" collapsible className="w-full space-y-3">
             {variants.map((variant, index) => (
-              <AccordionItem key={variant.id} value={variant.id!}>
+              <AccordionItem
+                key={variant.id}
+                value={variant.id!}
+                className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow data-[state=open]:shadow-lg data-[state=open]:border-emerald-200"
+              >
                 <AccordionTrigger
-                  className="hover:no-underline"
+                  className="hover:no-underline px-5 py-4 hover:bg-slate-50/50"
                   onClick={() => handleVariantSelect(variant.id!)}
                 >
                   <div className="flex items-center justify-between w-full pr-4">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={(variant as VariantWithImage)?.images?.[0]?.image_url || "/logo.svg"}
-                        alt={variant.name || `Variant ${index + 1}`}
-                        className="w-10 h-10 object-cover rounded-md"
-                      />
-                      <span className="font-semibold">
-                        {variant.name || `Variant ${index + 1}`}
-                      </span>
-                      {variant.is_default && (
-                        <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-                          Default
-                        </Badge>
-                      )}
+                    <div className="flex items-center gap-4">
+                      <div className="relative">
+                        <img
+                          src={(variant as VariantWithImage)?.images?.[0]?.image_url || "/logo.svg"}
+                          alt={variant.name || `Variant ${index + 1}`}
+                          className="w-14 h-14 object-cover rounded-xl border-2 border-slate-100 shadow-sm"
+                        />
+                        {variant.is_default && (
+                          <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                            <svg
+                              className="w-3 h-3 text-white"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-left">
+                        <span className="font-bold text-slate-900 block">
+                          {variant.name || `Variant ${index + 1}`}
+                        </span>
+                        {variant.is_default && (
+                          <span className="text-xs text-blue-600 font-medium">Default Variant</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
-                      <span className="flex items-center gap-1">
-                        <Package className="w-4 h-4" />
-                        {variant.capacity} {variant.capacity_unit}
-                      </span>
-                      <span className="flex items-center gap-1 font-medium">
-                        <FaMoneyBill className="w-4 h-4" />
-                        {convertNumberToCurrency(String(variant.price) || "0")}
-                      </span>
+                    <div className="flex items-center gap-6 text-sm">
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg">
+                        <Package className="w-4 h-4 text-slate-500" />
+                        <span className="font-medium text-slate-700">
+                          {variant.capacity} {variant.capacity_unit}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-lg">
+                        <FaMoneyBill className="w-4 h-4 text-emerald-600" />
+                        <span className="font-bold text-emerald-700">
+                          {convertNumberToCurrency(String(variant.price) || "0")}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </AccordionTrigger>
-                <AccordionContent>
+                <AccordionContent className="px-5 pb-5">
                   {/* Variant Update Form */}
                   {selectedVariantId && (
-                    <form onSubmit={handleSubmit(handleFormSubmit, onError)} className="space-y-6">
+                    <form
+                      onSubmit={handleSubmit(handleFormSubmit, onError)}
+                      className="space-y-8 pt-4"
+                    >
                       {/* Variant Images */}
-                      <div className="border-b pb-6">
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-lg font-semibold">Variant Images</h3>
+                      <div className="pb-6 border-b border-slate-100">
+                        <div className="flex items-center justify-between mb-5">
+                          <div className="flex items-center gap-2">
+                            <div className="h-7 w-1 bg-emerald-500 rounded-full" />
+                            <h3 className="text-lg font-bold text-slate-900">Variant Images</h3>
+                          </div>
                           <div>
                             <input
                               ref={fileInputRef}
@@ -266,11 +313,10 @@ export const UpdateVariantSection = ({
                             />
                             <Button
                               type="button"
-                              variant="outline"
                               size="sm"
                               onClick={() => fileInputRef.current?.click()}
                               disabled={uploadingImage}
-                              className="gap-2"
+                              className="gap-2 bg-emerald-600 hover:bg-emerald-700 shadow-md"
                             >
                               <ImagePlus className="w-4 h-4" />
                               {uploadingImage ? "Uploading..." : "Add Images"}
@@ -286,35 +332,49 @@ export const UpdateVariantSection = ({
 
                             if (images.length === 0) {
                               return (
-                                <div className="col-span-full text-center py-8 text-gray-400 border-2 border-dashed rounded-lg">
-                                  <Upload className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                                  <p>No images uploaded yet</p>
-                                  <p className="text-sm">Click "Add Images" to upload</p>
+                                <div
+                                  className="col-span-full text-center py-10 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50 hover:bg-slate-50 hover:border-emerald-300 transition-all cursor-pointer"
+                                  onClick={() => fileInputRef.current?.click()}
+                                >
+                                  <div className="inline-flex items-center justify-center w-14 h-14 bg-white rounded-xl shadow-sm mb-3">
+                                    <Upload className="w-7 h-7 text-slate-400" />
+                                  </div>
+                                  <p className="font-semibold text-slate-600">
+                                    No images uploaded yet
+                                  </p>
+                                  <p className="text-sm text-slate-400 mt-1">
+                                    Click here or "Add Images" button to upload
+                                  </p>
                                 </div>
                               );
                             }
 
                             return images.map((image, idx) => (
-                              <div key={image.id} className="relative group">
+                              <div
+                                key={image.id}
+                                className="relative group rounded-xl overflow-hidden border-2 border-slate-100 shadow-sm hover:shadow-md hover:border-emerald-200 transition-all"
+                              >
                                 <img
                                   src={image.image_url}
                                   alt={image.alt_text || `Variant image ${idx + 1}`}
-                                  className="w-full h-32 object-cover rounded-lg border"
+                                  className="w-full h-36 object-cover"
                                 />
                                 {image.is_primary && (
-                                  <Badge className="absolute top-2 left-2 bg-blue-500 text-white">
+                                  <Badge className="absolute top-2 left-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg">
                                     Primary
                                   </Badge>
                                 )}
-                                <Button
-                                  type="button"
-                                  variant="destructive"
-                                  size="icon"
-                                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
-                                  onClick={() => handleDeleteImage(image.id)}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                  <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="icon"
+                                    className="h-10 w-10 rounded-full shadow-lg"
+                                    onClick={() => handleDeleteImage(image.id)}
+                                  >
+                                    <Trash2 className="w-5 h-5" />
+                                  </Button>
+                                </div>
                               </div>
                             ));
                           })()}
@@ -322,8 +382,11 @@ export const UpdateVariantSection = ({
                       </div>
 
                       {/* Basic Information */}
-                      <div className="border-b pb-6">
-                        <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
+                      <div className="pb-6 border-b border-slate-100">
+                        <div className="flex items-center gap-2 mb-5">
+                          <div className="h-7 w-1 bg-emerald-500 rounded-full" />
+                          <h3 className="text-lg font-bold text-slate-900">Basic Information</h3>
+                        </div>
                         <div className="grid grid-cols-1 gap-4">
                           {/* Price */}
                           <div className="space-y-2">
@@ -374,10 +437,13 @@ export const UpdateVariantSection = ({
 
                       {/* Limited Edition Fields */}
                       {isLimitedProduct && (
-                        <div className="border-b pb-6">
-                          <h3 className="text-lg font-semibold mb-4 text-pink-900">
-                            Limited Edition Settings
-                          </h3>
+                        <div className="pb-6 border-b border-slate-100">
+                          <div className="flex items-center gap-2 mb-5">
+                            <div className="h-7 w-1 bg-gradient-to-b from-pink-500 to-rose-500 rounded-full" />
+                            <h3 className="text-lg font-bold bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">
+                              Limited Edition Settings
+                            </h3>
+                          </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {/* Max Stock */}
                             <div className="space-y-2">
@@ -433,8 +499,11 @@ export const UpdateVariantSection = ({
                       )}
 
                       {/* Capacity & Container */}
-                      <div className="border-b pb-6">
-                        <h3 className="text-lg font-semibold mb-4">Capacity & Container</h3>
+                      <div className="pb-6 border-b border-slate-100">
+                        <div className="flex items-center gap-2 mb-5">
+                          <div className="h-7 w-1 bg-emerald-500 rounded-full" />
+                          <h3 className="text-lg font-bold text-slate-900">Capacity & Container</h3>
+                        </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {/* Capacity */}
                           <div className="space-y-2">
@@ -595,8 +664,11 @@ export const UpdateVariantSection = ({
                       </div>
 
                       {/* Dimensions & Weight */}
-                      <div className="border-b pb-6">
-                        <h3 className="text-lg font-semibold mb-4">Dimensions & Weight</h3>
+                      <div className="pb-6 border-b border-slate-100">
+                        <div className="flex items-center gap-2 mb-5">
+                          <div className="h-7 w-1 bg-emerald-500 rounded-full" />
+                          <h3 className="text-lg font-bold text-slate-900">Dimensions & Weight</h3>
+                        </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor="length">
@@ -701,8 +773,13 @@ export const UpdateVariantSection = ({
                       </div>
 
                       {/* Dates */}
-                      <div className="border-b pb-6">
-                        <h3 className="text-lg font-semibold mb-4">Manufacturing & Expiry</h3>
+                      <div className="pb-6 border-b border-slate-100">
+                        <div className="flex items-center gap-2 mb-5">
+                          <div className="h-7 w-1 bg-emerald-500 rounded-full" />
+                          <h3 className="text-lg font-bold text-slate-900">
+                            Manufacturing & Expiry
+                          </h3>
+                        </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Controller
@@ -746,7 +823,12 @@ export const UpdateVariantSection = ({
 
                       {/* Details & Instructions */}
                       <div>
-                        <h3 className="text-lg font-semibold mb-4">Details & Instructions</h3>
+                        <div className="flex items-center gap-2 mb-5">
+                          <div className="h-7 w-1 bg-emerald-500 rounded-full" />
+                          <h3 className="text-lg font-bold text-slate-900">
+                            Details & Instructions
+                          </h3>
+                        </div>
                         <div className="space-y-4">
                           <div className="space-y-2">
                             <Label htmlFor="instrucstions">Instructions</Label>
@@ -783,18 +865,19 @@ export const UpdateVariantSection = ({
                       </div>
 
                       {/* Action Buttons */}
-                      <div className="flex justify-end gap-3">
+                      <div className="flex justify-end gap-3 pt-4">
                         <Button
                           type="button"
                           variant="outline"
                           onClick={() => reset()}
                           disabled={!isDirty}
+                          className="px-6 border-slate-200 hover:bg-slate-50"
                         >
                           Reset Changes
                         </Button>
                         <Button
                           type="submit"
-                          className="bg-primary hover:bg-primary/90"
+                          className="px-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/25"
                           disabled={!isDirty}
                         >
                           Update Variant
@@ -811,20 +894,29 @@ export const UpdateVariantSection = ({
 
       {/* Create New Variant Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Create New Variant</DialogTitle>
-            <DialogDescription>
-              Add a new variant for this {isLimitedProduct ? "limited edition" : "standard"}{" "}
-              product.
-            </DialogDescription>
-          </DialogHeader>
-          <VariationForm
-            form={newVariantForm}
-            onSubmit={handleCreateVariant}
-            state={{ productType: isLimitedProduct ? "LIMITED" : "STANDARD" }}
-            dispatch={dispatch}
-          />
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+          <div className="bg-gradient-to-r from-emerald-50 to-white px-6 py-5 border-b">
+            <DialogHeader className="space-y-1">
+              <DialogTitle className="text-2xl font-bold tracking-tight flex items-center gap-3">
+                <div className="p-2 bg-emerald-100 rounded-lg">
+                  <Package className="h-5 w-5 text-emerald-600" />
+                </div>
+                Create New Variant
+              </DialogTitle>
+              <DialogDescription className="text-slate-500">
+                Add a new variant for this {isLimitedProduct ? "limited edition" : "standard"}{" "}
+                product.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+          <div className="p-6">
+            <VariationForm
+              form={newVariantForm}
+              onSubmit={handleCreateVariant}
+              state={{ productType: isLimitedProduct ? "LIMITED" : "STANDARD" }}
+              dispatch={dispatch}
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </Card>

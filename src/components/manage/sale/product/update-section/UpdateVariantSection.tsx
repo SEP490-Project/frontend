@@ -44,6 +44,7 @@ import {
   createVariantImageThunk,
 } from "@/libs/stores/productManager/thunk";
 import { getProductDetailThunk } from "@/libs/stores/productManager/thunk";
+import NumberInput from "@/components/number-input";
 
 interface UpdateVariantSectionProps {
   form: UseFormReturn<any>;
@@ -397,14 +398,12 @@ export const UpdateVariantSection = ({
                               name="price"
                               control={control}
                               render={({ field }) => (
-                                <Input
-                                  id="price"
-                                  type="number"
-                                  step={1000}
-                                  min={1000}
-                                  placeholder="Minimum 1000 VND"
-                                  {...field}
-                                  className={errors.price ? "border-red-500" : ""}
+                                <NumberInput
+                                  value={field.value || 0}
+                                  onChange={field.onChange}
+                                  placeholder="Price must be at least 1,000 VND"
+                                  error={errors.price?.message as string}
+                                  required
                                 />
                               )}
                             />

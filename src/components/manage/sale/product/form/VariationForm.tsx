@@ -28,6 +28,7 @@ import { useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "@/libs/stores";
 import { getAllVariantAttributesThunk } from "@/libs/stores/attributeManager/thunk";
 import { fetchAllProductOptionTypesThunk } from "@/libs/stores/productOptionManager/thunk";
+import NumberInput from "@/components/number-input";
 
 interface VariationFormProps extends ProductFormProps<ProductVariant> {
   onSubmit?: (data: ProductVariant) => void;
@@ -252,7 +253,7 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="price" className="text-sm font-medium">
+            {/* <Label htmlFor="price" className="text-sm font-medium">
               Price (VND) <span className="text-red-500">*</span>
             </Label>
             <Input
@@ -266,6 +267,20 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
               onKeyDown={preventNegativeInput}
               onPaste={preventNegativePaste}
               {...register("price")}
+            /> */}
+            <Controller
+              name="price"
+              control={control}
+              render={({ field }) => (
+                <NumberInput
+                  label="Price"
+                  required
+                  currency="VND"
+                  value={field.value || 0}
+                  onChange={field.onChange}
+                  placeholder="Price must be at least 1,000 VND"
+                />
+              )}
             />
           </div>
         </div>

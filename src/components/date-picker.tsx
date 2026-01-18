@@ -18,6 +18,8 @@ interface DatePickerProps {
   maxDate?: string;
   dateFormat?: string;
   className?: string;
+  onlyPast?: boolean; // chỉ cho chọn ngày trong quá khứ (bao gồm hôm nay)
+  explainLine?: string; // dòng giải thích màu đỏ
 }
 
 // Helper parse date safely
@@ -53,6 +55,8 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   maxDate,
   dateFormat = "dd/MM/yyyy",
   className = "",
+  onlyPast = false,
+  explainLine,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const selectedDate = parseDate(value);
@@ -65,6 +69,11 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 
     if (minDate && date < new Date(minDate)) return;
     if (maxDate && date > new Date(maxDate)) return;
+    if (onlyPast) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (date > today) return;
+    }
 
     onChange(format(date, "yyyy-MM-dd"));
     setIsOpen(false);
@@ -114,8 +123,32 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               weekStartsOn={0}
               autoFocus
               disabled={(date) => {
+                // Giới hạn signed_date: chỉ được chọn trong khoảng 2 tháng trước đến hôm nay
+                if (explainLine === "signed_date") {
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  const twoMonthsAgo = new Date(today);
+                  twoMonthsAgo.setMonth(today.getMonth() - 2);
+                  if (date < twoMonthsAgo || date > today) return true;
+                }
+                // Giới hạn end_date: chỉ được chọn sau start_date tối thiểu 1 tháng
+                if (explainLine && explainLine.startsWith("end_date:")) {
+                  const minDateStr = explainLine.replace("end_date:", "").trim();
+                  const minDate = parseDate(minDateStr);
+                  if (minDate) {
+                    const minEndDate = new Date(minDate);
+                    minEndDate.setMonth(minEndDate.getMonth() + 1);
+                    minEndDate.setHours(0, 0, 0, 0);
+                    if (date < minEndDate) return true;
+                  }
+                }
                 if (minDate && date < parseDate(minDate)!) return true;
                 if (maxDate && date > parseDate(maxDate)!) return true;
+                if (onlyPast) {
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  if (date > today) return true;
+                }
                 return false;
               }}
             />
@@ -124,6 +157,16 @@ export const DatePicker: React.FC<DatePickerProps> = ({
       </Popover>
 
       {error && <p className="text-sm text-red-500">{error}</p>}
+      {explainLine === "signed_date" && (
+        <p className="text-xs text-gray-500 mt-1">
+          *You can only select a date within the last 2 months up to today.
+        </p>
+      )}
+      {explainLine && explainLine.startsWith("end_date:") && (
+        <p className="text-xs text-gray-500 mt-1">
+          *You can only select an end date at least 1 month after the start date.
+        </p>
+      )}
     </div>
   );
 };

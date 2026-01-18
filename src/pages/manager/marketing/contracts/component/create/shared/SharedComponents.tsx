@@ -176,6 +176,7 @@ export const CompactKPISelector: React.FC<{
                     </Label>
                     <Input
                       id={`target-${i}`}
+                      type="number"
                       placeholder="e.g., 100"
                       value={kpi.target}
                       onChange={(e) => handleChange(i, "target", e.target.value)}
@@ -202,14 +203,14 @@ export const CompactKPISelector: React.FC<{
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-red-500 hover:bg-red-50 h-9 w-9 flex-shrink-0 mt-4"
+                  className="text-red-500 hover:bg-red-50 h-9 w-9 shrink-0 mt-4"
                   onClick={() => handleRemove(i)}
                   title="Remove KPI"
                 >
                   <FaTrash className="w-4 h-4" />
                 </Button>
               ) : (
-                <div className="h-9 w-9 flex-shrink-0 mt-4 flex items-center justify-center">
+                <div className="h-9 w-9 shrink-0 mt-4 flex items-center justify-center">
                   <div
                     className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded text-center"
                     title="Required KPI - Cannot be removed"

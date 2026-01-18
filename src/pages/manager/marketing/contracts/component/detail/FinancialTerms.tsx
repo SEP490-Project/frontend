@@ -269,27 +269,6 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({ type, data, deposit }) 
               </div>
             )}
 
-            {/* Tax Withholding */}
-            {data.tax_withholding && (
-              <div className="border rounded-lg p-4 bg-red-50">
-                <h4 className="font-semibold text-gray-900 mb-2">Tax Withholding</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-500">Rate</p>
-                    <p className="text-xl font-bold text-red-600">
-                      {data.tax_withholding.rate_percent}%
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Threshold</p>
-                    <p className="font-semibold">
-                      {formatCurrency(data.tax_withholding.threshold)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Payment Cycle */}
             {data.payment_cycle && (
               <div className="border rounded-lg p-4">

@@ -78,15 +78,6 @@ const CONTRACT_TYPE_COLORS: Record<string, string> = {
   AFFILIATE: "bg-pink-100 text-pink-800 border-pink-200",
 };
 
-const getPaymentType = (payment: ContractPayment) => {
-  if (payment.is_deposit) return "Deposit";
-  if (payment.contract_type === "BRAND_AMBASSADOR" || payment.contract_type === "ADVERTISING")
-    return "Scheduled";
-  if (payment.contract_type === "AFFILIATE" || payment.contract_type === "CO_PRODUCING")
-    return "Performance";
-  return "-";
-};
-
 const PayNowMark: React.FC = () => (
   <span title="Pay Now" className="inline-block align-middle ml-1">
     <span
@@ -115,16 +106,9 @@ const ContractPaymentPage: React.FC = () => {
   const [allBrands, setAllBrands] = useState<any[]>([]);
   const debouncedBrandSearch = useDebounce(brandSearch, 400);
 
-  //   // Contract DataSelector states
-  //   const [contractSearch, setContractSearch] = useState("");
-  //   const [contractPage, setContractPage] = useState(1);
-  //   const [allContracts, setAllContracts] = useState<any[]>([]);
-  //   const debouncedContractSearch = useDebounce(contractSearch, 400);
-
   const dispatch = useAppDispatch();
   const { contractPayments, loading, pagination } = useContractPayment();
   const { brands, loading: brandLoading, pagination: brandPagination } = useBrand();
-  //   const { contracts, loading: contractLoading, pagination: contractPagination } = useContract();
 
   // Fetch brands for DataSelector
   useEffect(() => {
@@ -150,34 +134,6 @@ const ContractPaymentPage: React.FC = () => {
       setAllBrands((prev) => [...prev, ...brands]);
     }
   }, [brands, brandPage]);
-
-  // Fetch contracts for DataSelector
-  //   useEffect(() => {
-  //     setAllContracts([]);
-  //     setContractPage(1);
-  //   }, [debouncedContractSearch, selectedBrandId]);
-
-  //   useEffect(() => {
-  //     const contractParams: any = {
-  //       page: contractPage,
-  //       limit: 10,
-  //       status: "ACTIVE",
-  //       sort_by: "created_at",
-  //       sort_order: "desc",
-  //       ...(debouncedContractSearch ? { keyword: debouncedContractSearch } : {}),
-  //       ...(selectedBrandId ? { brand_id: selectedBrandId } : {}),
-  //     };
-
-  //     dispatch(fetchContracts(contractParams));
-  //   }, [dispatch, contractPage, debouncedContractSearch, selectedBrandId]);
-
-  //   useEffect(() => {
-  //     if (contractPage === 1) {
-  //       setAllContracts(contracts);
-  //     } else {
-  //       setAllContracts((prev) => [...prev, ...contracts]);
-  //     }
-  //   }, [contracts, contractPage]);
 
   // Fetch contract payments when filters change
   useEffect(() => {
@@ -226,12 +182,6 @@ const ContractPaymentPage: React.FC = () => {
     }
   }, [brandPagination?.has_next, brandLoading]);
 
-  //   const loadMoreContracts = useCallback(() => {
-  //     if (contractPagination?.has_next && !contractLoading) {
-  //       setContractPage((p) => p + 1);
-  //     }
-  //   }, [contractPagination?.has_next, contractLoading]);
-
   const handleBrandSelect = (brandId: string | null) => {
     setSelectedBrandId(brandId);
     // Reset contract selection when brand changes
@@ -239,10 +189,6 @@ const ContractPaymentPage: React.FC = () => {
       setSelectedContractId(null);
     }
   };
-
-  //   const handleContractSelect = (contractId: string | null) => {
-  //     setSelectedContractId(contractId);
-  //   };
 
   const handleResetFilters = () => {
     setSelectedBrandId(null);
@@ -254,7 +200,6 @@ const ContractPaymentPage: React.FC = () => {
     setSortBy("created_at");
     setSortOrder("desc");
     setBrandSearch("");
-    // setContractSearch("");
   };
 
   const handleViewPayment = (paymentId: string) => {
@@ -292,20 +237,6 @@ const ContractPaymentPage: React.FC = () => {
     return (
       <div className="flex flex-col">
         <span className="font-medium">{formatCurrency(payment.amount)}</span>
-        {(payment.base_amount !== undefined || payment.performance_amount !== undefined) && (
-          <div className="mt-1 space-y-0.5">
-            {payment.base_amount !== undefined && (
-              <div className="text-xs text-gray-500">
-                Base: {formatCurrency(payment.base_amount)}
-              </div>
-            )}
-            {payment.performance_amount !== undefined && payment.performance_amount > 0 && (
-              <div className="text-xs text-gray-500">
-                Perf: {formatCurrency(payment.performance_amount)}
-              </div>
-            )}
-          </div>
-        )}
       </div>
     );
   };
@@ -476,7 +407,7 @@ const ContractPaymentPage: React.FC = () => {
               <SelectContent>
                 <SelectItem value="created_at">Created At</SelectItem>
                 <SelectItem value="due_date">Due Date</SelectItem>
-                <SelectItem value="amount">Amount</SelectItem>
+                <SelectItem value="amount">Total Amount</SelectItem>
                 <SelectItem value="status">Status</SelectItem>
               </SelectContent>
             </Select>
@@ -511,8 +442,7 @@ const ContractPaymentPage: React.FC = () => {
                     <TableHead className="font-semibold">Contract</TableHead>
                     <TableHead className="font-semibold">Brand</TableHead>
                     <TableHead className="font-semibold">Type</TableHead>
-                    <TableHead className="font-semibold">Amount</TableHead>
-                    <TableHead className="font-semibold">Payment</TableHead>
+                    <TableHead className="font-semibold">Total Amount</TableHead>
                     <TableHead className="font-semibold">Status</TableHead>
                     <TableHead className="font-semibold">Due Date</TableHead>
                     <TableHead className="font-semibold">Payment Method</TableHead>
@@ -560,9 +490,6 @@ const ContractPaymentPage: React.FC = () => {
                       </TableCell>
                       <TableCell className="py-4">
                         <div>{formatAmount(payment)}</div>
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <span className="text-xs font-medium">{getPaymentType(payment)}</span>
                       </TableCell>
                       <TableCell className="py-4">
                         <Badge
@@ -659,12 +586,8 @@ const ContractPaymentPage: React.FC = () => {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-sm text-gray-500">Amount</div>
+                        <div className="text-sm text-gray-500">Total Amount</div>
                         <div className="text-sm">{formatAmount(payment)}</div>
-                        <div className="text-xs mt-1">
-                          <span className="font-medium">Payment: </span>
-                          {getPaymentType(payment)}
-                        </div>
                       </div>
                     </div>
 

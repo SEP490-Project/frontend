@@ -31,6 +31,12 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
 
     const isExistingContract = formData.brand && typeof formData.brand === "object";
 
+    // Lấy compensation_percent động từ formData
+    const compensationPercent =
+      formData.legal_terms?.compensation_percent !== undefined
+        ? formData.legal_terms?.compensation_percent
+        : 10;
+
     return {
       contract_number: formData.contract_number,
       title: formData.title,
@@ -128,9 +134,9 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
                     details: [
                       "Contract terminates immediately",
                       "Party B must refund the deposit",
-                      "Party B pays additional 10% compensation",
+                      `Party B pays additional ${compensationPercent}% compensation`,
                     ],
-                    compensation_percent: 10,
+                    compensation_percent: compensationPercent,
                   },
                   {
                     title: "Mutual agreement to terminate",
@@ -684,22 +690,6 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
                     <span className="font-semibold">{level.multiplier}x</span>
                   </p>
                 ))}
-              </div>
-            )}
-            {financial.tax_withholding && (
-              <div className="mt-2">
-                <p className="font-semibold text-xs text-gray-700 underline mb-1">
-                  Tax Withholding:
-                </p>
-                <p className="text-xs">
-                  A tax rate of{" "}
-                  <span className="font-semibold">{financial.tax_withholding.rate_percent}%</span>{" "}
-                  will be withheld for earnings exceeding{" "}
-                  <span className="font-semibold">
-                    {formatMoney(financial.tax_withholding.threshold)}
-                  </span>
-                  .
-                </p>
               </div>
             )}
           </div>

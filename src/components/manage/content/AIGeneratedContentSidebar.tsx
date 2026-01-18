@@ -184,7 +184,7 @@ const AIGeneratedContent: React.FC<AIGeneratedContentProps> = ({
             }
             value={context}
             onChange={(e) => setContext(e.target.value)}
-            className="min-h-[80px] resize-none bg-white text-sm"
+            className="h-[80px] resize-none bg-white text-sm"
           />
           {currentContent && (
             <div className="flex items-center gap-2">
@@ -203,17 +203,17 @@ const AIGeneratedContent: React.FC<AIGeneratedContentProps> = ({
         </div>
 
         {/* Model & Tone Selectors - Bottom of textarea area */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full overflow-hidden">
           {/* Tiered Model Selector */}
           <Select value={selectedModel} onValueChange={setSelectedModel}>
-            <SelectTrigger className="flex-1 h-8 text-xs bg-white">
+            <SelectTrigger className="w-1/2 min-w-0 h-8 text-xs bg-white">
               <SelectValue placeholder="Select model">
                 {selectedModel && (
-                  <span className="flex items-center gap-1">
-                    <span className="text-gray-400 capitalize">
+                  <span className="flex items-center gap-1 truncate">
+                    <span className="text-gray-400 capitalize flex-shrink-0">
                       {getProviderForModel(selectedModel)}:
                     </span>
-                    <span>{selectedModel}</span>
+                    <span className="truncate">{selectedModel}</span>
                   </span>
                 )}
               </SelectValue>
@@ -249,8 +249,8 @@ const AIGeneratedContent: React.FC<AIGeneratedContentProps> = ({
 
           {/* Tone Selector */}
           <Select value={tone} onValueChange={setTone}>
-            <SelectTrigger className="flex-1 h-8 text-xs bg-white">
-              <SelectValue placeholder="Tone" />
+            <SelectTrigger className="w-1/2 min-w-0 h-8 text-xs bg-white">
+              <SelectValue placeholder="Tone" className="truncate" />
             </SelectTrigger>
             <SelectContent>
               {tones.map((t) => (

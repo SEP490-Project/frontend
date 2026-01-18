@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
 import {
   Calendar,
   User,
@@ -19,13 +20,74 @@ import {
   Briefcase,
   AlertTriangle,
   Building2,
+  Hash,
+  Target,
+  Link2,
+  Palette,
+  Package,
+  Globe,
+  ExternalLink,
+  Tag,
 } from "lucide-react";
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { manageTask } from "@/libs/services/manageTask";
 import { toast } from "sonner";
 import type { Task } from "@/libs/types/task";
 import { useAuth } from "@/libs/hooks/useAuth";
 
+// Shared utility functions
+const getTaskColor = (type: string): string => {
+  switch (type) {
+    case "CONTENT":
+      return "#f7c06d";
+    case "MARKETING":
+      return "#ff88fa";
+    case "PRODUCT":
+      return "#9976ff";
+    default:
+      return "#9976ff";
+  }
+};
+
+const formatDate = (dateString: string): string => {
+  if (!dateString) return "No date available";
+  try {
+    return new Date(dateString).toLocaleString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  } catch {
+    return "Invalid date";
+  }
+};
+
+const getStatusColor = (status: string): string => {
+  switch (status) {
+    case "COMPLETED":
+      return "bg-green-100 text-green-800";
+    case "IN_PROGRESS":
+    case "ON_GOING":
+      return "bg-blue-100 text-blue-800";
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
+};
+
+const formatFieldName = (key: string): string => {
+  return key
+    .replace(/_/g, " ")
+    .replace(/([A-Z])/g, " $1")
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ")
+    .trim();
+};
+
+// Interfaces
 interface TaskSelectionDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -38,24 +100,22 @@ interface TaskDetailViewProps {
   onSelectForContent: () => void;
 }
 
+// Main Dialog Component
 const TaskSelectionDialog: React.FC<TaskSelectionDialogProps> = ({
   isOpen,
   onClose,
   onTaskSelect,
 }) => {
-  const [selectedTask, setSelectedTask] = React.useState<Task | null>(null);
-  const [viewingTask, setViewingTask] = React.useState<Task | null>(null);
-  const [loadingTaskDetail, setLoadingTaskDetail] = React.useState(false);
-
-  // Local state for tasks fetched from marketing API
-  const [tasks, setTasks] = React.useState<Task[]>([]);
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [viewingTask, setViewingTask] = useState<Task | null>(null);
+  const [loadingTaskDetail, setLoadingTaskDetail] = useState(false);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const { user } = useAuth();
 
-  // Fetch tasks without content assigned to current user
-  const fetchAvailableTasks = React.useCallback(async () => {
+  const fetchAvailableTasks = useCallback(async () => {
     if (!user?.id) return;
 
     setLoading(true);
@@ -90,46 +150,6 @@ const TaskSelectionDialog: React.FC<TaskSelectionDialogProps> = ({
     }
   }, [isOpen, fetchAvailableTasks]);
 
-  // Utility functions
-  const getTaskColor = (type: string): string => {
-    switch (type) {
-      case "CONTENT":
-        return "#f7c06d";
-      default:
-        return "#9976ff";
-    }
-  };
-
-  const formatDate = (dateString: string): string => {
-    try {
-      return new Date(dateString).toLocaleString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      });
-    } catch {
-      return "No deadline";
-    }
-  };
-
-  // Tasks are already filtered by the API (has_content: false, type: CONTENT, status: IN_PROGRESS)
-  const availableTasks = tasks;
-
-  const handleTaskSelect = (task: Task) => {
-    setSelectedTask(task);
-  };
-
-  const handleNext = () => {
-    if (selectedTask) {
-      onTaskSelect(selectedTask);
-      setSelectedTask(null);
-      onClose();
-    }
-  };
-
   const handleClose = () => {
     setSelectedTask(null);
     setViewingTask(null);
@@ -145,16 +165,12 @@ const TaskSelectionDialog: React.FC<TaskSelectionDialogProps> = ({
       } else {
         toast.error("Failed to load task details");
       }
-    } catch (error) {
-      console.error("Error fetching task detail:", error);
+    } catch (err) {
+      console.error("Error fetching task detail:", err);
       toast.error("Failed to load task details");
     } finally {
       setLoadingTaskDetail(false);
     }
-  };
-
-  const handleBackToTaskList = () => {
-    setViewingTask(null);
   };
 
   const handleSelectTaskForContent = () => {
@@ -166,13 +182,21 @@ const TaskSelectionDialog: React.FC<TaskSelectionDialogProps> = ({
     }
   };
 
+  const handleNext = () => {
+    if (selectedTask) {
+      onTaskSelect(selectedTask);
+      setSelectedTask(null);
+      onClose();
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl max-h-[90vh]">
         {viewingTask ? (
           <TaskDetailView
             task={viewingTask}
-            onBack={handleBackToTaskList}
+            onBack={() => setViewingTask(null)}
             onSelectForContent={handleSelectTaskForContent}
           />
         ) : (
@@ -199,19 +223,17 @@ const TaskSelectionDialog: React.FC<TaskSelectionDialogProps> = ({
                     Retry
                   </Button>
                 </div>
-              ) : availableTasks.length === 0 ? (
+              ) : tasks.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">No tasks available</div>
               ) : (
-                availableTasks.map((task) => (
+                tasks.map((task) => (
                   <TaskCard
                     key={task.id}
                     task={task}
-                    selectedTask={selectedTask}
-                    onSelect={handleTaskSelect}
-                    onViewDetail={handleViewTaskDetail}
+                    isSelected={selectedTask?.id === task.id}
+                    onSelect={() => setSelectedTask(task)}
+                    onViewDetail={() => handleViewTaskDetail(task)}
                     isLoadingDetail={loadingTaskDetail}
-                    getTaskColor={getTaskColor}
-                    formatDate={formatDate}
                   />
                 ))
               )}
@@ -236,42 +258,31 @@ const TaskSelectionDialog: React.FC<TaskSelectionDialogProps> = ({
   );
 };
 
+// Task Card Component
 const TaskCard: React.FC<{
   task: Task;
-  onSelect: (task: Task) => void;
-  selectedTask: Task | null;
-  onViewDetail: (task: Task) => void;
-  isLoadingDetail?: boolean;
-  getTaskColor: (type: string) => string;
-  formatDate: (dateString: string) => string;
-}> = ({
-  task,
-  onSelect,
-  selectedTask,
-  onViewDetail,
-  isLoadingDetail = false,
-  getTaskColor,
-  formatDate,
-}) => {
+  isSelected: boolean;
+  onSelect: () => void;
+  onViewDetail: () => void;
+  isLoadingDetail: boolean;
+}> = ({ task, isSelected, onSelect, onViewDetail, isLoadingDetail }) => {
   return (
     <Card
-      onClick={() => onSelect(task)}
+      onClick={onSelect}
       className={`mb-4 cursor-pointer hover:shadow-lg transition-shadow ${
-        selectedTask?.id === task.id ? "bg-neutral-50 border-[#FF9DB0]" : ""
+        isSelected ? "bg-neutral-50 border-[#FF9DB0]" : ""
       }`}
     >
       <CardHeader className="flex flex-row items-start justify-between">
         <div className="flex items-start gap-3">
           <div
-            className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+            className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
             style={{ backgroundColor: getTaskColor(task.type) }}
           >
-            <div className="w-3 h-3 bg-white rounded-full"></div>
+            <div className="w-3 h-3 bg-white rounded-full" />
           </div>
           <div className="space-y-1">
-            <CardTitle
-              className={`text-base ${selectedTask?.id === task.id ? "text-[#FF9DB0]" : ""}`}
-            >
+            <CardTitle className={`text-base ${isSelected ? "text-[#FF9DB0]" : ""}`}>
               {task.name}
             </CardTitle>
             <CardDescription className="flex items-center gap-4 text-sm">
@@ -301,7 +312,7 @@ const TaskCard: React.FC<{
                 disabled={isLoadingDetail}
                 onClick={(e) => {
                   e.stopPropagation();
-                  onViewDetail(task);
+                  onViewDetail();
                 }}
               >
                 {isLoadingDetail ? (
@@ -311,165 +322,215 @@ const TaskCard: React.FC<{
                 )}
               </Button>
             </TooltipTrigger>
-            <TooltipContent>
-              <p>View Task Details</p>
-            </TooltipContent>
+            <TooltipContent>View Task Details</TooltipContent>
           </Tooltip>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center justify-between">
-          <span
-            className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-              task.status === "COMPLETED"
-                ? "bg-green-100 text-green-800"
-                : task.status === "IN_PROGRESS"
-                  ? "bg-blue-100 text-blue-800"
-                  : "bg-gray-100 text-gray-800"
-            }`}
-          >
-            {task.status.replace("_", " ")}
-          </span>
-        </div>
+        <span
+          className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(task.status)}`}
+        >
+          {task.status.replace("_", " ")}
+        </span>
       </CardContent>
     </Card>
   );
 };
 
+// Known description fields for custom UI
+const KNOWN_DESCRIPTION_FIELDS = [
+  "description",
+  "product_name",
+  "platform",
+  "creative_notes",
+  "tagline",
+  "hashtags",
+  "kpi_goals",
+  "material_urls",
+  "material_url",
+  "tracking_link",
+  "is_affiliate_content",
+  "advertised_item_id",
+];
+
+// Task Detail View Component
 const TaskDetailView: React.FC<TaskDetailViewProps> = ({ task, onBack, onSelectForContent }) => {
-  const getTaskColor = (type: string): string => {
-    switch (type) {
-      case "CONTENT":
-        return "#f7c06d";
-      case "MARKETING":
-        return "#ff88fa";
-      case "PRODUCT":
-        return "#9976ff";
-      default:
-        return "#9976ff";
-    }
+  const taskData = task as Task & {
+    campaign_details?: {
+      name: string;
+      description: string;
+      type: string;
+      status: string;
+      start_date: string;
+      end_date: string;
+    };
+    milestone_details?: {
+      description: string;
+      due_date: string;
+      status: string;
+      completion_percentage: number;
+      behind_schedule: boolean;
+    };
+    brand_info?: { name: string; logo_url: string; status: string };
   };
 
-  const formatDate = (dateString: string): string => {
-    if (!dateString) return "No date available";
+  // Parse description
+  const descObj =
+    typeof task.description === "object" && task.description
+      ? (task.description as Record<string, unknown>)
+      : null;
+
+  const contentDetails = descObj
+    ? {
+        productName: descObj.product_name as string | null,
+        platform: descObj.platform as string | null,
+        creativeNotes: descObj.creative_notes as string | null,
+        tagline: descObj.tagline as string | null,
+        hashtags: (Array.isArray(descObj.hashtags) ? descObj.hashtags : []) as string[],
+        kpiGoals: (Array.isArray(descObj.kpi_goals) ? descObj.kpi_goals : []) as Array<{
+          metric: string;
+          target: string;
+          description?: string;
+        }>,
+        materialUrls: (Array.isArray(descObj.material_urls)
+          ? descObj.material_urls
+          : Array.isArray(descObj.material_url)
+            ? descObj.material_url
+            : []) as string[],
+        trackingLink: descObj.tracking_link as string | null,
+        isAffiliateContent: Boolean(descObj.is_affiliate_content),
+      }
+    : null;
+
+  const simpleDescription =
+    typeof task.description === "string"
+      ? task.description
+      : descObj?.description && typeof descObj.description === "string"
+        ? descObj.description
+        : null;
+
+  const showRichContent =
+    contentDetails &&
+    (contentDetails.productName ||
+      contentDetails.platform ||
+      contentDetails.creativeNotes ||
+      contentDetails.tagline ||
+      contentDetails.hashtags.length > 0 ||
+      contentDetails.kpiGoals.length > 0 ||
+      contentDetails.materialUrls.length > 0 ||
+      contentDetails.trackingLink ||
+      contentDetails.isAffiliateContent);
+
+  const unknownFields = descObj
+    ? Object.fromEntries(
+        Object.entries(descObj).filter(([key]) => !KNOWN_DESCRIPTION_FIELDS.includes(key)),
+      )
+    : null;
+  const hasUnknownFields = unknownFields && Object.keys(unknownFields).length > 0;
+
+  const { campaign_details: campaign, milestone_details: milestone, brand_info: brand } = taskData;
+
+  const getFileName = (url: string): string => {
     try {
-      return new Date(dateString).toLocaleString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      });
+      const decoded = decodeURIComponent(url.split("/").pop() || url);
+      const clean = decoded.replace(/^\d{8}_\d{6}_/, "");
+      return clean.length > 50 ? clean.substring(0, 47) + "..." : clean;
     } catch {
-      return "Invalid date";
+      return url.length > 50 ? url.substring(0, 47) + "..." : url;
     }
   };
 
-  const getStatusDisplay = (status: string): string => {
-    if (!status) return "Unknown";
-    return status.replace("_", " ");
-  };
-
-  const getStatusColor = (status: string): string => {
-    switch (status) {
-      case "COMPLETED":
-        return "bg-green-100 text-green-800";
-      case "IN_PROGRESS":
-        return "bg-blue-100 text-blue-800";
-      case "TODO":
-        return "bg-gray-100 text-gray-800";
-      default:
-        return "bg-gray-100 text-gray-800";
+  const renderValue = (value: unknown, depth = 0): React.ReactNode => {
+    if (value === null || value === undefined) {
+      return <span className="text-gray-400 italic">N/A</span>;
     }
-  };
-
-  const getDescription = (): string => {
-    if (!task.description) return "No description available";
-
-    // Handle nested description object structure
-    if (typeof task.description === "object" && task.description !== null) {
-      const desc = task.description as any;
-      if (desc.description && typeof desc.description === "string") {
-        return desc.description;
+    if (typeof value === "boolean") {
+      return (
+        <Badge
+          variant="secondary"
+          className={value ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}
+        >
+          {value ? "Yes" : "No"}
+        </Badge>
+      );
+    }
+    if (typeof value === "number") {
+      return <span className="font-medium text-gray-900">{value.toLocaleString()}</span>;
+    }
+    if (typeof value === "string") {
+      if (value.startsWith("http://") || value.startsWith("https://")) {
+        return (
+          <a
+            href={value}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:underline flex items-center gap-1 break-all"
+          >
+            {value.length > 60 ? value.substring(0, 57) + "..." : value}
+            <ExternalLink className="h-3 w-3 shrink-0" />
+          </a>
+        );
       }
-      // Fallback to JSON representation if structure is different
-      try {
-        return JSON.stringify(task.description, null, 2);
-      } catch {
-        return "No description available";
+      if (/^\d{4}-\d{2}-\d{2}/.test(value)) {
+        const date = new Date(value);
+        if (!isNaN(date.getTime())) {
+          return <span className="font-medium text-gray-900">{formatDate(value)}</span>;
+        }
       }
+      return <span className="font-medium text-gray-900">{value}</span>;
     }
-
-    if (typeof task.description === "string") {
-      return task.description;
+    if (Array.isArray(value)) {
+      if (value.length === 0) return <span className="text-gray-400 italic">Empty list</span>;
+      if (value.every((item) => typeof item === "string" || typeof item === "number")) {
+        return (
+          <div className="flex flex-wrap gap-1">
+            {value.map((item, i) => (
+              <Badge key={i} variant="secondary" className="bg-gray-100 text-gray-800">
+                {String(item)}
+              </Badge>
+            ))}
+          </div>
+        );
+      }
+      return (
+        <div className="space-y-2 mt-1">
+          {value.map((item, i) => (
+            <div key={i} className="bg-gray-50 rounded p-2 border border-gray-100">
+              {typeof item === "object" && item !== null ? (
+                <div className="space-y-1">
+                  {Object.entries(item as Record<string, unknown>).map(([k, v]) => (
+                    <div key={k} className="flex items-start gap-2">
+                      <span className="text-xs text-gray-500 min-w-20">{formatFieldName(k)}:</span>
+                      <div className="flex-1 text-sm">{renderValue(v, depth + 1)}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <span className="text-sm">{renderValue(item, depth + 1)}</span>
+              )}
+            </div>
+          ))}
+        </div>
+      );
     }
-
-    return "No description available";
+    if (typeof value === "object") {
+      return (
+        <div className={`space-y-2 ${depth > 0 ? "mt-1 pl-2 border-l-2 border-gray-200" : ""}`}>
+          {Object.entries(value as Record<string, unknown>).map(([k, v]) => (
+            <div key={k} className="bg-gray-50 rounded p-2 border border-gray-100">
+              <p className="text-xs text-gray-500 mb-1">{formatFieldName(k)}</p>
+              <div className="text-sm">{renderValue(v, depth + 1)}</div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return <span className="font-medium text-gray-900">{String(value)}</span>;
   };
-
-  const getMaterialUrls = (): string[] => {
-    if (!task.description || typeof task.description !== "object") {
-      return [];
-    }
-
-    const desc = task.description as any;
-    if (desc.material_url && Array.isArray(desc.material_url)) {
-      return desc.material_url;
-    }
-
-    return [];
-  };
-
-  const getCampaignInfo = () => {
-    const campaign = (task as any).campaign_details;
-    if (campaign && typeof campaign === "object") {
-      return {
-        name: campaign.name || "Unknown Campaign",
-        description: campaign.description || "No description",
-        type: campaign.type || "Unknown",
-        status: campaign.status || "Unknown",
-        startDate: campaign.start_date || "",
-        endDate: campaign.end_date || "",
-      };
-    }
-    return null;
-  };
-
-  const getMilestoneInfo = () => {
-    const milestone = (task as any).milestone_details;
-    if (milestone && typeof milestone === "object") {
-      return {
-        description: milestone.description || "No description",
-        dueDate: milestone.due_date || "",
-        status: milestone.status || "Unknown",
-        completionPercentage: milestone.completion_percentage || 0,
-        behindSchedule: milestone.behind_schedule || false,
-      };
-    }
-    return null;
-  };
-
-  const getBrandInfo = () => {
-    const brand = (task as any).brand_info;
-    if (brand && typeof brand === "object") {
-      return {
-        name: brand.name || "Unknown Brand",
-        logoUrl: brand.logo_url || "",
-        status: brand.status || "Unknown",
-      };
-    }
-    return null;
-  };
-
-  const materialUrls = getMaterialUrls();
-  const campaignInfo = getCampaignInfo();
-  const milestoneInfo = getMilestoneInfo();
-  const brandInfo = getBrandInfo();
 
   return (
-    <>
-      <DialogHeader>
+    <div className="flex flex-col h-full max-h-[calc(90vh-2rem)]">
+      <DialogHeader className="shrink-0">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={onBack}>
             ← Back
@@ -483,44 +544,195 @@ const TaskDetailView: React.FC<TaskDetailViewProps> = ({ task, onBack, onSelectF
         </div>
       </DialogHeader>
 
-      <div className="max-h-[70vh] overflow-y-auto mt-4 space-y-6">
+      <div className="flex-1 overflow-y-auto mt-4 space-y-6 min-h-0">
         {/* Task Header */}
         <div className="flex items-start gap-4">
           <div
-            className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+            className="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
             style={{ backgroundColor: getTaskColor(task.type) }}
           >
-            <div className="w-5 h-5 bg-white rounded-full"></div>
+            <div className="w-5 h-5 bg-white rounded-full" />
           </div>
-          <div className="flex-1">
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">{task.name}</h3>
-          </div>
+          <h3 className="text-xl font-semibold text-gray-900">{task.name}</h3>
         </div>
 
-        {/* Task Description */}
-        <div className="bg-white border rounded-lg p-4">
-          <h4 className="font-medium text-gray-900 mb-2">Description</h4>
-          <p className="text-gray-700 leading-relaxed">{getDescription()}</p>
-        </div>
+        {/* Simple Description */}
+        {simpleDescription && (
+          <div className="bg-white border rounded-lg p-4">
+            <h4 className="font-medium text-gray-900 mb-2">Description</h4>
+            <p className="text-gray-700 leading-relaxed">{simpleDescription}</p>
+          </div>
+        )}
 
-        {/* Material URLs */}
-        {materialUrls.length > 0 && (
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-            <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Materials ({materialUrls.length})
+        {/* Rich Content Details */}
+        {showRichContent && contentDetails && (
+          <div className="bg-gradient-to-br from-blue-50 to-white rounded-lg p-4 border border-blue-200">
+            <h4 className="font-medium text-gray-900 mb-4 flex items-center gap-2">
+              <FileText className="h-4 w-4 text-blue-600" />
+              Content Details
+              {contentDetails.isAffiliateContent && (
+                <Badge variant="secondary" className="ml-2 bg-amber-100 text-amber-800">
+                  Affiliate Content
+                </Badge>
+              )}
             </h4>
-            <div className="space-y-2">
-              {materialUrls.map((url, index) => (
-                <a
-                  key={index}
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block text-blue-600 hover:text-blue-800 underline text-sm break-all"
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {contentDetails.productName && (
+                <div className="bg-white p-3 rounded border border-gray-100">
+                  <p className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+                    <Package className="h-3 w-3" />
+                    Product Name
+                  </p>
+                  <p className="font-medium text-gray-900 text-sm">{contentDetails.productName}</p>
+                </div>
+              )}
+              {contentDetails.platform && (
+                <div className="bg-white p-3 rounded border border-gray-100">
+                  <p className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+                    <Globe className="h-3 w-3" />
+                    Platform
+                  </p>
+                  <Badge variant="outline" className="font-medium">
+                    {contentDetails.platform}
+                  </Badge>
+                </div>
+              )}
+              {contentDetails.tagline && (
+                <div className="bg-white p-3 rounded border border-gray-100 md:col-span-2">
+                  <p className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+                    <Tag className="h-3 w-3" />
+                    Tagline
+                  </p>
+                  <p className="font-medium text-gray-900 text-sm italic">
+                    "{contentDetails.tagline}"
+                  </p>
+                </div>
+              )}
+              {contentDetails.creativeNotes && (
+                <div className="bg-white p-3 rounded border border-gray-100 md:col-span-2">
+                  <p className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+                    <Palette className="h-3 w-3" />
+                    Creative Notes
+                  </p>
+                  <p className="font-medium text-gray-900 text-sm">
+                    {contentDetails.creativeNotes}
+                  </p>
+                </div>
+              )}
+              {contentDetails.hashtags.length > 0 && (
+                <div className="bg-white p-3 rounded border border-gray-100 md:col-span-2">
+                  <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                    <Hash className="h-3 w-3" />
+                    Hashtags
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {contentDetails.hashtags.map((tag, i) => (
+                      <Badge
+                        key={i}
+                        variant="secondary"
+                        className="bg-blue-100 text-blue-800 hover:bg-blue-200"
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {contentDetails.trackingLink && (
+                <div className="bg-white p-3 rounded border border-gray-100 md:col-span-2">
+                  <p className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+                    <Link2 className="h-3 w-3" />
+                    Tracking Link
+                  </p>
+                  <a
+                    href={contentDetails.trackingLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                  >
+                    {contentDetails.trackingLink}
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {contentDetails.kpiGoals.length > 0 && (
+              <div className="mt-4">
+                <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                  <Target className="h-3 w-3" />
+                  KPI Goals
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                  {contentDetails.kpiGoals.map((kpi, i) => (
+                    <div
+                      key={i}
+                      className="bg-white p-3 rounded border border-gray-100 hover:border-blue-200 transition-colors"
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium text-gray-700">
+                          {formatFieldName(kpi.metric)}
+                        </span>
+                        <Badge variant="outline" className="text-xs">
+                          {kpi.target}
+                        </Badge>
+                      </div>
+                      {kpi.description && (
+                        <p className="text-xs text-gray-500">{kpi.description}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {contentDetails.materialUrls.length > 0 && (
+              <div className="mt-4">
+                <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                  <FileText className="h-3 w-3" />
+                  Materials ({contentDetails.materialUrls.length})
+                </p>
+                <div className="space-y-2">
+                  {contentDetails.materialUrls.map((url, i) => (
+                    <a
+                      key={i}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 p-2 bg-white rounded border border-gray-100 hover:border-blue-200 hover:bg-blue-50 transition-colors group"
+                    >
+                      <FileText className="h-4 w-4 text-gray-400 group-hover:text-blue-500" />
+                      <span className="text-sm text-gray-700 group-hover:text-blue-700 flex-1 truncate">
+                        {getFileName(url)}
+                      </span>
+                      <ExternalLink className="h-3 w-3 text-gray-400 group-hover:text-blue-500" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Unknown Fields */}
+        {hasUnknownFields && (
+          <div className="bg-gradient-to-br from-slate-50 to-white rounded-lg p-4 border border-slate-200">
+            <h4 className="font-medium text-gray-900 mb-4 flex items-center gap-2">
+              <FileText className="h-4 w-4 text-slate-600" />
+              Additional Information
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {Object.entries(unknownFields!).map(([key, value]) => (
+                <div
+                  key={key}
+                  className={`bg-white p-3 rounded border border-gray-100 ${
+                    typeof value === "object" && value !== null ? "md:col-span-2" : ""
+                  }`}
                 >
-                  Material {index + 1}: {url.split("/").pop() || url}
-                </a>
+                  <p className="text-xs text-gray-500 mb-1">{formatFieldName(key)}</p>
+                  <div className="text-sm">{renderValue(value)}</div>
+                </div>
               ))}
             </div>
           </div>
@@ -535,7 +747,6 @@ const TaskDetailView: React.FC<TaskDetailViewProps> = ({ task, onBack, onSelectF
             </div>
             <p className="font-medium text-gray-900">{task.assigned_to_name}</p>
           </div>
-
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
               <Calendar className="h-4 w-4" />
@@ -543,16 +754,14 @@ const TaskDetailView: React.FC<TaskDetailViewProps> = ({ task, onBack, onSelectF
             </div>
             <p className="font-medium text-gray-900">{formatDate(task.deadline)}</p>
           </div>
-
           <div className="bg-gray-50 p-4 rounded-lg">
-            <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">Status</div>
+            <div className="text-sm text-gray-500 mb-1">Status</div>
             <span
               className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(task.status)}`}
             >
-              {getStatusDisplay(task.status)}
+              {task.status.replace("_", " ")}
             </span>
           </div>
-
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
               <FileText className="h-4 w-4" />
@@ -563,7 +772,7 @@ const TaskDetailView: React.FC<TaskDetailViewProps> = ({ task, onBack, onSelectF
         </div>
 
         {/* Campaign Information */}
-        {campaignInfo && (
+        {campaign && (
           <div className="bg-gradient-to-br from-purple-50 to-white rounded-lg p-4 border border-purple-200">
             <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
               <Briefcase className="h-4 w-4 text-purple-600" />
@@ -572,57 +781,57 @@ const TaskDetailView: React.FC<TaskDetailViewProps> = ({ task, onBack, onSelectF
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="bg-white p-3 rounded border border-gray-100">
                 <p className="text-xs text-gray-500 mb-1">Campaign Name</p>
-                <p className="font-medium text-gray-900 text-sm">{campaignInfo.name}</p>
+                <p className="font-medium text-gray-900 text-sm">{campaign.name || "Unknown"}</p>
               </div>
               <div className="bg-white p-3 rounded border border-gray-100">
                 <p className="text-xs text-gray-500 mb-1">Type</p>
-                <p className="font-medium text-gray-900 text-sm">{campaignInfo.type}</p>
+                <p className="font-medium text-gray-900 text-sm">{campaign.type || "Unknown"}</p>
               </div>
               <div className="bg-white p-3 rounded border border-gray-100">
                 <p className="text-xs text-gray-500 mb-1">Start Date</p>
                 <p className="font-medium text-gray-900 text-sm">
-                  {formatDate(campaignInfo.startDate)}
+                  {formatDate(campaign.start_date)}
                 </p>
               </div>
               <div className="bg-white p-3 rounded border border-gray-100">
                 <p className="text-xs text-gray-500 mb-1">End Date</p>
-                <p className="font-medium text-gray-900 text-sm">
-                  {formatDate(campaignInfo.endDate)}
-                </p>
+                <p className="font-medium text-gray-900 text-sm">{formatDate(campaign.end_date)}</p>
               </div>
               <div className="bg-white p-3 rounded border border-gray-100 md:col-span-2">
                 <p className="text-xs text-gray-500 mb-1">Description</p>
-                <p className="font-medium text-gray-900 text-sm">{campaignInfo.description}</p>
+                <p className="font-medium text-gray-900 text-sm">
+                  {campaign.description || "No description"}
+                </p>
               </div>
             </div>
           </div>
         )}
 
         {/* Brand Information */}
-        {brandInfo && (
+        {brand && (
           <div className="bg-gradient-to-br from-orange-50 to-white rounded-lg p-4 border border-orange-200">
             <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
               <Building2 className="h-4 w-4 text-orange-600" />
               Brand Information
             </h4>
             <div className="flex items-center gap-4">
-              {brandInfo.logoUrl && (
+              {brand.logo_url && (
                 <img
-                  src={brandInfo.logoUrl}
-                  alt={brandInfo.name}
+                  src={brand.logo_url}
+                  alt={brand.name}
                   className="w-16 h-16 rounded-lg object-cover border border-gray-200"
                 />
               )}
               <div className="flex-1">
-                <p className="font-medium text-gray-900 text-lg">{brandInfo.name}</p>
+                <p className="font-medium text-gray-900 text-lg">{brand.name || "Unknown"}</p>
                 <span
                   className={`inline-flex px-2 py-1 rounded-full text-xs font-medium mt-1 ${
-                    brandInfo.status === "ACTIVE"
+                    brand.status === "ACTIVE"
                       ? "bg-green-100 text-green-800"
                       : "bg-gray-100 text-gray-800"
                   }`}
                 >
-                  {brandInfo.status}
+                  {brand.status}
                 </span>
               </div>
             </div>
@@ -630,7 +839,7 @@ const TaskDetailView: React.FC<TaskDetailViewProps> = ({ task, onBack, onSelectF
         )}
 
         {/* Milestone Information */}
-        {milestoneInfo && (
+        {milestone && (
           <div className="bg-gradient-to-br from-green-50 to-white rounded-lg p-4 border border-green-200">
             <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-green-600" />
@@ -639,12 +848,14 @@ const TaskDetailView: React.FC<TaskDetailViewProps> = ({ task, onBack, onSelectF
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="bg-white p-3 rounded border border-gray-100">
                 <p className="text-xs text-gray-500 mb-1">Description</p>
-                <p className="font-medium text-gray-900 text-sm">{milestoneInfo.description}</p>
+                <p className="font-medium text-gray-900 text-sm">
+                  {milestone.description || "No description"}
+                </p>
               </div>
               <div className="bg-white p-3 rounded border border-gray-100">
                 <p className="text-xs text-gray-500 mb-1">Due Date</p>
                 <p className="font-medium text-gray-900 text-sm">
-                  {formatDate(milestoneInfo.dueDate)}
+                  {formatDate(milestone.due_date)}
                 </p>
               </div>
               <div className="bg-white p-3 rounded border border-gray-100">
@@ -653,11 +864,11 @@ const TaskDetailView: React.FC<TaskDetailViewProps> = ({ task, onBack, onSelectF
                   <div className="flex-1 bg-gray-200 rounded-full h-2">
                     <div
                       className="bg-green-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${milestoneInfo.completionPercentage}%` }}
-                    ></div>
+                      style={{ width: `${milestone.completion_percentage || 0}%` }}
+                    />
                   </div>
                   <span className="text-xs font-medium text-gray-900">
-                    {milestoneInfo.completionPercentage}%
+                    {milestone.completion_percentage || 0}%
                   </span>
                 </div>
               </div>
@@ -665,11 +876,11 @@ const TaskDetailView: React.FC<TaskDetailViewProps> = ({ task, onBack, onSelectF
                 <p className="text-xs text-gray-500 mb-1">Status</p>
                 <div className="flex items-center gap-2">
                   <span
-                    className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(milestoneInfo.status)}`}
+                    className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(milestone.status)}`}
                   >
-                    {getStatusDisplay(milestoneInfo.status)}
+                    {milestone.status?.replace("_", " ") || "Unknown"}
                   </span>
-                  {milestoneInfo.behindSchedule && (
+                  {milestone.behind_schedule && (
                     <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
                       Behind Schedule
                     </span>
@@ -681,12 +892,12 @@ const TaskDetailView: React.FC<TaskDetailViewProps> = ({ task, onBack, onSelectF
         )}
       </div>
 
-      <DialogFooter>
+      <DialogFooter className="shrink-0 mt-4 pt-4 border-t">
         <Button className="bg-[#FF9DB0] hover:bg-pink-600 text-white" onClick={onSelectForContent}>
           Create Content for This Task
         </Button>
       </DialogFooter>
-    </>
+    </div>
   );
 };
 

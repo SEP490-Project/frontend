@@ -301,17 +301,20 @@ export const ContentCreationModal: React.FC<ContentCreationModalProps> = ({
                 {loading ? (
                   // Loading skeleton with staggered animation
                   <div className="space-y-2">
-                    {[1, 2, 3].map((i) => (
+                    {[0, 1, 2].map((i) => (
                       <Card
                         key={i}
-                        className="p-4 animate-pulse"
-                        style={{ animationDelay: `${i * 100}ms` }}
+                        className="p-4 animate-in fade-in-0 slide-in-from-bottom-2 duration-300"
+                        style={{
+                          animationDelay: `${i * 75}ms`,
+                          animationFillMode: "backwards",
+                        }}
                       >
                         <div className="flex items-center gap-3">
-                          <Skeleton className="w-10 h-10 rounded" />
+                          <Skeleton className="w-10 h-10 rounded animate-pulse" />
                           <div className="flex-1 space-y-2">
-                            <Skeleton className="h-4 w-3/4" />
-                            <Skeleton className="h-3 w-1/2" />
+                            <Skeleton className="h-4 w-3/4 animate-pulse" />
+                            <Skeleton className="h-3 w-1/2 animate-pulse" />
                           </div>
                         </div>
                       </Card>
@@ -344,12 +347,15 @@ export const ContentCreationModal: React.FC<ContentCreationModalProps> = ({
                       className={cn(
                         "cursor-pointer transition-all duration-200 ease-out",
                         "hover:border-primary hover:shadow-md hover:-translate-y-0.5",
-                        "transform-gpu animate-in fade-in-0 slide-in-from-bottom-2",
+                        "transform-gpu animate-in fade-in-0 slide-in-from-bottom-2 duration-300",
                         selectedTask?.id === task.id
                           ? "border-primary ring-2 ring-primary/20 bg-primary/5 shadow-sm"
                           : "",
                       )}
-                      style={{ animationDelay: `${index * 50}ms` }}
+                      style={{
+                        animationDelay: `${index * 50}ms`,
+                        animationFillMode: "backwards",
+                      }}
                       onClick={() => handleTaskSelect(task)}
                     >
                       <CardContent className="p-4">

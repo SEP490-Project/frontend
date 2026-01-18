@@ -86,6 +86,7 @@ const BasicInfoStep = () => {
     if (existingProduct?.data?.id) return;
 
     const taskData = taskDetailById.data;
+
     limitedForm.reset({
       brand_id: taskData.brand_info?.id || "",
       category_id: "",
@@ -96,7 +97,7 @@ const BasicInfoStep = () => {
         achievable_quantity: 1,
         premiere_date: "",
         availability_start_date: "",
-        availability_end_date: "",
+        availability_end_date: taskData.campaign_details.end_date,
         is_free_shipping: true,
         concept_id: undefined,
       },

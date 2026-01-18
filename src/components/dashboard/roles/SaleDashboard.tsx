@@ -24,17 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  BadgePercent,
-  Banknote,
-  BanknoteArrowDown,
-  ChartLine,
-  Filter,
-  Loader2,
-  UserRound,
-  UserRoundCheck,
-  X,
-} from "lucide-react";
+import { BadgePercent, Banknote, BanknoteArrowDown, Filter, Loader2, X } from "lucide-react";
 import { DatePicker } from "@/components/date-picker";
 import { Button } from "@/components/ui/button";
 import { convertNumberToCurrency } from "@/libs/helper/helper";
@@ -351,7 +341,7 @@ const OverviewTab: React.FC<TabProps> = ({ startDate, endDate, periodGap = "day"
           iconBg="bg-red-100"
           tooltip="Total amount refunded to customers due to returns, cancellations, or product issues"
         />
-        <KPIWidget
+        {/* <KPIWidget
           title="Revenue Growth"
           data={formatCardData.revenue_growth}
           mode="percent"
@@ -359,7 +349,7 @@ const OverviewTab: React.FC<TabProps> = ({ startDate, endDate, periodGap = "day"
           iconColor="text-teal-700"
           iconBg="bg-teal-100"
           tooltip="Percentage change in revenue compared to the previous period, indicating business growth or decline"
-        />
+        /> */}
         <KPIWidget
           title="Average Order Value"
           data={formatCardData.average_order_value}
@@ -369,7 +359,7 @@ const OverviewTab: React.FC<TabProps> = ({ startDate, endDate, periodGap = "day"
           iconBg="bg-purple-100"
           tooltip="Average monetary value of each customer order, indicating customer spending patterns and purchase behavior"
         />
-        <KPIWidget
+        {/* <KPIWidget
           title="New Customers"
           data={formatCardData.new_customer_count}
           icon={<UserRound size={20} />}
@@ -384,7 +374,7 @@ const OverviewTab: React.FC<TabProps> = ({ startDate, endDate, periodGap = "day"
           iconColor="text-emerald-700"
           iconBg="bg-emerald-100"
           tooltip="Number of existing customers who made repeat purchases, indicating customer loyalty and satisfaction"
-        />
+        /> */}
       </div>
 
       {/* Product Type Trend Chart */}

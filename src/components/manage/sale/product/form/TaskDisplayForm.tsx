@@ -1,5 +1,15 @@
+import { Badge } from "@/components/ui/badge";
 import type { SingleTaskResponse } from "@/libs/types/task";
-import { Calendar, TriangleAlert } from "lucide-react";
+import { Calendar, FileText } from "lucide-react";
+import {
+  FaBox,
+  FaBullseye,
+  FaCalendarDays,
+  FaFileLines,
+  FaHashtag,
+  FaLocationDot,
+  FaUpRightFromSquare,
+} from "react-icons/fa6";
 
 const TaskDisplayForm = ({
   taskDetailById,
@@ -8,28 +18,7 @@ const TaskDisplayForm = ({
   taskDetailById: SingleTaskResponse | null;
   detailLoading: boolean;
 }) => {
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
   const task = taskDetailById?.data;
-  const isOverdue = task?.deadline
-    ? new Date(task.deadline) < new Date() && task?.status?.toLowerCase() !== "completed"
-    : false;
 
   if (detailLoading) {
     return (
@@ -53,374 +42,328 @@ const TaskDisplayForm = ({
     );
   }
 
+  const renderMaterials = (description: any) => {
+    const materials = [];
+
+    // Check for material_url array
+    if (
+      description?.material_url &&
+      Array.isArray(description.material_url) &&
+      description.material_url.length > 0
+    ) {
+      materials.push(...description.material_url);
+    }
+
+    // Check for materials array in structured data
+    if (
+      description?.materials &&
+      Array.isArray(description.materials) &&
+      description.materials.length > 0
+    ) {
+      materials.push(...description.materials);
+    }
+
+    // Check for material_urls in structured data
+    if (
+      description?.material_urls &&
+      Array.isArray(description.material_urls) &&
+      description.material_urls.length > 0
+    ) {
+      materials.push(...description.material_urls);
+    }
+
+    if (materials.length === 0) return null;
+
+    return (
+      <div className="mt-4 bg-blue-50 p-4 rounded-lg border border-blue-200">
+        <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+          <FileText className="h-4 w-4" />
+          Materials ({materials.length})
+        </h4>
+        <div className="space-y-2">
+          {materials.map((material, index) => (
+            <a
+              key={index}
+              href={material}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs hover:bg-blue-200 transition-colors"
+            >
+              <FaUpRightFromSquare className="h-3 w-3" />
+              Material {index + 1}
+            </a>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderTaskDetails = (description: any) => {
+    if (!description || typeof description !== "object") return null;
+
+    // Handle different task types based on the JSON structure
+    if (description.advertised_item_id || description.name) {
+      // Advertising/Affiliate Content Task
+      return (
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+            <FaFileLines className="h-4 w-4" />
+            Advertised Item Details
+          </h3>
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 space-y-3">
+            {description.name && (
+              <div className="flex items-start gap-2">
+                <span className="font-medium text-sm text-gray-700">Product:</span>
+                <span className="text-sm text-gray-600">{description.name}</span>
+              </div>
+            )}
+            {description.platform && (
+              <div className="flex items-start gap-2">
+                <span className="font-medium text-sm text-gray-700">Platform:</span>
+                <span className="text-sm text-gray-600">{description.platform}</span>
+              </div>
+            )}
+            {description.tagline && (
+              <div className="flex items-start gap-2">
+                <span className="font-medium text-sm text-gray-700">Tagline:</span>
+                <span className="text-sm text-gray-600">{description.tagline}</span>
+              </div>
+            )}
+            {description.creative_notes && (
+              <div className="flex items-start gap-2">
+                <span className="font-medium text-sm text-gray-700">Creative Notes:</span>
+                <span className="text-sm text-gray-600">{description.creative_notes}</span>
+              </div>
+            )}
+            {description.hashtags && description.hashtags.length > 0 && (
+              <div className="flex items-start gap-2">
+                <FaHashtag className="h-4 w-4 text-blue-600 mt-0.5" />
+                <div className="flex flex-wrap gap-1">
+                  {description.hashtags.map((tag: string, idx: number) => (
+                    <Badge key={idx} variant="outline" className="text-xs">
+                      #{tag}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+            {description.tracking_link && (
+              <div className="flex items-start gap-2">
+                <span className="font-medium text-sm text-gray-700">Tracking Link:</span>
+                <a
+                  href={description.tracking_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                >
+                  {description.tracking_link}
+                  <FaUpRightFromSquare className="h-3 w-3" />
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    if (description.event_id || description.event_name) {
+      // Brand Ambassador Event Task
+      return (
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+            <FaCalendarDays className="h-4 w-4" />
+            Event Details
+          </h3>
+          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 space-y-3">
+            {description.event_name && (
+              <div className="flex items-start gap-2">
+                <span className="font-medium text-sm text-gray-700">Event:</span>
+                <span className="text-sm text-gray-600">{description.event_name}</span>
+              </div>
+            )}
+            {description.event_date && (
+              <div className="flex items-start gap-2">
+                <span className="font-medium text-sm text-gray-700">Date:</span>
+                <span className="text-sm text-gray-600">{description.event_date}</span>
+              </div>
+            )}
+            {description.event_duration && (
+              <div className="flex items-start gap-2">
+                <span className="font-medium text-sm text-gray-700">Duration:</span>
+                <span className="text-sm text-gray-600">{description.event_duration}</span>
+              </div>
+            )}
+            {description.location && (
+              <div className="flex items-start gap-2">
+                <FaLocationDot className="h-4 w-4 text-red-600 mt-0.5" />
+                <span className="text-sm text-gray-600">{description.location}</span>
+              </div>
+            )}
+            {description.activities && description.activities.length > 0 && (
+              <div>
+                <span className="font-medium text-sm text-gray-700 block mb-2">Activities:</span>
+                <ul className="list-disc list-inside space-y-1 ml-4">
+                  {description.activities.map((activity: string, idx: number) => (
+                    <li key={idx} className="text-sm text-gray-600">
+                      {activity}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {description.representation_rules && description.representation_rules.length > 0 && (
+              <div>
+                <span className="font-medium text-sm text-gray-700 block mb-2">
+                  Representation Rules:
+                </span>
+                <ul className="list-disc list-inside space-y-1 ml-4">
+                  {description.representation_rules.map((rule: string, idx: number) => (
+                    <li key={idx} className="text-sm text-gray-600">
+                      {rule}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    if (
+      description.is_product_creation_task === true ||
+      description.product_id ||
+      description.product_name
+    ) {
+      // Co-Producing Product Task
+      return (
+        <div className="space-y-4">
+          <div className="bg-violet-50 border border-violet-200 rounded-lg p-4 space-y-3">
+            <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+              <FaBox className="h-4 w-4" />
+              Product Details
+            </h3>
+            {description.product_name && (
+              <div className="flex items-start gap-2">
+                <span className="font-medium text-sm text-gray-700">Product:</span>
+                <span className="text-sm text-gray-600">{description.product_name}</span>
+              </div>
+            )}
+            {description.product_description && (
+              <div className="flex items-start gap-2">
+                <span className="font-medium text-sm text-gray-700">Description:</span>
+                <span className="text-sm text-gray-600">{description.product_description}</span>
+              </div>
+            )}
+            {description.subtasks && description.subtasks.length > 0 && (
+              <div>
+                <span className="font-medium text-sm text-gray-700 block mb-2">Subtasks:</span>
+                <ul className="list-disc list-inside space-y-1 ml-4">
+                  {description.subtasks.map((subtask: string, idx: number) => (
+                    <li key={idx} className="text-sm text-gray-600">
+                      {subtask}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    if (
+      description.is_product_creation_task === false ||
+      description.concept_id ||
+      description.concept_name
+    ) {
+      // Co-Producing Concept Task
+      return (
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+            <FaBullseye className="h-4 w-4" />
+            Concept Details
+          </h3>
+          <div className="bg-violet-50 border border-violet-200 rounded-lg p-4 space-y-3">
+            {description.concept_name && (
+              <div className="flex items-start gap-2">
+                <span className="font-medium text-sm text-gray-700">Concept:</span>
+                <span className="text-sm text-gray-600">{description.concept_name}</span>
+              </div>
+            )}
+            {description.concept_description && (
+              <div className="flex items-start gap-2">
+                <span className="font-medium text-sm text-gray-700">Description:</span>
+                <span className="text-sm text-gray-600">{description.concept_description}</span>
+              </div>
+            )}
+            {description.related_product_name && (
+              <div className="flex items-start gap-2">
+                <span className="font-medium text-sm text-gray-700">Related Product:</span>
+                <span className="text-sm text-gray-600">{description.related_product_name}</span>
+              </div>
+            )}
+            {description.platform && (
+              <div className="flex items-start gap-2">
+                <span className="font-medium text-sm text-gray-700">Platform:</span>
+                <span className="text-sm text-gray-600">{description.platform}</span>
+              </div>
+            )}
+            {description.hashtags && description.hashtags.length > 0 && (
+              <div className="flex items-start gap-2">
+                <FaHashtag className="h-4 w-4 text-blue-600 mt-0.5" />
+                <div className="flex flex-wrap gap-1">
+                  {description.hashtags.map((tag: string, idx: number) => (
+                    <Badge key={idx} variant="outline" className="text-xs">
+                      #{tag}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // Display KPI Goals if available (common across all types)
+    if (description.kpi_goals && description.kpi_goals.length > 0) {
+      return (
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+            <FaBullseye className="h-4 w-4" />
+            KPI Goals
+          </h3>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
+            {description.kpi_goals.map((kpi: any, idx: number) => (
+              <div
+                key={idx}
+                className="flex items-center justify-between p-2 bg-white rounded border"
+              >
+                <span className="text-sm font-medium text-gray-700">
+                  {kpi.metric?.replace(/_/g, " ")}
+                </span>
+                <span className="text-sm text-gray-600">{kpi.target}</span>
+                {kpi.description && (
+                  <span className="text-xs text-gray-500">({kpi.description})</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <div className="bg-white p-6 rounded-lg mt-6 shadow-md mb-12">
       <h2 className="text-lg font-semibold mb-4">Task Information</h2>
 
-      {/* Task Name */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">
-        <label className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end">
-          Task Name
-        </label>
-        <div className="col-span-3">
-          <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md border border-gray-200">
-            {task.name || "N/A"}
-          </p>
-        </div>
-      </div>
+      {renderTaskDetails(task.description)}
 
-      {/* Task Type */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">
-        <label className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end">
-          Task Type
-        </label>
-        <div className="col-span-3">
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
-            {task.type?.toUpperCase() || "N/A"}
-          </span>
-        </div>
-      </div>
-
-      {/* Status */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">
-        <label className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end">
-          Status
-        </label>
-        <div className="col-span-3">
-          <span
-            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-              task.status === "COMPLETED"
-                ? "bg-green-100 text-green-800 border border-green-200"
-                : task.status === "IN_PROGRESS"
-                  ? "bg-blue-100 text-blue-800 border border-blue-200"
-                  : task.status === "PENDING"
-                    ? "bg-yellow-100 text-yellow-800 border border-yellow-200"
-                    : "bg-gray-100 text-gray-800 border border-gray-200"
-            }`}
-          >
-            {task.status?.toUpperCase() || "N/A"}
-          </span>
-        </div>
-      </div>
-
-      {/* Description */}
-      {task.description && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">
-          <label className="text-sm font-medium text-gray-700 text-right items-start flex justify-start md:justify-end pt-2">
-            Description
-          </label>
-          <div className="col-span-3">
-            <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md border border-gray-200 min-h-[40px] whitespace-pre-wrap">
-              {typeof task.description === "string"
-                ? task.description
-                : task.description?.description ||
-                  task.description?.product_description ||
-                  task.description?.product_name ||
-                  task.description?.event_name ||
-                  "No description provided"}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Deadline */}
-      {task.deadline && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">
-          <label className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end">
-            Deadline
-          </label>
-          <div className="col-span-3">
-            <p
-              className={`text-sm px-3 py-2 rounded-md border ${
-                isOverdue
-                  ? "bg-red-50 text-red-900 border-red-200 font-medium"
-                  : "bg-gray-50 text-gray-900 border-gray-200"
-              }`}
-            >
-              {isOverdue && <TriangleAlert className="inline h-4 w-4 mr-1" />}
-              {formatDate(task.deadline)}
-              {isOverdue && <span className="ml-2 text-xs">(Overdue)</span>}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Assigned To */}
-      {task.assigned_to_name && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">
-          <label className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end">
-            Assigned To
-          </label>
-          <div className="col-span-3">
-            <div className="bg-gray-50 px-3 py-2 rounded-md border border-gray-200">
-              <p className="text-sm text-gray-900 font-medium">{task.assigned_to_name}</p>
-              {task.assigned_to_role && (
-                <p className="text-xs text-gray-600 mt-1">
-                  Role: {task.assigned_to_role.toUpperCase()}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Created Information */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">
-        <label className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end">
-          Created
-        </label>
-        <div className="col-span-3">
-          <div className="bg-gray-50 px-3 py-2 rounded-md border border-gray-200">
-            <p className="text-sm text-gray-900">{formatDateTime(task.created_at)}</p>
-            {task.created_by_name && (
-              <p className="text-xs text-gray-600 mt-1">By: {task.created_by_name}</p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Updated Information */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">
-        <label className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end">
-          Last Updated
-        </label>
-        <div className="col-span-3">
-          <div className="bg-gray-50 px-3 py-2 rounded-md border border-gray-200">
-            <p className="text-sm text-gray-900">{formatDateTime(task.updated_at)}</p>
-            {task.updated_by_name && (
-              <p className="text-xs text-gray-600 mt-1">By: {task.updated_by_name}</p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Campaign Details Section */}
-      {task.campaign_details && (
-        <>
-          <div className="col-span-4 mt-8 mb-4">
-            <h3 className="text-base font-semibold text-gray-900 border-b pb-2">
-              Campaign Information
-            </h3>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">
-            <label className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end">
-              Campaign Name
-            </label>
-            <div className="col-span-3">
-              <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md border border-gray-200">
-                {task.campaign_details.name}
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">
-            <label className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end">
-              Campaign Type
-            </label>
-            <div className="col-span-3">
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">
-                {task.campaign_details.type?.toUpperCase()}
-              </span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">
-            <label className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end">
-              Campaign Status
-            </label>
-            <div className="col-span-3">
-              <span
-                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                  task.campaign_details.status === "ACTIVE"
-                    ? "bg-green-100 text-green-800 border border-green-200"
-                    : task.campaign_details.status === "PENDING"
-                      ? "bg-yellow-100 text-yellow-800 border border-yellow-200"
-                      : "bg-gray-100 text-gray-800 border border-gray-200"
-                }`}
-              >
-                {task.campaign_details.status?.toUpperCase()}
-              </span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">
-            <label className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end">
-              Campaign Period
-            </label>
-            <div className="col-span-3">
-              <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md border border-gray-200">
-                {new Date(task.campaign_details.start_date).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric",
-                })}{" "}
-                -{" "}
-                {new Date(task.campaign_details.end_date).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric",
-                })}
-              </p>
-            </div>
-          </div>
-
-          {task.campaign_details.description && (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">
-              <label className="text-sm font-medium text-gray-700 text-right items-start flex justify-start md:justify-end pt-2">
-                Campaign Description
-              </label>
-              <div className="col-span-3">
-                <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md border border-gray-200 min-h-[40px] whitespace-pre-wrap">
-                  {task.campaign_details.description}
-                </p>
-              </div>
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Brand Information */}
-      {task.brand_info && (
-        <>
-          <div className="col-span-4 mt-8 mb-4">
-            <h3 className="text-base font-semibold text-gray-900 border-b pb-2">
-              Brand Information
-            </h3>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">
-            <label className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end">
-              Brand Name
-            </label>
-            <div className="col-span-3">
-              <div className="flex items-center gap-3 bg-gray-50 px-3 py-2 rounded-md border border-gray-200">
-                {task.brand_info.logo_url && (
-                  <img
-                    src={task.brand_info.logo_url}
-                    alt={task.brand_info.name}
-                    className="h-8 w-8 rounded object-cover"
-                  />
-                )}
-                <div className="flex-1">
-                  <p className="text-sm text-gray-900 font-medium">{task.brand_info.name}</p>
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium mt-1 ${
-                      task.brand_info.status === "ACTIVE"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    {task.brand_info.status}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* Milestone Details Section */}
-      {task.milestone_details && (
-        <>
-          <div className="col-span-4 mt-8 mb-4">
-            <h3 className="text-base font-semibold text-gray-900 border-b pb-2">
-              Milestone Information
-            </h3>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">
-            <label className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end">
-              Milestone Status
-            </label>
-            <div className="col-span-3">
-              <span
-                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                  task.milestone_details.status === "COMPLETED"
-                    ? "bg-green-100 text-green-800 border border-green-200"
-                    : task.milestone_details.status === "IN_PROGRESS"
-                      ? "bg-blue-100 text-blue-800 border border-blue-200"
-                      : "bg-yellow-100 text-yellow-800 border border-yellow-200"
-                }`}
-              >
-                {task.milestone_details.status?.toUpperCase()}
-              </span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">
-            <label className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end">
-              Completion Progress
-            </label>
-            <div className="col-span-3">
-              <div className="bg-gray-50 px-3 py-2 rounded-md border border-gray-200">
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full transition-all"
-                      style={{
-                        width: `${task.milestone_details.completion_percentage}%`,
-                      }}
-                    />
-                  </div>
-                  <span className="text-sm font-medium text-gray-900">
-                    {task.milestone_details.completion_percentage}%
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">
-            <label className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end">
-              Due Date
-            </label>
-            <div className="col-span-3">
-              <p
-                className={`text-sm px-3 py-2 rounded-md border ${
-                  task.milestone_details.behind_schedule
-                    ? "bg-red-50 text-red-900 border-red-200 font-medium"
-                    : "bg-gray-50 text-gray-900 border-gray-200"
-                }`}
-              >
-                {task.milestone_details.behind_schedule && (
-                  <TriangleAlert className="inline h-4 w-4 mr-1" />
-                )}
-                {formatDate(task.milestone_details.due_date)}
-                {task.milestone_details.behind_schedule && (
-                  <span className="ml-2 text-xs">(Behind Schedule)</span>
-                )}
-              </p>
-            </div>
-          </div>
-
-          {task.milestone_details.completed_at && (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">
-              <label className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end">
-                Completed At
-              </label>
-              <div className="col-span-3">
-                <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md border border-gray-200">
-                  {formatDateTime(task.milestone_details.completed_at)}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {task.milestone_details.description && (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">
-              <label className="text-sm font-medium text-gray-700 text-right items-start flex justify-start md:justify-end pt-2">
-                Milestone Description
-              </label>
-              <div className="col-span-3">
-                <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md border border-gray-200 min-h-[40px] whitespace-pre-wrap">
-                  {task.milestone_details.description}
-                </p>
-              </div>
-            </div>
-          )}
-        </>
-      )}
+      {renderMaterials(task.description)}
 
       {/* Content & Product IDs */}
       {((task.content_ids && task.content_ids.length > 0) ||

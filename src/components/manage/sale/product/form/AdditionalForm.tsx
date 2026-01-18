@@ -137,6 +137,7 @@ export const AdditionalInfoForm = ({ form }: AdditionalInfoFormProps) => {
               value={field.value || ""}
               onChange={field.onChange}
               minDate={today}
+              maxDate={endSaleDate || undefined}
               placeholder="Select premiere date"
               className="col-span-3"
             />
@@ -160,6 +161,7 @@ export const AdditionalInfoForm = ({ form }: AdditionalInfoFormProps) => {
               value={field.value || ""}
               onChange={field.onChange}
               minDate={premiereDate || today}
+              maxDate={endSaleDate || undefined}
               placeholder="Select start sale date"
               disabled={!premiereDate}
               className="col-span-3"
@@ -185,7 +187,7 @@ export const AdditionalInfoForm = ({ form }: AdditionalInfoFormProps) => {
               onChange={field.onChange}
               minDate={startSaleDate || today}
               placeholder="Select end sale date"
-              disabled={!startSaleDate}
+              disabled={true}
               className="col-span-3"
             />
           )}

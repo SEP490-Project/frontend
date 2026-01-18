@@ -177,7 +177,7 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order }) => {
             <Badge
               className={`ml-2 ${order.is_self_picked_up ? "bg-orange-100 text-orange-800 border border-orange-200" : "bg-blue-100 text-blue-800 border border-blue-200"}`}
             >
-              {order.is_self_picked_up ? "AT PLACE" : "SHIPPING TO ADDRESS"}
+              {order.is_self_picked_up ? "In-Store Pickup" : "Home Delivery"}
             </Badge>
           </div>
           {!order.is_self_picked_up && (

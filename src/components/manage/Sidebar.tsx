@@ -340,10 +340,13 @@ const Sidebar: React.FC<SidebarProps> = ({
     ],
   };
 
-  const otherTabs: TabItem[] = [
-    { href: "/manage/account", label: "Account", icon: <FaRegUser size={18} /> },
-    { href: "/manage/ghn-mock", label: "GHN Mocking", icon: <FaShippingFast size={18} /> },
-  ];
+  const otherTabs: Record<string, TabItem[]> = {
+    DEFAULT: [{ href: "/manage/account", label: "Account", icon: <FaRegUser size={18} /> }],
+    ADMIN: [
+      { href: "/manage/account", label: "Account", icon: <FaRegUser size={18} /> },
+      { href: "/manage/ghn-mock", label: "GHN Mocking", icon: <FaShippingFast size={18} /> },
+    ],
+  };
 
   return (
     <>
@@ -381,7 +384,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           />
           <NavSection
             title="Others"
-            items={otherTabs}
+            items={otherTabs[role === "ADMIN" ? "ADMIN" : "DEFAULT"] || []}
             collapsed={collapsed}
             pathname={pathname}
             roleParam={roleParam}
@@ -454,7 +457,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 />
                 <NavSection
                   title="Others"
-                  items={otherTabs}
+                  items={otherTabs[role === "ADMIN" ? "ADMIN" : "DEFAULT"] || []}
                   collapsed={false}
                   pathname={pathname}
                   roleParam={roleParam}

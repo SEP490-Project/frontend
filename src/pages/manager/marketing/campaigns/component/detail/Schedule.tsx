@@ -30,6 +30,8 @@ import TaskDetailSlider from "@/components/manage/marketing/task/TaskDetailSlide
 import { formatDate } from "@/libs/helper/helper";
 import { format } from "date-fns";
 import type { TaskListMarketing } from "@/libs/types/task";
+import { useAuth } from "@/libs/hooks/useAuth";
+import { toast } from "sonner";
 
 interface ScheduleProps {
   campaignId?: string;
@@ -39,6 +41,7 @@ const Schedule: React.FC<ScheduleProps> = ({ campaignId }) => {
   const dispatch = useAppDispatch();
   const { id } = useParams<{ id: string }>();
   const currentCampaignId = campaignId || id;
+  const { user } = useAuth();
 
   const { taskDetail, detailLoading } = useTaskMarketing();
   const { campaignDetail } = useCampaign();
@@ -210,16 +213,8 @@ const Schedule: React.FC<ScheduleProps> = ({ campaignId }) => {
           }),
         );
 
-        // Reload task list to get updated assignment
-        if (currentCampaignId) {
-          dispatch(
-            getTaskList({
-              page: 1,
-              limit: 100,
-              campaign_id: currentCampaignId,
-            }),
-          );
-        }
+        // Reload task list to get updated assignment (fetch lại tháng hiện tại)
+        await fetchMonthTasks();
 
         // Refresh task detail if currently viewing
         if (showDetailSlider && selectedTask) {
@@ -229,14 +224,15 @@ const Schedule: React.FC<ScheduleProps> = ({ campaignId }) => {
         setShowTaskDetail(false);
         setSelectedUser("");
         setCurrentTaskType("");
+
         // Reload the task list modal to show updated assignment
         if (selectedDate) {
-          const tasksForDate = getTasksForDate(selectedDate);
-          if (tasksForDate.length > 0) {
-            setShowModal(true);
-          }
+          setShowModal(true);
         }
+
+        toast.success("Task assigned successfully!");
       } catch (error) {
+        toast.error("Failed to assign task!");
         console.error("Failed to assign task:", error);
       }
     }
@@ -396,11 +392,15 @@ const Schedule: React.FC<ScheduleProps> = ({ campaignId }) => {
                           {getTaskIcon(task.type)}
                         </div>
                         <div className="flex-1 space-y-2">
-                          <div className="flex items-start justify-between">
+                          <div className="flex items-start justify-between gap-4">
                             <h4 className="font-semibold text-gray-900">{task.name}</h4>
                             <Badge className={getStatusBadgeColor(task.status)}>
                               {task.status}
                             </Badge>
+                          </div>
+
+                          <div className="text-xs text-gray-500 mb-1">
+                            Task Type: <span className="font-medium">{task.type}</span>
                           </div>
 
                           <div className="space-y-1 text-sm text-gray-600">
@@ -422,7 +422,7 @@ const Schedule: React.FC<ScheduleProps> = ({ campaignId }) => {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  className="text-xs flex-1"
+                                  className="text-xs"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleOpenTaskDetail(task);
@@ -434,24 +434,26 @@ const Schedule: React.FC<ScheduleProps> = ({ campaignId }) => {
                               </TooltipTrigger>
                               <TooltipContent>View full task details</TooltipContent>
                             </Tooltip>
-                            {campaignDetail?.status === "RUNNING" && !task.assigned_to_id && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    size="sm"
-                                    className="text-xs flex-1 bg-primary hover:bg-primary/90"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleOpenAssignment(task);
-                                    }}
-                                  >
-                                    <FaUserPlus className="h-3 w-3 mr-1" />
-                                    Assign Task
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Assign this task to a team member</TooltipContent>
-                              </Tooltip>
-                            )}
+                            {campaignDetail?.status === "RUNNING" &&
+                              !task.assigned_to_id &&
+                              user?.role === "MARKETING_STAFF" && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      size="sm"
+                                      className="text-xs bg-primary hover:bg-primary/90"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleOpenAssignment(task);
+                                      }}
+                                    >
+                                      <FaUserPlus className="h-3 w-3 mr-1" />
+                                      Assign Task
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Assign this task to a team member</TooltipContent>
+                                </Tooltip>
+                              )}
                           </div>
                         </div>
                       </div>

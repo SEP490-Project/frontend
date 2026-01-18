@@ -59,41 +59,14 @@ const contractSchema = yup.object({
       const date = new Date(value);
       return !isNaN(date.getTime());
     })
-    .test(
-      "signed-date-validation",
-      "Signed date must be before the contract start date",
-      function (value) {
-        if (!value) return true;
-
-        const parentData = this.parent || this.options?.context || {};
-        const { start_date, end_date } = parentData;
-
-        if (!start_date || !end_date) return true;
-
-        const signed = new Date(value);
-        const start = new Date(start_date);
-        const end = new Date(end_date);
-
-        signed.setHours(0, 0, 0, 0);
-        start.setHours(0, 0, 0, 0);
-        end.setHours(0, 0, 0, 0);
-
-        // Cannot be between start and end date (inclusive)
-        if (signed > start && signed <= end) {
-          return this.createError({
-            message: "Signed date cannot be during the contract period",
-          });
-        }
-        // Cannot be after end date
-        if (signed > end) {
-          return this.createError({
-            message: "Signed date cannot be after the contract ends",
-          });
-        }
-
-        return true;
-      },
-    ),
+    .test("signed-date-not-in-future", "Signed date cannot be in the future", function (value) {
+      if (!value) return true;
+      const signed = new Date(value);
+      const today = new Date();
+      signed.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+      return signed.getTime() <= today.getTime();
+    }),
 
   // Representative fields - snake_case
   brand_representative_name: yup.string().required("Please enter the brand representative's name"),

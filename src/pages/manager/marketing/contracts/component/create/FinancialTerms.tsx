@@ -19,6 +19,8 @@ import {
   BrandAmbassadorScope,
   CoProducingScope,
 } from "./financialTermScope";
+import ContractUploader from "@/components/global/ContractUploader";
+import { useAuth } from "@/libs/hooks/useAuth";
 
 interface FinancialTermsProps {
   formData: any;
@@ -48,14 +50,12 @@ const CostBreakdown: React.FC<{
   const format = (n = 0) => new Intl.NumberFormat("vi-VN").format(n);
   const subtotal = breakdown.reduce((s, i) => s + (Number(i.value) || 0), 0);
 
+  // Disable add if subtotal >= total (like add milestone logic)
+  const canAddItem = subtotal < total;
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <Label className="text-sm font-semibold text-gray-800">Cost Breakdown</Label>
-        <Button onClick={addItem} variant="outline" size="sm" className="border-dashed border-2">
-          <FaPlus className="mr-2 h-4 w-4" /> Add Item
-        </Button>
-      </div>
+      <Label className="text-sm font-semibold text-gray-800">Cost Breakdown</Label>
 
       <div className="space-y-3">
         {breakdown.map((item) => (
@@ -95,6 +95,19 @@ const CostBreakdown: React.FC<{
         ))}
       </div>
 
+      {/* Add Item button below the list, aligned with summary bar */}
+      <div className="mt-2">
+        <Button
+          onClick={addItem}
+          variant="outline"
+          size="lg"
+          className="w-full border-dashed border-2"
+          disabled={!canAddItem}
+        >
+          <FaPlus className="mr-2 h-4 w-4" /> Add Item
+        </Button>
+      </div>
+
       <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 flex justify-between text-sm mt-3">
         <span className="font-medium text-indigo-800">Subtotal:</span>
         <span className="font-bold text-indigo-900">{format(subtotal)} VND</span>
@@ -124,6 +137,7 @@ const FinancialOverview: React.FC<{
   const total = financial_terms.total_cost ?? 0;
   const percent = formData.deposit_percent ?? 0;
   const paid = formData.is_deposit_paid ?? false;
+  const { user } = useAuth();
 
   const deposit = (total * percent) / 100;
   const remaining = total - deposit;
@@ -151,6 +165,8 @@ const FinancialOverview: React.FC<{
 
     return [];
   };
+
+  const depositProofUrls = formData.deposit_proof_url || [];
 
   return (
     <Card className="border border-gray-200 shadow-md overflow-hidden">
@@ -188,8 +204,10 @@ const FinancialOverview: React.FC<{
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
+            {/* LEFT */}
+            <div className="space-y-1">
               <Label className="text-sm font-medium">Deposit Percentage (% - Max 50%)</Label>
+
               <Input
                 type="number"
                 min={0}
@@ -200,10 +218,7 @@ const FinancialOverview: React.FC<{
                 placeholder="10"
                 onChange={(e) => {
                   let newPercent = Number(e.target.value) || 0;
-
-                  if (newPercent > 50) {
-                    newPercent = 50;
-                  }
+                  if (newPercent > 50) newPercent = 50;
 
                   const newDepositAmount = Math.round((total * newPercent) / 100);
 
@@ -213,11 +228,12 @@ const FinancialOverview: React.FC<{
                   });
                 }}
               />
+
               {errors.deposit_percent && (
-                <p className="text-xs text-red-500 mt-1">{errors.deposit_percent}</p>
+                <p className="text-xs text-red-500">{errors.deposit_percent}</p>
               )}
               {percent > 50 && (
-                <p className="text-xs text-orange-500 mt-1">Maximum deposit is 50% of total cost</p>
+                <p className="text-xs text-orange-500">Maximum deposit is 50% of total cost</p>
               )}
             </div>
 
@@ -234,6 +250,45 @@ const FinancialOverview: React.FC<{
               </Label>
             </div>
           </div>
+
+          {paid && (
+            <div className="space-y-1">
+              <ContractUploader
+                userId={user?.id || "unknown"}
+                accept="image/*,video/*,.pdf,.doc,.docx,.ppt,.pptx"
+                multiple
+                maxFiles={10}
+                maxSize={100}
+                allowedTypes={[
+                  "jpg",
+                  "jpeg",
+                  "png",
+                  "webp",
+                  "mp4",
+                  "mov",
+                  "avi",
+                  "doc",
+                  "docx",
+                  "pdf",
+                  "ppt",
+                  "pptx",
+                ]}
+                title="Upload deposit proof"
+                context="deposit-proof"
+                initialUrls={depositProofUrls}
+                onUploadComplete={(urls) => {
+                  const newUrls = [...depositProofUrls, ...urls];
+                  onUpdate({ deposit_proof_url: newUrls });
+                }}
+                onFilesRemove={(removedUrls) => {
+                  const filtered = depositProofUrls.filter(
+                    (url: any) => !removedUrls.includes(url),
+                  );
+                  onUpdate({ deposit_proof_url: filtered });
+                }}
+              />
+            </div>
+          )}
 
           <div>
             <Label className="text-sm font-medium">Deposit Amount (VND)</Label>

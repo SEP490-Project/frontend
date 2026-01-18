@@ -181,7 +181,6 @@ const PreOrder: React.FC = () => {
                 <TableHead className="font-semibold">Pre-Order ID</TableHead>
                 <TableHead className="font-semibold">Customer</TableHead>
                 <TableHead className="font-semibold">Total Amount</TableHead>
-                <TableHead className="font-semibold">Type</TableHead>
                 <TableHead className="font-semibold">Status</TableHead>
                 <TableHead className="font-semibold">Created At</TableHead>
                 <TableHead className="font-semibold">Actions</TableHead>
@@ -235,12 +234,6 @@ const PreOrder: React.FC = () => {
                       <div className="font-semibold text-gray-900">
                         {formatCurrency(preOrder.total_amount)}
                       </div>
-                    </TableCell>
-
-                    <TableCell className="py-4">
-                      <Badge className="bg-purple-100 text-purple-800 border border-purple-200 hover:bg-purple-200">
-                        PRE-ORDER
-                      </Badge>
                     </TableCell>
 
                     <TableCell className="py-4">

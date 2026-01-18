@@ -182,7 +182,7 @@ const PreOrderDetail: React.FC<PreOrderDetailProps> = ({ preOrder }) => {
             <Badge
               className={`ml-2 ${preOrder.is_self_picked_up ? "bg-orange-100 text-orange-800 border border-orange-200" : "bg-blue-100 text-blue-800 border border-blue-200"}`}
             >
-              {preOrder.is_self_picked_up ? "SELF PICKUP" : "DELIVERY"}
+              {preOrder.is_self_picked_up ? "In-Store Pickup" : "Home Delivery"}
             </Badge>
           </div>
           {!preOrder.is_self_picked_up && (

@@ -587,7 +587,7 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
         <div className="flex items-center gap-4">
           <motion.div
             whileHover={{ rotate: 5, scale: 1.1 }}
-            className="w-10 h-10 rounded-full flex items-center justify-center shadow-md"
+            className="w-10 h-10 rounded-full flex items-center justify-center shadow-md flex-shrink-0"
             style={{ backgroundColor: getTaskColor(selectedTask.type) }}
           >
             <div className="w-4 h-4 bg-white rounded-full"></div>

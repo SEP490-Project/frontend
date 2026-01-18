@@ -45,21 +45,19 @@ export interface Schedule {
 // Schedule item response (for list views)
 export interface ScheduleItem {
   schedule_id: string;
-  content_channel_id: string;
-  content_id: string;
-  content_title: string;
-  content_type: string;
-  channel_id: string;
-  channel_name: string;
-  channel_code: string;
+  reference_id: string;
+  reference_type?: string;
+  type: string;
   scheduled_at: string;
-  status: string;
+  status: ScheduleStatus;
   retry_count: number;
   last_error?: string;
   executed_at?: string;
   created_at: string;
   created_by: string;
-  created_by_id: string;
+  created_by_name?: string;
+  updated_at?: string;
+  content_details?: ContentScheduleDetails;
 }
 
 // Filter parameters for schedule listing

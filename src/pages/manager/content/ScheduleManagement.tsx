@@ -1,15 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { format } from "date-fns";
-import {
-  Calendar,
-  Clock,
-  Filter,
-  RefreshCw,
-  X,
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-} from "lucide-react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { format, parseISO, isAfter, isBefore, startOfDay, endOfDay } from "date-fns";
+import { Calendar, Clock, Filter, RefreshCw, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useSelector } from "react-redux";
 
 import { Button } from "@/components/ui/button";
@@ -32,10 +23,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DatePicker } from "@/components/date-picker";
-import { WarningDialog } from "@/components/global";
 import { useAppDispatch, type RootState } from "@/libs/stores";
-import { fetchSchedules, cancelSchedule } from "@/libs/stores/scheduleManager";
-import type { ScheduleFilterParams, ScheduleStatus, ScheduleItem } from "@/libs/types/schedule";
+import { fetchSchedules } from "@/libs/stores/scheduleManager";
+import type { ScheduleStatus } from "@/libs/types/schedule";
 
 const STATUS_OPTIONS: { value: ScheduleStatus | "ALL"; label: string }[] = [
   { value: "ALL", label: "All Statuses" },
@@ -63,71 +53,91 @@ const getStatusColor = (status: string): string => {
   }
 };
 
+const ITEMS_PER_PAGE = 20;
+
 export const ScheduleManagement: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { schedules, pagination, loading, cancelLoading } = useSelector(
-    (state: RootState) => state.manageSchedule,
-  );
+  const { schedules, loading } = useSelector((state: RootState) => state.manageSchedule);
 
-  // Filter state
-  const [filters, setFilters] = useState<ScheduleFilterParams>({
-    page: 1,
-    limit: 20,
-    status: undefined,
-    from_date: undefined,
-    to_date: undefined,
-  });
+  // Filter state (frontend only)
+  const [statusFilter, setStatusFilter] = useState<ScheduleStatus | "ALL">("ALL");
+  const [fromDate, setFromDate] = useState<string | undefined>(undefined);
+  const [toDate, setToDate] = useState<string | undefined>(undefined);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  // Cancel dialog state
-  const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [scheduleToCancel, setScheduleToCancel] = useState<ScheduleItem | null>(null);
-
-  // Fetch schedules on mount and when filters change
+  // Fetch all schedules on mount only
   useEffect(() => {
-    dispatch(fetchSchedules(filters));
-  }, [dispatch, filters]);
+    dispatch(fetchSchedules({ limit: 1000 })); // Fetch all for frontend filtering
+  }, [dispatch]);
 
-  // Handle filter changes
-  const updateFilter = (key: keyof ScheduleFilterParams, value: string | number | undefined) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: value || undefined,
-      page: key === "page" ? (value as number) : 1, // Reset page when other filters change
-    }));
-  };
+  // Filter schedules on frontend
+  const filteredSchedules = useMemo(() => {
+    return schedules.filter((schedule) => {
+      // Status filter
+      if (statusFilter !== "ALL" && schedule.status !== statusFilter) {
+        return false;
+      }
+
+      // Date filters
+      const scheduleDate = parseISO(schedule.scheduled_at);
+
+      if (fromDate) {
+        const fromDateStart = startOfDay(parseISO(fromDate));
+        if (isBefore(scheduleDate, fromDateStart)) {
+          return false;
+        }
+      }
+
+      if (toDate) {
+        const toDateEnd = endOfDay(parseISO(toDate));
+        if (isAfter(scheduleDate, toDateEnd)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [schedules, statusFilter, fromDate, toDate]);
+
+  // Paginate filtered results
+  const paginatedSchedules = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredSchedules.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredSchedules, currentPage]);
+
+  // Calculate pagination info
+  const paginationInfo = useMemo(() => {
+    const total = filteredSchedules.length;
+    const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
+    return {
+      page: currentPage,
+      limit: ITEMS_PER_PAGE,
+      total,
+      total_pages: totalPages,
+      has_next: currentPage < totalPages,
+      has_prev: currentPage > 1,
+    };
+  }, [filteredSchedules.length, currentPage]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, fromDate, toDate]);
 
   // Clear filters
-  const clearFilters = () => {
-    setFilters({
-      page: 1,
-      limit: 20,
-      status: undefined,
-      from_date: undefined,
-      to_date: undefined,
-    });
-  };
-
-  // Handle cancel click
-  const handleCancelClick = (schedule: ScheduleItem) => {
-    setScheduleToCancel(schedule);
-    setShowCancelDialog(true);
-  };
-
-  // Handle cancel confirm
-  const handleCancelConfirm = async () => {
-    if (scheduleToCancel) {
-      await dispatch(cancelSchedule(scheduleToCancel.schedule_id));
-      setShowCancelDialog(false);
-      setScheduleToCancel(null);
-    }
-  };
+  const clearFilters = useCallback(() => {
+    setStatusFilter("ALL");
+    setFromDate(undefined);
+    setToDate(undefined);
+    setCurrentPage(1);
+  }, []);
 
   // Handle refresh
-  const handleRefresh = () => {
-    dispatch(fetchSchedules(filters));
-  };
+  const handleRefresh = useCallback(() => {
+    dispatch(fetchSchedules({ limit: 1000 }));
+  }, [dispatch]);
 
-  const hasActiveFilters = filters.status || filters.from_date || filters.to_date;
+  const hasActiveFilters = statusFilter !== "ALL" || fromDate || toDate;
 
   return (
     <div className="space-y-6 p-6">
@@ -157,11 +167,8 @@ export const ScheduleManagement: React.FC = () => {
             <div className="w-48">
               <label className="text-sm font-medium mb-1.5 block">Status</label>
               <Select
-                value={filters.status || "ALL"}
-                onValueChange={(value) => {
-                  if (value === "ALL") updateFilter("status", undefined);
-                  else updateFilter("status", value as ScheduleStatus);
-                }}
+                value={statusFilter}
+                onValueChange={(value) => setStatusFilter(value as ScheduleStatus | "ALL")}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All Statuses" />
@@ -180,8 +187,8 @@ export const ScheduleManagement: React.FC = () => {
             <div className="w-48">
               <label className="text-sm font-medium mb-1.5 block">From Date</label>
               <DatePicker
-                value={filters.from_date}
-                onChange={(date) => updateFilter("from_date", date)}
+                value={fromDate}
+                onChange={(date) => setFromDate(date)}
                 placeholder="Start date"
               />
             </div>
@@ -190,8 +197,8 @@ export const ScheduleManagement: React.FC = () => {
             <div className="w-48">
               <label className="text-sm font-medium mb-1.5 block">To Date</label>
               <DatePicker
-                value={filters.to_date}
-                onChange={(date) => updateFilter("to_date", date)}
+                value={toDate}
+                onChange={(date) => setToDate(date)}
                 placeholder="End date"
               />
             </div>
@@ -218,7 +225,6 @@ export const ScheduleManagement: React.FC = () => {
                 <TableHead>Scheduled At</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Created By</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -241,29 +247,32 @@ export const ScheduleManagement: React.FC = () => {
                     <TableCell>
                       <Skeleton className="h-4 w-24" />
                     </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-8 w-16 ml-auto" />
-                    </TableCell>
                   </TableRow>
                 ))
-              ) : schedules.length === 0 ? (
+              ) : paginatedSchedules.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                     <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
                     <p>No schedules found</p>
                   </TableCell>
                 </TableRow>
               ) : (
-                schedules.map((schedule) => (
+                paginatedSchedules.map((schedule) => (
                   <TableRow key={schedule.schedule_id}>
                     <TableCell>
                       <div>
-                        <p className="font-medium truncate max-w-xs">{schedule.content_title}</p>
-                        <p className="text-xs text-muted-foreground">{schedule.content_type}</p>
+                        <p className="font-medium truncate max-w-xs">
+                          {schedule.content_details?.content_title || "—"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {schedule.content_details?.content_type || "—"}
+                        </p>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{schedule.channel_name}</Badge>
+                      <Badge variant="outline">
+                        {schedule.content_details?.channel_name || "—"}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1.5 text-sm">
@@ -279,25 +288,9 @@ export const ScheduleManagement: React.FC = () => {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm text-muted-foreground">{schedule.created_by}</span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {schedule.status === "PENDING" && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => handleCancelClick(schedule)}
-                          disabled={cancelLoading}
-                        >
-                          {cancelLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Cancel"}
-                        </Button>
-                      )}
-                      {schedule.status === "FAILED" && schedule.last_error && (
-                        <span className="text-xs text-red-600" title={schedule.last_error}>
-                          Error
-                        </span>
-                      )}
+                      <span className="text-sm text-muted-foreground">
+                        {schedule.created_by_name || schedule.created_by}
+                      </span>
                     </TableCell>
                   </TableRow>
                 ))
@@ -308,31 +301,31 @@ export const ScheduleManagement: React.FC = () => {
       </Card>
 
       {/* Pagination */}
-      {pagination && pagination.total_pages > 1 && (
+      {paginationInfo.total_pages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
-            {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}{" "}
-            schedules
+            Showing {(paginationInfo.page - 1) * paginationInfo.limit + 1} to{" "}
+            {Math.min(paginationInfo.page * paginationInfo.limit, paginationInfo.total)} of{" "}
+            {paginationInfo.total} schedules
           </p>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => updateFilter("page", pagination.page - 1)}
-              disabled={!pagination.has_prev}
+              onClick={() => setCurrentPage((p) => p - 1)}
+              disabled={!paginationInfo.has_prev}
             >
               <ChevronLeft className="h-4 w-4" />
               Previous
             </Button>
             <span className="text-sm">
-              Page {pagination.page} of {pagination.total_pages}
+              Page {paginationInfo.page} of {paginationInfo.total_pages}
             </span>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => updateFilter("page", pagination.page + 1)}
-              disabled={!pagination.has_next}
+              onClick={() => setCurrentPage((p) => p + 1)}
+              disabled={!paginationInfo.has_next}
             >
               Next
               <ChevronRight className="h-4 w-4" />
@@ -340,23 +333,6 @@ export const ScheduleManagement: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* Cancel Confirmation Dialog */}
-      <WarningDialog
-        isOpen={showCancelDialog}
-        onOpenChange={setShowCancelDialog}
-        title="Cancel Schedule"
-        description={`Are you sure you want to cancel the scheduled publish for "${scheduleToCancel?.content_title}"?`}
-        warningMessage="This action cannot be undone."
-        onConfirm={handleCancelConfirm}
-        onCancel={() => {
-          setShowCancelDialog(false);
-          setScheduleToCancel(null);
-        }}
-        confirmText="Cancel Schedule"
-        cancelText="Keep Schedule"
-        confirmButtonVariant="destructive"
-      />
     </div>
   );
 };

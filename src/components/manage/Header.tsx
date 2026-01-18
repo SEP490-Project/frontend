@@ -40,20 +40,17 @@ const Header: React.FC<HeaderProps> = ({
   const { user } = useAuth();
   const dispatch = useAppDispatch();
 
-  // 1. Get Data from Redux (The list)
   const { notifications } = useNotificationStore();
 
-  // 2. Get Real-time Actions & Count from Context
   const { unreadCount, markAsRead } = useNotificationContext();
 
-  // Fetch initial notifications on mount
   useEffect(() => {
     if (user?.id) {
-      dispatch(getNotifications({ page: 1, limit: 10, user_id: user.id }));
+      dispatch(getNotifications({ page: 1, limit: 10, user_id: user.id, type: "IN_APP" }));
     }
   }, [dispatch, user?.id]);
 
-  const displayedNotifications = notifications.slice(0, 5); // Increased to 5 for better utility
+  const displayedNotifications = notifications.slice(0, 5);
 
   const handleLogout = async () => {
     await dispatch(logout());

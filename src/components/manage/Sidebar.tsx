@@ -194,12 +194,12 @@ const Sidebar: React.FC<SidebarProps> = ({
       },
       {
         href: "/manage/brand/product-approval",
-        label: "Product Approval",
+        label: "Products",
         icon: <FaBox size={18} />,
       },
       {
         href: "/manage/brand/content-approval",
-        label: "Content Approval",
+        label: "Contents",
         icon: <FaFileSignature size={18} />,
       },
     ],

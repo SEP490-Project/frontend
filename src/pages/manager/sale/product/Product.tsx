@@ -32,11 +32,13 @@ import { StatusModal } from "@/components/modal/StatusModal";
 import { useNavigate } from "react-router";
 import { useAppDispatch, type RootState } from "@/libs/stores";
 import {
+  getAllLimitedProductsThunk,
   getAllProductsThunk,
+  getAllStandardProductsThunk,
   updateProductVisibilityThunk,
 } from "@/libs/stores/productManager/thunk";
 import { useSelector } from "react-redux";
-import type { ProductData, ProductParams } from "@/libs/types/product";
+import type { LimitedProductParams, ProductData, ProductParams } from "@/libs/types/product";
 import { PaginationTable } from "@/components/global";
 import { SelectAddProductType } from "@/components/manage/sale/product/SelectAddProductType";
 import { toast } from "sonner";
@@ -46,18 +48,32 @@ const Product: React.FC<{ type: "STANDARD" | "LIMITED" }> = ({ type }) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  const productResponse = useSelector((state: RootState) => state?.manageProduct?.products);
-  const pagination = useSelector((state: any) => state?.manageProduct?.products?.pagination);
+  const { limitedProducts, standardProducts, isLoading } = useSelector(
+    (state: RootState) => state?.manageProduct,
+  );
+  const { pagination } = type === "STANDARD" ? standardProducts || {} : limitedProducts || {};
   const { categories } = useSelector((state: RootState) => state?.manageCategory);
-
-  const products: ProductData[] = productResponse?.data || [];
-  const isLoading = useSelector((state: any) => state?.manageProduct?.isLoading);
   const error = useSelector((state: any) => state?.manageProduct?.error);
-  const [params, setParams] = useState<ProductParams>({
+
+  const [params, setParams] = useState<ProductParams | LimitedProductParams>({
     page: 1,
     limit: 5,
-    type: type || " ",
   });
+
+  const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      setParams((prev) => ({ ...prev, search: searchTerm, page: 1 }));
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm]);
+
+  const standardProductsList: ProductData[] = standardProducts?.data || [];
+  const limitedProductsList: ProductData[] = limitedProducts?.data || [];
+
+  const products: ProductData[] = type === "STANDARD" ? standardProductsList : limitedProductsList;
 
   const filterParentCategory = categories?.data.filter((cat) => !cat.parent_category);
 
@@ -85,13 +101,21 @@ const Product: React.FC<{ type: "STANDARD" | "LIMITED" }> = ({ type }) => {
   }, [type]);
 
   useEffect(() => {
-    dispatch(
-      getAllProductsThunk({
-        ...params,
-        type: params.type === " " ? undefined : params.type,
-        category_id: params.category_id === " " ? undefined : params.category_id,
-      }),
-    );
+    if (params.type === "STANDARD") {
+      dispatch(
+        getAllStandardProductsThunk({
+          ...params,
+          category_id: params.category_id === " " ? undefined : params.category_id,
+        }),
+      );
+    } else {
+      dispatch(
+        getAllLimitedProductsThunk({
+          ...params,
+          category_id: params.category_id === " " ? undefined : params.category_id,
+        }),
+      );
+    }
   }, [dispatch, params]);
 
   useEffect(() => {
@@ -125,16 +149,42 @@ const Product: React.FC<{ type: "STANDARD" | "LIMITED" }> = ({ type }) => {
 
           <div className="flex-1 min-w-[200px]">
             <Input
-              placeholder="Search by name or description..."
-              // value={searchTerm}
-              // onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search by name"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full"
             />
           </div>
-
+        </div>
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+          {type === "LIMITED" && (
+            <div>
+              <Select
+                value={undefined}
+                onValueChange={(value) => {
+                  if (value === "All") {
+                    setParams({ ...params, filter_preorder: undefined, filter_order: undefined });
+                  } else if (value === "Pre-order") {
+                    setParams({ ...params, filter_preorder: true, filter_order: undefined });
+                  } else if (value === "Order") {
+                    setParams({ ...params, filter_order: true, filter_preorder: undefined });
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Availability" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All</SelectItem>
+                  <SelectItem value="Pre-order">Pre-order</SelectItem>
+                  <SelectItem value="Order">Available Now</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="min-w-[150px]">
             <Select
-              value={params.category_id || " "}
+              value={params.category_id || undefined}
               onValueChange={(value) => {
                 setParams({ ...params, category_id: value });
               }}
@@ -152,20 +202,19 @@ const Product: React.FC<{ type: "STANDARD" | "LIMITED" }> = ({ type }) => {
               </SelectContent>
             </Select>
           </div>
-
           {type === "LIMITED" && (
             <div className="min-w-[150px]">
               <Select
-                value={params.status || " "}
+                value={params.status || undefined}
                 onValueChange={(value) => {
                   setParams({ ...params, status: value });
                 }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Status" />
+                  <SelectValue placeholder="Statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value=" ">All Status</SelectItem>
+                  <SelectItem value=" ">All Statuses</SelectItem>
                   <SelectItem value="DRAFT">Draft</SelectItem>
                   <SelectItem value="SUBMITTED">Submitted</SelectItem>
                   <SelectItem value="APPROVED">Approved</SelectItem>

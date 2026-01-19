@@ -23,6 +23,32 @@ const getAllProductsThunk = createAsyncThunk(
   },
 );
 
+const getAllStandardProductsThunk = createAsyncThunk(
+  "products/getAllStandard",
+  async (params: ProductParams, { rejectWithValue }) => {
+    try {
+      const response = await manageProduct.getAllStandardProducts(params);
+      return response.data as ProductResponse<ProductData[]>;
+    } catch (error: AxiosError | unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Failed to fetch standard products");
+    }
+  },
+);
+
+const getAllLimitedProductsThunk = createAsyncThunk(
+  "products/getAllLimited",
+  async (params: ProductParams, { rejectWithValue }) => {
+    try {
+      const response = await manageProduct.getAllLimitedProducts(params);
+      return response.data as ProductResponse<ProductData[]>;
+    } catch (error: AxiosError | unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Failed to fetch limited products");
+    }
+  },
+);
+
 const getProductDetailThunk = createAsyncThunk(
   "products/getDetail",
   async (productId: string, { rejectWithValue }) => {
@@ -254,4 +280,6 @@ export {
   updateLimitedProductVariantThunk,
   openEarlyPreorderProductDeliveryThunk,
   deleteVariantImageThunk,
+  getAllStandardProductsThunk,
+  getAllLimitedProductsThunk,
 };

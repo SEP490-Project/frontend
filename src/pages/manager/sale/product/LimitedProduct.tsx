@@ -109,7 +109,7 @@ const LimitedProduct: React.FC = () => {
 
           <div className="flex-1 min-w-[200px]">
             <Input
-              placeholder="Search by name"
+              placeholder="Search by product name"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full"
@@ -141,7 +141,7 @@ const LimitedProduct: React.FC = () => {
               }}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Availability" />
+                <SelectValue placeholder="Select Availability" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="Pre-order">Pre-order</SelectItem>
@@ -158,7 +158,7 @@ const LimitedProduct: React.FC = () => {
               }}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Category" />
+                <SelectValue placeholder="Select Category" />
               </SelectTrigger>
               <SelectContent>
                 {filterParentCategory?.map((category) => (
@@ -178,7 +178,7 @@ const LimitedProduct: React.FC = () => {
               }}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Statuses" />
+                <SelectValue placeholder="Select Status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="DRAFT">Draft</SelectItem>

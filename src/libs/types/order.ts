@@ -121,4 +121,22 @@ export interface OrderRequestQuery {
   limit?: number;
   search?: string;
   status?: string;
+  createdFrom?: string;
+  createdTo?: string;
+}
+
+export interface PriceBreakDownResponse {
+  success: boolean;
+  status: string;
+  status_code: number;
+  message: string;
+  data: PriceBreakDown[];
+}
+
+export interface PriceBreakDown {
+  item_id: string;
+  company_percentage: number;
+  kol_percentage: number;
+  company_amount: number;
+  kol_amount: number;
 }

@@ -19,8 +19,10 @@ import {
   obligateRefundAPreOrderThunk,
   markLimitedOrderAsDeliveredThunk,
   markLimitedOrderAsInTransitThunk,
+  getOrderPriceBreakdownThunk,
+  getPreorderPriceBreakdownThunk,
 } from "./thunk";
-import type { OrderResponse } from "@/libs/types/order";
+import type { OrderResponse, PriceBreakDownResponse } from "@/libs/types/order";
 import type { PreOrderResponse } from "@/libs/types/pre-order";
 
 const orderManagerSlice = createSlice({
@@ -28,6 +30,8 @@ const orderManagerSlice = createSlice({
   initialState: {
     ordersForSaleStaff: null as OrderResponse | null,
     preOrderForSaleStaff: null as PreOrderResponse | null,
+    orderPriceBreakDown: null as PriceBreakDownResponse | null,
+    preorderPriceBreakDown: null as PriceBreakDownResponse | null,
     loading: false,
     errors: null as any,
   },
@@ -243,6 +247,30 @@ const orderManagerSlice = createSlice({
         state.loading = false;
       })
       .addCase(markLimitedOrderAsDeliveredThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.errors = action.error;
+      })
+      .addCase(getOrderPriceBreakdownThunk.pending, (state) => {
+        state.loading = true;
+        state.errors = null;
+      })
+      .addCase(getOrderPriceBreakdownThunk.fulfilled, (state, action) => {
+        state.loading = false;
+        state.orderPriceBreakDown = action.payload;
+      })
+      .addCase(getOrderPriceBreakdownThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.errors = action.error;
+      })
+      .addCase(getPreorderPriceBreakdownThunk.pending, (state) => {
+        state.loading = true;
+        state.errors = null;
+      })
+      .addCase(getPreorderPriceBreakdownThunk.fulfilled, (state, action) => {
+        state.loading = false;
+        state.preorderPriceBreakDown = action.payload;
+      })
+      .addCase(getPreorderPriceBreakdownThunk.rejected, (state, action) => {
         state.loading = false;
         state.errors = action.error;
       });

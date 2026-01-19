@@ -94,6 +94,12 @@ export const manageOrder = {
         "Content-Type": "multipart/form-data",
       },
     }),
+
+  // Price Breakdown
+  getOrderPriceBreakdown: (orderId: string, orderType: string) =>
+    api.get(`/orders/${orderId}/price-breakdown`, { params: { orderType: orderType } }),
+  getPreorderPriceBreakdown: (preOrderId: string) =>
+    api.get(`/preorders/${preOrderId}/price-breakdown`),
 };
 
 export default manageOrder;

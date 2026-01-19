@@ -30,6 +30,7 @@ import {
   ContentApproval,
   TaskSchedule,
   ContractPayment,
+  Violation,
 } from "@/pages/manager/marketing";
 import ManageLayout from "@/layouts/ManageLayout";
 import Login from "@/pages/authentication/Login";
@@ -209,6 +210,7 @@ const AppRoutes = () => (
           <Route path="contents-approval/preview/:id" element={<ContentPreviewPage />} />
           <Route path="task-schedule" element={<TaskSchedule />} />
           <Route path="contract-payment" element={<ContractPayment />} />
+          <Route path="violations" element={<Violation />} />
         </Route>
       </Route>
 

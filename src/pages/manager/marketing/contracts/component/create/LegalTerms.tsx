@@ -6,9 +6,32 @@ import { Input } from "@/components/ui/input";
 interface LegalTermsProps {
   formData: any;
   onInputChange: (field: string, value: any) => void;
+  onUpdateLegalTerms?: (updates: any) => void;
 }
 
-const LegalTerms: React.FC<LegalTermsProps> = ({ formData, onInputChange }) => {
+const LegalTerms: React.FC<LegalTermsProps> = ({ formData, onInputChange, onUpdateLegalTerms }) => {
+  const compensationPercent =
+    formData.compensation_percent !== undefined
+      ? formData.compensation_percent
+      : formData.legal_terms?.compensation_percent;
+
+  const handleCompensationPercentChange = (value: any) => {
+    const numericValue = value === "" ? "" : Number(value);
+
+    if (onUpdateLegalTerms) {
+      // Edit mode - use onUpdateLegalTerms
+      onUpdateLegalTerms({ compensation_percent: numericValue });
+    } else {
+      // Create mode or Edit mode without onUpdateLegalTerms
+      // Update both locations for compatibility
+      onInputChange("compensation_percent", numericValue);
+      onInputChange("legal_terms", {
+        ...formData.legal_terms,
+        compensation_percent: numericValue,
+      });
+    }
+  };
+
   return (
     <div className="space-y-8">
       <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
@@ -37,6 +60,11 @@ const LegalTerms: React.FC<LegalTermsProps> = ({ formData, onInputChange }) => {
                       Party A loses (forfeits) the money they paid (the deposit).
                     </span>
                   </li>
+                  <li>
+                    <span className="font-medium text-rose-400">
+                      Party A must pay the current milestone.
+                    </span>
+                  </li>
                 </ul>
               </li>
               <li>
@@ -59,17 +87,13 @@ const LegalTerms: React.FC<LegalTermsProps> = ({ formData, onInputChange }) => {
                         max={100}
                         enforceRange
                         value={
-                          formData.legal_terms?.compensation_percent === null ||
-                          formData.legal_terms?.compensation_percent === undefined
+                          compensationPercent === null || compensationPercent === undefined
                             ? ""
-                            : formData.legal_terms?.compensation_percent
+                            : compensationPercent
                         }
                         onChange={(e) => {
                           const val = e.target.value;
-                          onInputChange("legal_terms", {
-                            ...formData.legal_terms,
-                            compensation_percent: val === "" ? "" : Number(val),
-                          });
+                          handleCompensationPercentChange(val);
                         }}
                         className="w-20 h-8 pr-7"
                         placeholder="0"

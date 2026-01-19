@@ -121,6 +121,25 @@ export const CompactKPISelector: React.FC<{
 
   const metricOptions = getMetricsForType(contractType);
 
+  // Define maximum KPIs allowed for each contract type
+  const getMaxKPIsForType = (type?: string): number => {
+    switch (type) {
+      case "CO_PRODUCING":
+        return 1;
+      case "BRAND_AMBASSADOR":
+        return 1;
+      case "ADVERTISING":
+        return 4;
+      case "AFFILIATE":
+        return 5;
+      default:
+        return KPI_METRICS_GENERAL.length; // All available metrics
+    }
+  };
+
+  const maxKPIs = getMaxKPIsForType(contractType);
+  const canAddMoreKPIs = kpis.length < maxKPIs;
+
   return (
     <div className="space-y-3">
       <Label className="text-sm font-semibold flex items-center gap-2 text-gray-700">
@@ -224,17 +243,27 @@ export const CompactKPISelector: React.FC<{
         })}
       </div>
 
-      <Button
-        type="button"
-        variant="outline"
-        onClick={handleAdd}
-        className="w-full mt-4 py-6 border-2 border-dashed border-indigo-300 hover:bg-indigo-50 hover:border-indigo-400 transition-all rounded-lg"
-      >
-        <div className="flex items-center gap-2">
-          <FaPlus className="w-4 h-4 text-indigo-600" />
-          <span className="font-medium text-indigo-700">Add KPI</span>
+      {canAddMoreKPIs && (
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleAdd}
+          className="w-full mt-4 py-6 border-2 border-dashed border-indigo-300 hover:bg-indigo-50 hover:border-indigo-400 transition-all rounded-lg"
+        >
+          <div className="flex items-center gap-2">
+            <FaPlus className="w-4 h-4 text-indigo-600" />
+            <span className="font-medium text-indigo-700">Add KPI</span>
+          </div>
+        </Button>
+      )}
+
+      {!canAddMoreKPIs && kpis.length >= maxKPIs && (
+        <div className="w-full mt-4 py-3 px-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
+          <div className="flex items-center justify-center gap-2">
+            <span className="text-sm text-gray-500">Maximum KPIs reached ({maxKPIs})</span>
+          </div>
         </div>
-      </Button>
+      )}
     </div>
   );
 });

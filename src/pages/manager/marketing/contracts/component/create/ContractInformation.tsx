@@ -45,6 +45,8 @@ interface ContractInformationProps {
   onInputChange: (field: string, value: any) => void;
   errors?: any;
   onFieldValidation?: (field: string, error: string | null) => void;
+  isBrandLockedMode?: boolean;
+  onBrandChange?: () => void;
 }
 
 const CONTRACT_TYPE_OPTIONS = [
@@ -186,6 +188,8 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
   onInputChange,
   errors = {},
   onFieldValidation,
+  isBrandLockedMode = false,
+  onBrandChange,
 }) => {
   const dispatch = useAppDispatch();
   const { brands, loading: brandLoading, pagination, brand } = useBrand();
@@ -258,6 +262,10 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
   }, [pagination?.has_next, brandLoading]);
 
   const handleBrandSelect = (brandId: string | null) => {
+    if (isBrandLockedMode) {
+      onBrandChange?.();
+      return;
+    }
     onInputChange("brand_id", brandId || "");
     if (!brandId) {
       setBrandDetailsOpen(false);
@@ -524,9 +532,11 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">Brand Selection</CardTitle>
                 <p className="text-sm text-slate-500">
-                  {formData.brand_id
-                    ? "Selected brand (you can change if needed)"
-                    : "Search and pick the partner brand."}
+                  {isBrandLockedMode
+                    ? "Brand is locked and cannot be changed in edit mode"
+                    : formData.brand_id
+                      ? "Selected brand (you can change if needed)"
+                      : "Search and pick the partner brand."}
                 </p>
               </CardHeader>
               <CardContent>
@@ -538,11 +548,16 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                     renderItem={(b) => <MemoBrandCard brand={b} isSelection={true} />}
                     getLabel={(b) => b.name}
                     title="Brands"
-                    placeholder="Search brands name..."
+                    placeholder={
+                      isBrandLockedMode
+                        ? "Brand cannot be changed in edit mode"
+                        : "Search brands name..."
+                    }
                     onSearch={setSearch}
                     searchValue={search}
                     onScrollEnd={loadMoreBrands}
                     loading={brandLoading}
+                    disabled={isBrandLockedMode}
                   />
 
                   <AnimatePresence>

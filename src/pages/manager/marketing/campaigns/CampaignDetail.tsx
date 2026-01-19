@@ -119,7 +119,6 @@ const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({ userRole = "mar
   const navigate = useNavigate();
 
   const { campaignDetail, detailLoading } = useCampaign();
-  console.log("Campaign Detail:", campaignDetail);
 
   // Campaign action states
   const [showApproveDialog, setShowApproveDialog] = useState(false);

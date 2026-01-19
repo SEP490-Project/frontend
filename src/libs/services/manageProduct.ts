@@ -2,6 +2,7 @@ import api from "../api";
 import type {
   CreateProductPayload,
   CreateVariantImagePayload,
+  LimitedProductParams,
   ProductParams,
 } from "../types/product";
 
@@ -37,6 +38,10 @@ const manageProduct = {
     api.patch(`products/variants/limited/${variantId}`, data),
   openEarlyPreorderProductDelivery: (productId: string) =>
     api.patch(`/preorders/staff/products/${productId}/open-early`),
+
+  //Get Product (New API)
+  getAllStandardProducts: (params: ProductParams) => api.get("products/standard", { params }),
+  getAllLimitedProducts: (params: LimitedProductParams) => api.get("products/limited", { params }),
 };
 
 export default manageProduct;

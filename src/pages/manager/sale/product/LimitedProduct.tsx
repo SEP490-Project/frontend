@@ -18,7 +18,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FaPenToSquare, FaFilter, FaEye } from "react-icons/fa6";
-import { Switch } from "@/components/ui/switch";
 import { Trash } from "lucide-react";
 import {
   Dialog,
@@ -28,41 +27,39 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { StatusModal } from "@/components/modal/StatusModal";
 import { useNavigate } from "react-router";
 import { useAppDispatch, type RootState } from "@/libs/stores";
-import {
-  getAllLimitedProductsThunk,
-  getAllProductsThunk,
-  getAllStandardProductsThunk,
-  updateProductVisibilityThunk,
-} from "@/libs/stores/productManager/thunk";
+import { getAllLimitedProductsThunk } from "@/libs/stores/productManager/thunk";
 import { useSelector } from "react-redux";
-import type { LimitedProductParams, ProductData, ProductParams } from "@/libs/types/product";
+import type { LimitedProductParams, ProductData } from "@/libs/types/product";
 import { PaginationTable } from "@/components/global";
 import { SelectAddProductType } from "@/components/manage/sale/product/SelectAddProductType";
-import { toast } from "sonner";
 import { getAllCategoriesThunk } from "@/libs/stores/categoryManager/thunk";
 
-const Product: React.FC<{ type: "STANDARD" | "LIMITED" }> = ({ type }) => {
+const LimitedProduct: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  const { limitedProducts, standardProducts, isLoading } = useSelector(
+  const { limitedProducts, isLoading, error } = useSelector(
     (state: RootState) => state?.manageProduct,
   );
-  const { pagination } = type === "STANDARD" ? standardProducts || {} : limitedProducts || {};
   const { categories } = useSelector((state: RootState) => state?.manageCategory);
-  const error = useSelector((state: any) => state?.manageProduct?.error);
 
-  const [params, setParams] = useState<ProductParams | LimitedProductParams>({
+  const [params, setParams] = useState<LimitedProductParams>({
     page: 1,
     limit: 5,
   });
-
   const [searchTerm, setSearchTerm] = useState("");
 
+  const pagination = limitedProducts?.pagination;
+  const products: ProductData[] = limitedProducts?.data || [];
+  const filterParentCategory = categories?.data.filter((cat) => !cat.parent_category);
+
   useEffect(() => {
+    if (searchTerm === "") {
+      setParams((prev) => ({ ...prev, search: undefined, page: 1 }));
+      return;
+    }
     const delayDebounceFn = setTimeout(() => {
       setParams((prev) => ({ ...prev, search: searchTerm, page: 1 }));
     }, 500);
@@ -70,57 +67,20 @@ const Product: React.FC<{ type: "STANDARD" | "LIMITED" }> = ({ type }) => {
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm]);
 
-  const standardProductsList: ProductData[] = standardProducts?.data || [];
-  const limitedProductsList: ProductData[] = limitedProducts?.data || [];
-
-  const products: ProductData[] = type === "STANDARD" ? standardProductsList : limitedProductsList;
-
-  const filterParentCategory = categories?.data.filter((cat) => !cat.parent_category);
-
-  const handleToggleVisibility = async (product: ProductData, isActive: boolean) => {
-    if (product.variants?.length === 0 || !product.variants) {
-      toast.error("Cannot change visibility of a product with no variants.");
-      return;
-    }
-    const result = await dispatch(
-      updateProductVisibilityThunk({ productId: product.id, isActive }),
-    );
-    if (result.meta.requestStatus === "fulfilled") {
-      dispatch(
-        getAllProductsThunk({
-          ...params,
-          type: params.type === " " ? undefined : params.type,
-          category_id: params.category_id === " " ? undefined : params.category_id,
-        }),
-      );
-    }
-  };
-
   useEffect(() => {
-    setParams((prev) => ({ ...prev, type: type, page: 1 }));
-  }, [type]);
-
-  useEffect(() => {
-    if (params.type === "STANDARD") {
-      dispatch(
-        getAllStandardProductsThunk({
-          ...params,
-          category_id: params.category_id === " " ? undefined : params.category_id,
-        }),
-      );
-    } else {
-      dispatch(
-        getAllLimitedProductsThunk({
-          ...params,
-          category_id: params.category_id === " " ? undefined : params.category_id,
-        }),
-      );
-    }
+    Promise.all([
+      dispatch(getAllCategoriesThunk({ limit: 100, page: 1 })),
+      dispatch(getAllLimitedProductsThunk(params)),
+    ]);
   }, [dispatch, params]);
 
-  useEffect(() => {
-    dispatch(getAllCategoriesThunk({ page: 1, limit: 100 }));
-  }, [dispatch]);
+  const handleResetFilters = () => {
+    setParams({
+      page: 1,
+      limit: 5,
+    });
+    setSearchTerm("");
+  };
 
   return (
     <div className="min-h-fit p-4 sm:p-6">
@@ -155,45 +115,52 @@ const Product: React.FC<{ type: "STANDARD" | "LIMITED" }> = ({ type }) => {
               className="w-full"
             />
           </div>
+          <div>
+            <Button variant="outline" onClick={handleResetFilters}>
+              Clear All
+            </Button>
+          </div>
         </div>
         <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-          {type === "LIMITED" && (
-            <div>
-              <Select
-                value={undefined}
-                onValueChange={(value) => {
-                  if (value === "All") {
-                    setParams({ ...params, filter_preorder: undefined, filter_order: undefined });
-                  } else if (value === "Pre-order") {
-                    setParams({ ...params, filter_preorder: true, filter_order: undefined });
-                  } else if (value === "Order") {
-                    setParams({ ...params, filter_order: true, filter_preorder: undefined });
-                  }
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Availability" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="All">All</SelectItem>
-                  <SelectItem value="Pre-order">Pre-order</SelectItem>
-                  <SelectItem value="Order">Available Now</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          <div>
+            <Select
+              value={params.filter_preorder ? "Pre-order" : params.filter_order ? "Order" : ""}
+              onValueChange={(value) => {
+                if (value === "Pre-order") {
+                  setParams({ ...params, filter_preorder: true, filter_order: undefined, page: 1 });
+                } else if (value === "Order") {
+                  setParams({ ...params, filter_order: true, filter_preorder: undefined, page: 1 });
+                } else {
+                  setParams({
+                    ...params,
+                    filter_order: undefined,
+                    filter_preorder: undefined,
+                    page: 1,
+                  });
+                }
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Availability" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Pre-order">Pre-order</SelectItem>
+                <SelectItem value="Order">Available Now</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="min-w-[150px]">
             <Select
-              value={params.category_id || undefined}
+              value={params.category_id || ""}
               onValueChange={(value) => {
-                setParams({ ...params, category_id: value });
+                setParams({ ...params, category_id: value === "" ? undefined : value, page: 1 });
               }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value=" ">All Categories</SelectItem>
                 {filterParentCategory?.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name}
@@ -202,29 +169,26 @@ const Product: React.FC<{ type: "STANDARD" | "LIMITED" }> = ({ type }) => {
               </SelectContent>
             </Select>
           </div>
-          {type === "LIMITED" && (
-            <div className="min-w-[150px]">
-              <Select
-                value={params.status || undefined}
-                onValueChange={(value) => {
-                  setParams({ ...params, status: value });
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value=" ">All Statuses</SelectItem>
-                  <SelectItem value="DRAFT">Draft</SelectItem>
-                  <SelectItem value="SUBMITTED">Submitted</SelectItem>
-                  <SelectItem value="APPROVED">Approved</SelectItem>
-                  <SelectItem value="REVISION">Revision</SelectItem>
-                  <SelectItem value="ACTIVED">Actived</SelectItem>
-                  <SelectItem value="INACTIVED">Inactived</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+
+          <div className="min-w-[150px]">
+            <Select
+              value={params.status || ""}
+              onValueChange={(value) => {
+                setParams({ ...params, status: value === "" ? undefined : value, page: 1 });
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="DRAFT">Draft</SelectItem>
+                <SelectItem value="SUBMITTED">Submitted</SelectItem>
+                <SelectItem value="REVISION">Revision</SelectItem>
+                <SelectItem value="ACTIVED">Actived</SelectItem>
+                <SelectItem value="INACTIVED">Inactived</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
@@ -313,30 +277,15 @@ const Product: React.FC<{ type: "STANDARD" | "LIMITED" }> = ({ type }) => {
                     </TableCell>
 
                     <TableCell className="py-4">
-                      {product.type === "LIMITED" ? (
-                        <Badge
-                          className={
-                            product.is_active
-                              ? "bg-green-100 text-green-800 border border-green-200 hover:bg-green-200 "
-                              : "bg-red-100 text-red-800 border border-red-200 hover:bg-red-200"
-                          }
-                        >
-                          {product.status}
-                        </Badge>
-                      ) : (
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <span>
-                              <Switch checked={product.is_active} />
-                            </span>
-                          </DialogTrigger>
-                          <StatusModal
-                            name={product.name}
-                            status={product.is_active ? "Inactive" : "Active"}
-                            onConfirm={() => handleToggleVisibility(product, !product.is_active)}
-                          />
-                        </Dialog>
-                      )}
+                      <Badge
+                        className={
+                          product.is_active
+                            ? "bg-green-100 text-green-800 border border-green-200 hover:bg-green-200 "
+                            : "bg-red-100 text-red-800 border border-red-200 hover:bg-red-200"
+                        }
+                      >
+                        {product.status}
+                      </Badge>
                     </TableCell>
 
                     <TableCell className="py-4">
@@ -403,4 +352,4 @@ const Product: React.FC<{ type: "STANDARD" | "LIMITED" }> = ({ type }) => {
   );
 };
 
-export default Product;
+export default LimitedProduct;

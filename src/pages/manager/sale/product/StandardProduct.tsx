@@ -280,7 +280,7 @@ const StandardProduct: React.FC = () => {
                           variant="ghost"
                           size="icon"
                           className=" hover:bg-blue-100"
-                          title="Edit"
+                          title="View"
                           onClick={() => {
                             navigate(`/manage/sale/product/${product.id}`, {
                               state: { data: product },

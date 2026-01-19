@@ -38,6 +38,7 @@ import { PaymentDetailModal } from "@/components/manage/marketing/contract-payme
 const PAGE_SIZE = 5;
 
 const CONTRACT_PAYMENT_STATUS_LABELS: Record<string, string> = {
+  NOT_STARTED: "Not Started",
   PENDING: "Pending",
   PAID: "Paid",
   OVERDUE: "Overdue",
@@ -58,6 +59,7 @@ const CONTRACT_TYPE_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
+  NOT_STARTED: "bg-gray-100 text-gray-800 border-gray-200",
   PAID: "bg-green-100 text-green-800 border-green-200",
   //   CANCELLED: "bg-red-100 text-red-800 border-red-200",
   PENDING: "bg-yellow-100 text-yellow-800 border-yellow-200",
@@ -341,6 +343,7 @@ const ContractPaymentPage: React.FC = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">All Status</SelectItem>
+                <SelectItem value="NOT_STARTED">Not Started</SelectItem>
                 <SelectItem value="PENDING">Pending</SelectItem>
                 <SelectItem value="PAID">Paid</SelectItem>
                 <SelectItem value="OVERDUE">Overdue</SelectItem>

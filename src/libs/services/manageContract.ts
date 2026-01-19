@@ -41,7 +41,14 @@ export const manageContract = {
       state: "APPROVED",
     }),
 
+  terminateContract: (contractId: string) =>
+    api.patch(`/contracts/${contractId}/state`, {
+      state: "TERMINATED",
+    }),
+
   rejectContract: (contractId: string) => api.patch(`/contracts/${contractId}/reject`),
 
   createContract: (req: any) => api.post("/contracts/async", req),
+
+  updateContract: (id: string, req: any) => api.put(`/contracts/${id}`, req),
 };

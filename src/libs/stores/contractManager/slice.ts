@@ -7,6 +7,7 @@ import {
   rejectContract,
   getContractById,
   createContract,
+  updateContract,
 } from "./thunk";
 import type { ContractDetail, ContractBase } from "@/libs/types/contract";
 
@@ -150,6 +151,16 @@ export const manageContractSlice = createSlice({
         state.detailLoading = false;
       })
       .addCase(createContract.rejected, (state) => {
+        state.detailLoading = false;
+      })
+
+      .addCase(updateContract.pending, (state) => {
+        state.detailLoading = true;
+      })
+      .addCase(updateContract.fulfilled, (state) => {
+        state.detailLoading = false;
+      })
+      .addCase(updateContract.rejected, (state) => {
         state.detailLoading = false;
       });
   },

@@ -82,14 +82,16 @@ const ContractDetailPage: React.FC = () => {
         </div>
 
         <div className="flex gap-3">
-          <Button
-            onClick={() => navigate(`/manage/marketing/contracts/edit/${id}`)}
-            variant="outline"
-            className="flex items-center"
-          >
-            <FaPencil className="h-4 w-4 mr-2" />
-            Edit Contract
-          </Button>
+          {contractDetail.status === "DRAFT" && (
+            <Button
+              onClick={() => navigate(`/manage/marketing/contracts/edit/${id}`)}
+              variant="outline"
+              className="flex items-center"
+            >
+              <FaPencil className="h-4 w-4 mr-2" />
+              Edit Contract
+            </Button>
+          )}
 
           {contractDetail.campaign_id && (
             <Button

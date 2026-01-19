@@ -889,7 +889,10 @@ const AddContractPage: React.FC = () => {
             items: [
               {
                 title: "Party A (Brand) breaks the rules",
-                details: ["Contract terminates immediately", "Party A forfeits the deposit"],
+                details: [
+                  "Contract terminates immediately",
+                  "Party A forfeits the deposit and must pay for the current milestone",
+                ],
               },
               {
                 title: "Party B (Service Provider) breaks the rules",

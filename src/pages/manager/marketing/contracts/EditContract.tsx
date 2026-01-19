@@ -20,6 +20,7 @@ import {
   ContractFiles,
 } from "./component/create";
 import { validateField } from "./validation";
+import { updateContract } from "@/libs/stores/contractManager/thunk";
 
 const CONTRACT_TYPE_OPTIONS = [
   { value: "ADVERTISING", label: "Advertising Contract" },
@@ -92,7 +93,7 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
       return !!hasPaymentMethod;
     }
     case "legal-terms": {
-      const compensation_percent = formData.legal_terms?.compensation_percent;
+      const compensation_percent = formData.compensation_percent;
       return !!(
         compensation_percent !== undefined &&
         compensation_percent !== null &&
@@ -182,6 +183,12 @@ const EditContractPage: React.FC = () => {
 
         // Legal terms
         legal_terms: contractDetail.legal_terms || {},
+
+        // Extract compensation_percent from nested structure for easier access
+        compensation_percent:
+          contractDetail.legal_terms?.breach_of_contract?.items?.find(
+            (item: any) => item.title === "Party B (Service Provider) breaks the rules",
+          )?.compensation_percent || 0,
 
         // File URLs
         contract_file_url: contractDetail.contract_file_url || "",
@@ -327,9 +334,31 @@ const EditContractPage: React.FC = () => {
     });
   };
 
+  const prepareContractDataForPreview = (formData: any) => {
+    // Prepare contract data that works for both create and edit modes
+    // Always ensure compensation_percent is available at legal_terms level for preview consistency
+    const compensation_percent =
+      formData.compensation_percent !== undefined
+        ? formData.compensation_percent
+        : formData.legal_terms?.compensation_percent || 0;
+
+    return {
+      ...formData,
+      legal_terms: {
+        ...formData.legal_terms,
+        compensation_percent: Number(compensation_percent),
+      },
+    };
+  };
+
   const handleContractTypeChange = async () => {
     // Contract type is locked in edit mode
     toast.warning("Contract type cannot be changed after creation");
+  };
+
+  const handleBrandChange = async () => {
+    // Brand is locked in edit mode
+    toast.warning("Brand cannot be changed after contract creation");
   };
 
   const handleContractUrlsChange = (urls: string[]) => {
@@ -408,21 +437,84 @@ const EditContractPage: React.FC = () => {
 
         financial_terms: formData.financial_terms || {},
 
-        legal_terms: formData.legal_terms || {},
+        legal_terms: {
+          ...formData.legal_terms,
+          breach_of_contract: {
+            label: formData.legal_terms?.breach_of_contract?.label || "Breach of Contract",
+            items: [
+              {
+                title: "Party A (Brand) breaks the rules",
+                details: [
+                  "Contract terminates immediately",
+                  "Party A forfeits the deposit and must pay for the current milestone",
+                ],
+              },
+              {
+                title: "Party B (Service Provider) breaks the rules",
+                details: [
+                  "Contract terminates immediately",
+                  "Party B must refund the deposit",
+                  `Party B pays additional ${formData.compensation_percent || formData.legal_terms?.compensation_percent || 0}% compensation`,
+                ],
+                compensation_percent:
+                  formData.compensation_percent || formData.legal_terms?.compensation_percent || 0,
+              },
+              {
+                title: "Mutual agreement to terminate",
+                details: [
+                  "Contract stops with no penalties",
+                  "No compensation required from either party",
+                ],
+              },
+            ],
+          },
+          standard_terms: formData.legal_terms?.standard_terms || {
+            label: "Standard Terms",
+            items: [
+              {
+                title: "Confidentiality",
+                description:
+                  "Both parties must keep all contract information confidential and cannot disclose to third parties without written consent",
+              },
+              {
+                title: "Dispute Resolution",
+                description:
+                  "Disputes will be resolved through negotiation first, then legal proceedings if necessary",
+              },
+              {
+                title: "Contract Effectiveness",
+                description:
+                  "Contract is effective from signature date until all obligations are fulfilled",
+              },
+              {
+                title: "Force Majeure",
+                description:
+                  "Neither party is liable for failure to perform due to circumstances beyond their control, including natural disasters or government actions",
+              },
+            ],
+          },
+        },
 
         contract_file_url: formData.contract_file_url || "",
         proposal_file_url: formData.proposal_file_url || "",
       };
 
-      // TODO: Implement updateContract thunk
-      console.log("Contract update payload:", contractPayload);
+      // Call updateContract API
+      const result = await dispatch(updateContract({ id: id!, req: contractPayload }));
 
-      toast.success("Contract updated successfully! (simulated)");
-      setShowPreviewModal(false);
+      if (updateContract.fulfilled.match(result)) {
+        toast.success("Contract updated successfully!");
+        setShowPreviewModal(false);
 
-      setTimeout(() => {
-        navigate(`/manage/marketing/contracts/${id}`);
-      }, 1000);
+        // Refresh contract data
+        dispatch(getContractById(id!));
+
+        setTimeout(() => {
+          navigate(`/manage/marketing/contracts/${id}`);
+        }, 1000);
+      } else {
+        throw new Error((result.payload as string) || "Failed to update contract");
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       toast.error(`Failed to update contract: ${errorMessage}`);
@@ -441,6 +533,7 @@ const EditContractPage: React.FC = () => {
       onInputChange: handleInputChange,
       errors,
       onContractTypeChange: handleContractTypeChange, // Locked in edit mode
+      onBrandChange: handleBrandChange, // Locked in edit mode
       onUpdateScopeOfWork: update_scope_of_work,
       onFieldValidation: handleFieldValidation,
       contractTypeOptions: CONTRACT_TYPE_OPTIONS,
@@ -451,6 +544,7 @@ const EditContractPage: React.FC = () => {
       onProposalUrlsChange: handleProposalUrlsChange,
       onSubmit: handleSubmit,
       isTypeLockedMode: true, // Always locked in edit mode
+      isBrandLockedMode: true, // Always locked in edit mode
     };
     const TabComponent = TAB_COMPONENTS[tabId];
     return TabComponent ? <TabComponent {...componentProps} /> : null;
@@ -634,9 +728,10 @@ const EditContractPage: React.FC = () => {
       {/* Preview Modal */}
       {showPreviewModal && (
         <ContractPreviewModal
+          key={JSON.stringify(formData)} // Force re-render when formData changes
           isOpen={showPreviewModal}
           onClose={() => setShowPreviewModal(false)}
-          contractData={formData}
+          contractData={prepareContractDataForPreview(formData)}
           onConfirmCreate={handleSubmit}
         />
       )}

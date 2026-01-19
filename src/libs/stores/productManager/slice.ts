@@ -16,6 +16,8 @@ import {
   openEarlyPreorderProductDeliveryThunk,
   deleteVariantImageThunk,
   createVariantImageThunk,
+  getAllStandardProductsThunk,
+  getAllLimitedProductsThunk,
 } from "./thunk";
 import { setItem } from "@/libs/local-storage";
 import { toast } from "sonner";
@@ -24,6 +26,8 @@ const productManagerSlice = createSlice({
   name: "productManager",
   initialState: {
     products: null as ProductResponse<ProductData[]> | null,
+    standardProducts: null as ProductResponse<ProductData[]> | null,
+    limitedProducts: null as ProductResponse<ProductData[]> | null,
     createdProduct: null as ProductResponse<ProductData> | null,
     productDetail: null as ProductResponse<ProductData> | null,
     productVariants: [] as ProductVariant[],
@@ -248,6 +252,32 @@ const productManagerSlice = createSlice({
         state.isLoading = false;
         state.error = action.error.message || "Failed to upload variant image";
         toast.error(state.error);
+      })
+      .addCase(getAllStandardProductsThunk.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(getAllStandardProductsThunk.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.standardProducts = action.payload;
+        state.error = null;
+      })
+      .addCase(getAllStandardProductsThunk.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || "Failed to fetch standard products";
+      })
+      .addCase(getAllLimitedProductsThunk.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(getAllLimitedProductsThunk.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.limitedProducts = action.payload;
+        state.error = null;
+      })
+      .addCase(getAllLimitedProductsThunk.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || "Failed to fetch limited products";
       });
   },
 });

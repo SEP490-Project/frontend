@@ -1,4 +1,5 @@
-import { default as Product } from "./product/Product";
+import { default as LimitedProduct } from "./product/LimitedProduct";
+import { default as StandardProduct } from "./product/StandardProduct";
 import { default as ProductDetail } from "./product/ProductDetail";
 import { default as EditProduct } from "./product/EditProduct";
 import { default as Category } from "./category/Category";
@@ -13,7 +14,8 @@ import { default as VariantsStep } from "@/pages/manager/sale/product/add-produc
 import { default as DoneStep } from "@/pages/manager/sale/product/add-product-step/DoneStep";
 
 export {
-  Product,
+  StandardProduct,
+  LimitedProduct,
   ProductDetail,
   EditProduct,
   Category,

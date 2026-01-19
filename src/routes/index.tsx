@@ -50,7 +50,6 @@ import {
 import PrivateRoute from "./private-route";
 import PublicRoute from "./public-route";
 import {
-  Product,
   Category,
   Order,
   Review,
@@ -62,6 +61,8 @@ import {
   AssignedTask,
   EditProduct,
   ProductDetail,
+  StandardProduct,
+  LimitedProduct,
 } from "@/pages/manager/sale";
 import ContentPreviewPage from "@/pages/manager/marketing/content-approval/ContentPreviewPage";
 import AddProductStep from "@/components/manage/sale/product/AddProductStep";
@@ -161,8 +162,8 @@ const AppRoutes = () => (
         <Route path="/manage/sale" element={<ManageLayout />}>
           <Route path="task" element={<AssignedTask />} />
           <Route path="product">
-            <Route index element={<Product type="STANDARD" />} />
-            <Route path="limited" element={<Product type="LIMITED" />} />
+            <Route index element={<StandardProduct />} />
+            <Route path="limited" element={<LimitedProduct />} />
           </Route>
           <Route path="product/create" element={<AddProductStep />}>
             <Route index element={<BasicInfoStep />} />

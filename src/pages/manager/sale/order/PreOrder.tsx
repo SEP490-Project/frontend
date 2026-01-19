@@ -149,18 +149,22 @@ const PreOrder: React.FC = () => {
           </div>
 
           <div>
-            <Button variant="outline" onClick={() => {}}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setParams({ page: 1, limit: 5, search: "", status: "" });
+              }}
+            >
               Clear All
             </Button>
           </div>
         </div>
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          <Select value={params.status || " "} onValueChange={(value) => handleStatusChange(value)}>
+          <Select value={params.status || ""} onValueChange={(value) => handleStatusChange(value)}>
             <SelectTrigger>
-              <SelectValue placeholder="Status" />
+              <SelectValue placeholder="Select Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value=" ">All Status</SelectItem>
               <SelectItem value="PENDING">Pending</SelectItem>
               <SelectItem value="PRE_ORDERED">Pre-Ordered</SelectItem>
               <SelectItem value="AWAITING_RELEASE">Awaiting Release</SelectItem>

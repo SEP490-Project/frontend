@@ -81,7 +81,12 @@ const YoutubeComponent = ({ node }: { node: any }) => {
 declare module "@tiptap/core" {
   interface Commands<ReturnType> {
     youtube: {
-      setYoutubeVideo: (options: { src: string; width?: number; height?: number }) => ReturnType;
+      setYoutubeVideo: (options: {
+        src: string;
+        width?: number;
+        height?: number;
+        start?: number;
+      }) => ReturnType;
     };
   }
 }

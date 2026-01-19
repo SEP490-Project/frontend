@@ -676,20 +676,6 @@ export const ContractPDF = ({ data }: { data: any }) => {
                 ))}
               </View>
             )}
-            {financial.tax_withholding && (
-              <View>
-                <Text style={styles.subHeading}>Tax Withholding:</Text>
-                <Text style={styles.textBlock}>
-                  A tax rate of{" "}
-                  <Text style={styles.bold}>{financial.tax_withholding.rate_percent}%</Text> will be
-                  withheld for earnings exceeding{" "}
-                  <Text style={styles.bold}>
-                    {formatMoney(financial.tax_withholding.threshold)}
-                  </Text>
-                  .
-                </Text>
-              </View>
-            )}
           </View>
         );
 

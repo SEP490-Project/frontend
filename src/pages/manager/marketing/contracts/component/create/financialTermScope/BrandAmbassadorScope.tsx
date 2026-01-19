@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { FaDollarSign } from "react-icons/fa6";
@@ -15,7 +15,7 @@ const BrandAmbassadorScope: React.FC<BrandAmbassadorScopeProps> = ({ formData, o
   const start_date = formData?.start_date;
   const end_date = formData?.end_date;
 
-  React.useEffect(() => {
+  useEffect(() => {
     const updates: any = {};
     if (financial_terms.payment_method !== "BANK_TRANSFER") {
       updates.payment_method = "BANK_TRANSFER";

@@ -77,15 +77,6 @@ const CONTRACT_TYPE_COLORS: Record<string, string> = {
   AFFILIATE: "bg-pink-100 text-pink-800 border-pink-200",
 };
 
-const getPaymentType = (payment: any) => {
-  if (payment.is_deposit) return "Deposit";
-  if (payment.contract_type === "BRAND_AMBASSADOR" || payment.contract_type === "ADVERTISING")
-    return "Scheduled";
-  if (payment.contract_type === "AFFILIATE" || payment.contract_type === "CO_PRODUCING")
-    return "Performance";
-  return "-";
-};
-
 const PayNowMark: React.FC = () => (
   <span title="Pay Now" className="inline-block align-middle ml-1">
     <span
@@ -401,20 +392,6 @@ const ContractPaymentBrandPage: React.FC = () => {
     return (
       <div className="flex flex-col">
         <span className="font-medium">{formatCurrency(payment.amount)}</span>
-        {(payment.base_amount !== undefined || payment.performance_amount !== undefined) && (
-          <div className="mt-1 space-y-0.5">
-            {payment.base_amount !== undefined && (
-              <div className="text-xs text-gray-500">
-                Base: {formatCurrency(payment.base_amount)}
-              </div>
-            )}
-            {payment.performance_amount !== undefined && payment.performance_amount > 0 && (
-              <div className="text-xs text-gray-500">
-                Perf: {formatCurrency(payment.performance_amount)}
-              </div>
-            )}
-          </div>
-        )}
       </div>
     );
   };
@@ -656,8 +633,7 @@ const ContractPaymentBrandPage: React.FC = () => {
                     <TableHead className="font-semibold">Contract</TableHead>
                     <TableHead className="font-semibold">Brand</TableHead>
                     <TableHead className="font-semibold">Type</TableHead>
-                    <TableHead className="font-semibold">Amount</TableHead>
-                    <TableHead className="font-semibold">Payment</TableHead>
+                    <TableHead className="font-semibold">Total Amount</TableHead>
                     <TableHead className="font-semibold">Status</TableHead>
                     <TableHead className="font-semibold">Due Date</TableHead>
                     <TableHead className="font-semibold">Payment Method</TableHead>
@@ -704,12 +680,6 @@ const ContractPaymentBrandPage: React.FC = () => {
                         )}
                       </TableCell>
                       <TableCell className="py-4">{formatAmount(payment)}</TableCell>
-                      <TableCell className="py-4">
-                        <span className="text-xs font-medium">{getPaymentType(payment)}</span>
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <span className="text-xs font-medium">{getPaymentType(payment)}</span>
-                      </TableCell>
                       <TableCell className="py-4">
                         <Badge
                           className={`border ${STATUS_COLORS[payment.status] || ""} text-xs font-medium px-2 py-1`}
@@ -846,10 +816,6 @@ const ContractPaymentBrandPage: React.FC = () => {
                       <div className="text-right">
                         <div className="text-sm text-gray-500">Amount</div>
                         <div className="text-sm">{formatAmount(payment)}</div>
-                        <div className="text-xs mt-1">
-                          <span className="font-medium">Payment: </span>
-                          {getPaymentType(payment)}
-                        </div>
                       </div>
                     </div>
 

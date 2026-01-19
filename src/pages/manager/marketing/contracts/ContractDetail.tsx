@@ -232,6 +232,35 @@ const ContractDetailPage: React.FC = () => {
             percent: contractDetail.deposit_percent,
           }}
         />
+
+        {/* Deposit Proof Section */}
+        {contractDetail.is_deposit_paid && contractDetail.deposit_proof_url && (
+          <div className="border-t border-gray-100 pt-6">
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <FaFileContract className="w-5 h-5 text-green-600" />
+                Deposit Proof
+              </h3>
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-700 mb-1">Deposit Payment Proof</p>
+                    <p className="text-sm text-green-600 font-medium">Proof document submitted</p>
+                  </div>
+                  <Button
+                    onClick={() => window.open(contractDetail.deposit_proof_url, "_blank")}
+                    variant="outline"
+                    className="border-green-300 text-green-700 hover:bg-green-50"
+                  >
+                    <FaEye className="w-4 h-4 mr-2" />
+                    View Proof
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <LegalTerms data={contractDetail.legal_terms} />
       </Card>
 

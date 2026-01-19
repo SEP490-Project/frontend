@@ -166,7 +166,7 @@ const FinancialOverview: React.FC<{
     return [];
   };
 
-  const depositProofUrls = formData.deposit_proof_url || [];
+  const depositProofUrls = formData.deposit_proof_url || "";
 
   return (
     <Card className="border border-gray-200 shadow-md overflow-hidden">
@@ -252,12 +252,12 @@ const FinancialOverview: React.FC<{
           </div>
 
           {paid && (
-            <div className="space-y-1">
+            <div className="space-y-3">
               <ContractUploader
                 userId={user?.id || "unknown"}
                 accept="image/*,video/*,.pdf,.doc,.docx,.ppt,.pptx"
-                multiple
-                maxFiles={10}
+                multiple={false}
+                maxFiles={1}
                 maxSize={100}
                 allowedTypes={[
                   "jpg",
@@ -275,18 +275,26 @@ const FinancialOverview: React.FC<{
                 ]}
                 title="Upload deposit proof"
                 context="deposit-proof"
-                initialUrls={depositProofUrls}
+                initialUrls={depositProofUrls ? [depositProofUrls] : []}
                 onUploadComplete={(urls) => {
-                  const newUrls = [...depositProofUrls, ...urls];
-                  onUpdate({ deposit_proof_url: newUrls });
+                  const newUrl = urls.length > 0 ? urls[0] : "";
+                  onUpdate({ deposit_proof_url: newUrl });
                 }}
                 onFilesRemove={(removedUrls) => {
-                  const filtered = depositProofUrls.filter(
-                    (url: any) => !removedUrls.includes(url),
-                  );
-                  onUpdate({ deposit_proof_url: filtered });
+                  // If the current deposit_proof_url is among the removed files, clear it
+                  if (removedUrls.includes(depositProofUrls)) {
+                    onUpdate({ deposit_proof_url: "" });
+                  }
                 }}
               />
+
+              {paid && (!depositProofUrls || depositProofUrls.trim() === "") && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-700 font-medium">
+                    Deposit proof is required when deposit is marked as paid.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
@@ -374,8 +382,17 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({
       onInputChange("is_deposit_paid", updates.is_deposit_paid);
     }
 
+    if (updates.deposit_proof_url !== undefined) {
+      onInputChange("deposit_proof_url", updates.deposit_proof_url);
+    }
+
     const financialUpdates = Object.keys(updates).reduce((acc: any, key) => {
-      if (key !== "deposit_percent" && key !== "deposit_amount" && key !== "is_deposit_paid") {
+      if (
+        key !== "deposit_percent" &&
+        key !== "deposit_amount" &&
+        key !== "is_deposit_paid" &&
+        key !== "deposit_proof_url"
+      ) {
         if (key === "cost_breakdown" && Array.isArray(updates[key])) {
           acc[`${key}_array`] = updates[key];
 

@@ -57,6 +57,7 @@ export interface ContractDetail {
   status: string;
   deposit_amount: number;
   deposit_percent: number;
+  deposit_proof_url: string;
   is_deposit_paid: boolean;
   campaign_id?: string;
   campaign_name?: string;

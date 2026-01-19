@@ -25,6 +25,7 @@ import {
   FaUserTie,
   FaFileShield,
   FaServer,
+  FaTriangleExclamation,
 } from "react-icons/fa6";
 import { useAuth } from "@/libs/hooks/useAuth";
 import { useAppDispatch } from "@/libs/stores";
@@ -219,6 +220,11 @@ const Sidebar: React.FC<SidebarProps> = ({
         href: "/manage/marketing/contract-payment",
         label: "Contract Payment",
         icon: <FaMoneyBillTransfer size={18} />,
+      },
+      {
+        href: "/manage/marketing/violations",
+        label: "Violations",
+        icon: <FaTriangleExclamation size={18} />,
       },
       {
         href: "/manage/marketing/contents-approval",

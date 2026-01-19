@@ -38,8 +38,6 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
         : formData.compensation_percent !== undefined
           ? formData.compensation_percent
           : 0;
-    console.log("Compensation Percent for Preview:", compensationPercent);
-    console.log("Form Data for Preview:", formData.legal_terms.breach_of_contract.items);
 
     return {
       contract_number: formData.contract_number,

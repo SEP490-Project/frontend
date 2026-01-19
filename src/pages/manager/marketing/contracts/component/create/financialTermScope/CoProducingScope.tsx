@@ -24,6 +24,14 @@ const CoProducingScope: React.FC<CoProducingScopeProps> = ({ formData, onUpdate,
 
   const previousScheduleRef = React.useRef<string>("");
 
+  // Validate profit shares
+  const companyPercent = financial_terms.profit_split_company_percent || 0;
+  const kolPercent = financial_terms.profit_split_kol_percent || 0;
+  const totalPercent = companyPercent + kolPercent;
+  const isValidProfitSplit = totalPercent === 100;
+  const profitSplitWarning =
+    totalPercent !== 100 ? `Total profit share is ${totalPercent}%. It must equal 100%.` : null;
+
   const handleScheduleGenerated = useCallback(
     (newSchedule: any[]) => {
       if (financial_terms.profit_distribution_cycle === "QUARTERLY") {
@@ -84,7 +92,7 @@ const CoProducingScope: React.FC<CoProducingScopeProps> = ({ formData, onUpdate,
                 })
               }
               placeholder="60"
-              className="h-11"
+              className={`h-11 ${!isValidProfitSplit ? "border-red-500 focus:border-red-500" : ""}`}
               min="0"
               max="100"
             />
@@ -104,12 +112,18 @@ const CoProducingScope: React.FC<CoProducingScopeProps> = ({ formData, onUpdate,
                 })
               }
               placeholder="40"
-              className="h-11"
+              className={`h-11 ${!isValidProfitSplit ? "border-red-500 focus:border-red-500" : ""}`}
               min="0"
               max="100"
             />
           </div>
         </div>
+
+        {profitSplitWarning && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-700 font-medium">{profitSplitWarning}</p>
+          </div>
+        )}
 
         <SelectField
           label="Profit Distribution Cycle"

@@ -7,6 +7,7 @@ import Color from "@tiptap/extension-color";
 import Highlight from "@tiptap/extension-highlight";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
+import Youtube from "@tiptap/extension-youtube"; // Import the official Youtube extension
 import { VideoExtension } from "@/components/global/tiptap-extensions/VideoExtension";
 
 /**
@@ -26,7 +27,7 @@ export const tiptapJsonToHtml = (json: string | object | null | undefined): stri
       return typeof json === "string" ? json : "";
     }
 
-    // Generate HTML from TipTap JSON using the same extensions
+    // Generate HTML from TipTap JSON using the extensions
     const html = generateHTML(jsonContent, [
       StarterKit.configure({
         bulletList: {
@@ -50,6 +51,21 @@ export const tiptapJsonToHtml = (json: string | object | null | undefined): stri
           class: "max-w-full h-auto",
         },
       }),
+      // Official Youtube Extension Configuration
+      Youtube.configure({
+        controls: true,
+        nocookie: true,
+        allowFullscreen: true,
+        autoplay: false,
+        ccLanguage: "en",
+        width: 640,
+        height: 480,
+        // Ensure the iframe has responsive styling classes if you use Tailwind
+        HTMLAttributes: {
+          class: "w-full aspect-video h-auto rounded-lg shadow-md",
+        },
+      }),
+      // Keep your custom video extension if it handles local video files
       VideoExtension,
       TextStyle,
       Color,
@@ -61,14 +77,14 @@ export const tiptapJsonToHtml = (json: string | object | null | undefined): stri
       }),
       Underline,
       TextAlign.configure({
-        types: ["heading", "paragraph", "image", "video"],
+        types: ["heading", "paragraph", "image", "video", "youtube"], // Added 'youtube' to text align support
       }),
     ]);
 
     return html;
   } catch (error) {
     console.error("Error converting TipTap JSON to HTML:", error);
-    // If it's not valid JSON or conversion fails, return the original content
+    // If conversion fails, return the original content or empty string
     return typeof json === "string" ? json : "";
   }
 };

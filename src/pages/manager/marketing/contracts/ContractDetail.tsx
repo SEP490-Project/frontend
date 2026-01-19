@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,14 @@ import {
   FaPencil,
   FaArrowRight,
 } from "react-icons/fa6";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle, RefreshCw } from "lucide-react";
+import ContractViolationSection from "@/components/manage/brand/ContractViolationSection";
+import { ReportBrandViolation } from "@/components/manage/marketing/violation";
+import { manageViolation } from "@/libs/services/manageViolation";
+import type { ContractViolation } from "@/libs/types/violation";
+import type { ContractStatus } from "@/libs/types/contract";
+import { isViolationStatus } from "@/libs/types/violation";
+import { toast } from "sonner";
 
 const ContractDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -25,10 +32,57 @@ const ContractDetailPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [violation, setViolation] = useState<ContractViolation | null>(null);
+  const [showReportBrandViolation, setShowReportBrandViolation] = useState(false);
+
+  const status = useMemo(() => contractDetail?.status as ContractStatus, [contractDetail?.status]);
+  const isViolation = useMemo(() => {
+    console.log("Checking violation status for:", status, isViolationStatus(status));
+
+    return isViolationStatus(status);
+  }, [status]);
+
+  // Fetch violation data if contract is in violation status
+  const fetchViolationData = useCallback(async () => {
+    if (!id || !contractDetail) return;
+    const status = contractDetail.status as ContractStatus;
+    if (!isViolationStatus(status)) {
+      setViolation(null);
+      return;
+    }
+
+    try {
+      const response = await manageViolation.getByContractId(id);
+      setViolation(response.data.data);
+    } catch (error: any) {
+      console.error("Failed to fetch violation data:", error);
+      toast.error("Failed to load violation details");
+    }
+  }, [id, contractDetail]);
 
   useEffect(() => {
     if (id) dispatch(getContractById(id));
   }, [dispatch, id]);
+
+  useEffect(() => {
+    if (contractDetail?.id) {
+      // Check if violation is already present
+      const status = contractDetail.status as ContractStatus;
+      if (isViolationStatus(status) && contractDetail.violation) {
+        setViolation(contractDetail.violation);
+      } else {
+        fetchViolationData();
+      }
+    }
+  }, [contractDetail?.id, contractDetail?.status, contractDetail?.violation, fetchViolationData]);
+
+  const handleViolationSuccess = (shouldReloadContract = false) => {
+    // Refresh contract and violation data
+    if (id) {
+      fetchViolationData();
+      if (shouldReloadContract) dispatch(getContractById(id));
+    }
+  };
 
   if (detailLoading)
     return (
@@ -81,7 +135,19 @@ const ContractDetailPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex gap-3 flex-wrap">
+          {/* Report Brand Violation - only for ACTIVE contracts */}
+          {contractDetail.status === "ACTIVE" && (
+            <Button
+              onClick={() => setShowReportBrandViolation(true)}
+              variant="outline"
+              className="border-orange-300 text-orange-700 bg-white hover:bg-orange-50 flex items-center"
+            >
+              <AlertTriangle className="h-4 w-4 mr-2" />
+              Report Brand Violation
+            </Button>
+          )}
+
           {contractDetail.status === "DRAFT" && (
             <Button
               onClick={() => navigate(`/manage/marketing/contracts/edit/${id}`)}
@@ -127,8 +193,32 @@ const ContractDetailPage: React.FC = () => {
               </Button>
             )}
           </PDFDownloadLink>
+
+          {/* Refresh Contract */}
+          <Button
+            onClick={() => dispatch(getContractById(contractDetail.id))}
+            disabled={detailLoading}
+            variant="outline"
+            className="items-center"
+          >
+            <RefreshCw className={"h-4 w-4"} />
+          </Button>
         </div>
       </div>
+
+      {/* Contract Violation Section */}
+      {isViolation && violation && (
+        <div className="space-y-6 mb-8">
+          <ContractViolationSection
+            violation={violation}
+            contractStatus={status}
+            userRole="marketing"
+            onPayPenalty={() => {}} // Marketing staff doesn't pay, handled differently
+            onReviewProof={() => {}} // Marketing staff doesn't review, brand does
+            onSubmitProof={() => handleViolationSuccess(false)}
+          />
+        </div>
+      )}
 
       <Card className="p-6 space-y-6 shadow-sm border border-gray-100">
         <ContractInformation data={contractDetail} />
@@ -150,6 +240,18 @@ const ContractDetailPage: React.FC = () => {
         onClose={() => setIsPreviewModalOpen(false)}
         contractData={contractDetail}
       />
+
+      {/* Report Brand Violation Modal */}
+      {id && (
+        <ReportBrandViolation
+          contractId={id}
+          contractNumber={contractDetail.contract_number}
+          brandName={contractDetail.brand?.name || "Unknown Brand"}
+          open={showReportBrandViolation}
+          onOpenChange={setShowReportBrandViolation}
+          onSuccess={() => handleViolationSuccess(true)}
+        />
+      )}
     </div>
   );
 };

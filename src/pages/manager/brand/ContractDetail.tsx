@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useContract } from "@/libs/hooks/useContract";
 import {
   ContractInformation,
@@ -27,8 +28,17 @@ import {
   FaXmark,
   FaArrowRight,
 } from "react-icons/fa6";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import ContractViolationSection from "@/components/manage/brand/ContractViolationSection";
+import ViolationPenaltyPayment from "@/components/manage/brand/ViolationPenaltyPayment";
+import ViolationProofReview from "@/components/manage/brand/ViolationProofReview";
+import ReportKOLViolation from "@/components/manage/brand/ReportKOLViolation";
+import { manageViolation } from "@/libs/services/manageViolation";
+import type { ContractViolation } from "@/libs/types/violation";
+import type { ContractStatus } from "@/libs/types/contract";
+import { isViolationStatus } from "@/libs/types/violation";
+import { DialogTitle } from "@radix-ui/react-dialog";
 
 export default function ContractDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -39,9 +49,55 @@ export default function ContractDetailPage() {
   const [isApproving, setIsApproving] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
 
+  // Violation State
+  const [violation, setViolation] = useState<ContractViolation | null>(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isProofReviewModalOpen, setIsProofReviewModalOpen] = useState(false);
+
+  // Fetch violation data if contract is in violation status
+  const fetchViolationData = useCallback(async () => {
+    if (!id || !contractDetail) return;
+    const status = contractDetail.status as ContractStatus;
+    if (!isViolationStatus(status)) {
+      setViolation(null);
+      return;
+    }
+
+    try {
+      const response = await manageViolation.getByContractId(id);
+      setViolation(response.data.data);
+    } catch (error: any) {
+      console.error("Failed to fetch violation data:", error);
+      toast.error("Failed to load violation details");
+    }
+  }, [id, contractDetail]);
+
   useEffect(() => {
     if (id) dispatch(getContractById(id));
   }, [dispatch, id]);
+
+  useEffect(() => {
+    if (contractDetail?.id) {
+      // Check if violation is already present
+      const status = contractDetail.status as ContractStatus;
+      if (isViolationStatus(status) && contractDetail.violation) {
+        setViolation(contractDetail.violation);
+      } else {
+        fetchViolationData();
+      }
+    }
+  }, [
+    contractDetail?.id,
+    contractDetail?.status,
+    contractDetail?.violation,
+    contractDetail,
+    fetchViolationData,
+  ]);
+
+  const handleViolationSuccess = (shouldReloadContract = false) => {
+    fetchViolationData();
+    if (shouldReloadContract && id) dispatch(getContractById(id));
+  };
 
   const handleApprove = async () => {
     if (!contractDetail?.id) return;
@@ -86,17 +142,22 @@ export default function ContractDetailPage() {
   if (!contractDetail)
     return (
       <div className="flex flex-col items-center justify-center min-h-[40vh] text-center">
-        <FaFileContract className="w-14 h-14 text-gray-300 mb-4" />
-        <h2 className="text-lg font-semibold text-gray-700 mb-1">No Contract Found</h2>
-        <p className="text-gray-500 mb-4">
-          The contract you are looking for does not exist or has been removed.
-        </p>
+        <div className="rounded-full bg-gray-100 p-6">
+          <FaFileContract className="w-14 h-14 text-gray-300 mb-4" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-2xl font-bold text-gray-900">Contract Not Found</h2>
+          <p className="text-gray-500 max-w-sm mx-auto">
+            The contract you are looking for does not exist or has been removed. Please check the
+            URL or go back to the list.
+          </p>
+        </div>
         <Button
           variant="outline"
           onClick={() => navigate("/manage/brand/contracts")}
-          className="border-gray-300 flex items-center gap-2"
+          className="bg-primary hover:bg-primary/90"
         >
-          <FaArrowLeft className="w-4 h-4" />
+          <FaArrowLeft className="mr-2 h-4 w-4" />
           Back to Contracts
         </Button>
       </div>
@@ -108,6 +169,7 @@ export default function ContractDetailPage() {
 
   return (
     <div className="min-h-fit p-4 sm:p-6">
+      {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
         <div className="flex items-center gap-3">
           <Button
@@ -129,6 +191,24 @@ export default function ContractDetailPage() {
         </div>
 
         <div className="flex gap-3 flex-wrap">
+          {/* Report Issue Button - For Active Contracts */}
+          {contractDetail.status === "ACTIVE" && id && (
+            <ReportKOLViolation
+              contractId={id}
+              contractNumber={contractDetail.contract_number}
+              onReportSuccess={() => handleViolationSuccess(true)}
+              trigger={
+                <Button
+                  variant="outline"
+                  className="bg-white hover:bg-orange-50 text-orange-700 border-orange-200"
+                >
+                  <AlertTriangle className="mr-2 h-4 w-4" />
+                  Report KOL Violation
+                </Button>
+              }
+            />
+          )}
+
           {/* Campaign Navigation */}
           {contractDetail.campaign_id && (
             <Button
@@ -143,7 +223,7 @@ export default function ContractDetailPage() {
 
           {/* Action Buttons - Approve/Reject */}
           {canTakeAction && (
-            <>
+            <div className="flex items-center gap-2 border-l border-gray-200 pl-3 ml-1">
               <Button
                 onClick={handleReject}
                 disabled={isRejecting || isApproving || actionLoading}
@@ -170,7 +250,7 @@ export default function ContractDetailPage() {
                 )}
                 {isApproving ? "Approving..." : "Approve"}
               </Button>
-            </>
+            </div>
           )}
 
           {/* Preview & Download */}
@@ -197,6 +277,15 @@ export default function ContractDetailPage() {
               </Button>
             )}
           </PDFDownloadLink>
+
+          {/* Refresh Contract */}
+          <Button
+            onClick={() => dispatch(getContractById(contractDetail.id))}
+            disabled={isRejecting || isApproving || actionLoading}
+            variant="outline"
+          >
+            <RefreshCw className={"h-4 w-4"} />
+          </Button>
         </div>
       </div>
 
@@ -218,19 +307,86 @@ export default function ContractDetailPage() {
         </Card>
       )}
 
-      <Card className="p-6 space-y-6 shadow-sm border border-gray-100">
-        <ContractInformation data={contractDetail} />
-        <ScopeOfWork type={type} data={contractDetail.scope_of_work} />
-        <FinancialTerms
-          type={type}
-          data={contractDetail.financial_terms}
-          deposit={{
-            amount: contractDetail.deposit_amount,
-            isPaid: contractDetail.is_deposit_paid,
-            percent: contractDetail.deposit_percent,
-          }}
-        />
-        <LegalTerms data={contractDetail.legal_terms} />
+      {/* Violation Section */}
+      {isViolationStatus(contractDetail.status as ContractStatus) && violation && (
+        <div className="space-y-6 mb-8">
+          <ContractViolationSection
+            violation={violation}
+            contractStatus={contractDetail.status as ContractStatus}
+            userRole="brand"
+            onPayPenalty={() => setIsPaymentModalOpen(true)}
+            onReviewProof={() => setIsProofReviewModalOpen(true)}
+          />
+
+          {/* Penalty Payment Modal */}
+          <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
+            <DialogContent className="sm:max-w-md p-0 overflow-hidden border-0">
+              <DialogTitle
+                hidden={true}
+                aria-hidden={true}
+                className="text-lg font-semibold text-gray-900"
+              >
+                Pay Violation Penalty
+              </DialogTitle>
+              <ViolationPenaltyPayment
+                violation={violation}
+                contractId={id!}
+                onPaymentCreated={() => {
+                  handleViolationSuccess(false);
+                  setIsPaymentModalOpen(false); // Close modale, ContractViolationSection will show link
+                }}
+              />
+            </DialogContent>
+          </Dialog>
+
+          {/* Proof Review Modal */}
+          <Dialog open={isProofReviewModalOpen} onOpenChange={setIsProofReviewModalOpen}>
+            <DialogContent className="max-w-7xl w-full p-0 overflow-hidden border-0">
+              <DialogTitle
+                hidden={true}
+                aria-hidden={true}
+                className="text-lg font-semibold text-gray-900"
+              >
+                Review Violation Proof
+              </DialogTitle>
+              <ViolationProofReview
+                violation={violation}
+                contractId={id!}
+                onReviewComplete={() => {
+                  handleViolationSuccess(true);
+                  setIsProofReviewModalOpen(false);
+                }}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
+      )}
+
+      {/* Main Content Info */}
+      <Card className="overflow-hidden border-t-4 border-t-primary shadow-md">
+        <div className="grid gap-8 p-6 lg:p-8">
+          <ContractInformation data={contractDetail} />
+
+          <div className="border-t border-gray-100 pt-8">
+            <ScopeOfWork type={type} data={contractDetail.scope_of_work} />
+          </div>
+
+          <div className="border-t border-gray-100 pt-8">
+            <FinancialTerms
+              type={type}
+              data={contractDetail.financial_terms}
+              deposit={{
+                amount: contractDetail.deposit_amount,
+                isPaid: contractDetail.is_deposit_paid,
+                percent: contractDetail.deposit_percent,
+              }}
+            />
+          </div>
+
+          <div className="border-t border-gray-100 pt-8">
+            <LegalTerms data={contractDetail.legal_terms} />
+          </div>
+        </div>
       </Card>
 
       <ContractPreviewModal

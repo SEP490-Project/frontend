@@ -23,6 +23,16 @@ const ContractInformation: React.FC<{ data: any }> = ({ data }) => {
       ACTIVE: "bg-green-100 text-green-800 border-green-300",
       EXPIRED: "bg-red-100 text-red-800 border-red-300",
       TERMINATED: "bg-orange-100 text-orange-800 border-orange-300",
+      INACTIVE: "bg-yellow-100 text-yellow-800 border-yellow-300",
+      COMPLATED: "bg-emerald-100 text-emerald-800 border-emerald-300",
+      BRAND_VIOLATED: "bg-purple-100 text-purple-800 border-purple-300",
+      BRAND_PENALTY_PENDING: "bg-amber-100 text-amber-800 border-amber-300",
+      BRAND_PENALTY_PAID: "bg-teal-100 text-teal-800 border-teal-300",
+      KOL_VIOLATED: "bg-pink-100 text-pink-800 border-pink-300",
+      KOL_REFUND_PENDING: "bg-indigo-100 text-indigo-800 border-indigo-300",
+      KOL_PROOF_SUBMITTED: "bg-cyan-100 text-cyan-800 border-cyan-300",
+      KOL_PROOF_REJECTED: "bg-rose-100 text-rose-800 border-rose-300",
+      KOL_REFUND_APPROVED: "bg-lime-100 text-lime-800 border-lime-300",
     };
     return colors[status] || "bg-gray-100 text-gray-800";
   };

@@ -27,9 +27,16 @@ import {
   FaCheck,
   FaXmark,
   FaArrowRight,
+  FaEllipsisVertical,
 } from "react-icons/fa6";
 import { Loader2, AlertTriangle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import ContractViolationSection from "@/components/manage/brand/ContractViolationSection";
 import ViolationPenaltyPayment from "@/components/manage/brand/ViolationPenaltyPayment";
 import ViolationProofReview from "@/components/manage/brand/ViolationProofReview";
@@ -190,102 +197,115 @@ export default function ContractDetailPage() {
           </div>
         </div>
 
-        <div className="flex gap-3 flex-wrap">
-          {/* Report Issue Button - For Active Contracts */}
-          {contractDetail.status === "ACTIVE" && id && (
-            <ReportKOLViolation
-              contractId={id}
-              contractNumber={contractDetail.contract_number}
-              onReportSuccess={() => handleViolationSuccess(true)}
-              trigger={
+        <div className="flex items-center gap-3">
+          {/* Primary Actions Group - Always visible */}
+          <div className="flex items-center gap-2">
+            {/* Action Buttons - Approve/Reject - Highest Priority */}
+            {canTakeAction && (
+              <div className="flex items-center gap-2 border-r border-gray-200 pr-3">
                 <Button
+                  onClick={handleReject}
+                  disabled={isRejecting || isApproving || actionLoading}
                   variant="outline"
-                  className="bg-white hover:bg-orange-50 text-orange-700 border-orange-200"
+                  className="border-red-300 text-red-700 bg-white hover:bg-red-50 flex items-center whitespace-nowrap"
                 >
-                  <AlertTriangle className="mr-2 h-4 w-4" />
-                  Report KOL Violation
+                  {isRejecting ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <FaXmark className="h-4 w-4 mr-2" />
+                  )}
+                  {isRejecting ? "Rejecting..." : "Reject"}
                 </Button>
-              }
-            />
-          )}
 
-          {/* Campaign Navigation */}
-          {contractDetail.campaign_id && (
-            <Button
-              onClick={() => navigate(`/manage/brand/campaigns/${contractDetail.campaign_id}`)}
-              variant="outline"
-              className="border-green-300 text-green-700 bg-white hover:bg-green-50 flex items-center"
-            >
-              <FaArrowRight className="h-4 w-4 mr-2" />
-              View Campaign: {contractDetail.campaign_name || "Campaign"}
-            </Button>
-          )}
-
-          {/* Action Buttons - Approve/Reject */}
-          {canTakeAction && (
-            <div className="flex items-center gap-2 border-l border-gray-200 pl-3 ml-1">
-              <Button
-                onClick={handleReject}
-                disabled={isRejecting || isApproving || actionLoading}
-                variant="outline"
-                className="border-red-300 text-red-700 bg-white hover:bg-red-50 flex items-center"
-              >
-                {isRejecting ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <FaXmark className="h-4 w-4 mr-2" />
-                )}
-                {isRejecting ? "Rejecting..." : "Reject"}
-              </Button>
-
-              <Button
-                onClick={handleApprove}
-                disabled={isApproving || isRejecting || actionLoading}
-                className="bg-green-600 hover:bg-green-700 text-white flex items-center"
-              >
-                {isApproving ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <FaCheck className="h-4 w-4 mr-2" />
-                )}
-                {isApproving ? "Approving..." : "Approve"}
-              </Button>
-            </div>
-          )}
-
-          {/* Preview & Download */}
-          <Button
-            onClick={() => setIsPreviewModalOpen(true)}
-            variant="outline"
-            className="border-blue-300 text-blue-700 bg-white hover:bg-blue-100 flex items-center"
-          >
-            <FaEye className="h-4 w-4 mr-2" />
-            Preview Contract
-          </Button>
-
-          <PDFDownloadLink
-            document={<ContractPDF data={contractDetail} />}
-            fileName={`${contractDetail.title || "contract"}_${contractDetail.contract_number}.pdf`}
-          >
-            {({ loading }) => (
-              <Button
-                disabled={loading}
-                className="bg-red-600 hover:bg-red-700 text-white flex items-center"
-              >
-                <FaFileArrowDown className="h-4 w-4 mr-2" />
-                {loading ? "Generating..." : "Download PDF"}
-              </Button>
+                <Button
+                  onClick={handleApprove}
+                  disabled={isApproving || isRejecting || actionLoading}
+                  className="bg-green-600 hover:bg-green-700 text-white flex items-center whitespace-nowrap"
+                >
+                  {isApproving ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <FaCheck className="h-4 w-4 mr-2" />
+                  )}
+                  {isApproving ? "Approving..." : "Approve"}
+                </Button>
+              </div>
             )}
-          </PDFDownloadLink>
 
-          {/* Refresh Contract */}
-          <Button
-            onClick={() => dispatch(getContractById(contractDetail.id))}
-            disabled={isRejecting || isApproving || actionLoading}
-            variant="outline"
-          >
-            <RefreshCw className={"h-4 w-4"} />
-          </Button>
+            {/* Essential Actions - Preview & Download */}
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => setIsPreviewModalOpen(true)}
+                variant="outline"
+                className="border-blue-300 text-blue-700 bg-white hover:bg-blue-100 flex items-center whitespace-nowrap"
+              >
+                <FaEye className="h-4 w-4 mr-2" />
+                Preview
+              </Button>
+
+              <PDFDownloadLink
+                document={<ContractPDF data={contractDetail} />}
+                fileName={`${contractDetail.title || "contract"}_${contractDetail.contract_number}.pdf`}
+              >
+                {({ loading }) => (
+                  <Button
+                    disabled={loading}
+                    className="bg-red-600 hover:bg-red-700 text-white flex items-center whitespace-nowrap"
+                  >
+                    <FaFileArrowDown className="h-4 w-4 mr-2" />
+                    {loading ? "Generating..." : "Download"}
+                  </Button>
+                )}
+              </PDFDownloadLink>
+            </div>
+          </div>
+
+          {/* Secondary Actions - Overflow Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex items-center justify-center w-10 h-10 p-0">
+                <FaEllipsisVertical className="h-4 w-4" />
+                <span className="sr-only">More options</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              {/* Report Issue Button - For Active Contracts */}
+              {contractDetail.status === "ACTIVE" && id && (
+                <ReportKOLViolation
+                  contractId={id}
+                  contractNumber={contractDetail.contract_number}
+                  onReportSuccess={() => handleViolationSuccess(true)}
+                  trigger={
+                    <DropdownMenuItem className="text-orange-700 hover:bg-orange-50 cursor-pointer">
+                      <AlertTriangle className="mr-2 h-4 w-4" />
+                      Report KOL Violation
+                    </DropdownMenuItem>
+                  }
+                />
+              )}
+
+              {/* Campaign Navigation */}
+              {contractDetail.campaign_id && (
+                <DropdownMenuItem
+                  onClick={() => navigate(`/manage/brand/campaigns/${contractDetail.campaign_id}`)}
+                  className="text-green-700 hover:bg-green-50 cursor-pointer"
+                >
+                  <FaArrowRight className="mr-2 h-4 w-4" />
+                  View Campaign
+                </DropdownMenuItem>
+              )}
+
+              {/* Refresh Contract */}
+              <DropdownMenuItem
+                onClick={() => dispatch(getContractById(contractDetail.id))}
+                disabled={isRejecting || isApproving || actionLoading}
+                className="cursor-pointer"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Refresh Contract
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 

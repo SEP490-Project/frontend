@@ -16,8 +16,15 @@ import {
   FaFileContract,
   FaPencil,
   FaArrowRight,
+  FaEllipsisVertical,
 } from "react-icons/fa6";
 import { Loader2, AlertTriangle, RefreshCw } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import ContractViolationSection from "@/components/manage/brand/ContractViolationSection";
 import { ReportBrandViolation } from "@/components/manage/marketing/violation";
 import { manageViolation } from "@/libs/services/manageViolation";
@@ -135,74 +142,95 @@ const ContractDetailPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex gap-3 flex-wrap">
-          {/* Report Brand Violation - only for ACTIVE contracts */}
-          {contractDetail.status === "ACTIVE" && (
-            <Button
-              onClick={() => setShowReportBrandViolation(true)}
-              variant="outline"
-              className="border-orange-300 text-orange-700 bg-white hover:bg-orange-50 flex items-center"
-            >
-              <AlertTriangle className="h-4 w-4 mr-2" />
-              Report Brand Violation
-            </Button>
-          )}
-
-          {contractDetail.status === "DRAFT" && (
-            <Button
-              onClick={() => navigate(`/manage/marketing/contracts/edit/${id}`)}
-              variant="outline"
-              className="flex items-center"
-            >
-              <FaPencil className="h-4 w-4 mr-2" />
-              Edit Contract
-            </Button>
-          )}
-
-          {contractDetail.campaign_id && (
-            <Button
-              onClick={() => navigate(`/manage/marketing/campaigns/${contractDetail.campaign_id}`)}
-              variant="outline"
-              className="border-green-300 text-green-700 bg-white hover:bg-green-50 flex items-center"
-            >
-              <FaArrowRight className="h-4 w-4 mr-2" />
-              View Campaign: {contractDetail.campaign_name || "Campaign"}
-            </Button>
-          )}
-
-          <Button
-            onClick={() => setIsPreviewModalOpen(true)}
-            variant="outline"
-            className="border-blue-300 text-blue-700 bg-white hover:bg-blue-100 flex items-center"
-          >
-            <FaEye className="h-4 w-4 mr-2" />
-            Preview Contract
-          </Button>
-
-          <PDFDownloadLink
-            document={<ContractPDF data={contractDetail} />}
-            fileName={`${contractDetail.title || "contract"}_${contractDetail.contract_number}.pdf`}
-          >
-            {({ loading }) => (
-              <Button
-                disabled={loading}
-                className="bg-red-600 hover:bg-red-700 text-white flex items-center"
-              >
-                <FaFileArrowDown className="h-4 w-4 mr-2" />
-                {loading ? "Generating..." : "Download PDF"}
-              </Button>
+        <div className="flex items-center gap-3">
+          {/* Primary Actions Group - Always visible */}
+          <div className="flex items-center gap-2">
+            {/* Edit Button for Draft Contracts - Highest Priority */}
+            {contractDetail.status === "DRAFT" && (
+              <div className="flex items-center gap-2 border-r border-gray-200 pr-3">
+                <Button
+                  onClick={() => navigate(`/manage/marketing/contracts/edit/${id}`)}
+                  variant="outline"
+                  className="flex items-center whitespace-nowrap"
+                >
+                  <FaPencil className="h-4 w-4 mr-2" />
+                  Edit Contract
+                </Button>
+              </div>
             )}
-          </PDFDownloadLink>
 
-          {/* Refresh Contract */}
-          <Button
-            onClick={() => dispatch(getContractById(contractDetail.id))}
-            disabled={detailLoading}
-            variant="outline"
-            className="items-center"
-          >
-            <RefreshCw className={"h-4 w-4"} />
-          </Button>
+            {/* Essential Actions - Preview & Download */}
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => setIsPreviewModalOpen(true)}
+                variant="outline"
+                className="border-blue-300 text-blue-700 bg-white hover:bg-blue-100 flex items-center whitespace-nowrap"
+              >
+                <FaEye className="h-4 w-4 mr-2" />
+                Preview
+              </Button>
+
+              <PDFDownloadLink
+                document={<ContractPDF data={contractDetail} />}
+                fileName={`${contractDetail.title || "contract"}_${contractDetail.contract_number}.pdf`}
+              >
+                {({ loading }) => (
+                  <Button
+                    disabled={loading}
+                    className="bg-red-600 hover:bg-red-700 text-white flex items-center whitespace-nowrap"
+                  >
+                    <FaFileArrowDown className="h-4 w-4 mr-2" />
+                    {loading ? "Generating..." : "Download"}
+                  </Button>
+                )}
+              </PDFDownloadLink>
+            </div>
+          </div>
+
+          {/* Secondary Actions - Overflow Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex items-center justify-center w-10 h-10 p-0">
+                <FaEllipsisVertical className="h-4 w-4" />
+                <span className="sr-only">More options</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              {/* Report Brand Violation - only for ACTIVE contracts */}
+              {contractDetail.status === "ACTIVE" && (
+                <DropdownMenuItem
+                  onClick={() => setShowReportBrandViolation(true)}
+                  className="text-orange-700 hover:bg-orange-50 cursor-pointer"
+                >
+                  <AlertTriangle className="mr-2 h-4 w-4" />
+                  Report Brand Violation
+                </DropdownMenuItem>
+              )}
+
+              {/* Campaign Navigation */}
+              {contractDetail.campaign_id && (
+                <DropdownMenuItem
+                  onClick={() =>
+                    navigate(`/manage/marketing/campaigns/${contractDetail.campaign_id}`)
+                  }
+                  className="text-green-700 hover:bg-green-50 cursor-pointer"
+                >
+                  <FaArrowRight className="mr-2 h-4 w-4" />
+                  View Campaign
+                </DropdownMenuItem>
+              )}
+
+              {/* Refresh Contract */}
+              <DropdownMenuItem
+                onClick={() => dispatch(getContractById(contractDetail.id))}
+                disabled={detailLoading}
+                className="cursor-pointer"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Refresh Contract
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 

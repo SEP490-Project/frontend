@@ -40,6 +40,7 @@ import { toast } from "sonner";
 const PAGE_SIZE = 5;
 
 const CONTRACT_PAYMENT_STATUS_LABELS: Record<string, string> = {
+  NOT_STARTED: "Not Started",
   PENDING: "Pending",
   PAID: "Paid",
   OVERDUE: "Overdue",
@@ -52,6 +53,7 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
+  NOT_STARTED: "bg-gray-100 text-gray-800 border-gray-200",
   PAID: "bg-green-100 text-green-800 border-green-200",
   PENDING: "bg-yellow-100 text-yellow-800 border-yellow-200",
   OVERDUE: "bg-orange-100 text-orange-800 border-orange-200",
@@ -532,6 +534,7 @@ const ContractPaymentBrandPage: React.FC = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">All Status</SelectItem>
+                <SelectItem value="NOT_STARTED">Not Started</SelectItem>
                 <SelectItem value="PENDING">Pending</SelectItem>
                 <SelectItem value="PAID">Paid</SelectItem>
                 <SelectItem value="OVERDUE">Overdue</SelectItem>

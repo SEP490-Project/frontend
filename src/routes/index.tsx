@@ -12,6 +12,7 @@ import {
   ProductApproval,
   ContentApproval as BrandContentApproval,
   ProductDetail as BrandProductDetail,
+  CampaignDetail as BrandCampaignDetail,
 } from "@/pages/manager/brand";
 import BrandContractDetail from "@/pages/manager/brand/ContractDetail";
 import {
@@ -218,7 +219,7 @@ const AppRoutes = () => (
           <Route path="contracts" element={<Contract />} />
           <Route path="contracts/:id" element={<BrandContractDetail />} />
           <Route path="campaigns" element={<BrandCampaign />} />
-          <Route path="campaigns/:id" element={<CampaignDetail userRole="brand" />} />
+          <Route path="campaigns/:id" element={<BrandCampaignDetail />} />
           <Route path="contract-payment" element={<ContractPaymentBrand />} />
           <Route path="payment-transaction" element={<BrandPaymentTransaction />} />
           <Route path="product-approval" element={<ProductApproval />} />

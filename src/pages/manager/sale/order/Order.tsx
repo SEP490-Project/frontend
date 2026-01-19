@@ -158,7 +158,12 @@ const Order: React.FC = () => {
           </div>
 
           <div>
-            <Button variant="outline" onClick={() => {}}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setParams({ page: 1, limit: 5, search: "", status: "" });
+              }}
+            >
               Clear All
             </Button>
           </div>

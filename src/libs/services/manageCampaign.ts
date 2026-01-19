@@ -24,4 +24,7 @@ export const manageCampaign = {
 
   rejectCampaign: (req: string, reason?: string) =>
     api.patch(`/campaigns/id/${req}/reject`, { reason }),
+
+  updateCampaign: (campaignId: string, request: CampaignRequest) =>
+    api.put(`/campaigns/id/${campaignId}`, request),
 };

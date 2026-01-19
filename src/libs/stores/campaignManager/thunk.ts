@@ -119,3 +119,19 @@ export const suggestCampaign = createAsyncThunk(
     }
   },
 );
+
+export const updateCampaign = createAsyncThunk(
+  "/campaigns/update",
+  async (
+    { campaignId, request }: { campaignId: string; request: CampaignRequest },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await manageCampaign.updateCampaign(campaignId, request);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Failed");
+    }
+  },
+);

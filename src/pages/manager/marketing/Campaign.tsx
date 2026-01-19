@@ -290,23 +290,25 @@ const CampaignPage: React.FC = () => {
                               <p>View campaign</p>
                             </TooltipContent>
                           </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 hover:bg-yellow-50"
-                                onClick={() =>
-                                  navigate(`/manage/marketing/campaigns/edit/${campaign.id}`)
-                                }
-                              >
-                                <FaPenToSquare className="text-yellow-600" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Edit campaign</p>
-                            </TooltipContent>
-                          </Tooltip>
+                          {campaign.status === "DRAFT" && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 hover:bg-yellow-50"
+                                  onClick={() =>
+                                    navigate(`/manage/marketing/campaigns/edit/${campaign.id}`)
+                                  }
+                                >
+                                  <FaPenToSquare className="text-yellow-600" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Edit campaign</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
                         </div>
                       </TableCell>
                     </motion.tr>
@@ -387,23 +389,25 @@ const CampaignPage: React.FC = () => {
                           <p>View campaign</p>
                         </TooltipContent>
                       </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 hover:bg-yellow-50"
-                            onClick={() =>
-                              navigate(`/manage/marketing/campaigns/${campaign.id}/edit`)
-                            }
-                          >
-                            <FaPenToSquare className="text-yellow-600" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Edit campaign</p>
-                        </TooltipContent>
-                      </Tooltip>
+                      {campaign.status === "DRAFT" && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 hover:bg-yellow-50"
+                              onClick={() =>
+                                navigate(`/manage/marketing/campaigns/edit/${campaign.id}`)
+                              }
+                            >
+                              <FaPenToSquare className="text-yellow-600" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Edit campaign</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
                     </div>
                   </motion.div>
                 ))}

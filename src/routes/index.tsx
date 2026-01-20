@@ -85,9 +85,11 @@ import Representative from "@/pages/manager/admin/configurations/Representative"
 import PrivacyPolicyAdmin from "@/pages/manager/admin/configurations/PrivacyPolicyAdmin";
 import GhnMock from "@/pages/manager/shared/GhnMock";
 import SystemSpecs from "@/pages/manager/admin/SystemSpecs";
+import ScrollToTop from "@/components/global/ScrollToTop";
 
 const AppRoutes = () => (
   <BrowserRouter>
+    <ScrollToTop />
     <Routes>
       <Route path="/sales-app/login" element={<SalesPwaLogin />} />
       <Route element={<SalesPwaRoute />}>

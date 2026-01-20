@@ -155,9 +155,15 @@ const Blog = () => {
                     >
                       <div className="relative h-48 overflow-hidden">
                         <img
-                          src={post.thumbnail_url}
+                          src={post.thumbnail_url || "/not-found-800x384.png"}
                           alt={post.title}
                           className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            if (target.src !== window.location.origin + "/not-found-800x384.png") {
+                              target.src = "/not-found-800x384.png";
+                            }
+                          }}
                         />
                         <div className="absolute top-4 left-4">
                           <span className="bg-[#fec6d4] text-[#383838] px-3 py-1 rounded-full text-sm font-medium">

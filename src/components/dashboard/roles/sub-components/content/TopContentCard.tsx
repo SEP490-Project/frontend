@@ -79,6 +79,8 @@ export const TopContentCard: React.FC<TopContentCardProps> = ({
                   key={content.content_id}
                   variants={itemVariants}
                   custom={index}
+                  initial="hidden"
+                  animate="visible"
                   className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200"
                 >
                   <motion.div

@@ -223,6 +223,7 @@ export interface AffiliateStats {
 }
 
 export interface ChannelDetailsResponse {
+  last_synced_at: string;
   channel: ChannelInfo;
   period: PeriodInfo;
   mapped_metrics: Record<string, number>;

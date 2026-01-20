@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import type { PreOrderData } from "@/libs/types/pre-order";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -14,13 +14,24 @@ import {
   Tag,
   Clock,
 } from "lucide-react";
+import { useAppDispatch, type RootState } from "@/libs/stores";
+import { useSelector } from "react-redux";
+import { getPreorderPriceBreakdownThunk } from "@/libs/stores/orderManager/thunk";
 
 interface PreOrderDetailProps {
   preOrder: PreOrderData;
 }
 
 const PreOrderDetail: React.FC<PreOrderDetailProps> = ({ preOrder }) => {
+  const dispatch = useAppDispatch();
+
+  const { preorderPriceBreakDown, loading } = useSelector((state: RootState) => state?.manageOrder);
+
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (preOrder?.id) dispatch(getPreorderPriceBreakdownThunk(preOrder.id));
+  }, [dispatch, preOrder.id]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -97,14 +108,18 @@ const PreOrderDetail: React.FC<PreOrderDetailProps> = ({ preOrder }) => {
     );
   };
 
+  if (!preOrder) {
+    return <div>No pre-order data available.</div>;
+  }
+
+  if (loading) {
+    return <div>Loading pre-order details...</div>;
+  }
+
   return (
     <div className="space-y-6">
       {/* Header Section */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900">Pre-Order Details</h2>
-          <p className="text-sm text-gray-500 font-mono mt-1">#{preOrder.id.slice(0, 8)}...</p>
-        </div>
         <div className="flex items-center gap-2">
           <Badge
             className={
@@ -620,6 +635,49 @@ const PreOrderDetail: React.FC<PreOrderDetailProps> = ({ preOrder }) => {
               <p className="text-3xl font-bold text-gray-900 mt-1">{preOrder.quantity}</p>
             </div>
           </div>
+
+          {/* Price Breakdown */}
+          {preorderPriceBreakDown && preorderPriceBreakDown.data.length > 0 && (
+            <>
+              <Separator className="my-4" />
+              <div className="space-y-3">
+                <h4 className="text-sm font-semibold text-gray-700">Price Breakdown</h4>
+                {preorderPriceBreakDown.data.map((breakdown) => (
+                  <div
+                    key={breakdown.item_id}
+                    className="bg-white/60 rounded-lg p-4 border border-gray-200"
+                  >
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div>
+                        <div>
+                          <p className="text-xs text-gray-700">
+                            Company Share{" "}
+                            <span className="text-xs text-gray-500">
+                              ({breakdown.company_percentage}%)
+                            </span>
+                          </p>
+                        </div>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {formatCurrency(breakdown.company_amount)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-700">
+                          KOL Share{" "}
+                          <span className="text-xs text-gray-500">
+                            ({breakdown.kol_percentage}%)
+                          </span>
+                        </p>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {formatCurrency(breakdown.kol_amount)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>

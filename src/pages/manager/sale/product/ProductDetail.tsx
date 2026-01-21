@@ -34,7 +34,6 @@ import type {
 import { MdHeight, MdWidthNormal } from "react-icons/md";
 import { convertNumberToCurrency, formatDate } from "@/libs/helper/helper";
 import { FaMoneyBill } from "react-icons/fa6";
-import PlaceholderImage from "public/icon.png";
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -403,7 +402,7 @@ const ProductDetail: React.FC = () => {
                   src={
                     typeof currentImage === "string"
                       ? currentImage
-                      : currentImage?.image_url || PlaceholderImage
+                      : currentImage?.image_url || "/icon.png"
                   }
                   alt={product.name}
                   className="w-full h-full object-contain"

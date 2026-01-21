@@ -384,8 +384,11 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
         // Re-validate end_date when start_date changes
         if (updatedForm.end_date) {
           const endDate = normalizeDate(updatedForm.end_date);
-          if (endDate < startDate) {
-            onFieldValidation("end_date", "End date must be later than or equal to start date.");
+          const minEndDate = new Date(startDate);
+          minEndDate.setMonth(minEndDate.getMonth() + 1);
+
+          if (endDate < normalizeDate(minEndDate)) {
+            onFieldValidation("end_date", "End date must be at least 1 month after start date.");
           } else {
             onFieldValidation("end_date", null);
           }
@@ -397,21 +400,25 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
         (field === "end_date" && updatedForm.signed_date) ||
         (field === "end_date" && updatedForm.start_date)
       ) {
-        const signedDate = normalizeDate(updatedForm.signed_date);
-        const startDate = updatedForm.start_date
-          ? normalizeDate(updatedForm.start_date)
-          : signedDate;
         const endDate = normalizeDate(updatedForm.end_date);
-        const referenceDate = updatedForm.start_date ? startDate : signedDate;
 
-        if (endDate < referenceDate) {
-          const referenceName = updatedForm.start_date ? "start date" : "signed date";
-          onFieldValidation(
-            "end_date",
-            `End date must be later than or equal to ${referenceName}.`,
-          );
-        } else {
-          onFieldValidation("end_date", null);
+        if (updatedForm.start_date) {
+          const startDate = normalizeDate(updatedForm.start_date);
+          const minEndDate = new Date(startDate);
+          minEndDate.setMonth(minEndDate.getMonth() + 1);
+
+          if (endDate < normalizeDate(minEndDate)) {
+            onFieldValidation("end_date", "End date must be at least 1 month after start date.");
+          } else {
+            onFieldValidation("end_date", null);
+          }
+        } else if (updatedForm.signed_date) {
+          const signedDate = normalizeDate(updatedForm.signed_date);
+          if (endDate <= signedDate) {
+            onFieldValidation("end_date", "End date must be later than signed date.");
+          } else {
+            onFieldValidation("end_date", null);
+          }
         }
       }
     }
@@ -742,14 +749,22 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                           explainLine={`end_date:${formData.start_date || formData.signed_date || ""}`}
                           minDate={(() => {
                             if (formData.start_date) {
-                              return formData.start_date;
+                              const startDate = new Date(formData.start_date);
+                              const minEndDate = new Date(startDate);
+                              minEndDate.setMonth(minEndDate.getMonth() + 1);
+                              return getLocalDateString(minEndDate);
                             }
                             if (formData.signed_date) {
-                              return formData.signed_date;
+                              const signedDate = new Date(formData.signed_date);
+                              signedDate.setDate(signedDate.getDate() + 1); // Next day after signed
+                              return getLocalDateString(signedDate);
                             }
                             return getLocalDateString(new Date());
                           })()}
                         />
+                        <p className="text-xs text-slate-500 mt-1">
+                          Must be at least 1 month after start date
+                        </p>
                         <FieldError message={errors.end_date} />
                       </div>
                     </div>

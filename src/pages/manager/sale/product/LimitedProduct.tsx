@@ -35,7 +35,6 @@ import type { LimitedProductParams, ProductData } from "@/libs/types/product";
 import { PaginationTable } from "@/components/global";
 import { SelectAddProductType } from "@/components/manage/sale/product/SelectAddProductType";
 import { getAllCategoriesThunk } from "@/libs/stores/categoryManager/thunk";
-import PlaceholderImage from "public/icon.png";
 
 const LimitedProduct: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -240,7 +239,7 @@ const LimitedProduct: React.FC = () => {
                     <TableCell className="py-4 max-w-xs">
                       <div className="flex items-center">
                         <img
-                          src={product.thumbnail_url?.[0] || PlaceholderImage}
+                          src={product.thumbnail_url?.[0] || "/icon.png"}
                           alt={product.name}
                           className="w-12 h-12 object-cover rounded mr-4 float-left"
                         />

@@ -114,6 +114,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
             "mp4",
             "mp3",
             "zip",
+            "rar",
           ],
     [allowedTypes],
   );

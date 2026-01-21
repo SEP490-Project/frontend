@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,83 @@ import {
 import { useContentMarketing } from "@/libs/hooks/useContentMarketing";
 import { useAppDispatch } from "@/libs/stores";
 import { HlsPlyrHydrator } from "@/components/hls-video-hydrator";
+
+// Progressive Video Loading Component
+const ProgressiveVideo: React.FC<{ videoUrl: string; poster?: string }> = ({
+  videoUrl,
+  poster,
+}) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const handleLoadStart = () => {
+    setIsLoading(true);
+    setHasError(false);
+  };
+
+  const handleCanPlay = () => {
+    setIsLoading(false);
+  };
+
+  const handleError = () => {
+    setIsLoading(false);
+    setHasError(true);
+  };
+
+  const handleRetry = () => {
+    setHasError(false);
+    setIsLoading(true);
+    if (videoRef.current) {
+      videoRef.current.load();
+    }
+  };
+
+  return (
+    <div className="relative bg-black rounded-lg overflow-hidden">
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-900 z-10">
+          <div className="text-center text-white">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+            <p className="text-sm">Loading video...</p>
+          </div>
+        </div>
+      )}
+
+      {hasError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-900 z-10">
+          <div className="text-center text-white">
+            <XCircle className="h-8 w-8 mx-auto mb-2 text-red-400" />
+            <p className="text-sm">Failed to load video</p>
+            <button
+              onClick={handleRetry}
+              className="mt-2 px-3 py-1 bg-white/20 rounded text-xs hover:bg-white/30 transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
+
+      <video
+        ref={videoRef}
+        className="w-full h-auto max-h-[500px]"
+        controls
+        poster={poster}
+        preload="metadata"
+        onLoadStart={handleLoadStart}
+        onCanPlay={handleCanPlay}
+        onError={handleError}
+        playsInline
+        controlsList="nodownload"
+      >
+        <source src={videoUrl} type="video/mp4" />
+        <source src={videoUrl} type="video/webm" />
+        Your browser does not support the video tag.
+      </video>
+    </div>
+  );
+};
 
 interface ContentPreviewProps {
   contentId: string | null;
@@ -124,6 +201,88 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
     setShowRejectModal(false);
   };
 
+  // Validate video URL
+  const isValidVideoUrl = (url: string | any): boolean => {
+    if (!url || typeof url !== "string") return false;
+    const videoExtensions = [".mp4", ".webm", ".ogg", ".mov", ".avi"];
+    const lowerUrl = url.toLowerCase();
+    return (
+      videoExtensions.some((ext) => lowerUrl.includes(ext)) ||
+      lowerUrl.includes("youtube.com") ||
+      lowerUrl.includes("vimeo.com") ||
+      lowerUrl.includes("cloudfront.net")
+    );
+  };
+
+  // Determine if this is video content
+  const isVideoContent = (() => {
+    if (!content) return false;
+
+    if (content.type === "VIDEO") return true;
+    if (content.blog) return false;
+
+    if (typeof content.body === "object" && content.body && (content.body as any).video_url) {
+      return true;
+    }
+
+    if (typeof content.body === "string" && isValidVideoUrl(content.body)) return true;
+    if (content.video_url && isValidVideoUrl(content.video_url)) return true;
+
+    try {
+      const parsed = typeof content.body === "string" ? JSON.parse(content.body) : content.body;
+      if (parsed && (parsed.type === "video" || parsed.video_url)) {
+        return true;
+      }
+    } catch {
+      // Not JSON
+    }
+
+    return false;
+  })();
+
+  // Extract video URL from content
+  const getVideoUrl = (): string | null => {
+    if (!content?.body) return content?.video_url || null;
+
+    if (typeof content.body === "object" && content.body && (content.body as any).video_url) {
+      const videoUrl = (content.body as any).video_url;
+      if (isValidVideoUrl(videoUrl)) return videoUrl;
+    }
+
+    if (typeof content.body === "string" && isValidVideoUrl(content.body)) {
+      return content.body;
+    }
+
+    try {
+      const parsed = typeof content.body === "string" ? JSON.parse(content.body) : content.body;
+      if (parsed?.video_url && isValidVideoUrl(parsed.video_url)) return parsed.video_url;
+      if (parsed?.body && isValidVideoUrl(parsed.body)) return parsed.body;
+    } catch {
+      // Not JSON
+    }
+
+    return content.video_url || null;
+  };
+
+  // Get video description
+  const getVideoDescription = (): string => {
+    if (!content) return "No description available";
+
+    if (typeof content.body === "object" && content.body) {
+      if ((content.body as any).description) return (content.body as any).description;
+      if ((content.body as any).title) return (content.body as any).title;
+    }
+
+    try {
+      const parsed = typeof content.body === "string" ? JSON.parse(content.body) : content.body;
+      return (
+        parsed?.description || parsed?.title || content.description || "No description available"
+      );
+    } catch {
+      return content.description || "No description available";
+    }
+  };
+
   // Format date for display
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -138,6 +297,8 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
 
   // Get reading time estimate
   const getReadingTime = (content: Content) => {
+    if (isVideoContent) return "3 min watch";
+
     try {
       let textContent = "";
 
@@ -331,21 +492,54 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
                 {/* Content Body */}
                 <div className="prose prose-base max-w-none text-gray-700 leading-relaxed">
                   {(() => {
+                    if (isVideoContent) {
+                      const videoUrl = getVideoUrl();
+                      const videoDescription = getVideoDescription();
+
+                      return (
+                        <div className="space-y-6">
+                          {videoUrl && (
+                            <ProgressiveVideo videoUrl={videoUrl} poster={content.thumbnail_url} />
+                          )}
+
+                          {videoDescription !== "No description available" && (
+                            <div className="text-gray-800 leading-relaxed">
+                              <p className="mb-4">{videoDescription}</p>
+                            </div>
+                          )}
+
+                          {!videoUrl && (
+                            <div className="text-gray-500 text-center p-8 bg-gray-50 rounded-lg">
+                              <p>Video content detected but no valid video URL found.</p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+
                     try {
                       // Handle TipTap JSON format in body field
                       if (content.body && typeof content.body === "object") {
                         const htmlContent = tiptapJsonToHtml(JSON.stringify(content.body));
                         return (
-                          <div
-                            dangerouslySetInnerHTML={{ __html: htmlContent }}
-                            className="ProseMirror prose prose-sm sm:prose-base lg:prose-lg max-w-none prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-blockquote:my-2"
-                          />
+                          <>
+                            <div
+                              dangerouslySetInnerHTML={{ __html: htmlContent }}
+                              className="ProseMirror prose prose-sm sm:prose-base lg:prose-lg max-w-none prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-blockquote:my-2"
+                            />
+                            <HlsPlyrHydrator />
+                          </>
                         );
                       }
 
                       // Handle body as string
                       if (content.body && typeof content.body === "string") {
-                        return <div dangerouslySetInnerHTML={{ __html: content.body }} />;
+                        return (
+                          <>
+                            <div dangerouslySetInnerHTML={{ __html: content.body }} />
+                            <HlsPlyrHydrator />
+                          </>
+                        );
                       }
 
                       return <div className="text-gray-500 italic">No content available</div>;
@@ -353,7 +547,6 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
                       return <div className="text-red-500 italic">Error loading content</div>;
                     }
                   })()}
-                  <HlsPlyrHydrator />
                 </div>
               </>
             )}

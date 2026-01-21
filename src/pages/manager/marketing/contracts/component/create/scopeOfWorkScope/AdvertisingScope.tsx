@@ -332,7 +332,7 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                 <div>
                   <ContractUploader
                     userId={user?.id || "unknown"}
-                    accept="image/*,video/*, .pdf, .doc, .docx, .ppt,.pptx"
+                    accept="image/*,video/*, .pdf, .doc, .docx, .ppt,.pptx, .zip"
                     multiple
                     maxFiles={10}
                     maxSize={100}

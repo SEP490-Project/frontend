@@ -81,6 +81,21 @@ const REP_CONFIG_TO_FORM_MAP: Record<string, string> = {
 const FieldError = ({ message }: { message?: string | null }) =>
   message ? <p className="text-xs text-red-500 mt-1">{message}</p> : null;
 
+// Helper function to get local date string without timezone conversion
+const getLocalDateString = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+// Helper function to normalize date for comparison (set to local midnight)
+const normalizeDate = (dateInput: string | Date): Date => {
+  const date =
+    typeof dateInput === "string" ? new Date(dateInput + "T00:00:00") : new Date(dateInput);
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+};
+
 const MemoBrandCard = React.memo(({ brand, isSelection }: { brand: any; isSelection: boolean }) => {
   if (!brand) return null;
   return (
@@ -205,16 +220,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
   const [bankSearch, setBankSearch] = useState("");
   const debouncedBankSearch = useDebounce(bankSearch, 400);
 
-  // Set start_date mặc định là ngày mai nếu chưa có
-  useEffect(() => {
-    if (!formData.start_date) {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(0, 0, 0, 0);
-      const isoTomorrow = tomorrow.toISOString().split("T")[0];
-      onInputChange("start_date", isoTomorrow);
-    }
-  }, [formData.start_date, onInputChange]);
+  // Start date will be selected by user with validation
 
   const filteredBanks = useMemo(() => {
     const search = debouncedBankSearch.toLowerCase();
@@ -334,30 +340,76 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
     const updatedForm = { ...formData, [field]: value };
     onInputChange(field, value);
 
-    // Không tự động set start_date từ signed_date nữa
-
     if (onFieldValidation) {
       const validation = await validateField(field, value, updatedForm);
       onFieldValidation(field, validation.isValid ? null : validation.error);
 
       if (field === "signed_date") {
-        const today = new Date();
-        const signedDate = new Date(value);
+        const today = normalizeDate(new Date());
+        const signedDate = normalizeDate(value);
         if (signedDate >= today) {
           onFieldValidation("signed_date", "Signed Date must be earlier than today.");
         } else {
           onFieldValidation("signed_date", null);
         }
+
+        // Re-validate start_date when signed_date changes
+        if (updatedForm.start_date) {
+          const startDate = normalizeDate(updatedForm.start_date);
+          const today = normalizeDate(new Date());
+          if (startDate < today || startDate <= signedDate) {
+            onFieldValidation(
+              "start_date",
+              "Start date must be today or later, and after signed date.",
+            );
+          } else {
+            onFieldValidation("start_date", null);
+          }
+        }
+      }
+
+      if (field === "start_date") {
+        const startDate = normalizeDate(value);
+        const today = normalizeDate(new Date());
+        const signedDate = updatedForm.signed_date ? normalizeDate(updatedForm.signed_date) : null;
+
+        if (startDate < today) {
+          onFieldValidation("start_date", "Start date must be today or later.");
+        } else if (signedDate && startDate <= signedDate) {
+          onFieldValidation("start_date", "Start date must be after signed date.");
+        } else {
+          onFieldValidation("start_date", null);
+        }
+
+        // Re-validate end_date when start_date changes
+        if (updatedForm.end_date) {
+          const endDate = normalizeDate(updatedForm.end_date);
+          if (endDate < startDate) {
+            onFieldValidation("end_date", "End date must be later than or equal to start date.");
+          } else {
+            onFieldValidation("end_date", null);
+          }
+        }
       }
 
       if (
         (field === "signed_date" && updatedForm.end_date) ||
-        (field === "end_date" && updatedForm.signed_date)
+        (field === "end_date" && updatedForm.signed_date) ||
+        (field === "end_date" && updatedForm.start_date)
       ) {
-        const signedDate = new Date(updatedForm.signed_date);
-        const endDate = new Date(updatedForm.end_date);
-        if (endDate < signedDate) {
-          onFieldValidation("end_date", "End date must be later than or equal to signed date.");
+        const signedDate = normalizeDate(updatedForm.signed_date);
+        const startDate = updatedForm.start_date
+          ? normalizeDate(updatedForm.start_date)
+          : signedDate;
+        const endDate = normalizeDate(updatedForm.end_date);
+        const referenceDate = updatedForm.start_date ? startDate : signedDate;
+
+        if (endDate < referenceDate) {
+          const referenceName = updatedForm.start_date ? "start date" : "signed date";
+          onFieldValidation(
+            "end_date",
+            `End date must be later than or equal to ${referenceName}.`,
+          );
         } else {
           onFieldValidation("end_date", null);
         }
@@ -650,19 +702,34 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                     error={errors.signed_date}
                     required
                     explainLine="signed_date"
+                    maxDate={(() => {
+                      const yesterday = new Date();
+                      yesterday.setDate(yesterday.getDate() - 1);
+                      return getLocalDateString(yesterday);
+                    })()}
                   />
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Contract Duration</Label>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <Label className="text-xs">Start Date</Label>
+                        <Label className="text-xs">Start Date *</Label>
                         <DatePicker
                           value={formData.start_date || ""}
-                          onChange={() => {}}
-                          placeholder="Auto-set to today"
-                          disabled
+                          onChange={(value: string) => handleFieldChange("start_date", value)}
+                          placeholder="Select start date"
+                          error={errors.start_date}
+                          required
+                          explainLine={`contract_start:${formData.signed_date || ""}`}
+                          minDate={(() => {
+                            const yesterday = new Date();
+                            yesterday.setDate(yesterday.getDate() - 1);
+                            return getLocalDateString(yesterday);
+                          })()}
                         />
-                        <p className="text-xs text-slate-500 mt-1">Auto-set to today</p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Must be today or later, and after signed date
+                        </p>
+                        <FieldError message={errors.start_date} />
                       </div>
                       <div>
                         <Label className="text-xs">End Date *</Label>
@@ -672,7 +739,16 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                           placeholder="Select end date"
                           error={errors.end_date}
                           required
-                          explainLine={`end_date:${formData.start_date || ""}`}
+                          explainLine={`end_date:${formData.start_date || formData.signed_date || ""}`}
+                          minDate={(() => {
+                            if (formData.start_date) {
+                              return formData.start_date;
+                            }
+                            if (formData.signed_date) {
+                              return formData.signed_date;
+                            }
+                            return getLocalDateString(new Date());
+                          })()}
                         />
                         <FieldError message={errors.end_date} />
                       </div>

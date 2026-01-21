@@ -178,7 +178,7 @@ const BrandProductDetail: React.FC = () => {
         </div>
 
         {/* Brand Action Buttons */}
-        {product?.status === "DRAFT" && (
+        {product?.status === "SUBMITTED" && (
           <div className="flex items-center gap-2">
             <Button
               variant="outline"

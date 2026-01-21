@@ -131,7 +131,6 @@ const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, err
                 tax_withholding: { threshold: 0, rate_percent: 0 },
               });
             }
-            // eslint-disable-next-line
           },
           [] /* only run once on mount */,
         )}

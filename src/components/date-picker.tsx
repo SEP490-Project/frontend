@@ -131,15 +131,29 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                   twoMonthsAgo.setMonth(today.getMonth() - 2);
                   if (date < twoMonthsAgo || date > today) return true;
                 }
-                // Giới hạn end_date: chỉ được chọn sau start_date tối thiểu 1 tháng
+                // Giới hạn start_date: phải sau ngày ký và sau hôm nay
+                if (explainLine && explainLine.startsWith("start_date:")) {
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  const signedDateStr = explainLine.replace("start_date:", "").trim();
+                  const signedDate = parseDate(signedDateStr);
+
+                  // Phải sau hôm nay
+                  if (date <= today) return true;
+
+                  // Nếu có signed_date, phải sau signed_date
+                  if (signedDate) {
+                    signedDate.setHours(0, 0, 0, 0);
+                    if (date <= signedDate) return true;
+                  }
+                }
+                // Giới hạn end_date: chỉ được chọn sau start_date (không bắt buộc 1 tháng)
                 if (explainLine && explainLine.startsWith("end_date:")) {
                   const minDateStr = explainLine.replace("end_date:", "").trim();
                   const minDate = parseDate(minDateStr);
                   if (minDate) {
-                    const minEndDate = new Date(minDate);
-                    minEndDate.setMonth(minEndDate.getMonth() + 1);
-                    minEndDate.setHours(0, 0, 0, 0);
-                    if (date < minEndDate) return true;
+                    minDate.setHours(0, 0, 0, 0);
+                    if (date <= minDate) return true;
                   }
                 }
                 if (minDate && date < parseDate(minDate)!) return true;
@@ -163,9 +177,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         </p>
       )}
       {explainLine && explainLine.startsWith("end_date:") && (
-        <p className="text-xs text-gray-500 mt-1">
-          *You can only select an end date at least 1 month after the start date.
-        </p>
+        <p className="text-xs text-gray-500 mt-1">*End date must be after the start date.</p>
       )}
     </div>
   );

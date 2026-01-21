@@ -5,7 +5,12 @@ export interface OrderData {
   id: string;
   user_id: string;
   status: string;
+  bank_account: string;
+  bank_name: string;
+  bank_account_holder: string;
   total_amount: number;
+  company_revenue: number;
+  kol_revenue: number;
   full_name: string;
   phone_number: string;
   email: string;
@@ -22,17 +27,14 @@ export interface OrderData {
   created_at: string;
   updated_at: string;
   is_self_picked_up: boolean;
-  user_note: string;
+  confirmation_image?: string;
   order_type: string;
   ghn_order_code?: string;
-  order_items: OrderItem[];
-  confirmation_image?: string;
+  user_note: string;
   payment_transaction: PaymentTransaction;
-  bank_account?: string;
-  bank_name?: string;
-  bank_account_holder?: string;
-  staff_resource?: string;
+  order_items: OrderItem[];
   user_resource?: string;
+  staff_resource?: string;
 }
 
 interface PaymentTransaction {

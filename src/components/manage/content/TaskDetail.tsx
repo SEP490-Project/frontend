@@ -442,10 +442,16 @@ export function TaskDetail({ taskId, onClose, isVisible }: TaskDetailProps) {
 
   const getTaskColor = (type: string): string => {
     switch (type) {
-      case "CONTENT":
+      case "PRODUCT":
         return "#f7c06d";
-      default:
+      case "CONTENT":
+        return "#ff88fa";
+      case "EVENT":
+        return "#6ad1ff";
+      case "OTHER":
         return "#9976ff";
+      default:
+        return "#e5e7eb";
     }
   };
 

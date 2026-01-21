@@ -9,7 +9,6 @@ import {
 import { useAppDispatch, type RootState } from "@/libs/stores";
 import {
   salesFinancialsDashboard,
-  salesRevenueGrowth,
   salesRevenueTrend,
   salesOrderDashboard,
   salesOrderTrend,
@@ -29,27 +28,64 @@ import { DatePicker } from "@/components/date-picker";
 import { Button } from "@/components/ui/button";
 import { convertNumberToCurrency } from "@/libs/helper/helper";
 
-const SaleDashboard: React.FC = () => {
-  const [showFilter, setShowFilter] = React.useState(false);
-  const [startDate, setStartDate] = React.useState<string | undefined>(undefined);
-  const [endDate, setEndDate] = React.useState<string | undefined>(undefined);
-  const [periodGap, setPeriodGap] = React.useState<"day" | "week" | "month" | "quarter" | "year">(
-    "day",
-  );
-
-  const formatDateToRFC3339 = (dateString: string | undefined) => {
-    if (!dateString) return undefined;
-    try {
-      const date = new Date(dateString);
-      return date.toISOString();
-    } catch {
-      return undefined;
+const formatDateToRFC3339 = (dateString: string | undefined, isEndDate: boolean = false) => {
+  if (!dateString) return undefined;
+  try {
+    const date = new Date(dateString);
+    if (isEndDate) {
+      date.setHours(23, 59, 59, 999);
+    } else {
+      date.setHours(0, 0, 0, 0);
     }
-  };
+    return date.toISOString();
+  } catch {
+    return undefined;
+  }
+};
+
+const SaleDashboard: React.FC = () => {
+  const currentDate = new Date();
+  const defaultStartDate = new Date();
+  defaultStartDate.setMonth(currentDate.getMonth() - 1);
+
+  const [showFilter, setShowFilter] = React.useState(false);
+  const [startDate, setStartDate] = React.useState<string | undefined>(
+    formatDateToRFC3339(defaultStartDate.toISOString().split("T")[0], false),
+  );
+  const [endDate, setEndDate] = React.useState<string | undefined>(
+    formatDateToRFC3339(currentDate.toISOString().split("T")[0], true),
+  );
+  const [periodGap, setPeriodGap] = React.useState<"day" | "month" | "year">("day");
 
   const handleClearDates = () => {
     setStartDate(undefined);
     setEndDate(undefined);
+  };
+
+  const handleSetGapPeriod = (value: "day" | "month" | "year") => {
+    setPeriodGap(value);
+    if (value === "day") {
+      const start = new Date();
+      start.setMonth(currentDate.getMonth() - 1);
+      const end = new Date();
+      setStartDate(start.toISOString().split("T")[0]);
+      setEndDate(end.toISOString().split("T")[0]);
+      return;
+    } else if (value === "month") {
+      const start = new Date();
+      start.setFullYear(currentDate.getFullYear() - 1);
+      const end = new Date();
+      setStartDate(start.toISOString().split("T")[0]);
+      setEndDate(end.toISOString().split("T")[0]);
+      return;
+    } else if (value === "year") {
+      const start = new Date();
+      start.setFullYear(currentDate.getFullYear() - 5);
+      const end = new Date();
+      setStartDate(start.toISOString().split("T")[0]);
+      setEndDate(end.toISOString().split("T")[0]);
+      return;
+    }
   };
 
   // Handle scroll to hide filter
@@ -77,7 +113,6 @@ const SaleDashboard: React.FC = () => {
       <div className="p-2 sm:p-6 w-full flex flex-col gap-6">
         <div className="flex flex-col sm:flex-row justify-between w-full gap-4">
           <h1 className="text-xl sm:text-2xl font-semibold">Dashboard</h1>
-
           <div className="flex flex-col sm:flex-row gap-4 sm:items-center justify-between w-full sm:w-auto">
             <div className="relative">
               <Button variant="default" size="lg" onClick={() => setShowFilter(!showFilter)}>
@@ -91,7 +126,7 @@ const SaleDashboard: React.FC = () => {
                     <Select
                       value={periodGap}
                       onValueChange={(value) =>
-                        setPeriodGap(value as "day" | "week" | "month" | "quarter" | "year")
+                        handleSetGapPeriod(value as "day" | "month" | "year")
                       }
                     >
                       <SelectTrigger className="w-[150px]">
@@ -99,9 +134,7 @@ const SaleDashboard: React.FC = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="day">Daily</SelectItem>
-                        <SelectItem value="week">Weekly</SelectItem>
                         <SelectItem value="month">Monthly</SelectItem>
-                        <SelectItem value="quarter">Quarterly</SelectItem>
                         <SelectItem value="year">Yearly</SelectItem>
                       </SelectContent>
                     </Select>
@@ -146,15 +179,15 @@ const SaleDashboard: React.FC = () => {
 
         <TabsContent value="overview">
           <OverviewTab
-            startDate={formatDateToRFC3339(startDate)}
-            endDate={formatDateToRFC3339(endDate)}
+            startDate={formatDateToRFC3339(startDate, false)}
+            endDate={formatDateToRFC3339(endDate, true)}
             periodGap={periodGap}
           />
         </TabsContent>
         <TabsContent value="order/preorder">
           <OrderTab
-            startDate={formatDateToRFC3339(startDate)}
-            endDate={formatDateToRFC3339(endDate)}
+            startDate={formatDateToRFC3339(startDate, false)}
+            endDate={formatDateToRFC3339(endDate, true)}
             periodGap={periodGap}
           />
         </TabsContent>
@@ -166,7 +199,7 @@ const SaleDashboard: React.FC = () => {
 interface TabProps {
   startDate?: string;
   endDate?: string;
-  periodGap?: "day" | "week" | "month" | "quarter" | "year";
+  periodGap?: "day" | "month" | "year";
 }
 
 const OverviewTab: React.FC<TabProps> = ({ startDate, endDate, periodGap = "day" }) => {
@@ -189,8 +222,6 @@ const OverviewTab: React.FC<TabProps> = ({ startDate, endDate, periodGap = "day"
         period_gap: periodGap,
       }),
     );
-
-    dispatch(salesRevenueGrowth({ compare_with: "day" }));
 
     dispatch(salesRevenueTrend({ from_date: startDate, to_date: endDate, period_gap: periodGap }));
   }, [dispatch, startDate, endDate, periodGap]);
@@ -469,7 +500,7 @@ const OverviewTab: React.FC<TabProps> = ({ startDate, endDate, periodGap = "day"
   );
 };
 
-const OrderTab: React.FC<TabProps> = ({ startDate, endDate, periodGap }) => {
+const OrderTab: React.FC<TabProps> = ({ startDate, endDate, periodGap = "day" }) => {
   const dispatch = useAppDispatch();
   const { orderDashboard, loadingOrderTrend, loadingOrderDashboard } = useSelector(
     (state: RootState) => state.manageSalesAnalytic,
@@ -489,7 +520,7 @@ const OrderTab: React.FC<TabProps> = ({ startDate, endDate, periodGap }) => {
       salesOrderTrend({
         from_date: startDate,
         to_date: endDate,
-        period_gap: "day",
+        period_gap: periodGap,
       }),
     );
   }, [dispatch, startDate, endDate, periodGap]);

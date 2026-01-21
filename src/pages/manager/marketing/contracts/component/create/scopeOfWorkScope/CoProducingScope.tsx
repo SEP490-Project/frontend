@@ -257,7 +257,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                   <div>
                     <ContractUploader
                       userId={user?.id || "unknown"}
-                      accept="image/*,video/*, .pdf, .doc, .docx, .ppt,.pptx"
+                      accept="image/*,video/*, .pdf, .doc, .docx, .ppt,.pptx, .zip"
                       multiple={true}
                       maxFiles={20}
                       maxSize={200}
@@ -549,7 +549,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                             <div>
                               <ContractUploader
                                 userId={user?.id || "unknown"}
-                                accept="image/*,video/*"
+                                accept="image/*,video/*,.zip"
                                 multiple={true}
                                 maxFiles={20}
                                 maxSize={200}

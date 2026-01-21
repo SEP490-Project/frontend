@@ -257,7 +257,7 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                   <div>
                     <ContractUploader
                       userId={user?.id || "unknown"}
-                      accept="image/*,video/*, .pdf, .doc, .docx, .ppt,.pptx, .zip"
+                      accept="image/*,video/*, .pdf, .doc, .docx, .ppt,.pptx, .zip, .rar"
                       multiple={true}
                       maxFiles={20}
                       maxSize={200}
@@ -274,6 +274,8 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                         "docx",
                         "ppt",
                         "pptx",
+                        "zip",
+                        "rar",
                       ]}
                       title="Upload product materials"
                       context={`coproducing-product-${i + 1}`}

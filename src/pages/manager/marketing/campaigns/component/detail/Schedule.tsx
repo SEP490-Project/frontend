@@ -1,7 +1,12 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useAppDispatch } from "@/libs/stores";
 import { useParams } from "react-router-dom";
-import { getTaskList, assignTask, getTaskDetail } from "@/libs/stores/taskManager/thunk";
+import {
+  getTaskList,
+  assignTask,
+  getTaskDetail,
+  updateTaskState,
+} from "@/libs/stores/taskManager/thunk";
 import { clearTaskDetail } from "@/libs/stores/taskManager/slice";
 import { getAllUsersThunk } from "@/libs/stores/userManager/thunk";
 import { useTaskMarketing } from "@/libs/hooks/useTaskMarketing";
@@ -238,6 +243,30 @@ const Schedule: React.FC<ScheduleProps> = ({ campaignId }) => {
     }
   };
 
+  const handleUpdateTaskState = async (task: TaskListMarketing, newState: string) => {
+    try {
+      await dispatch(
+        updateTaskState({
+          taskId: task.id,
+          state: newState,
+        }),
+      );
+
+      // Reload task list to get updated status
+      await fetchMonthTasks();
+
+      // Refresh task detail if currently viewing the same task
+      if (showDetailSlider && selectedTask?.id === task.id) {
+        await dispatch(getTaskDetail(task.id));
+      }
+
+      toast.success(`Task ${newState === "IN_PROGRESS" ? "started" : "completed"} successfully!`);
+    } catch (error) {
+      toast.error("Failed to update task status!");
+      console.error("Failed to update task status:", error);
+    }
+  };
+
   const getTaskIcon = (type: string) => {
     switch (type) {
       case "EVENT":
@@ -290,6 +319,12 @@ const Schedule: React.FC<ScheduleProps> = ({ campaignId }) => {
         taskDate.getDate() === date.getDate()
       );
     });
+  };
+
+  // Check if a date has tasks assigned to current user
+  const hasUserAssignedTasks = (date: Date): boolean => {
+    const tasksForDate = getTasksForDate(date);
+    return tasksForDate.some((task) => task.assigned_to_id === user?.id);
   };
 
   // Simplified task counts (not used for display anymore)
@@ -360,6 +395,7 @@ const Schedule: React.FC<ScheduleProps> = ({ campaignId }) => {
                 onContractSearch={() => {}}
                 contractLoading={false}
                 taskLoading={taskLoading}
+                hasUserAssignedTasks={hasUserAssignedTasks}
               />
             </motion.div>
           </CardContent>
@@ -454,6 +490,47 @@ const Schedule: React.FC<ScheduleProps> = ({ campaignId }) => {
                                   <TooltipContent>Assign this task to a team member</TooltipContent>
                                 </Tooltip>
                               )}
+                            {/* Start/Done Task buttons for assigned user */}
+                            {task.assigned_to_id === user?.id && (
+                              <>
+                                {task.status === "TODO" && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        size="sm"
+                                        className="text-xs bg-blue-600 hover:bg-blue-700 text-white"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleUpdateTaskState(task, "IN_PROGRESS");
+                                        }}
+                                      >
+                                        <FaClock className="h-3 w-3 mr-1" />
+                                        Start Task
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Start working on this task</TooltipContent>
+                                  </Tooltip>
+                                )}
+                                {task.status === "IN_PROGRESS" && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        size="sm"
+                                        className="text-xs bg-green-600 hover:bg-green-700 text-white"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleUpdateTaskState(task, "DONE");
+                                        }}
+                                      >
+                                        <FaCalendarCheck className="h-3 w-3 mr-1" />
+                                        Done Task
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Mark this task as completed</TooltipContent>
+                                  </Tooltip>
+                                )}
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>

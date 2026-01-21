@@ -168,6 +168,8 @@ export interface ListContent {
   type: string;
   status: string;
   thumbnail_url?: string;
+  video_url?: string;
+  description?: string;
   publish_date?: string;
   created_at: string;
   updated_at: string;

@@ -34,6 +34,8 @@ export interface Content {
     id: string;
     post_date: string;
   }[];
+  created_by?: UserBrief | null;
+  updated_by?: UserBrief | null;
 
   // Legacy fields for backward compatibility
   actor?: string;
@@ -43,6 +45,12 @@ export interface Content {
   html_content?: string;
   json_content?: object;
   video_url?: string;
+}
+
+interface UserBrief {
+  id: string;
+  username: string;
+  email: string;
 }
 
 export interface ContentListParams {

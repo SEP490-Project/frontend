@@ -595,7 +595,7 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
                     <div>
                       <ContractUploader
                         userId={user?.id || "unknown"}
-                        accept="image/*,video/*, .pdf, .doc, .docx, .ppt,.pptx, .zip"
+                        accept="image/*,video/*, .pdf, .doc, .docx, .ppt,.pptx, .zip, .rar"
                         multiple
                         maxFiles={10}
                         maxSize={100}
@@ -612,6 +612,8 @@ const AffiliateScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeOfW
                           "docx",
                           "ppt",
                           "pptx",
+                          "zip",
+                          "rar",
                         ]}
                         title="Upload creative materials"
                         context={`affiliate-content-${i + 1}`}

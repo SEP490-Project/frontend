@@ -41,12 +41,14 @@ import { toast } from "sonner";
 import { convertNumberToCurrency } from "@/libs/helper/helper";
 import { useSelector } from "react-redux";
 import { getValueByConfigKey } from "@/libs/stores/configManager/thunk";
+import { getTaskDetailById } from "@/libs/stores/taskManager/thunk";
 
 const VariantsStep = () => {
   const dispatch = useAppDispatch();
 
   const { productDetail } = useSelector((state: RootState) => state?.manageProduct);
   const { configValue } = useSelector((state: RootState) => state.manageConfig);
+  const { taskDetailById } = useSelector((state: RootState) => state.manageTask);
 
   const [variants, setVariants] = useState<VariantWithImage[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -92,6 +94,14 @@ const VariantsStep = () => {
   useEffect(() => {
     dispatch(getValueByConfigKey("product_maximum_variants"));
   }, [dispatch]);
+
+  // Fetch task details for LIMITED product to get KPI goals
+  useEffect(() => {
+    const taskId = state?.task?.id;
+    if (taskId && state?.productType === "LIMITED") {
+      dispatch(getTaskDetailById(taskId));
+    }
+  }, [dispatch, state?.task?.id, state?.productType]);
 
   useEffect(() => {
     const productId = String(
@@ -206,6 +216,27 @@ const VariantsStep = () => {
     if (data.type === "LIMITED" && data.input_stock && data.input_stock <= achievableQuantity) {
       toast.error("Stock must be greater than achievable quantity for limited variants.");
       return;
+    }
+
+    // Validate stock against KPI goals target for LIMITED products
+    if (data.type === "LIMITED" && data.input_stock) {
+      const kpiGoals = taskDetailById?.data?.description?.kpi_goals;
+      if (kpiGoals && kpiGoals.length > 0) {
+        // Find the maximum target from all KPI goals (parse as number)
+        const maxKpiTarget = Math.max(
+          ...kpiGoals.map((kpi) => {
+            const target = parseInt(kpi.target, 10);
+            return isNaN(target) ? 0 : target;
+          }),
+        );
+
+        if (maxKpiTarget > 0 && data.input_stock <= maxKpiTarget) {
+          toast.error(
+            `Stock must be greater than the KPI goals target (${maxKpiTarget}). Current stock: ${data.input_stock}`,
+          );
+          return;
+        }
+      }
     }
 
     setIsLoading(true);

@@ -332,7 +332,7 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                 <div>
                   <ContractUploader
                     userId={user?.id || "unknown"}
-                    accept="image/*,video/*, .pdf, .doc, .docx, .ppt,.pptx, .zip"
+                    accept="image/*,video/*, .pdf, .doc, .docx, .ppt,.pptx, .zip, .rar"
                     multiple
                     maxFiles={10}
                     maxSize={100}
@@ -349,6 +349,8 @@ const AdvertisingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                       "pdf",
                       "ppt",
                       "pptx",
+                      "zip",
+                      "rar",
                     ]}
                     title="Upload creative assets"
                     context={`advertising-content-${i + 1}`}

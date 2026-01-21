@@ -78,6 +78,7 @@ interface Task {
   description: TaskDescription;
   deadline: string;
   materialFiles?: File[];
+  assigned_to_id?: string;
 }
 
 interface Milestone {
@@ -185,6 +186,7 @@ const AddCampaignPage: React.FC = () => {
               },
               materialFiles: [],
               material_urls: materialUrls,
+              assigned_to_id: task.assigned_to_id || null,
             };
           }),
         }));
@@ -218,6 +220,7 @@ const AddCampaignPage: React.FC = () => {
         type: t.type,
         deadline: formatToISO(t.deadline),
         description: t.description?.description_json || {},
+        assigned_to_id: t.assigned_to_id || undefined,
       })),
     })),
   });

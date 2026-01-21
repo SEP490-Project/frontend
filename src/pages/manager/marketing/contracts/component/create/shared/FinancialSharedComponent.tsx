@@ -15,6 +15,23 @@ import { Plus, Trash2 } from "lucide-react";
 import { FaCalendarDay, FaChartLine } from "react-icons/fa6";
 import { format } from "date-fns";
 
+interface EventType {
+  id: number;
+  name?: string;
+  date?: string;
+  location?: string;
+  expected_duration?: string;
+}
+
+interface ScheduleType {
+  id: number;
+  milestone?: string;
+  percent?: number;
+  amount?: number;
+  due_date?: string;
+  linked_event_ids?: number[];
+}
+
 const formatCurrency = (value: number | string) => {
   if (!value) return 0;
   const numValue = typeof value === "string" ? parseFloat(value) : value;
@@ -94,24 +111,48 @@ export const SelectField: React.FC<{
 );
 
 export const PaymentSchedule: React.FC<{
-  schedules: any[];
+  schedules: ScheduleType[];
   totalCost: number;
-  onUpdate: (schedules: any[]) => void;
+  onUpdate: (schedules: ScheduleType[]) => void;
   startDate?: string;
   endDate?: string;
   depositPercent?: number;
-}> = ({ schedules, totalCost, onUpdate, startDate, endDate, depositPercent = 0 }) => {
+  numberOfEvents?: number;
+  events?: EventType[];
+}> = ({
+  schedules,
+  totalCost,
+  onUpdate,
+  startDate,
+  endDate,
+  depositPercent = 0,
+  numberOfEvents = 0,
+  events = [],
+}) => {
+  const totalPercent = schedules.reduce((sum, s) => sum + (s.percent || 0), 0);
+  const totalAmount = schedules.reduce((sum, s) => sum + (s.amount || 0), 0);
+
+  const minDate = startDate || undefined;
+  const maxDate = endDate || undefined;
+
+  const expectedPercent = 100 - depositPercent;
+  const expectedAmount = totalCost ? Math.round((totalCost * expectedPercent) / 100) : 0;
+
+  const percentValid = totalPercent === expectedPercent;
+  const amountValid = totalAmount === expectedAmount;
+
   const addSchedule = () => {
     const newId = schedules.length > 0 ? Math.max(...schedules.map((s) => s.id || 0)) + 1 : 1;
     // Tính phần trăm còn lại
-    const totalPercent = schedules.reduce((sum, s) => sum + (s.percent || 0), 0);
-    const percentLeft = Math.max(0, expectedPercent - totalPercent);
+    const currentTotalPercent = schedules.reduce((sum, s) => sum + (s.percent || 0), 0);
+    const percentLeft = Math.max(0, expectedPercent - currentTotalPercent);
     const newSchedule = {
       id: newId,
       milestone: "",
       percent: percentLeft,
       amount: totalCost ? Math.round((totalCost * percentLeft) / 100) : 0,
       due_date: "",
+      linked_event_ids: [] as number[], // Thêm field để liên kết với events
     };
     onUpdate([...schedules, newSchedule]);
   };
@@ -145,20 +186,73 @@ export const PaymentSchedule: React.FC<{
     onUpdate(schedules.filter((_, i) => i !== index));
   };
 
-  const totalPercent = schedules.reduce((sum, s) => sum + (s.percent || 0), 0);
-  const totalAmount = schedules.reduce((sum, s) => sum + (s.amount || 0), 0);
+  // Disable add nếu đã đủ percent hoặc vượt quá số milestone cho phép
+  const getMaxMilestones = () => {
+    if (numberOfEvents === 0) return Infinity; // Không giới hạn nếu không có event info
+    if (numberOfEvents === 1) return 1;
+    return numberOfEvents; // Với n events: max n milestones
+  };
 
-  const minDate = startDate || undefined;
-  const maxDate = endDate || undefined;
+  const getMinMilestones = () => {
+    if (numberOfEvents === 0) return 0;
+    if (numberOfEvents === 1) return 0; // 1 event có thể 0 hoặc 1 milestone
+    return 1; // Với n events (n >= 2): minimum 1 milestone
+  };
 
-  const expectedPercent = 100 - depositPercent;
-  const expectedAmount = totalCost ? Math.round((totalCost * expectedPercent) / 100) : 0;
+  const maxMilestones = getMaxMilestones();
+  const minMilestones = getMinMilestones();
+  const canAddMilestone = totalPercent < expectedPercent && schedules.length < maxMilestones;
 
-  const percentValid = totalPercent === expectedPercent;
-  const amountValid = totalAmount === expectedAmount;
+  // Helper function để tính minDate cho payment dựa trên linked events
+  const getMinPaymentDate = (schedule: ScheduleType, index: number): string | undefined => {
+    const linkedEventIds = schedule.linked_event_ids || [];
+    let calculatedMinDate = index === 0 ? minDate : schedules[index - 1]?.due_date || minDate;
 
-  // Disable add nếu đã đủ percent
-  const canAddMilestone = totalPercent < expectedPercent;
+    if (linkedEventIds.length > 0 && events.length > 0) {
+      // Tìm event date muộn nhất trong các linked events
+      let latestEventDate: Date | null = null;
+      linkedEventIds.forEach((eventId: number) => {
+        const event = events.find((e: EventType) => e.id === eventId);
+        if (event && event.date) {
+          const eventDate = new Date(event.date);
+          if (!latestEventDate || eventDate > latestEventDate) {
+            latestEventDate = eventDate;
+          }
+        }
+      });
+
+      if (latestEventDate) {
+        // Payment date phải sau event date
+        const dayAfterEvent = new Date(latestEventDate);
+        dayAfterEvent.setDate(dayAfterEvent.getDate() + 1);
+        const dayAfterEventStr = dayAfterEvent.toISOString().split("T")[0];
+
+        // Chọn date muộn hơn giữa calculatedMinDate và dayAfterEvent
+        if (!calculatedMinDate || dayAfterEventStr > calculatedMinDate) {
+          calculatedMinDate = dayAfterEventStr;
+        }
+      }
+    }
+
+    return calculatedMinDate;
+  };
+
+  // Helper function để lấy available events cho milestone
+  const getAvailableEventsForMilestone = (currentScheduleIndex: number): EventType[] => {
+    if (numberOfEvents === 0) return [];
+
+    // Lấy danh sách events đã được link với các milestones khác
+    const linkedEventsInOtherMilestones = new Set<number>();
+    schedules.forEach((schedule, index) => {
+      if (index !== currentScheduleIndex) {
+        const linkedIds = schedule.linked_event_ids || [];
+        linkedIds.forEach((id) => linkedEventsInOtherMilestones.add(id));
+      }
+    });
+
+    // Chỉ trả về events chưa được link với milestone nào khác
+    return events.filter((event) => !linkedEventsInOtherMilestones.has(event.id));
+  };
 
   return (
     <div className="space-y-4">
@@ -176,6 +270,30 @@ export const PaymentSchedule: React.FC<{
         </div>
       )}
 
+      {numberOfEvents > 0 && (
+        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-md text-sm text-emerald-800">
+          <div className="space-y-1">
+            <div>
+              <strong>Event-based Payment Rules:</strong>
+            </div>
+            <div>
+              • Number of Events: <strong>{numberOfEvents}</strong>
+            </div>
+            <div>
+              • Milestone Requirements:{" "}
+              {numberOfEvents === 1
+                ? "Maximum 1 milestone allowed"
+                : `Minimum 1, Maximum ${maxMilestones} milestones allowed`}
+            </div>
+            <div className="text-xs mt-1 space-y-1">
+              <div>• Each event can only be linked to ONE milestone.</div>
+              <div>• Each milestone can be linked to one or multiple events.</div>
+              <div>• Payment date must be after the latest linked event date.</div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {startDate && endDate && (
         <div className="p-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-800">
           <strong>Note:</strong> Payment dates must be between{" "}
@@ -184,68 +302,154 @@ export const PaymentSchedule: React.FC<{
         </div>
       )}
 
-      {schedules.map((schedule, index) => (
-        <Card key={schedule.id || index} className="p-4 bg-slate-50 border-slate-200">
-          <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_1fr_auto] gap-4">
-            <div>
-              <Label className="text-sm font-medium">Milestone Description</Label>
-              <Input
-                placeholder="Initial payment, Final delivery"
-                value={schedule.milestone || ""}
-                onChange={(e) => updateSchedule(index, "milestone", e.target.value)}
-                className="bg-white"
-              />
-            </div>
+      {schedules.map((schedule, index) => {
+        const availableEvents = getAvailableEventsForMilestone(index);
+        const linkedEventIds = schedule.linked_event_ids || [];
 
-            <div>
-              <Label className="text-sm font-medium">Percent</Label>
-              <Input
-                type="number"
-                placeholder="30"
-                value={schedule.percent || ""}
-                onChange={(e) => updateSchedule(index, "percent", parseFloat(e.target.value) || 0)}
-                className="bg-white"
-                min={0}
-                max={100}
-              />
-            </div>
+        return (
+          <Card key={schedule.id || index} className="p-4 bg-slate-50 border-slate-200">
+            <div className="space-y-4">
+              {/* Row 1: Milestone Description */}
+              <div>
+                <Label className="text-sm font-medium">Milestone Description</Label>
+                <Input
+                  placeholder={
+                    numberOfEvents > 0
+                      ? `e.g., Payment for Event #${index + 1}, After event completion`
+                      : "Initial payment, Final delivery"
+                  }
+                  value={schedule.milestone || ""}
+                  onChange={(e) => updateSchedule(index, "milestone", e.target.value)}
+                  className="bg-white"
+                />
+              </div>
 
-            <div>
-              <Label className="text-sm font-medium">Amount (VND)</Label>
-              <Input
-                type="text"
-                placeholder="3,000,000"
-                value={formatCurrency(schedule.amount || 0)}
-                disabled
-                className="bg-white"
-              />
-            </div>
+              {/* Row 2: Event Selector (chỉ hiện khi có events) */}
+              {numberOfEvents > 0 && availableEvents.length > 0 && (
+                <div>
+                  <Label className="text-sm font-medium">Linked Events</Label>
+                  <div className="space-y-2">
+                    {availableEvents.map((event: EventType, eventIdx: number) => {
+                      const isChecked = linkedEventIds.includes(event.id);
+                      const eventDate = event.date
+                        ? new Date(event.date).toLocaleDateString("vi-VN")
+                        : "No date";
+                      const eventTime = event.date
+                        ? new Date(event.date).toLocaleTimeString("vi-VN", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "";
 
-            <div>
-              <Label className="text-sm font-medium">Due Date</Label>
-              <DatePicker
-                value={schedule.due_date || ""}
-                onChange={(date) => updateSchedule(index, "due_date", date)}
-                placeholder="Select date"
-                className="bg-white"
-                minDate={index === 0 ? minDate : schedules[index - 1]?.due_date || minDate}
-                maxDate={maxDate}
-              />
-            </div>
+                      return (
+                        <div
+                          key={event.id}
+                          className="flex items-center space-x-3 p-2 bg-white rounded border"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              const newLinkedIds = e.target.checked
+                                ? [...linkedEventIds, event.id]
+                                : linkedEventIds.filter((id) => id !== event.id);
+                              updateSchedule(index, "linked_event_ids", newLinkedIds);
+                            }}
+                            className="rounded"
+                          />
+                          <div className="flex-1">
+                            <div className="text-sm font-medium">
+                              {event.name || `Event #${eventIdx + 1}`}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              📅 {eventDate} {eventTime} | 📍 {event.location || "TBD"} | ⏱️{" "}
+                              {event.expected_duration || "Duration TBD"}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {linkedEventIds.length > 0 && (
+                    <p className="text-xs text-green-600 mt-1">
+                      💡 Payment date must be after the latest linked event date.
+                    </p>
+                  )}
+                  {linkedEventIds.length === 0 && (
+                    <p className="text-xs text-amber-600 mt-1">
+                      ⚠️ No events linked. Payment date will follow standard contract timeline.
+                    </p>
+                  )}
+                </div>
+              )}
 
-            <div className="flex items-end">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => removeSchedule(index)}
-                className="text-red-500 hover:bg-red-50"
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
+              {/* Row 2.5: Event info when no available events for this milestone */}
+              {numberOfEvents > 0 && availableEvents.length === 0 && (
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded">
+                  <p className="text-sm text-gray-600">
+                    📋 <strong>Note:</strong> All events have been linked to other milestones. Each
+                    event can only be linked to one milestone.
+                  </p>
+                </div>
+              )}
+
+              {/* Row 3: Financial Details */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Percent</Label>
+                  <Input
+                    type="number"
+                    placeholder="30"
+                    value={schedule.percent || ""}
+                    onChange={(e) =>
+                      updateSchedule(index, "percent", parseFloat(e.target.value) || 0)
+                    }
+                    className="bg-white"
+                    min={0}
+                    max={100}
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium">Amount (VND)</Label>
+                  <Input
+                    type="text"
+                    placeholder="3,000,000"
+                    value={formatCurrency(schedule.amount || 0)}
+                    disabled
+                    className="bg-white"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium">Due Date</Label>
+                  <DatePicker
+                    value={schedule.due_date || ""}
+                    onChange={(date) => updateSchedule(index, "due_date", date)}
+                    placeholder="Select date"
+                    className="bg-white"
+                    minDate={getMinPaymentDate(schedule, index)}
+                    maxDate={maxDate}
+                  />
+                </div>
+              </div>
+
+              {/* Delete Button */}
+              <div className="flex justify-end pt-2 border-t">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeSchedule(index)}
+                  className="text-red-500 hover:bg-red-50"
+                >
+                  <Trash2 className="w-4 h-4 mr-1" />
+                  Remove Milestone
+                </Button>
+              </div>
             </div>
-          </div>
-        </Card>
-      ))}
+          </Card>
+        );
+      })}
 
       <div className="mt-2">
         <Button
@@ -257,7 +461,19 @@ export const PaymentSchedule: React.FC<{
         >
           <Plus className="w-4 h-4 mr-2" />
           Add Milestone
+          {numberOfEvents > 0 && (
+            <span className="ml-2 text-xs">
+              ({schedules.length}/{maxMilestones})
+            </span>
+          )}
         </Button>
+
+        {numberOfEvents > 0 && !canAddMilestone && schedules.length >= maxMilestones && (
+          <p className="text-xs text-amber-600 mt-2 text-center">
+            Maximum number of milestones reached for {numberOfEvents} event
+            {numberOfEvents > 1 ? "s" : ""}.
+          </p>
+        )}
       </div>
 
       <Card className="p-4 bg-blue-50 border-blue-200 mt-2">
@@ -292,11 +508,26 @@ export const PaymentSchedule: React.FC<{
           </div>
         </div>
 
-        {(!percentValid || !amountValid) && (
-          <div className="mt-3 text-center text-xs text-red-600">
-            {depositPercent > 0
-              ? `Payment schedule must equal ${expectedPercent}% (${depositPercent}% is reserved for deposit). Total amount should be ${formatCurrency(expectedAmount)} VND.`
-              : "Total milestone percentage must equal 100%, and total amount must match the contract cost."}
+        {(!percentValid ||
+          !amountValid ||
+          (numberOfEvents >= 2 && schedules.length < minMilestones)) && (
+          <div className="mt-3 text-center text-xs text-red-600 space-y-1">
+            {numberOfEvents >= 2 && schedules.length < minMilestones && (
+              <div>
+                Minimum {minMilestones} milestone{minMilestones > 1 ? "s" : ""} required for{" "}
+                {numberOfEvents} events.
+              </div>
+            )}
+            {!percentValid && (
+              <div>
+                {depositPercent > 0
+                  ? `Payment schedule must equal ${expectedPercent}% (${depositPercent}% is reserved for deposit).`
+                  : "Total milestone percentage must equal 100%."}
+              </div>
+            )}
+            {!amountValid && (
+              <div>Total amount should be {formatCurrency(expectedAmount)} VND.</div>
+            )}
           </div>
         )}
       </Card>

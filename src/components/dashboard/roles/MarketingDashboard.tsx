@@ -261,30 +261,6 @@ const MarketingDashboard: React.FC = () => {
       }))
     : [];
 
-  const alertsData = [
-    ...(Array.isArray(upcomingDeadlines)
-      ? upcomingDeadlines
-          .filter((d: any) => d.days_remaining <= 7)
-          .map((deadline: any) => ({
-            type: "Deadline Alert",
-            message: `Campaign "${deadline.name}" ending in ${deadline.days_remaining} days`,
-            priority: deadline.days_remaining <= 3 ? "High" : "Medium",
-          }))
-      : []),
-    ...(draftCampaigns && draftCampaigns > 0
-      ? [
-          {
-            type: "Draft Campaigns",
-            message: `${draftCampaigns} campaigns in draft status`,
-            priority: "Low" as const,
-          },
-        ]
-      : []),
-  ];
-
-  const totalAlerts = alertsData.length;
-  const highPriorityAlerts = alertsData.filter((alert) => alert.priority === "High").length;
-
   const isAnyLoading =
     loading || loadingKPI || loadingRevenue || loadingTopBrands || loadingDeadlines;
 
@@ -325,17 +301,6 @@ const MarketingDashboard: React.FC = () => {
           iconColor="text-orange-600"
           iconBg="bg-orange-100"
           tooltip="Number of campaigns in draft status that need review and approval before going live"
-        />
-        <KPIWidget
-          title="Total Alerts"
-          data={{
-            value: totalAlerts,
-            statusText: `${highPriorityAlerts} high priority`,
-          }}
-          icon={<FaTriangleExclamation size={20} />}
-          iconColor="text-red-600"
-          iconBg="bg-red-100"
-          tooltip="Total number of system alerts requiring attention including upcoming deadlines, campaign issues, and other notifications"
         />
       </div>
 
@@ -625,47 +590,47 @@ const MarketingDashboard: React.FC = () => {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="p-4">
-          <div className="flex flex-col gap-4">
-            <div className="flex justify-between items-center flex-wrap gap-2">
-              <h2 className="text-lg font-semibold">Upcoming Deadlines</h2>
-              <div className="flex gap-2 items-center flex-wrap">
-                <label className="text-sm font-medium">Days:</label>
-                <Select
-                  value={deadlineFilter.days.toString()}
-                  onValueChange={(value) => setDeadlineFilter({ days: Number(value) })}
-                >
-                  <SelectTrigger className="w-[120px] h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="7">7 days</SelectItem>
-                    <SelectItem value="14">14 days</SelectItem>
-                    <SelectItem value="30">30 days</SelectItem>
-                    <SelectItem value="60">60 days</SelectItem>
-                    <SelectItem value="90">90 days</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setDeadlineFilter({ days: 30 })}
-                  className="h-8 text-xs"
-                >
-                  Reset
-                </Button>
-              </div>
+      {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-4"> */}
+      <Card className="p-4">
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-between items-center flex-wrap gap-2">
+            <h2 className="text-lg font-semibold">Upcoming Deadlines</h2>
+            <div className="flex gap-2 items-center flex-wrap">
+              <label className="text-sm font-medium">Days:</label>
+              <Select
+                value={deadlineFilter.days.toString()}
+                onValueChange={(value) => setDeadlineFilter({ days: Number(value) })}
+              >
+                <SelectTrigger className="w-[120px] h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7">7 days</SelectItem>
+                  <SelectItem value="14">14 days</SelectItem>
+                  <SelectItem value="30">30 days</SelectItem>
+                  <SelectItem value="60">60 days</SelectItem>
+                  <SelectItem value="90">90 days</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setDeadlineFilter({ days: 30 })}
+                className="h-8 text-xs"
+              >
+                Reset
+              </Button>
             </div>
-            {isEmptyData(upcomingDeadlinesData) ? (
-              <NoDataMessage message="No upcoming deadlines found" />
-            ) : (
-              <TableWidget title="" data={upcomingDeadlinesData} />
-            )}
           </div>
-        </Card>
+          {isEmptyData(upcomingDeadlinesData) ? (
+            <NoDataMessage message="No upcoming deadlines found" />
+          ) : (
+            <TableWidget title="" data={upcomingDeadlinesData} />
+          )}
+        </div>
+      </Card>
 
-        <Card className="p-4">
+      {/* <Card className="p-4">
           <div className="flex flex-col gap-4">
             <h2 className="text-lg font-semibold">Alerts & Notifications</h2>
             {isEmptyData(alertsData) ? (
@@ -675,7 +640,7 @@ const MarketingDashboard: React.FC = () => {
             )}
           </div>
         </Card>
-      </div>
+      </div> */}
     </div>
   );
 };

@@ -41,6 +41,7 @@ interface CalendarProps {
   contractLoading: boolean;
   onContractLoadMore?: () => void;
   taskLoading?: boolean;
+  hasUserAssignedTasks?: (date: Date) => boolean;
 }
 
 function Calendar({
@@ -58,6 +59,7 @@ function Calendar({
   contractLoading,
   onContractLoadMore,
   taskLoading = false,
+  hasUserAssignedTasks,
 }: CalendarProps) {
   const today = new Date();
   const year = currentDate.getFullYear();
@@ -258,6 +260,7 @@ function Calendar({
           {calendarDays.map((dayObj) => {
             const dayTasks = getTasksForDate(dayObj.date);
             const displayTasks = dayTasks.slice(0, 4);
+            const hasUserTasks = hasUserAssignedTasks ? hasUserAssignedTasks(dayObj.date) : false;
 
             return (
               <div
@@ -266,7 +269,13 @@ function Calendar({
                 className={`
                   border-r border-b border-border/20 p-2 cursor-pointer
                   hover:bg-gray-50 flex flex-col justify-between
-                  ${!dayObj.isCurrentMonth ? "bg-gray-50/50" : "bg-white"}
+                  ${
+                    !dayObj.isCurrentMonth
+                      ? "bg-gray-50/50"
+                      : hasUserTasks
+                        ? "bg-blue-50/30"
+                        : "bg-white"
+                  }
                 `}
               >
                 <span

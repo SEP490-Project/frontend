@@ -4,6 +4,10 @@ import {
   getContractPaymentBrand,
   getContractPaymentDetail,
   createPaymentLink,
+  getRefundPayments,
+  getPendingRefundProofs,
+  submitRefundProof,
+  reviewRefundProof,
 } from "./thunk";
 import type { ContractPayment, PaymentLink } from "@/libs/types/contract-payments";
 
@@ -23,6 +27,12 @@ interface stateType {
     has_next: boolean;
     has_prev: boolean;
   } | null;
+  // Refund workflow state
+  refundPayments: ContractPayment[];
+  pendingRefundProofs: ContractPayment[];
+  refundLoading: boolean;
+  refundSubmitting: boolean;
+  refundReviewing: boolean;
 }
 
 const initialState: stateType = {
@@ -34,6 +44,12 @@ const initialState: stateType = {
   paymentLink: null,
   loadingPayment: false,
   pagination: null,
+  // Refund workflow state
+  refundPayments: [],
+  pendingRefundProofs: [],
+  refundLoading: false,
+  refundSubmitting: false,
+  refundReviewing: false,
 };
 
 export const manageContractPaymentSlice = createSlice({
@@ -86,6 +102,65 @@ export const manageContractPaymentSlice = createSlice({
       })
       .addCase(getContractPaymentDetail.rejected, (state) => {
         state.detailLoading = false;
+      })
+
+      // Refund workflow reducers
+      .addCase(getRefundPayments.pending, (state) => {
+        state.refundLoading = true;
+      })
+      .addCase(getRefundPayments.fulfilled, (state, action) => {
+        state.refundLoading = false;
+        state.refundPayments = action.payload.data || [];
+      })
+      .addCase(getRefundPayments.rejected, (state) => {
+        state.refundLoading = false;
+      })
+
+      .addCase(getPendingRefundProofs.pending, (state) => {
+        state.refundLoading = true;
+      })
+      .addCase(getPendingRefundProofs.fulfilled, (state, action) => {
+        state.refundLoading = false;
+        state.pendingRefundProofs = action.payload.data || [];
+      })
+      .addCase(getPendingRefundProofs.rejected, (state) => {
+        state.refundLoading = false;
+      })
+
+      .addCase(submitRefundProof.pending, (state) => {
+        state.refundSubmitting = true;
+      })
+      .addCase(submitRefundProof.fulfilled, (state, action) => {
+        state.refundSubmitting = false;
+        // Update the payment in refundPayments list
+        const updatedPayment = action.payload.data;
+        if (updatedPayment) {
+          const index = state.refundPayments.findIndex((p) => p.id === updatedPayment.id);
+          if (index !== -1) {
+            state.refundPayments[index] = updatedPayment;
+          }
+        }
+      })
+      .addCase(submitRefundProof.rejected, (state) => {
+        state.refundSubmitting = false;
+      })
+
+      .addCase(reviewRefundProof.pending, (state) => {
+        state.refundReviewing = true;
+      })
+      .addCase(reviewRefundProof.fulfilled, (state, action) => {
+        state.refundReviewing = false;
+        // Update the payment in pendingRefundProofs list
+        const updatedPayment = action.payload.data;
+        if (updatedPayment) {
+          const index = state.pendingRefundProofs.findIndex((p) => p.id === updatedPayment.id);
+          if (index !== -1) {
+            state.pendingRefundProofs[index] = updatedPayment;
+          }
+        }
+      })
+      .addCase(reviewRefundProof.rejected, (state) => {
+        state.refundReviewing = false;
       });
   },
 });

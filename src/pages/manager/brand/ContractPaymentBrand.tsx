@@ -44,6 +44,11 @@ const CONTRACT_PAYMENT_STATUS_LABELS: Record<string, string> = {
   PENDING: "Pending",
   PAID: "Paid",
   OVERDUE: "Overdue",
+  // CO_PRODUCING refund workflow statuses
+  KOL_PENDING: "Awaiting Refund Proof",
+  KOL_PROOF_SUBMITTED: "Proof Submitted",
+  KOL_PROOF_REJECTED: "Proof Rejected",
+  KOL_REFUND_APPROVED: "Refund Approved",
 };
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
@@ -57,6 +62,11 @@ const STATUS_COLORS: Record<string, string> = {
   PAID: "bg-green-100 text-green-800 border-green-200",
   PENDING: "bg-yellow-100 text-yellow-800 border-yellow-200",
   OVERDUE: "bg-orange-100 text-orange-800 border-orange-200",
+  // CO_PRODUCING refund workflow statuses
+  KOL_PENDING: "bg-amber-100 text-amber-800 border-amber-200",
+  KOL_PROOF_SUBMITTED: "bg-blue-100 text-blue-800 border-blue-200",
+  KOL_PROOF_REJECTED: "bg-red-100 text-red-800 border-red-200",
+  KOL_REFUND_APPROVED: "bg-green-100 text-green-800 border-green-200",
 };
 
 const PAYMENT_METHOD_COLORS: Record<string, string> = {

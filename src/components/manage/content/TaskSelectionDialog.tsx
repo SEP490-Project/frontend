@@ -38,14 +38,16 @@ import { useAuth } from "@/libs/hooks/useAuth";
 // Shared utility functions
 const getTaskColor = (type: string): string => {
   switch (type) {
-    case "CONTENT":
-      return "#f7c06d";
-    case "MARKETING":
-      return "#ff88fa";
     case "PRODUCT":
+      return "#f7c06d";
+    case "CONTENT":
+      return "#ff88fa";
+    case "EVENT":
+      return "#6ad1ff";
+    case "OTHER":
       return "#9976ff";
     default:
-      return "#9976ff";
+      return "#e5e7eb";
   }
 };
 

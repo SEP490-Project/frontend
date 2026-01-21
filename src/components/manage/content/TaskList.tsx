@@ -1,5 +1,5 @@
 import { useRef, useEffect } from "react";
-import { Eye, FileText } from "lucide-react";
+import { Eye, FileText, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,6 +25,8 @@ export function TaskList({ currentDate, onViewTask, statusFilter = "ALL" }: Task
     switch (type) {
       case "CONTENT":
         return <FileText className="h-4 w-4 text-white" />;
+      case "PRODUCT":
+        return <Package className="h-4 w-4 text-white" />;
       default:
         return <div className="w-2 h-2 bg-white rounded-full" />;
     }
@@ -32,10 +34,16 @@ export function TaskList({ currentDate, onViewTask, statusFilter = "ALL" }: Task
 
   const getTaskColor = (type: string): string => {
     switch (type) {
-      case "CONTENT":
+      case "PRODUCT":
         return "#f7c06d";
-      default:
+      case "CONTENT":
+        return "#ff88fa";
+      case "EVENT":
+        return "#6ad1ff";
+      case "OTHER":
         return "#9976ff";
+      default:
+        return "#e5e7eb";
     }
   };
 

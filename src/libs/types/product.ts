@@ -21,6 +21,15 @@ export interface ProductResponse<T> {
   pagination: Pagination;
 }
 
+export type ProductStatus =
+  | "DRAFT"
+  | "SUBMITTED"
+  | "APPROVED"
+  | "REJECTED"
+  | "REVISION"
+  | "ACTIVED"
+  | "INACTIVED";
+
 export interface ProductData {
   id: string;
   brand_id: string;
@@ -28,7 +37,7 @@ export interface ProductData {
   brand_name: string;
   thumbnail_url: string[] | null;
   is_active: boolean;
-  status?: "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED" | "REVISION"; // added optional since not always needed
+  status?: ProductStatus | string | null; // added optional since not always needed
   category: {
     id: string;
     name: string;

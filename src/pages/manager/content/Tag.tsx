@@ -136,7 +136,6 @@ const ManageTags: React.FC = () => {
             <TableHeader className="px-4">
               <TableRow className="border-b bg-gray-50">
                 <TableHead className="font-semibold">Name</TableHead>
-                <TableHead className="font-semibold">Usage Count</TableHead>
                 <TableHead className="font-semibold">Created At</TableHead>
                 <TableHead className="font-semibold">Updated At</TableHead>
                 <TableHead className="font-semibold">Actions</TableHead>
@@ -172,8 +171,6 @@ const ManageTags: React.FC = () => {
                         </span>
                       </div>
                     </TableCell>
-
-                    <TableCell className="py-4">{tag.usage_count}</TableCell>
 
                     <TableCell className="py-4">
                       <span className="text-sm text-gray-600">{formatDate(tag.created_at)}</span>

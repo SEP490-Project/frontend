@@ -196,7 +196,7 @@ const Order: React.FC = () => {
               <TableRow className="border-b bg-gray-50">
                 <TableHead className="font-semibold">Order ID</TableHead>
                 <TableHead className="font-semibold">Customer</TableHead>
-                <TableHead className="font-semibold">Total Amount</TableHead>
+                <TableHead className="font-semibold">Total Amount (Brand / System)</TableHead>
                 <TableHead className="font-semibold">Type</TableHead>
                 <TableHead className="font-semibold">Status</TableHead>
                 <TableHead className="font-semibold">Created At</TableHead>
@@ -249,7 +249,10 @@ const Order: React.FC = () => {
 
                     <TableCell className="py-4">
                       <div className="font-semibold text-gray-900">
-                        {convertNumberToCurrency(String(order.total_amount))}
+                        {convertNumberToCurrency(String(order.total_amount))} (
+                        {convertNumberToCurrency(String(order.company_revenue))}
+                        {" / "}
+                        {convertNumberToCurrency(String(order.kol_revenue))})
                       </div>
                       <div className="text-xs text-gray-500">
                         Shipping: {convertNumberToCurrency(String(order.shipping_fee))}

@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useContract } from "@/libs/hooks/useContract";
+import { useContractPayment } from "@/libs/hooks/useContractPayment";
 import {
   ContractInformation,
   FinancialTerms,
@@ -15,9 +16,12 @@ import {
   approveContract,
   rejectContract,
 } from "@/libs/stores/contractManager/thunk";
+import { getContractPayment } from "@/libs/stores/contractPaymentManager/thunk";
 import { useAppDispatch } from "@/libs/stores";
 import { ContractPreviewModal } from "@/components/manage/marketing/contract/ContractPreviewModal";
 import { ContractPDF } from "@/components/manage/marketing/contract/ContractPreview";
+import { PaymentDetailModal } from "@/components/manage/marketing/contract-payment";
+import PaginationTable from "@/components/global/PaginationTable";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import {
   FaEye,
@@ -28,6 +32,8 @@ import {
   FaXmark,
   FaArrowRight,
   FaEllipsisVertical,
+  FaCreditCard,
+  FaCalendar,
 } from "react-icons/fa6";
 import { Loader2, AlertTriangle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
@@ -44,12 +50,22 @@ import ReportKOLViolation from "@/components/manage/brand/ReportKOLViolation";
 import { manageViolation } from "@/libs/services/manageViolation";
 import type { ContractViolation } from "@/libs/types/violation";
 import type { ContractStatus } from "@/libs/types/contract";
+import type { ContractPayment } from "@/libs/types/contract-payments";
 import { isViolationStatus } from "@/libs/types/violation";
+import { Badge } from "@/components/ui/badge";
+import { formatDate } from "@/libs/helper/helper";
 import { DialogTitle } from "@radix-ui/react-dialog";
+
+const PAGE_SIZE = 5;
 
 export default function ContractDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { contractDetail, detailLoading, actionLoading } = useContract();
+  const {
+    contractPayments,
+    loading: paymentsLoading,
+    pagination: paymentsPagination,
+  } = useContractPayment();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
@@ -60,6 +76,11 @@ export default function ContractDetailPage() {
   const [violation, setViolation] = useState<ContractViolation | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isProofReviewModalOpen, setIsProofReviewModalOpen] = useState(false);
+
+  // Contract Payments State
+  const [paymentPage, setPaymentPage] = useState(1);
+  const [isContractPaymentModalOpen, setIsContractPaymentModalOpen] = useState(false);
+  const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
 
   // Fetch violation data if contract is in violation status
   const fetchViolationData = useCallback(async () => {
@@ -83,6 +104,50 @@ export default function ContractDetailPage() {
     if (id) dispatch(getContractById(id));
   }, [dispatch, id]);
 
+  // Fetch contract payments for this contract with pagination
+  useEffect(() => {
+    if (!id) return;
+
+    const params = {
+      page: paymentPage,
+      limit: PAGE_SIZE,
+      contract_id: id,
+      sort_by: "created_at",
+      sort_order: "desc",
+    };
+
+    dispatch(getContractPayment(params));
+  }, [dispatch, id, paymentPage]);
+
+  // Reset payment page when contract changes
+  useEffect(() => {
+    if (contractDetail?.id) {
+      setPaymentPage(1);
+    }
+  }, [contractDetail?.id]);
+
+  // Fetch contract payments for this contract with pagination
+  useEffect(() => {
+    if (!id) return;
+
+    const params = {
+      page: paymentPage,
+      limit: PAGE_SIZE,
+      contract_id: id,
+      sort_by: "created_at",
+      sort_order: "desc",
+    };
+
+    dispatch(getContractPayment(params));
+  }, [dispatch, id, paymentPage]);
+
+  // Reset payment page when contract changes
+  useEffect(() => {
+    if (contractDetail?.id) {
+      setPaymentPage(1);
+    }
+  }, [contractDetail?.id]);
+
   useEffect(() => {
     if (contractDetail?.id) {
       // Check if violation is already present
@@ -104,6 +169,39 @@ export default function ContractDetailPage() {
   const handleViolationSuccess = (shouldReloadContract = false) => {
     fetchViolationData();
     if (shouldReloadContract && id) dispatch(getContractById(id));
+  };
+
+  const handleViewPayment = (paymentId: string) => {
+    setSelectedPaymentId(paymentId);
+    setIsContractPaymentModalOpen(true);
+  };
+
+  const handleCloseContractPaymentModal = () => {
+    setIsContractPaymentModalOpen(false);
+    setSelectedPaymentId(null);
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(amount);
+  };
+
+  const formatAmount = (payment: ContractPayment) => {
+    const isPerformanceBased =
+      (payment.contract_type === "CO_PRODUCING" || payment.contract_type === "AFFILIATE") &&
+      payment.amount === 0;
+
+    if (isPerformanceBased) {
+      return <span className="text-sm italic text-gray-600">To be calculated by performance</span>;
+    }
+
+    return (
+      <div className="flex flex-col">
+        <span className="font-medium">{formatCurrency(payment.amount)}</span>
+      </div>
+    );
   };
 
   const handleApprove = async () => {
@@ -441,10 +539,154 @@ export default function ContractDetailPage() {
         </div>
       </Card>
 
+      {/* Contract Payments Section */}
+      <Card className="p-6 space-y-6 shadow-sm border border-gray-100 mt-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <FaCreditCard className="w-6 h-6 text-primary" />
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">Contract Payments</h2>
+              <p className="text-gray-600 text-sm">
+                Payment schedule and history for this contract
+              </p>
+            </div>
+          </div>
+          <div className="text-sm text-gray-500">
+            {paymentsPagination?.total || contractPayments.length} payment
+            {(paymentsPagination?.total || contractPayments.length) !== 1 ? "s" : ""}
+          </div>
+        </div>
+
+        {paymentsLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-2">Loading contract payments...</span>
+          </div>
+        ) : contractPayments.length === 0 ? (
+          <div className="text-center py-12">
+            <FaCreditCard className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-700 mb-2">No Contract Payments</h3>
+            <p className="text-gray-500">
+              No payment schedule has been created for this contract yet.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {contractPayments.map((payment) => {
+              const STATUS_COLORS: Record<string, string> = {
+                NOT_STARTED: "bg-gray-100 text-gray-800 border-gray-200",
+                PAID: "bg-green-100 text-green-800 border-green-200",
+                PENDING: "bg-yellow-100 text-yellow-800 border-yellow-200",
+                OVERDUE: "bg-orange-100 text-orange-800 border-orange-200",
+              };
+
+              const STATUS_LABELS: Record<string, string> = {
+                NOT_STARTED: "Not Started",
+                PENDING: "Pending",
+                PAID: "Paid",
+                OVERDUE: "Overdue",
+              };
+
+              return (
+                <div
+                  key={payment.id}
+                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          className={`border text-xs font-medium px-2 py-1 ${STATUS_COLORS[payment.status] || ""}`}
+                        >
+                          {STATUS_LABELS[payment.status] || payment.status}
+                        </Badge>
+                        {payment.is_deposit && (
+                          <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-xs px-2 py-1">
+                            Deposit
+                          </Badge>
+                        )}
+                        {payment.pay_now && (
+                          <span title="Pay Now" className="inline-block align-middle">
+                            <span className="inline-block w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewPayment(payment.id)}
+                      className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                    >
+                      <FaEye className="h-4 w-4 mr-2" />
+                      View Details
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium text-gray-700">Amount:</span>
+                      <div className="mt-1">{formatAmount(payment)}</div>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Due Date:</span>
+                      <div className="mt-1 flex items-center gap-2">
+                        <FaCalendar className="w-4 h-4 text-gray-400" />
+                        <span>{formatDate(payment.due_date)}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Payment Method:</span>
+                      <div className="mt-1">
+                        <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-xs px-2 py-1">
+                          {payment.payment_method === "BANK_TRANSFER"
+                            ? "Bank Transfer"
+                            : payment.payment_method === "CASH"
+                              ? "Cash"
+                              : payment.payment_method === "CHECK"
+                                ? "Check"
+                                : payment.payment_method}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+
+                  {payment.note && (
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      <span className="font-medium text-gray-700 text-sm">Note:</span>
+                      <p className="text-sm text-gray-600 mt-1">{payment.note}</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Pagination for Contract Payments */}
+        {paymentsPagination && paymentsPagination.total > 0 && (
+          <div className="mt-4">
+            <PaginationTable
+              page={paymentsPagination.page}
+              totalItems={paymentsPagination.total}
+              pageSize={PAGE_SIZE}
+              onPageChange={setPaymentPage}
+            />
+          </div>
+        )}
+      </Card>
+
       <ContractPreviewModal
         isOpen={isPreviewModalOpen}
         onClose={() => setIsPreviewModalOpen(false)}
         contractData={contractDetail}
+      />
+
+      {/* Contract Payment Detail Modal */}
+      <PaymentDetailModal
+        isOpen={isContractPaymentModalOpen}
+        onClose={handleCloseContractPaymentModal}
+        paymentId={selectedPaymentId}
       />
     </div>
   );

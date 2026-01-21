@@ -8,6 +8,7 @@ import {
 } from "@/libs/stores/campaignManager/thunk";
 import { Schedule } from "../marketing/campaigns/component/detail";
 import { useCampaign } from "@/libs/hooks/useCampaign";
+import type { MetricsItem } from "@/libs/types/campaign";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,6 +35,14 @@ import {
   FaFlag,
   FaClipboardCheck,
   FaArrowRight,
+  FaEye,
+  FaThumbsUp,
+  FaComment,
+  FaShare,
+  FaArrowPointer,
+  FaCartShopping,
+  FaUsers,
+  FaBullseye,
 } from "react-icons/fa6";
 import { motion } from "framer-motion";
 import { formatDate } from "@/libs/helper/helper";
@@ -74,6 +83,8 @@ const CAMPAIGN_TYPE_COLORS: Record<string, string> = {
 const MILESTONE_STATUS_LABELS: Record<string, string> = {
   PENDING: "Pending",
   IN_PROGRESS: "In Progress",
+  ON_GOING: "On Going",
+  NOT_STARTED: "Not Started",
   COMPLETED: "Completed",
   OVERDUE: "Overdue",
 };
@@ -81,8 +92,20 @@ const MILESTONE_STATUS_LABELS: Record<string, string> = {
 const MILESTONE_STATUS_COLORS: Record<string, string> = {
   PENDING: "bg-gray-100 text-gray-800 border-gray-200",
   IN_PROGRESS: "bg-blue-100 text-blue-800 border-blue-200",
+  ON_GOING: "bg-blue-100 text-blue-800 border-blue-200",
+  NOT_STARTED: "bg-gray-100 text-gray-800 border-gray-200",
   COMPLETED: "bg-green-100 text-green-800 border-green-200",
   OVERDUE: "bg-red-100 text-red-800 border-red-200",
+};
+
+const METRICS_CONFIG: Record<string, { label: string; icon: React.ComponentType<any> }> = {
+  reach: { label: "Reach", icon: FaEye },
+  likes: { label: "Likes", icon: FaThumbsUp },
+  comments: { label: "Comments", icon: FaComment },
+  shares: { label: "Shares", icon: FaShare },
+  click_through: { label: "Click Through", icon: FaArrowPointer },
+  units_sold: { label: "Units Sold", icon: FaCartShopping },
+  event_participation: { label: "Event Participation", icon: FaUsers },
 };
 
 const BrandCampaignDetailPage: React.FC = () => {
@@ -535,6 +558,165 @@ const BrandCampaignDetailPage: React.FC = () => {
                     </div>
                   )}
                 </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* Metrics Comparison */}
+        {campaignDetail?.metrics_comparison && (
+          <motion.div variants={itemVariants}>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FaBullseye className="h-5 w-5 text-purple-600" />
+                  Performance Metrics
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Overall Metrics Summary */}
+                {campaignDetail.metrics_comparison?.expected_metrics &&
+                  Object.keys(campaignDetail.metrics_comparison.expected_metrics).length > 0 && (
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-3">Overall Campaign Metrics</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {Object.entries(campaignDetail.metrics_comparison.expected_metrics).map(
+                          ([metric, expectedValue]) => {
+                            const realisticValue =
+                              campaignDetail.metrics_comparison?.realistic_metrics?.[metric] ?? 0;
+                            const config = METRICS_CONFIG[metric];
+                            const IconComponent = config?.icon || FaBullseye;
+
+                            return (
+                              <div
+                                key={metric}
+                                className="p-4 border rounded-lg bg-white hover:shadow-md transition-shadow"
+                              >
+                                <div className="flex items-center gap-2 mb-2">
+                                  <IconComponent className="h-4 w-4 text-blue-600" />
+                                  <span className="text-sm font-medium text-gray-700">
+                                    {config?.label || metric}
+                                  </span>
+                                </div>
+                                <div className="space-y-1">
+                                  <div className="flex justify-between text-sm">
+                                    <span className="text-gray-600">Target:</span>
+                                    <span className="font-semibold text-gray-900">
+                                      {typeof expectedValue === "number"
+                                        ? expectedValue.toLocaleString()
+                                        : expectedValue}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between text-sm">
+                                    <span className="text-gray-600">Current:</span>
+                                    <span className="font-semibold text-blue-600">
+                                      {typeof realisticValue === "number"
+                                        ? realisticValue.toLocaleString()
+                                        : realisticValue}
+                                    </span>
+                                  </div>
+                                  <div className="mt-2">
+                                    <div className="flex justify-between text-xs text-gray-500 mb-1">
+                                      <span>Progress</span>
+                                      <span>
+                                        {expectedValue > 0
+                                          ? Math.round(
+                                              (Number(realisticValue) / Number(expectedValue)) *
+                                                100,
+                                            )
+                                          : 0}
+                                        %
+                                      </span>
+                                    </div>
+                                    <Progress
+                                      value={
+                                        expectedValue > 0
+                                          ? Math.min(
+                                              (Number(realisticValue) / Number(expectedValue)) *
+                                                100,
+                                              100,
+                                            )
+                                          : 0
+                                      }
+                                      className="h-1.5"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          },
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                {/* Individual Items Metrics */}
+                {campaignDetail.metrics_comparison?.items &&
+                  campaignDetail.metrics_comparison.items.length > 0 && (
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-3">Item-specific Metrics</h4>
+                      <div className="space-y-4">
+                        {(campaignDetail.metrics_comparison.items as MetricsItem[]).map((item) => (
+                          <div key={item.item_id} className="border rounded-lg p-4 bg-gray-50">
+                            <h5 className="font-medium text-gray-800 mb-3">{item.item_name}</h5>
+
+                            {item.expected_metrics && item.expected_metrics.length > 0 && (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {item.expected_metrics.map((metricData, index) => {
+                                  const config = METRICS_CONFIG[metricData.metric];
+                                  const IconComponent = config?.icon || FaBullseye;
+                                  const realisticValue =
+                                    item.realistic_metrics?.[metricData.metric] || 0;
+
+                                  return (
+                                    <div key={index} className="p-3 bg-white rounded border">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <IconComponent className="h-3 w-3 text-gray-500" />
+                                        <span className="text-xs font-medium text-gray-600">
+                                          {config?.label || metricData.metric}
+                                        </span>
+                                      </div>
+                                      <div className="space-y-1">
+                                        <div className="flex justify-between text-xs">
+                                          <span className="text-gray-500">Target:</span>
+                                          <span className="font-medium text-gray-800">
+                                            {typeof metricData.target === "string"
+                                              ? Number(metricData.target).toLocaleString()
+                                              : metricData.target}
+                                          </span>
+                                        </div>
+                                        <div className="flex justify-between text-xs">
+                                          <span className="text-gray-500">Current:</span>
+                                          <span className="font-medium text-blue-600">
+                                            {typeof realisticValue === "number"
+                                              ? realisticValue.toLocaleString()
+                                              : realisticValue}
+                                          </span>
+                                        </div>
+                                        <Progress
+                                          value={
+                                            Number(metricData.target) > 0
+                                              ? Math.min(
+                                                  (Number(realisticValue) /
+                                                    Number(metricData.target)) *
+                                                    100,
+                                                  100,
+                                                )
+                                              : 0
+                                          }
+                                          className="h-1 mt-2"
+                                        />
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
               </CardContent>
             </Card>
           </motion.div>

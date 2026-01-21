@@ -34,6 +34,7 @@ import type {
 import { MdHeight, MdWidthNormal } from "react-icons/md";
 import { convertNumberToCurrency, formatDate } from "@/libs/helper/helper";
 import { FaMoneyBill } from "react-icons/fa6";
+import PlaceholderImage from "public/icon.png";
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -307,7 +308,9 @@ const ProductDetail: React.FC = () => {
                       className="w-12 h-12 object-contain rounded-lg border border-gray-200"
                     />
                   )}
-                  <p className="text-gray-900">{product.brand_name || "No brand available"}</p>
+                  <p className="text-gray-900">
+                    {product.brand_name ?? product.brand_place_holder}
+                  </p>
                 </div>
               </div>
               <div className="bg-gray-50 p-4 rounded-lg">
@@ -400,8 +403,7 @@ const ProductDetail: React.FC = () => {
                   src={
                     typeof currentImage === "string"
                       ? currentImage
-                      : currentImage?.image_url ||
-                        "https://cdn.shopify.com/s/files/1/0069/4471/8937/products/Chanel-Coco-Mademoiselle-Intense-EDP-W-50ml-2_de2881cf-4ddb-4a2d-a65a-12b75ff4ec7f_1200x1200.jpg?v=1573190789"
+                      : currentImage?.image_url || PlaceholderImage
                   }
                   alt={product.name}
                   className="w-full h-full object-contain"

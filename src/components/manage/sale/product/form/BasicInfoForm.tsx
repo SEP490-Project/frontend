@@ -8,16 +8,16 @@ import {
 } from "@/components/ui/select";
 import { useBrand } from "@/libs/hooks/useBrand";
 import { useAppDispatch } from "@/libs/stores";
-import { brand } from "@/libs/stores/brandManager/thunk";
+import { brand as GetAllBrands } from "@/libs/stores/brandManager/thunk";
 import { useCallback, useEffect, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Controller } from "react-hook-form";
 import type {
-  CreateProductPayload,
   CreateLimitedProductPayload,
   ProductFormProps,
   ProductData,
   ProductResponse,
+  CreateStandardProductPayload,
 } from "@/libs/types/product";
 import {
   createLimitedProductThunk,
@@ -41,7 +41,7 @@ export const BasicInfoForm = ({
   setIsCreating,
   // taskDetailById,
   // detailLoading,
-}: ProductFormProps<CreateProductPayload | CreateLimitedProductPayload> & {
+}: ProductFormProps<CreateStandardProductPayload | CreateLimitedProductPayload> & {
   isCreating?: boolean;
   setIsCreating?: (value: boolean) => void;
   taskDetailById?: SingleTaskResponse | null;
@@ -61,7 +61,12 @@ export const BasicInfoForm = ({
   const productBasicInfos = getItem<ProductResponse<ProductData>>("currentProduct")?.data;
   const isLimitedProduct = state?.productType === "LIMITED";
 
-  const [name, category_id, brand_id] = watch(["name", "category_id", "brand_id"]);
+  const [name, category_id, brand_place_holder, brand_id] = watch([
+    "name",
+    "category_id",
+    "brand_place_holder",
+    "brand_id",
+  ]);
 
   const premiere_date = watch("limited_attribute.premiere_date" as any);
   const availability_start_date = watch("limited_attribute.availability_start_date" as any);
@@ -69,7 +74,7 @@ export const BasicInfoForm = ({
   const achievable_quantity = watch("limited_attribute.achievable_quantity" as any);
 
   const onSubmit = useCallback(
-    async (payload: CreateProductPayload | CreateLimitedProductPayload) => {
+    async (payload: CreateStandardProductPayload | CreateLimitedProductPayload) => {
       try {
         if (productBasicInfos?.id) {
           if (navigate && steps && currentStep !== undefined) {
@@ -80,7 +85,7 @@ export const BasicInfoForm = ({
         setIsCreating?.(true);
         const result = await dispatch(
           state.productType === "STANDARD"
-            ? createStandardProductThunk(payload as CreateProductPayload)
+            ? createStandardProductThunk(payload as CreateStandardProductPayload)
             : createLimitedProductThunk(payload as CreateLimitedProductPayload),
         ).unwrap();
         console.log("Created product:", result);
@@ -105,17 +110,16 @@ export const BasicInfoForm = ({
   }, []);
 
   useEffect(() => {
-    if (setIsDisabled) {
-      const isBasicFormValid = Boolean(
-        name &&
-          name.trim() !== "" &&
-          category_id &&
-          brand_id &&
-          !errors.name &&
-          !errors.category_id &&
-          !errors.brand_id,
-      );
+    const isBasicFormValid = Boolean(
+      name &&
+        name.trim() !== "" &&
+        category_id &&
+        !errors.name &&
+        !errors.category_id &&
+        (brand_id || brand_place_holder),
+    );
 
+    if (setIsDisabled) {
       if (isLimitedProduct) {
         const isLimitedFormValid = Boolean(
           premiere_date && availability_start_date && availability_end_date && achievable_quantity,
@@ -129,6 +133,7 @@ export const BasicInfoForm = ({
   }, [
     name,
     category_id,
+    brand_place_holder,
     brand_id,
     errors,
     setIsDisabled,
@@ -147,6 +152,7 @@ export const BasicInfoForm = ({
         name: existingProduct.name,
         category_id: existingProduct.category?.id?.toString() || "",
         brand_id: existingProduct.brand_id?.toString() || "",
+        brand_place_holder: existingProduct.brand_place_holder || "",
         description: existingProduct.description || null,
       } as any);
     }
@@ -190,7 +196,7 @@ export const BasicInfoForm = ({
   useEffect(() => {
     const fetchBrands = async () => {
       try {
-        await dispatch(brand(params)).unwrap();
+        await dispatch(GetAllBrands(params)).unwrap();
       } catch (error) {
         console.error("Failed to fetch brands:", error);
         toast.error("Failed to load brands");
@@ -257,28 +263,44 @@ export const BasicInfoForm = ({
           <span className="text-red-600">*</span>
           Brand
         </label>
-        <Controller
-          name="brand_id"
-          control={control}
-          render={({ field }) => (
-            <Select
-              disabled={isLimitedProduct ? true : false}
-              value={field.value}
-              onValueChange={field.onChange}
-            >
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select a brand" />
-              </SelectTrigger>
-              <SelectContent className="max-h-70">
-                {brands?.map((brand) => (
-                  <SelectItem key={brand.id} value={brand?.id}>
-                    {brand.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        />
+        {state.productType === "STANDARD" ? (
+          <Controller
+            name="brand_place_holder"
+            control={control}
+            render={({ field }) => (
+              <Input
+                id="productBrand"
+                placeholder="Input"
+                className="col-span-3"
+                autoComplete="off"
+                {...field}
+              />
+            )}
+          />
+        ) : (
+          <Controller
+            name="brand_id"
+            control={control}
+            render={({ field }) => (
+              <Select
+                disabled={isLimitedProduct ? true : false}
+                value={field.value || ""}
+                onValueChange={field.onChange}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select a brand" />
+                </SelectTrigger>
+                <SelectContent className="max-h-70">
+                  {brands?.map((brand) => (
+                    <SelectItem key={brand.id} value={brand?.id || ""}>
+                      {brand.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">

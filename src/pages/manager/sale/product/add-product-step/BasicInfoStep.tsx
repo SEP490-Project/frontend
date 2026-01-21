@@ -1,10 +1,10 @@
 import { AdditionalInfoForm } from "@/components/manage/sale/product/form/AdditionalForm";
 import { BasicInfoForm } from "@/components/manage/sale/product/form/BasicInfoForm";
 import {
-  type CreateProductPayload,
   type CreateLimitedProductPayload,
   type ProductData,
   type ProductResponse,
+  type CreateStandardProductPayload,
 } from "@/libs/types/product";
 import {
   createStandardProductSchema,
@@ -40,11 +40,12 @@ const BasicInfoStep = () => {
   const [isCreating, setIsCreating] = useState(false);
   const isLimitedProduct = state?.productType === "LIMITED";
 
-  const standardForm = useForm<CreateProductPayload>({
+  const standardForm = useForm<CreateStandardProductPayload>({
     resolver: yupResolver(createStandardProductSchema),
     defaultValues: {
-      brand_id: "",
+      brand_id: null,
       category_id: "",
+      brand_place_holder: "",
       description: null,
       name: "",
     },
@@ -131,6 +132,7 @@ const BasicInfoStep = () => {
         standardForm.reset({
           name: productData.name,
           category_id: productData.category?.id?.toString() || "",
+          brand_place_holder: productData.brand_place_holder || "",
           brand_id: productData.brand_id?.toString() || "",
           description: productData.description || null,
         });

@@ -284,8 +284,6 @@ const Blog = () => {
                           src={post.thumbnail_url || "/not-found-800x384.png"}
                           alt={post.title}
                           className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
-                          loading="lazy"
-                          decoding="async"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             if (target.src !== window.location.origin + "/not-found-800x384.png") {

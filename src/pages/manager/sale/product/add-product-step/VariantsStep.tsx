@@ -1,7 +1,8 @@
 import { useOutletContext, type NavigateFunction } from "react-router";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2, Plus, ImageIcon, Upload, Loader2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Trash2, Plus, ImageIcon, Loader2, Package, ImagePlus } from "lucide-react";
+import { FaMoneyBill } from "react-icons/fa6";
 import {
   Dialog,
   DialogContent,
@@ -9,6 +10,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { productVariantSchema } from "@/libs/validation/productValidation";
@@ -204,7 +212,7 @@ const VariantsStep = () => {
   }, [variants.length, setIsDisabled, setOnSubmitStep, navigate, steps, currentStep, state]);
 
   return (
-    <div className="bg-white p-6 rounded-lg mt-6 mb-12 shadow-md">
+    <Card className="overflow-hidden border-0 shadow-lg shadow-slate-200/50 bg-white mt-6 mb-12">
       {isLoading && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 flex flex-col items-center gap-4">
@@ -214,176 +222,327 @@ const VariantsStep = () => {
           </div>
         </div>
       )}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">Product Variants</h2>
-          <p className="text-sm text-gray-500 mt-1">Manage different variations of your product</p>
-        </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button
-              className="flex items-center gap-2 bg-primary hover:bg-primary/90"
-              disabled={isLoading}
-            >
-              <Plus className="w-4 h-4" />
-              Add Variant
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-bold">Add New Variant</DialogTitle>
-            </DialogHeader>
-            <VariationForm
-              form={form}
-              onSubmit={handleAddVariant}
-              setOnSubmitStep={setOnSubmitStep}
-              steps={steps}
-              currentStep={currentStep}
-              navigate={navigate}
-              state={state}
-              isDisabled={false}
-              setIsDisabled={setIsDisabled}
-              dispatch={dispatch}
-            />
-          </DialogContent>
-        </Dialog>
-      </div>
 
-      {variants.length === 0 ? (
-        <div className="text-center py-16 text-gray-500 border-2 border-dashed border-gray-200 rounded-lg">
-          <div className="mb-4">
-            <ImageIcon className="w-16 h-16 mx-auto text-gray-300" />
+      <CardHeader className="bg-gradient-to-r from-primary/5 to-white border-b px-6 py-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-primary/10 rounded-xl">
+              <Package className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-xl font-bold text-slate-900">Product Variants</CardTitle>
+              <p className="text-sm text-slate-500 mt-0.5">
+                Manage different versions of your product
+              </p>
+            </div>
           </div>
-          <p className="text-lg font-semibold text-gray-700 mb-2">No variants created yet</p>
-          <p className="text-sm text-gray-500 mb-6">
-            Click "Add Variant" to create your first product variant
-          </p>
-          <Button
-            onClick={() => setIsDialogOpen(true)}
-            className="inline-flex items-center gap-2"
-            variant="outline"
-          >
-            <Plus className="w-4 h-4" />
-            Create First Variant
-          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button
+                className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/25"
+                disabled={isLoading}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Variant
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+              <div className="bg-gradient-to-r from-primary/5 to-white px-6 py-5 border-b">
+                <DialogHeader className="space-y-1">
+                  <DialogTitle className="text-2xl font-bold tracking-tight flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <Package className="h-5 w-5 text-primary" />
+                    </div>
+                    Add New Variant
+                  </DialogTitle>
+                </DialogHeader>
+              </div>
+              <div className="p-6">
+                <VariationForm
+                  form={form}
+                  onSubmit={handleAddVariant}
+                  setOnSubmitStep={setOnSubmitStep}
+                  steps={steps}
+                  currentStep={currentStep}
+                  navigate={navigate}
+                  state={state}
+                  isDisabled={false}
+                  setIsDisabled={setIsDisabled}
+                  dispatch={dispatch}
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
-      ) : (
-        <div className="grid gap-4">
-          {variants.map((variant, index) => (
-            <Card
-              key={variant.id || `${variant.name}-${index}`}
-              className="border border-gray-200 hover:shadow-md transition-shadow"
-            >
-              <CardHeader className="pb-3">
-                <div className="flex gap-4 items-start">
-                  {/* Variant Image */}
-                  <div className="flex-shrink-0">
-                    <div
-                      onClick={() => variant.id && fileInputRefs.current[variant.id]?.click()}
-                      className="relative w-24 h-24 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 hover:border-primary cursor-pointer transition-colors flex items-center justify-center group overflow-hidden"
-                    >
-                      {variant?.images && variant.images.length > 0 ? (
-                        <>
-                          <img
-                            src={variant.images[0].image_url}
-                            alt={variant.images[0].alt_text || variant.name}
-                            className="w-full h-full object-cover rounded-lg"
-                          />
-                          <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-40 transition-opacity flex items-center justify-center">
-                            <Upload className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                          </div>
-                        </>
-                      ) : (
-                        <div className="text-center">
-                          <ImageIcon className="w-8 h-8 text-gray-400 mx-auto mb-1" />
-                          <p className="text-xs text-gray-500">Add Image</p>
-                        </div>
-                      )}
-                    </div>
-                    {variant.id && (
-                      <input
-                        type="file"
-                        ref={(el) => {
-                          fileInputRefs.current[variant.id!] = el;
-                        }}
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file && variant.id) {
-                            handleImageUpload(variant.id, file);
-                          }
-                        }}
-                        accept="image/*"
-                        className="hidden"
-                      />
-                    )}
-                  </div>
+      </CardHeader>
 
-                  {/* Variant Details */}
-                  <div className="flex-1">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <CardTitle className="text-lg font-semibold text-gray-900">
-                            {variant.capacity} {variant.capacity_unit} {variant.container_type} -{" "}
-                            <span className="font-medium">
-                              {convertNumberToCurrency(variant.price?.toString() || "0")}
-                            </span>
-                          </CardTitle>
-                          {variant.is_default && (
-                            <span className="px-2 py-1 text-xs font-medium border border-primary text-primary rounded-full">
-                              Default
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      {variant.id && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteVariant(variant.id!)}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50 -mt-2"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div className="md:flex gap-4">
-                        <div>
-                          <p className="text-gray-500 font-medium mb-1">Dispenser Type</p>
-                          <p className="text-gray-900">{variant.dispenser_type}</p>
-                        </div>
-                        {variant.input_stock !== undefined && state.productType === "LIMITED" && (
-                          <div>
-                            <p className="text-gray-500 font-medium mb-1">Current Stock</p>
-                            <p className="text-gray-900">{variant.input_stock} units</p>
+      <CardContent className="p-6">
+        {variants.length === 0 ? (
+          <div
+            className="text-center py-16 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50 hover:bg-slate-50 hover:border-primary/30 transition-all cursor-pointer"
+            onClick={() => setIsDialogOpen(true)}
+          >
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-full shadow-sm mb-4">
+              <Package className="w-10 h-10 text-slate-400" />
+            </div>
+            <p className="text-lg font-semibold text-slate-700 mb-2">No variants created yet</p>
+            <p className="text-sm text-slate-500 mb-6 max-w-md mx-auto">
+              Create product variants to offer different sizes, packaging options, or formulations
+            </p>
+            <Button className="inline-flex items-center gap-2" variant="outline">
+              <Plus className="w-4 h-4" />
+              Create First Variant
+            </Button>
+          </div>
+        ) : (
+          <Accordion type="single" collapsible className="w-full space-y-3">
+            {variants.map((variant, index) => (
+              <AccordionItem
+                key={variant.id || `${variant.name}-${index}`}
+                value={variant.id || `variant-${index}`}
+                className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow data-[state=open]:shadow-lg data-[state=open]:border-primary/30"
+              >
+                <AccordionTrigger className="hover:no-underline px-5 py-4 hover:bg-slate-50/50">
+                  <div className="flex items-center justify-between w-full pr-4">
+                    <div className="flex items-center gap-4">
+                      {/* Variant Thumbnail */}
+                      <div className="relative">
+                        <img
+                          src={variant?.images?.[0]?.image_url || "/logo.svg"}
+                          alt={variant.name || `Variant ${index + 1}`}
+                          className="w-14 h-14 object-cover rounded-xl border-2 border-slate-100 shadow-sm"
+                        />
+                        {variant.is_default && (
+                          <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                            <svg
+                              className="w-3 h-3 text-white"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
                           </div>
                         )}
                       </div>
-                      {variant.attributes?.length > 0 && (
-                        <div className="col-span-2">
-                          <div className="flex flex-wrap gap-2">
-                            {variant.attributes.map((attr, attrIndex) => (
-                              <span
-                                key={attrIndex}
-                                className="px-3 py-1 bg-gray-100 text-gray-700 rounded-md text-xs"
-                              >
-                                {attr.ingredient}: {attr.value} {attr.unit}
-                              </span>
-                            ))}
-                          </div>
+                      {/* Variant Name & Default Badge */}
+                      <div className="text-left">
+                        <span className="font-bold text-slate-900 block">
+                          {variant.name || `Variant ${index + 1}`}
+                        </span>
+                        {variant.is_default && (
+                          <span className="text-xs text-blue-600 font-medium">Default Variant</span>
+                        )}
+                      </div>
+                    </div>
+                    {/* Quick Info Pills */}
+                    <div className="flex items-center gap-4 text-sm">
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg">
+                        <Package className="w-4 h-4 text-slate-500" />
+                        <span className="font-medium text-slate-700">
+                          {variant.capacity} {variant.capacity_unit}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg">
+                        <FaMoneyBill className="w-4 h-4 text-primary" />
+                        <span className="font-bold text-primary">
+                          {convertNumberToCurrency(variant.price?.toString() || "0")}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </AccordionTrigger>
+
+                <AccordionContent className="px-5 pb-5">
+                  <div className="space-y-6 pt-4">
+                    {/* Variant Images Section */}
+                    <div className="pb-6 border-b border-slate-100">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                          <div className="h-7 w-1 bg-primary rounded-full" />
+                          <h3 className="text-lg font-bold text-slate-900">Variant Images</h3>
+                          {variant?.images && variant.images.length > 0 && (
+                            <span className="text-sm text-slate-500 font-normal">
+                              ({variant.images.length}{" "}
+                              {variant.images.length === 1 ? "image" : "images"})
+                            </span>
+                          )}
                         </div>
+                        {variant.id && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => fileInputRefs.current[variant.id!]?.click()}
+                            className="gap-2 bg-primary hover:bg-primary/90 shadow-md"
+                          >
+                            <ImagePlus className="w-4 h-4" />
+                            Add Images
+                          </Button>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                        {variant?.images && variant.images.length > 0 ? (
+                          variant.images.map((image, imgIndex) => (
+                            <div
+                              key={imgIndex}
+                              className="relative group rounded-xl overflow-hidden border-2 border-slate-100 shadow-sm hover:shadow-md hover:border-primary/30 transition-all"
+                            >
+                              <img
+                                src={image.image_url}
+                                alt={image.alt_text || `${variant.name} image ${imgIndex + 1}`}
+                                className="w-full h-32 object-cover"
+                              />
+                              {imgIndex === 0 && (
+                                <Badge className="absolute top-2 left-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg">
+                                  Primary
+                                </Badge>
+                              )}
+                            </div>
+                          ))
+                        ) : (
+                          <div
+                            className="col-span-full text-center py-10 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50 hover:bg-slate-50 hover:border-primary/30 transition-all cursor-pointer"
+                            onClick={() => variant.id && fileInputRefs.current[variant.id]?.click()}
+                          >
+                            <div className="inline-flex items-center justify-center w-14 h-14 bg-white rounded-xl shadow-sm mb-3">
+                              <ImageIcon className="w-7 h-7 text-slate-400" />
+                            </div>
+                            <p className="font-semibold text-slate-600">No images uploaded yet</p>
+                            <p className="text-sm text-slate-400 mt-1">
+                              Click here or "Add Images" button to upload
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Hidden File Input */}
+                      {variant.id && (
+                        <input
+                          type="file"
+                          ref={(el) => {
+                            fileInputRefs.current[variant.id!] = el;
+                          }}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file && variant.id) {
+                              handleImageUpload(variant.id, file);
+                            }
+                          }}
+                          accept="image/*"
+                          className="hidden"
+                        />
+                      )}
+                    </div>
+
+                    {/* Variant Details Section */}
+                    <div className="pb-6 border-b border-slate-100">
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="h-7 w-1 bg-primary rounded-full" />
+                        <h3 className="text-lg font-bold text-slate-900">Variant Details</h3>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                          <p className="text-xs text-slate-500 font-medium uppercase tracking-wide mb-1">
+                            Capacity
+                          </p>
+                          <p className="text-base font-semibold text-slate-900">
+                            {variant.capacity} {variant.capacity_unit}
+                          </p>
+                        </div>
+                        <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                          <p className="text-xs text-slate-500 font-medium uppercase tracking-wide mb-1">
+                            Container
+                          </p>
+                          <p className="text-base font-semibold text-slate-900">
+                            {variant.container_type}
+                          </p>
+                        </div>
+                        <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                          <p className="text-xs text-slate-500 font-medium uppercase tracking-wide mb-1">
+                            Dispenser
+                          </p>
+                          <p className="text-base font-semibold text-slate-900">
+                            {variant.dispenser_type}
+                          </p>
+                        </div>
+                        <div className="bg-primary/5 rounded-xl p-4 border border-primary/20">
+                          <p className="text-xs text-primary/70 font-medium uppercase tracking-wide mb-1">
+                            Price
+                          </p>
+                          <p className="text-base font-bold text-primary">
+                            {convertNumberToCurrency(variant.price?.toString() || "0")}
+                          </p>
+                        </div>
+                        {variant.input_stock !== undefined && state.productType === "LIMITED" && (
+                          <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
+                            <p className="text-xs text-amber-700 font-medium uppercase tracking-wide mb-1">
+                              Stock
+                            </p>
+                            <p className="text-base font-semibold text-amber-900">
+                              {variant.input_stock} units
+                            </p>
+                          </div>
+                        )}
+                        {variant.pre_order_limit && (
+                          <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
+                            <p className="text-xs text-purple-700 font-medium uppercase tracking-wide mb-1">
+                              Pre-order Limit
+                            </p>
+                            <p className="text-base font-semibold text-purple-900">
+                              {variant.pre_order_limit}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Attributes/Ingredients Section */}
+                    {variant.attributes && variant.attributes?.length > 0 && (
+                      <div className="pb-6 border-b border-slate-100">
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="h-7 w-1 bg-primary rounded-full" />
+                          <h3 className="text-lg font-bold text-slate-900">Ingredients</h3>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {variant.attributes.map((attr, attrIndex) => (
+                            <span
+                              key={attrIndex}
+                              className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 text-slate-700 rounded-xl text-sm font-medium border border-slate-200 shadow-sm"
+                            >
+                              <span className="w-2 h-2 rounded-full bg-primary/60 mr-2"></span>
+                              {attr.ingredient}: {attr.value} {attr.unit}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="flex justify-end gap-3 pt-2">
+                      {variant.id && (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeleteVariant(variant.id!)}
+                          className="gap-2"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Remove Variant
+                        </Button>
                       )}
                     </div>
                   </div>
-                </div>
-              </CardHeader>
-            </Card>
-          ))}
-        </div>
-      )}
-    </div>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

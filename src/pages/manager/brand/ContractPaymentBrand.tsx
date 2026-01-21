@@ -40,6 +40,7 @@ import { toast } from "sonner";
 const PAGE_SIZE = 5;
 
 const CONTRACT_PAYMENT_STATUS_LABELS: Record<string, string> = {
+  NOT_STARTED: "Not Started",
   PENDING: "Pending",
   PAID: "Paid",
   OVERDUE: "Overdue",
@@ -52,6 +53,7 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
+  NOT_STARTED: "bg-gray-100 text-gray-800 border-gray-200",
   PAID: "bg-green-100 text-green-800 border-green-200",
   PENDING: "bg-yellow-100 text-yellow-800 border-yellow-200",
   OVERDUE: "bg-orange-100 text-orange-800 border-orange-200",
@@ -75,15 +77,6 @@ const CONTRACT_TYPE_COLORS: Record<string, string> = {
   ADVERTISING: "bg-cyan-100 text-cyan-800 border-cyan-200",
   CO_PRODUCING: "bg-violet-100 text-violet-800 border-violet-200",
   AFFILIATE: "bg-pink-100 text-pink-800 border-pink-200",
-};
-
-const getPaymentType = (payment: any) => {
-  if (payment.is_deposit) return "Deposit";
-  if (payment.contract_type === "BRAND_AMBASSADOR" || payment.contract_type === "ADVERTISING")
-    return "Scheduled";
-  if (payment.contract_type === "AFFILIATE" || payment.contract_type === "CO_PRODUCING")
-    return "Performance";
-  return "-";
 };
 
 const PayNowMark: React.FC = () => (
@@ -401,20 +394,6 @@ const ContractPaymentBrandPage: React.FC = () => {
     return (
       <div className="flex flex-col">
         <span className="font-medium">{formatCurrency(payment.amount)}</span>
-        {(payment.base_amount !== undefined || payment.performance_amount !== undefined) && (
-          <div className="mt-1 space-y-0.5">
-            {payment.base_amount !== undefined && (
-              <div className="text-xs text-gray-500">
-                Base: {formatCurrency(payment.base_amount)}
-              </div>
-            )}
-            {payment.performance_amount !== undefined && payment.performance_amount > 0 && (
-              <div className="text-xs text-gray-500">
-                Perf: {formatCurrency(payment.performance_amount)}
-              </div>
-            )}
-          </div>
-        )}
       </div>
     );
   };
@@ -555,6 +534,7 @@ const ContractPaymentBrandPage: React.FC = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">All Status</SelectItem>
+                <SelectItem value="NOT_STARTED">Not Started</SelectItem>
                 <SelectItem value="PENDING">Pending</SelectItem>
                 <SelectItem value="PAID">Paid</SelectItem>
                 <SelectItem value="OVERDUE">Overdue</SelectItem>
@@ -656,8 +636,7 @@ const ContractPaymentBrandPage: React.FC = () => {
                     <TableHead className="font-semibold">Contract</TableHead>
                     <TableHead className="font-semibold">Brand</TableHead>
                     <TableHead className="font-semibold">Type</TableHead>
-                    <TableHead className="font-semibold">Amount</TableHead>
-                    <TableHead className="font-semibold">Payment</TableHead>
+                    <TableHead className="font-semibold">Total Amount</TableHead>
                     <TableHead className="font-semibold">Status</TableHead>
                     <TableHead className="font-semibold">Due Date</TableHead>
                     <TableHead className="font-semibold">Payment Method</TableHead>
@@ -704,12 +683,6 @@ const ContractPaymentBrandPage: React.FC = () => {
                         )}
                       </TableCell>
                       <TableCell className="py-4">{formatAmount(payment)}</TableCell>
-                      <TableCell className="py-4">
-                        <span className="text-xs font-medium">{getPaymentType(payment)}</span>
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <span className="text-xs font-medium">{getPaymentType(payment)}</span>
-                      </TableCell>
                       <TableCell className="py-4">
                         <Badge
                           className={`border ${STATUS_COLORS[payment.status] || ""} text-xs font-medium px-2 py-1`}
@@ -846,10 +819,6 @@ const ContractPaymentBrandPage: React.FC = () => {
                       <div className="text-right">
                         <div className="text-sm text-gray-500">Amount</div>
                         <div className="text-sm">{formatAmount(payment)}</div>
-                        <div className="text-xs mt-1">
-                          <span className="font-medium">Payment: </span>
-                          {getPaymentType(payment)}
-                        </div>
                       </div>
                     </div>
 

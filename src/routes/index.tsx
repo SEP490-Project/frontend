@@ -12,6 +12,7 @@ import {
   ProductApproval,
   ContentApproval as BrandContentApproval,
   ProductDetail as BrandProductDetail,
+  CampaignDetail as BrandCampaignDetail,
 } from "@/pages/manager/brand";
 import BrandContractDetail from "@/pages/manager/brand/ContractDetail";
 import {
@@ -30,6 +31,7 @@ import {
   ContentApproval,
   TaskSchedule,
   ContractPayment,
+  Violation,
 } from "@/pages/manager/marketing";
 import ManageLayout from "@/layouts/ManageLayout";
 import Login from "@/pages/authentication/Login";
@@ -48,7 +50,6 @@ import {
 import PrivateRoute from "./private-route";
 import PublicRoute from "./public-route";
 import {
-  Product,
   Category,
   Order,
   Review,
@@ -60,6 +61,8 @@ import {
   AssignedTask,
   EditProduct,
   ProductDetail,
+  StandardProduct,
+  LimitedProduct,
 } from "@/pages/manager/sale";
 import ContentPreviewPage from "@/pages/manager/marketing/content-approval/ContentPreviewPage";
 import AddProductStep from "@/components/manage/sale/product/AddProductStep";
@@ -159,8 +162,8 @@ const AppRoutes = () => (
         <Route path="/manage/sale" element={<ManageLayout />}>
           <Route path="task" element={<AssignedTask />} />
           <Route path="product">
-            <Route index element={<Product type="STANDARD" />} />
-            <Route path="limited" element={<Product type="LIMITED" />} />
+            <Route index element={<StandardProduct />} />
+            <Route path="limited" element={<LimitedProduct />} />
           </Route>
           <Route path="product/create" element={<AddProductStep />}>
             <Route index element={<BasicInfoStep />} />
@@ -208,6 +211,7 @@ const AppRoutes = () => (
           <Route path="contents-approval/preview/:id" element={<ContentPreviewPage />} />
           <Route path="task-schedule" element={<TaskSchedule />} />
           <Route path="contract-payment" element={<ContractPayment />} />
+          <Route path="violations" element={<Violation />} />
         </Route>
       </Route>
 
@@ -216,7 +220,7 @@ const AppRoutes = () => (
           <Route path="contracts" element={<Contract />} />
           <Route path="contracts/:id" element={<BrandContractDetail />} />
           <Route path="campaigns" element={<BrandCampaign />} />
-          <Route path="campaigns/:id" element={<CampaignDetail userRole="brand" />} />
+          <Route path="campaigns/:id" element={<BrandCampaignDetail />} />
           <Route path="contract-payment" element={<ContractPaymentBrand />} />
           <Route path="payment-transaction" element={<BrandPaymentTransaction />} />
           <Route path="product-approval" element={<ProductApproval />} />

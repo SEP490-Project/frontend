@@ -8,6 +8,7 @@ import {
   approveCampaign,
   rejectCampaign,
   suggestCampaign,
+  updateCampaign,
 } from "./thunk";
 import type { CampaignData, CampaignSuggestion } from "@/libs/types/campaign";
 import { toast } from "sonner";
@@ -181,6 +182,23 @@ export const manageCampaignSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
         const message = (action.payload as string) || "Failed to reject campaign";
+        toast.error(message);
+      })
+
+      .addCase(updateCampaign.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateCampaign.fulfilled, (state, action) => {
+        state.loading = false;
+        state.error = null;
+        const message = action.payload.message || "Campaign updated successfully";
+        toast.success(message);
+      })
+      .addCase(updateCampaign.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        const message = (action.payload as string) || "Failed to update campaign";
         toast.error(message);
       });
   },

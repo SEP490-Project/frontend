@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import type { OrderData } from "@/libs/types/order";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -9,13 +9,26 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { FaBox, FaStore, FaTag, FaImage } from "react-icons/fa6";
+import { useAppDispatch, type RootState } from "@/libs/stores";
+import { useSelector } from "react-redux";
+import { getOrderPriceBreakdownThunk } from "@/libs/stores/orderManager/thunk";
 
 interface OrderDetailProps {
   order: OrderData;
 }
 
 const OrderDetail: React.FC<OrderDetailProps> = ({ order }) => {
+  const dispatch = useAppDispatch();
+
+  const { orderPriceBreakDown, loading } = useSelector((state: RootState) => state?.manageOrder);
+
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (order && order.id) {
+      dispatch(getOrderPriceBreakdownThunk({ orderId: order.id, orderType: order.order_type }));
+    }
+  }, [dispatch, order]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -89,6 +102,14 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order }) => {
     );
   };
 
+  if (!order) {
+    return <div>No order data available.</div>;
+  }
+
+  if (loading) {
+    return <div>Loading order details...</div>;
+  }
+
   return (
     <div className="space-y-6">
       {/* Order Info Section */}
@@ -98,7 +119,7 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order }) => {
           <div className="space-y-2">
             <div>
               <span className="text-sm text-gray-500">Order ID:</span>
-              <span className="ml-2 font-mono text-sm font-medium">#{order.id.slice(0, 8)}...</span>
+              <span className="ml-2 font-mono text-sm font-medium">#{order.id}</span>
             </div>
             {order.ghn_order_code && (
               <div>
@@ -177,7 +198,7 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order }) => {
             <Badge
               className={`ml-2 ${order.is_self_picked_up ? "bg-orange-100 text-orange-800 border border-orange-200" : "bg-blue-100 text-blue-800 border border-blue-200"}`}
             >
-              {order.is_self_picked_up ? "AT PLACE" : "SHIPPING TO ADDRESS"}
+              {order.is_self_picked_up ? "In-Store Pickup" : "Home Delivery"}
             </Badge>
           </div>
           {!order.is_self_picked_up && (
@@ -566,6 +587,81 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order }) => {
       )}
 
       <Separator />
+      {/* Price Breakdown Section */}
+      {orderPriceBreakDown && orderPriceBreakDown.data.length > 0 && (
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-lg border border-blue-200">
+          <h3 className="text-sm font-medium text-gray-700 mb-3 uppercase tracking-wide">
+            Price Breakdown
+          </h3>
+          <div className="space-y-4">
+            {orderPriceBreakDown.data.map((breakdown, index) => {
+              const orderItem = order.order_items?.find((item) => item.id === breakdown.item_id);
+              return (
+                <div
+                  key={breakdown.item_id || index}
+                  className="bg-white p-3 rounded-md border border-gray-200"
+                >
+                  <div className="text-sm font-medium text-gray-800 mb-2">
+                    {orderItem?.product_name || `Item ${index + 1}`}
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-500">Company Share:</span>
+                        <span className="font-medium text-gray-700">
+                          {breakdown.company_percentage}%
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Amount:</span>
+                        <span className="font-semibold text-green-600">
+                          {formatCurrency(breakdown.company_amount)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-500">KOL Share:</span>
+                        <span className="font-medium text-gray-700">
+                          {breakdown.kol_percentage}%
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Amount:</span>
+                        <span className="font-semibold text-purple-600">
+                          {formatCurrency(breakdown.kol_amount)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            <Separator className="bg-blue-300" />
+
+            {/* Total Breakdown */}
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-gray-700">Total Company:</span>
+                <span className="text-base font-bold text-green-600">
+                  {formatCurrency(
+                    orderPriceBreakDown.data.reduce((sum, b) => sum + b.company_amount, 0),
+                  )}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-gray-700">Total KOL:</span>
+                <span className="text-base font-bold text-purple-600">
+                  {formatCurrency(
+                    orderPriceBreakDown.data.reduce((sum, b) => sum + b.kol_amount, 0),
+                  )}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Order Summary Section */}
       <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-5 rounded-lg border border-gray-200">

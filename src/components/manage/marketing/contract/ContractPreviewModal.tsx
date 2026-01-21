@@ -31,6 +31,14 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
 
     const isExistingContract = formData.brand && typeof formData.brand === "object";
 
+    // Lấy compensation_percent động từ formData - check both locations for create/edit compatibility
+    const compensationPercent =
+      formData.legal_terms?.compensation_percent !== undefined
+        ? formData.legal_terms?.compensation_percent
+        : formData.compensation_percent !== undefined
+          ? formData.compensation_percent
+          : 0;
+
     return {
       contract_number: formData.contract_number,
       title: formData.title,
@@ -113,24 +121,43 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
           },
 
       legal_terms: {
+        ...(formData.legal_terms || {}),
         breach_of_contract: {
           label: "Breach of Contract",
           items:
             formData.legal_terms?.breach_of_contract?.items?.length > 0
-              ? formData.legal_terms.breach_of_contract.items
+              ? formData.legal_terms.breach_of_contract.items.map((item: any) => {
+                  // Always update compensation_percent for Party B item
+                  if (item.title === "Party B (Service Provider) breaks the rules") {
+                    const percent = compensationPercent;
+                    return {
+                      ...item,
+                      compensation_percent: percent,
+                      details: [
+                        "Contract terminates immediately",
+                        "Party B must refund the deposit",
+                        `Party B pays additional ${percent}% compensation`,
+                      ],
+                    };
+                  }
+                  return item;
+                })
               : [
                   {
                     title: "Party A (Brand) breaks the rules",
-                    details: ["Contract terminates immediately", "Party A forfeits the deposit"],
+                    details: [
+                      "Contract terminates immediately",
+                      "Party A forfeits the deposit and must pay for the current milestone",
+                    ],
                   },
                   {
                     title: "Party B (Service Provider) breaks the rules",
                     details: [
                       "Contract terminates immediately",
                       "Party B must refund the deposit",
-                      "Party B pays additional 10% compensation",
+                      `Party B pays additional ${compensationPercent}% compensation`,
                     ],
-                    compensation_percent: 10,
+                    compensation_percent: compensationPercent,
                   },
                   {
                     title: "Mutual agreement to terminate",
@@ -169,7 +196,6 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
                   },
                 ],
         },
-        ...(formData.legal_terms || {}),
       },
     };
   };
@@ -686,22 +712,6 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
                 ))}
               </div>
             )}
-            {financial.tax_withholding && (
-              <div className="mt-2">
-                <p className="font-semibold text-xs text-gray-700 underline mb-1">
-                  Tax Withholding:
-                </p>
-                <p className="text-xs">
-                  A tax rate of{" "}
-                  <span className="font-semibold">{financial.tax_withholding.rate_percent}%</span>{" "}
-                  will be withheld for earnings exceeding{" "}
-                  <span className="font-semibold">
-                    {formatMoney(financial.tax_withholding.threshold)}
-                  </span>
-                  .
-                </p>
-              </div>
-            )}
           </div>
         );
 
@@ -994,7 +1004,7 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
               className="bg-green-600 hover:bg-green-700 text-white"
             >
               <FaCircleCheck className="h-4 w-4 mr-2" />
-              Create Draft Contract
+              Confirm Contract
             </Button>
           )}
         </div>

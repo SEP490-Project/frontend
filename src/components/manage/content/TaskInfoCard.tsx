@@ -239,7 +239,7 @@ const renderTaskDetails = (description: any) => {
                       key={idx}
                       className="bg-white border border-gray-100 px-2 py-0.5 rounded text-xs text-gray-600"
                     >
-                      #{tag}
+                      {tag}
                     </span>
                   ))}
                 </div>
@@ -375,7 +375,7 @@ const renderTaskDetails = (description: any) => {
               <div className="flex flex-wrap gap-1">
                 {description.hashtags.map((tag: string, i: number) => (
                   <Badge key={i} variant="outline" className="text-[10px] font-normal">
-                    #{tag}
+                    {tag}
                   </Badge>
                 ))}
               </div>

@@ -13,11 +13,21 @@ import {
   Zap,
   Weight,
   RulerDimensionLine,
+  Loader2,
 } from "lucide-react";
 import { MdHeight, MdWidthNormal } from "react-icons/md";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { useAppDispatch } from "@/libs/stores";
 import {
   getProductDetailThunk,
@@ -26,8 +36,9 @@ import {
 } from "@/libs/stores/productManager/thunk";
 import { useProduct } from "@/libs/hooks/useProduct";
 import { convertNumberToCurrency, formatDate } from "@/libs/helper/helper";
-import { FaMoneyBill } from "react-icons/fa6";
+import { FaMoneyBill, FaArrowLeft, FaCircleCheck, FaCircleXmark } from "react-icons/fa6";
 import type { LimitedProductData, ProductAttribute, ProductVariant } from "@/libs/types/product";
+import { motion } from "framer-motion";
 
 const BrandProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -35,6 +46,10 @@ const BrandProductDetail: React.FC = () => {
   const dispatch = useAppDispatch();
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [showApproveDialog, setShowApproveDialog] = useState(false);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { productDetail, isLoading } = useProduct();
 
   const product: any = productDetail?.data || null;
@@ -55,20 +70,43 @@ const BrandProductDetail: React.FC = () => {
 
   const handleUpdateStatus = async (status: "ACTIVED" | "REVISION") => {
     if (!product?.id) return;
-    const result = await dispatch(updateProductStateThunk({ productId: product.id, status }));
-    if (result.meta.requestStatus === "fulfilled") {
-      await dispatch(
-        updateProductVisibilityThunk({ productId: product.id, isActive: status === "ACTIVED" }),
-      );
+    setIsSubmitting(true);
+    try {
+      const result = await dispatch(updateProductStateThunk({ productId: product.id, status }));
+      if (result.meta.requestStatus === "fulfilled") {
+        await dispatch(
+          updateProductVisibilityThunk({ productId: product.id, isActive: status === "ACTIVED" }),
+        );
+      }
+      setShowApproveDialog(false);
+      setShowRejectDialog(false);
+      setRejectReason("");
+      navigate("/manage/brand/product-approval");
+    } catch (error) {
+      console.error("Failed to update product status:", error);
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+
+  const handleGoBack = () => {
     navigate("/manage/brand/product-approval");
+  };
+
+  const handleApproveProduct = () => {
+    handleUpdateStatus("ACTIVED");
+  };
+
+  const handleRejectProduct = () => {
+    if (!rejectReason.trim()) return;
+    handleUpdateStatus("REVISION");
   };
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="text-gray-600">Loading product details...</p>
         </div>
       </div>
@@ -79,10 +117,9 @@ const BrandProductDetail: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600 mb-4">Error: {error || "Product not found"}</p>
-          <Button onClick={() => navigate("/manage/brand/product-approval")}>
-            Back to Approval
-          </Button>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Product not found</h2>
+          <p className="text-gray-600 mb-4">The product you're looking for doesn't exist.</p>
+          <Button onClick={handleGoBack}>Go Back</Button>
         </div>
       </div>
     );
@@ -120,17 +157,49 @@ const BrandProductDetail: React.FC = () => {
 
   return (
     <div className="min-h-fit p-4 sm:p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl sm:text-2xl font-semibold">Product Details</h1>
-        <div className="flex gap-2">
-          <Button size="sm" variant="destructive" onClick={() => handleUpdateStatus("REVISION")}>
-            Reject (Revision)
+      {/* Navigation Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center justify-between mb-6"
+      >
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" onClick={handleGoBack} className="flex items-center">
+            <FaArrowLeft className="w-4 h-4 mr-2" />
+            Return
           </Button>
-          <Button size="sm" onClick={() => handleUpdateStatus("ACTIVED")}>
-            Approve
-          </Button>
+
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              Product Details
+            </h1>
+            <p className="text-gray-600">Product name: {product?.name || "—"}</p>
+          </div>
         </div>
-      </div>
+
+        {/* Brand Action Buttons */}
+        {product?.status === "DRAFT" && (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              className="border-red-200 text-red-700 hover:bg-red-50 flex items-center gap-2"
+              onClick={() => setShowRejectDialog(true)}
+              disabled={isSubmitting}
+            >
+              <FaCircleXmark className="w-4 h-4" />
+              Reject Product
+            </Button>
+            <Button
+              className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+              onClick={() => setShowApproveDialog(true)}
+              disabled={isSubmitting}
+            >
+              <FaCircleCheck className="w-4 h-4" />
+              Approve Product
+            </Button>
+          </div>
+        )}
+      </motion.div>
 
       <div className="lg:col-span-2">
         <div className="bg-white rounded-lg shadow mb-3">
@@ -632,15 +701,104 @@ const BrandProductDetail: React.FC = () => {
       </div>
       <div className="border-gray-200 absolute min-w-full bottom-0 left-0 bg-white min-h-fit border-t flex justify-end items-center px-4 py-2 gap-2">
         <div className="space-x-2">
-          <Button
-            variant={"outline"}
-            size={"sm"}
-            onClick={() => navigate("/manage/brand/product-approval")}
-          >
+          <Button variant={"outline"} size={"sm"} onClick={handleGoBack}>
             Back To Approval
           </Button>
         </div>
       </div>
+
+      {/* Approve Product Dialog */}
+      <Dialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <div className="p-2 bg-green-100 rounded-full">
+                <FaCircleCheck className="h-5 w-5 text-green-600" />
+              </div>
+              Approve Product
+            </DialogTitle>
+            <DialogDescription className="text-left">
+              Are you sure you want to approve the product <strong>"{product?.name}"</strong>?
+              <br />
+              <br />
+              This action will make the product available for sale.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowApproveDialog(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="bg-green-600 hover:bg-green-700"
+              onClick={handleApproveProduct}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <FaCircleCheck className="h-4 w-4 mr-2" />
+              )}
+              {isSubmitting ? "Approving..." : "Approve Product"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject Product Dialog */}
+      <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <div className="p-2 bg-red-100 rounded-full">
+                <FaCircleXmark className="h-5 w-5 text-red-600" />
+              </div>
+              Reject Product
+            </DialogTitle>
+            <DialogDescription className="text-left">
+              Are you sure you want to reject the product <strong>"{product?.name}"</strong>?
+              <br />
+              <br />
+              Please provide a reason for rejection:
+            </DialogDescription>
+          </DialogHeader>
+          <div className="px-6 pb-4">
+            <Textarea
+              placeholder="Enter reason for rejection..."
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              className="min-h-[100px]"
+            />
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowRejectDialog(false);
+                setRejectReason("");
+              }}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleRejectProduct}
+              disabled={isSubmitting || !rejectReason.trim()}
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <FaCircleXmark className="h-4 w-4 mr-2" />
+              )}
+              {isSubmitting ? "Rejecting..." : "Reject Product"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

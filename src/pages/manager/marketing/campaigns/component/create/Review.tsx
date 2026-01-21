@@ -51,6 +51,7 @@ interface ReviewProps {
   toPayload: () => any;
   onBack: () => void;
   onSubmit: () => void;
+  isEditMode?: boolean;
 }
 
 const Review: React.FC<ReviewProps> = ({
@@ -59,6 +60,7 @@ const Review: React.FC<ReviewProps> = ({
   selectedContract,
   onBack,
   onSubmit,
+  isEditMode = false,
 }) => {
   const totalTasks = milestones.reduce((acc, m) => acc + m.tasks.length, 0);
   const { loading } = useCampaign();
@@ -67,11 +69,30 @@ const Review: React.FC<ReviewProps> = ({
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return "—";
-    return new Date(dateStr).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+    try {
+      // Handle different date formats from API
+      let date: Date;
+
+      if (dateStr.includes(" +0000 UTC")) {
+        // Handle "2026-02-18 00:00:00 +0000 UTC" format
+        date = new Date(dateStr);
+      } else if (dateStr.includes("T")) {
+        // Handle ISO format "2026-01-18T00:00:00.000Z"
+        date = new Date(dateStr);
+      } else {
+        // Handle simple date format "2026-01-18"
+        date = new Date(dateStr + "T00:00:00");
+      }
+
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    } catch (error) {
+      console.warn("Failed to format date:", dateStr, error);
+      return "—";
+    }
   };
 
   const getCampaignTypeColor = (type: string) => {
@@ -105,8 +126,14 @@ const Review: React.FC<ReviewProps> = ({
           <CheckCircle className="w-6 h-6 text-green-600" />
         </div>
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Review Campaign</h2>
-          <p className="text-gray-600">Please review all details before creating the campaign</p>
+          <h2 className="text-2xl font-bold text-gray-900">
+            {isEditMode ? "Review Campaign Changes" : "Review Campaign"}
+          </h2>
+          <p className="text-gray-600">
+            {isEditMode
+              ? "Please review your changes before updating the campaign"
+              : "Please review all details before creating the campaign"}
+          </p>
         </div>
       </div>
 
@@ -267,7 +294,13 @@ const Review: React.FC<ReviewProps> = ({
             className="bg-gradient-to-r from-primary/70 to-primary/80 hover:from-primary/70 hover:to-primary/50 text-white px-8"
             disabled={loading}
           >
-            {loading ? "Creating..." : "Create Campaign"}
+            {loading
+              ? isEditMode
+                ? "Updating..."
+                : "Creating..."
+              : isEditMode
+                ? "Update Campaign"
+                : "Create Campaign"}
           </Button>
         </div>
       </div>

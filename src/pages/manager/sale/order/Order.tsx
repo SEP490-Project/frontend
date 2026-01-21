@@ -150,23 +150,34 @@ const Order: React.FC = () => {
 
           <div className="flex-1 min-w-[200px]">
             <Input
-              placeholder="Search by order ID, name, email or phone..."
+              placeholder="Search by order ID or GHN tracking code"
               value={params.search}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="w-full"
             />
           </div>
 
-          <div className="min-w-[150px]">
+          <div>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setParams({ page: 1, limit: 5, search: "", status: "" });
+              }}
+            >
+              Clear All
+            </Button>
+          </div>
+        </div>
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <div>
             <Select
-              value={params.status || " "}
+              value={params.status || ""}
               onValueChange={(value) => handleStatusChange(value)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder="Select Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value=" ">All Statuses</SelectItem>
                 {statusOptions.map((status) => (
                   <SelectItem key={status} value={status}>
                     {status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}

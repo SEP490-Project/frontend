@@ -1,7 +1,5 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { FaChartLine, FaCalendarDay } from "react-icons/fa6";
 import {
   SelectField,
@@ -121,40 +119,22 @@ const AffiliateScope: React.FC<AffiliateScopeProps> = ({ formData, onUpdate, err
           />
         )}
 
-        <Card className="p-4 bg-yellow-50 border-yellow-200">
-          <h4 className="font-medium text-yellow-900 mb-3">Tax Withholding</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <CurrencyInput
-              label="Threshold (VND)"
-              value={financial_terms.tax_withholding?.threshold || 0}
-              onChange={(value) =>
-                onUpdate({
-                  tax_withholding: { ...financial_terms.tax_withholding, threshold: value },
-                })
-              }
-              placeholder="10.000.000"
-            />
-
-            <div className="space-y-1">
-              <Label className="text-sm font-medium flex items-center">Tax Rate (%)</Label>
-              <Input
-                type="number"
-                value={financial_terms.tax_withholding?.rate_percent || ""}
-                onChange={(e) =>
-                  onUpdate({
-                    tax_withholding: {
-                      ...financial_terms.tax_withholding,
-                      rate_percent: parseFloat(e.target.value) || 0,
-                    },
-                  })
-                }
-                placeholder="10"
-                min="0"
-                max="100"
-              />
-            </div>
-          </div>
-        </Card>
+        {/* Tax Withholding hidden, but always set default = 0 */}
+        {useEffect(
+          () => {
+            if (
+              !financial_terms.tax_withholding ||
+              financial_terms.tax_withholding.threshold !== 0 ||
+              financial_terms.tax_withholding.rate_percent !== 0
+            ) {
+              onUpdate({
+                tax_withholding: { threshold: 0, rate_percent: 0 },
+              });
+            }
+            // eslint-disable-next-line
+          },
+          [] /* only run once on mount */,
+        )}
 
         <CommissionLevels
           levels={financial_terms.levels || []}

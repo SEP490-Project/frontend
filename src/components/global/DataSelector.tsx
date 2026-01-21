@@ -29,6 +29,7 @@ interface DataSelectorProps<T> {
   searchValue?: string;
   onScrollEnd?: () => void;
   loading?: boolean;
+  disabled?: boolean;
 }
 
 const DataSelector = <T extends { id: string }>({
@@ -43,6 +44,7 @@ const DataSelector = <T extends { id: string }>({
   searchValue,
   onScrollEnd,
   loading,
+  disabled = false,
 }: DataSelectorProps<T>) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const selectedItem = data.find((item) => String(item.id) === String(selectedId)) || null;
@@ -57,8 +59,8 @@ const DataSelector = <T extends { id: string }>({
   };
 
   return (
-    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-      <DialogTrigger asChild>
+    <Dialog open={isDialogOpen && !disabled} onOpenChange={disabled ? () => {} : setIsDialogOpen}>
+      <DialogTrigger asChild disabled={disabled}>
         <div className="w-full relative">
           {/* Icon search */}
           <FaMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
@@ -66,13 +68,14 @@ const DataSelector = <T extends { id: string }>({
           {/* Input hiển thị lựa chọn */}
           <Input
             readOnly
+            disabled={disabled}
             value={selectedItem ? getLabel(selectedItem) : ""}
             placeholder={placeholder}
-            className="cursor-pointer pl-9 pr-9"
+            className={`cursor-pointer pl-9 pr-9 ${disabled ? "bg-gray-100 cursor-not-allowed" : ""}`}
           />
 
           {/* Nút clear */}
-          {selectedItem && (
+          {selectedItem && !disabled && (
             <button
               type="button"
               className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-gray-100"

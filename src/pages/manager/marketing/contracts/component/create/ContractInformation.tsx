@@ -37,6 +37,7 @@ import {
   FaImage,
 } from "react-icons/fa6";
 import { Badge } from "@/components/ui/badge";
+import { Loader2 } from "lucide-react";
 
 interface ContractInformationProps {
   formData: any;
@@ -44,6 +45,8 @@ interface ContractInformationProps {
   onInputChange: (field: string, value: any) => void;
   errors?: any;
   onFieldValidation?: (field: string, error: string | null) => void;
+  isBrandLockedMode?: boolean;
+  onBrandChange?: () => void;
 }
 
 const CONTRACT_TYPE_OPTIONS = [
@@ -87,7 +90,7 @@ const MemoBrandCard = React.memo(({ brand, isSelection }: { brand: any; isSelect
       } gap-4 sm:gap-6 rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md w-full`}
     >
       <div
-        className={`flex-shrink-0 ${
+        className={`shrink-0 ${
           isSelection ? "h-12 w-12" : "h-20 w-20"
         } rounded-xl border border-slate-100 bg-white shadow-sm flex items-center justify-center`}
       >
@@ -125,19 +128,19 @@ const MemoBrandCard = React.memo(({ brand, isSelection }: { brand: any; isSelect
           <div className="mt-5 space-y-3 text-sm">
             {brand.contact_email && (
               <div className="flex items-center gap-2 text-slate-700">
-                <FaEnvelope className="h-4 w-4 text-slate-500 flex-shrink-0" />
+                <FaEnvelope className="h-4 w-4 text-slate-500 shrink-0" />
                 <span className="truncate">{brand.contact_email}</span>
               </div>
             )}
             {brand.contact_phone && (
               <div className="flex items-center gap-2 text-slate-700">
-                <FaPhone className="h-4 w-4 text-slate-500 flex-shrink-0" />
+                <FaPhone className="h-4 w-4 text-slate-500 shrink-0" />
                 <span>{brand.contact_phone}</span>
               </div>
             )}
             {brand.website && (
               <div className="flex items-center gap-2 text-slate-700">
-                <FaGlobe className="h-4 w-4 text-slate-500 flex-shrink-0" />
+                <FaGlobe className="h-4 w-4 text-slate-500 shrink-0" />
                 <a
                   href={brand.website}
                   target="_blank"
@@ -185,6 +188,8 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
   onInputChange,
   errors = {},
   onFieldValidation,
+  isBrandLockedMode = false,
+  onBrandChange,
 }) => {
   const dispatch = useAppDispatch();
   const { brands, loading: brandLoading, pagination, brand } = useBrand();
@@ -199,6 +204,17 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
 
   const [bankSearch, setBankSearch] = useState("");
   const debouncedBankSearch = useDebounce(bankSearch, 400);
+
+  // Set start_date mặc định là ngày mai nếu chưa có
+  useEffect(() => {
+    if (!formData.start_date) {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 0);
+      const isoTomorrow = tomorrow.toISOString().split("T")[0];
+      onInputChange("start_date", isoTomorrow);
+    }
+  }, [formData.start_date, onInputChange]);
 
   const filteredBanks = useMemo(() => {
     const search = debouncedBankSearch.toLowerCase();
@@ -246,6 +262,10 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
   }, [pagination?.has_next, brandLoading]);
 
   const handleBrandSelect = (brandId: string | null) => {
+    if (isBrandLockedMode) {
+      onBrandChange?.();
+      return;
+    }
     onInputChange("brand_id", brandId || "");
     if (!brandId) {
       setBrandDetailsOpen(false);
@@ -314,20 +334,17 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
     const updatedForm = { ...formData, [field]: value };
     onInputChange(field, value);
 
-    if (field === "signed_date") {
-      onInputChange("start_date", value);
-      updatedForm.start_date = value;
-    }
+    // Không tự động set start_date từ signed_date nữa
 
     if (onFieldValidation) {
       const validation = await validateField(field, value, updatedForm);
       onFieldValidation(field, validation.isValid ? null : validation.error);
 
       if (field === "signed_date") {
-        const createdAt = new Date();
+        const today = new Date();
         const signedDate = new Date(value);
-        if (signedDate < createdAt) {
-          onFieldValidation("signed_date", "Signed Date cannot be earlier than today.");
+        if (signedDate >= today) {
+          onFieldValidation("signed_date", "Signed Date must be earlier than today.");
         } else {
           onFieldValidation("signed_date", null);
         }
@@ -515,9 +532,11 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">Brand Selection</CardTitle>
                 <p className="text-sm text-slate-500">
-                  {formData.brand_id
-                    ? "Selected brand (you can change if needed)"
-                    : "Search and pick the partner brand."}
+                  {isBrandLockedMode
+                    ? "Brand is locked and cannot be changed in edit mode"
+                    : formData.brand_id
+                      ? "Selected brand (you can change if needed)"
+                      : "Search and pick the partner brand."}
                 </p>
               </CardHeader>
               <CardContent>
@@ -529,11 +548,16 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                     renderItem={(b) => <MemoBrandCard brand={b} isSelection={true} />}
                     getLabel={(b) => b.name}
                     title="Brands"
-                    placeholder="Search brands name..."
+                    placeholder={
+                      isBrandLockedMode
+                        ? "Brand cannot be changed in edit mode"
+                        : "Search brands name..."
+                    }
                     onSearch={setSearch}
                     searchValue={search}
                     onScrollEnd={loadMoreBrands}
                     loading={brandLoading}
+                    disabled={isBrandLockedMode}
                   />
 
                   <AnimatePresence>
@@ -553,7 +577,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
 
                         {brandLoading && !brand ? (
                           <div className="flex items-center justify-center p-8 bg-gray-50 rounded-lg">
-                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                            <Loader2 className="mx-auto mb-4 h-12 w-12 text-primary animate-spin" />
                             <span className="ml-2 text-sm text-gray-600">
                               Loading brand information...
                             </span>
@@ -621,12 +645,11 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                     value={formData.signed_date || ""}
                     onChange={(value: string) => {
                       handleFieldChange("signed_date", value);
-                      handleFieldChange("start_date", value);
                     }}
                     placeholder="Select signed date"
                     error={errors.signed_date}
                     required
-                    minDate={new Date().toISOString().split("T")[0]}
+                    explainLine="signed_date"
                   />
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Contract Duration</Label>
@@ -635,11 +658,11 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                         <Label className="text-xs">Start Date</Label>
                         <DatePicker
                           value={formData.start_date || ""}
-                          onChange={(value: string) => handleFieldChange("start_date", value)}
-                          placeholder="Auto-filled from Signed Date"
+                          onChange={() => {}}
+                          placeholder="Auto-set to today"
                           disabled
                         />
-                        <p className="text-xs text-slate-500 mt-1">Auto-filled from Signed Date</p>
+                        <p className="text-xs text-slate-500 mt-1">Auto-set to today</p>
                       </div>
                       <div>
                         <Label className="text-xs">End Date *</Label>
@@ -649,7 +672,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                           placeholder="Select end date"
                           error={errors.end_date}
                           required
-                          minDate={formData.start_date || formData.signed_date || undefined}
+                          explainLine={`end_date:${formData.start_date || ""}`}
                         />
                         <FieldError message={errors.end_date} />
                       </div>

@@ -1,47 +1,78 @@
 import React, { useEffect, useState } from "react";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableHead,
-} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { FaFilter, FaEye } from "react-icons/fa6";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
+import { FaEye } from "react-icons/fa6";
+import { Loader2 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch } from "@/libs/stores";
-import { getAllProductsThunk } from "@/libs/stores/productManager/thunk";
+import { getAllLimitedProductsThunk } from "@/libs/stores/productManager/thunk";
 import { useProduct } from "@/libs/hooks/useProduct";
-import { PaginationTable } from "@/components/global";
+import { useSelector } from "react-redux";
+import { getAllCategoriesThunk } from "@/libs/stores/categoryManager/thunk";
+import PaginationTable from "@/components/global/PaginationTable";
 import { getItem } from "@/libs/local-storage";
+import { motion } from "framer-motion";
 
 const ProductApprovalPage: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { isLoading, products } = useProduct();
+  const { isLoading, limitedProducts } = useProduct();
   const navigate = useNavigate();
-  const user = getItem<{
-    id: string;
-  }>("user");
+  const user = getItem<{ id: string }>("user");
+  const { categories } = useSelector((state: any) => state?.manageCategory || {});
 
   const [params, setParams] = useState({
     page: 1,
     limit: 5,
     type: "LIMITED",
-    status: "SUBMITTED",
+    status: " ",
     search: "",
     user_id: user?.id || "",
+    category_id: " ",
   });
 
+  useEffect(() => {
+    dispatch(getAllCategoriesThunk({ page: 1, limit: 100 }));
+  }, [dispatch]);
+
   // Get products data and pagination from useProduct hook
-  const productsData = products?.data || [];
-  const pagination = products?.pagination;
-  const error = null; // useProduct hook should handle errors internally
+  const productsData = limitedProducts?.data || [];
+  const pagination = limitedProducts?.pagination;
+
+  // Motion variants for animations
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 },
+  };
+
+  const headerVariants = {
+    hidden: { opacity: 0, y: -20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+  };
+
+  const filterVariants = {
+    hidden: { opacity: 0, x: -20 },
+    visible: { opacity: 1, x: 0, transition: { duration: 0.4 } },
+  };
 
   useEffect(() => {
-    dispatch(getAllProductsThunk(params));
+    dispatch(
+      getAllLimitedProductsThunk({
+        ...params,
+        status: params.status === " " || !params.status ? undefined : params.status,
+        category_id:
+          params.category_id === " " || !params.category_id ? undefined : params.category_id,
+      }),
+    );
   }, [dispatch, params]);
 
   const handleViewDetails = (product: any) => {
@@ -49,22 +80,17 @@ const ProductApprovalPage: React.FC = () => {
   };
 
   const getStatusBadge = (status: string) => {
+    // Match color style with Product.tsx
     const statusColors: Record<string, string> = {
-      DRAFT: "bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200",
-      SUBMITTED: "bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200",
-      APPROVED: "bg-green-100 text-green-800 border-green-200 hover:bg-green-200",
-      REJECTED: "bg-red-100 text-red-800 border-red-200 hover:bg-red-200",
-      REVISION: "bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-200",
+      DRAFT: "bg-gray-100 text-gray-800 border border-gray-200 hover:bg-gray-200",
+      SUBMITTED: "bg-yellow-100 text-yellow-800 border border-yellow-200 hover:bg-yellow-200",
+      APPROVED: "bg-green-100 text-green-800 border border-green-200 hover:bg-green-200",
+      REJECTED: "bg-red-100 text-red-800 border border-red-200 hover:bg-red-200",
+      REVISION: "bg-purple-100 text-purple-800 border border-purple-200 hover:bg-purple-200",
+      ACTIVED: "bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200",
+      INACTIVED: "bg-orange-100 text-orange-800 border border-orange-200 hover:bg-orange-200",
     };
-
     return <Badge className={statusColors[status] || "bg-gray-100 text-gray-800"}>{status}</Badge>;
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(amount);
   };
 
   const formatDate = (dateString: string) => {
@@ -77,73 +103,134 @@ const ProductApprovalPage: React.FC = () => {
 
   return (
     <div className="min-h-fit p-4 sm:p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl sm:text-2xl font-semibold">Product Approval</h1>
-      </div>
+      {/* Header */}
+      <motion.div
+        className="flex justify-between items-center mb-6"
+        variants={headerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <div>
+          <motion.h1 className="text-xl sm:text-2xl font-semibold" variants={itemVariants}>
+            Brand Product Approval
+          </motion.h1>
+          <motion.p className="text-gray-600 mt-1" variants={itemVariants}>
+            Review and approve product submissions as brand representative
+          </motion.p>
+        </div>
+      </motion.div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow mb-4 p-4">
+      <motion.div
+        className="bg-white rounded-lg shadow mb-4 p-4"
+        variants={filterVariants}
+        initial="hidden"
+        animate="visible"
+      >
         <div className="flex items-center gap-4 flex-wrap">
-          <div className="flex items-center gap-2">
-            <FaFilter className="text-gray-500" />
-            <span className="text-sm font-medium">Filters:</span>
-          </div>
-
-          <div className="flex-1 min-w-[200px]">
+          <motion.div variants={itemVariants} className="flex-1 min-w-48">
             <Input
               placeholder="Search by product name..."
               value={params.search || ""}
               onChange={(e) => setParams({ ...params, search: e.target.value, page: 1 })}
               className="w-full"
+              autoComplete="off"
             />
-          </div>
+          </motion.div>
+          <motion.div variants={itemVariants} className="min-w-36">
+            <Select
+              value={params.category_id || undefined}
+              onValueChange={(value) => setParams({ ...params, category_id: value, page: 1 })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value=" ">All Categories</SelectItem>
+                {categories?.data
+                  ?.filter((cat: any) => !cat.parent_category)
+                  ?.map((category: any) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </motion.div>
+          <motion.div variants={itemVariants} className="min-w-36">
+            <Select
+              value={params.status || undefined}
+              onValueChange={(value) => setParams({ ...params, status: value, page: 1 })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value=" ">All Statuses</SelectItem>
+                <SelectItem value="DRAFT">Draft</SelectItem>
+                <SelectItem value="SUBMITTED">Submitted</SelectItem>
+                <SelectItem value="APPROVED">Approved</SelectItem>
+                <SelectItem value="REVISION">Revision</SelectItem>
+                <SelectItem value="ACTIVED">Actived</SelectItem>
+                <SelectItem value="INACTIVED">Inactived</SelectItem>
+                <SelectItem value="REJECTED">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
+          </motion.div>
+          <motion.div variants={itemVariants}>
+            <Button
+              variant="outline"
+              onClick={() =>
+                setParams({
+                  page: 1,
+                  limit: 5,
+                  type: "LIMITED",
+                  status: " ",
+                  search: "",
+                  user_id: user?.id || "",
+                  category_id: " ",
+                })
+              }
+              className="px-4 py-2"
+            >
+              Reset Filters
+            </Button>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Desktop Table */}
-      <div className="bg-white rounded-lg overflow-hidden shadow">
-        <div className="hidden md:block">
-          <Table>
-            <TableHeader className="px-4">
-              <TableRow className="border-b bg-gray-50">
-                <TableHead className="font-semibold">Product</TableHead>
-                <TableHead className="font-semibold">Brand</TableHead>
-                <TableHead className="font-semibold">Category</TableHead>
-                <TableHead className="font-semibold">Type</TableHead>
-                <TableHead className="font-semibold">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8">
-                    <div className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                      <span className="ml-2">Loading products...</span>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : error ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-red-600">
-                    Error: Failed to load products
-                  </TableCell>
-                </TableRow>
-              ) : !productsData || productsData.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                    No products found for approval
-                  </TableCell>
-                </TableRow>
-              ) : (
-                productsData.map((product: any, index: number) => (
-                  <TableRow
+      {/* Product Table */}
+      <Card>
+        <CardContent className="p-0">
+          {isLoading ? (
+            <div className="p-8 text-center">
+              <Loader2 className="mx-auto mb-4 h-12 w-12 text-primary animate-spin" />
+              <p className="text-gray-500">Loading products...</p>
+            </div>
+          ) : (
+            <>
+              {/* Desktop Grid Layout */}
+              <div className="hidden lg:block">
+                {/* Table Header */}
+                <div className="grid grid-cols-12 gap-4 p-4 bg-gray-50 border-b font-medium text-sm text-gray-600">
+                  <div className="col-span-5">Product</div>
+                  <div className="col-span-2">Variants</div>
+                  <div className="col-span-3">Category</div>
+                  <div className="col-span-1">Status</div>
+                  <div className="col-span-1">Actions</div>
+                </div>
+
+                {/* Table Body */}
+                {productsData.map((product: any, index) => (
+                  <motion.div
                     key={product.id}
-                    className={`border-b hover:bg-gray-50 ${
-                      index % 2 === 0 ? "bg-white" : "bg-gray-25"
-                    }`}
+                    layout="position"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="grid grid-cols-12 gap-4 p-4 border-b hover:bg-gray-50 transition-colors"
                   >
-                    <TableCell className="py-4 max-w-xs">
+                    <div className="col-span-5">
                       <div className="flex items-center">
                         <img
                           src={
@@ -151,144 +238,172 @@ const ProductApprovalPage: React.FC = () => {
                             "https://cdn.shopify.com/s/files/1/0069/4471/8937/products/Chanel-Coco-Mademoiselle-Intense-EDP-W-50ml-2_de2881cf-4ddb-4a2d-a65a-12b75ff4ec7f_1200x1200.jpg?v=1573190789"
                           }
                           alt={product.name}
-                          className="w-12 h-12 object-cover rounded mr-4 float-left"
+                          className="w-12 h-12 object-cover rounded mr-4"
                         />
-                        <span className="font-medium text-gray-900 block text-nowrap overflow-hidden text-ellipsis">
-                          {product.name}
-                        </span>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-gray-900 truncate">{product.name}</h4>
+                        </div>
                       </div>
-                    </TableCell>
-
-                    <TableCell className="py-4">
-                      <div className="flex items-center">
-                        {product.brand_logo_url && (
-                          <img
-                            src={product.brand_logo_url}
-                            alt={product.brand_name}
-                            className="w-8 h-8 object-cover rounded mr-2"
-                          />
-                        )}
-                        <span className="text-sm text-gray-600 max-w-xs truncate">
-                          {product.brand_name}
-                        </span>
-                      </div>
-                    </TableCell>
-
-                    <TableCell className="py-4">
-                      {product.category ? product.category.name : "N/A"}
-                    </TableCell>
-
-                    <TableCell className="py-4">
-                      <Badge
-                        className={
-                          product.type === "STANDARD"
-                            ? "bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200"
-                            : "bg-orange-100 text-orange-800 border border-orange-200 hover:bg-orange-200"
-                        }
-                      >
-                        {product.type}
-                      </Badge>
-                    </TableCell>
-
-                    <TableCell className="py-4">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="hover:bg-blue-100"
-                        title="View Details"
-                        onClick={() => handleViewDetails(product)}
-                      >
-                        <FaEye className="text-blue-600" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-          {pagination && (
-            <PaginationTable
-              page={pagination.page}
-              totalItems={pagination.total}
-              pageSize={pagination.limit}
-              onPageChange={(page) => setParams({ ...params, page })}
-            />
-          )}
-        </div>
-
-        {/* Mobile View */}
-        <div className="md:hidden space-y-4 p-4">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-              <span className="ml-2">Loading products...</span>
-            </div>
-          ) : !productsData || productsData.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">No products found for approval</div>
-          ) : (
-            productsData.map((product: any) => (
-              <div
-                key={product.id}
-                className="bg-white border rounded-lg p-4 space-y-3 cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => handleViewDetails(product)}
-              >
-                <div className="flex items-start space-x-3">
-                  <img
-                    src={
-                      product.thumbnail_url?.[0] ||
-                      "https://cdn.shopify.com/s/files/1/0069/4471/8937/products/Chanel-Coco-Mademoiselle-Intense-EDP-W-50ml-2_de2881cf-4ddb-4a2d-a65a-12b75ff4ec7f_1200x1200.jpg?v=1573190789"
-                    }
-                    alt={product.name}
-                    className="w-16 h-16 object-cover rounded"
-                  />
-                  <div className="flex-1">
-                    <h3 className="font-medium text-gray-900 line-clamp-2">{product.name}</h3>
-                    <div className="flex items-center mt-1">
-                      {product.brand_logo_url && (
-                        <img
-                          src={product.brand_logo_url}
-                          alt={product.brand_name}
-                          className="w-4 h-4 object-cover rounded mr-1"
-                        />
-                      )}
-                      <span className="text-sm text-gray-600">{product.brand_name}</span>
                     </div>
-                  </div>
-                  {getStatusBadge(product.status)}
-                </div>
 
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-xs text-gray-500">Price</p>
-                    <p className="font-semibold text-primary">{formatCurrency(product.price)}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-gray-500">Category</p>
-                    <p className="text-sm">{product.category?.name || "N/A"}</p>
-                  </div>
-                </div>
+                    <div className="col-span-2 flex items-center">
+                      <span className="text-sm text-gray-600">{product.variants?.length || 0}</span>
+                    </div>
 
-                <div className="flex justify-between items-center pt-2 border-t">
-                  <p className="text-xs text-gray-500">
-                    Submitted: {formatDate(product.created_at)}
-                  </p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleViewDetails(product);
-                    }}
-                  >
-                    <FaEye className="mr-2" />
-                    View Details
-                  </Button>
-                </div>
+                    <div className="col-span-3 flex items-center">
+                      <span className="text-sm text-gray-600">
+                        {product.category ? product.category.name : "N/A"}
+                      </span>
+                    </div>
+
+                    <div className="col-span-1 flex items-center">
+                      {getStatusBadge(product.status)}
+                    </div>
+
+                    <div className="col-span-1 flex items-center gap-2">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-blue-50"
+                            onClick={() => handleViewDetails(product)}
+                          >
+                            <FaEye className="text-blue-600" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>View details</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </motion.div>
+                ))}
               </div>
-            ))
+
+              {/* Mobile Card List */}
+              <div className="lg:hidden divide-y">
+                <motion.div
+                  initial="hidden"
+                  animate="visible"
+                  variants={{
+                    visible: {
+                      transition: { staggerChildren: 0.05 },
+                    },
+                  }}
+                >
+                  {productsData.map((product: any) => (
+                    <motion.div
+                      key={product.id}
+                      className="p-4 flex flex-col gap-3 bg-white"
+                      variants={itemVariants}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start space-x-3 flex-1">
+                          <img
+                            src={
+                              product.thumbnail_url?.[0] ||
+                              "https://cdn.shopify.com/s/files/1/0069/4471/8937/products/Chanel-Coco-Mademoiselle-Intense-EDP-W-50ml-2_de2881cf-4ddb-4a2d-a65a-12b75ff4ec7f_1200x1200.jpg?v=1573190789"
+                            }
+                            alt={product.name}
+                            className="w-16 h-16 object-cover rounded"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-gray-900 line-clamp-2">
+                              {product.name}
+                            </h4>
+                            <div className="flex gap-2 mt-2 flex-wrap">
+                              {getStatusBadge(product.status)}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 text-sm text-gray-600">
+                        <div className="flex items-center">
+                          {product.brand_logo_url && (
+                            <img
+                              src={product.brand_logo_url}
+                              alt={product.brand_name}
+                              className="w-4 h-4 object-cover rounded mr-2"
+                            />
+                          )}
+                          <span className="font-medium">Brand:</span>
+                          <span className="ml-1">{product.brand_name}</span>
+                        </div>
+
+                        <div>
+                          <span className="font-medium">Variants:</span>
+                          <span className="ml-1">{product.variants?.length || 0}</span>
+                        </div>
+
+                        <div>
+                          <span className="font-medium">Category:</span>
+                          <span className="ml-1">{product.category?.name || "N/A"}</span>
+                        </div>
+
+                        <div>
+                          <span className="font-medium">Submitted:</span>
+                          <span className="ml-1">{formatDate(product.created_at)}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-1 pt-2">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 hover:bg-blue-50"
+                              onClick={() => handleViewDetails(product)}
+                            >
+                              <FaEye className="text-blue-600" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>View details</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              </div>
+
+              {/* No results message */}
+              {(!productsData || productsData.length === 0) && (
+                <motion.div
+                  className="p-8 text-center text-gray-500"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <p>
+                    {params.search
+                      ? "No products match your current search."
+                      : "No products found for approval."}
+                  </p>
+                </motion.div>
+              )}
+            </>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
+      {/* Pagination */}
+      {pagination && pagination.total > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: productsData.length * 0.05 + 0.2 }}
+        >
+          <PaginationTable
+            page={pagination.page}
+            totalItems={pagination.total}
+            pageSize={pagination.limit}
+            onPageChange={(page) => setParams({ ...params, page })}
+          />
+        </motion.div>
+      )}
     </div>
   );
 };

@@ -32,7 +32,7 @@ import { StatusModal } from "@/components/modal/StatusModal";
 import { useNavigate } from "react-router";
 import { useAppDispatch, type RootState } from "@/libs/stores";
 import {
-  getAllProductsThunk,
+  getAllStandardProductsThunk,
   updateProductVisibilityThunk,
 } from "@/libs/stores/productManager/thunk";
 import { useSelector } from "react-redux";
@@ -42,24 +42,42 @@ import { SelectAddProductType } from "@/components/manage/sale/product/SelectAdd
 import { toast } from "sonner";
 import { getAllCategoriesThunk } from "@/libs/stores/categoryManager/thunk";
 
-const Product: React.FC<{ type: "STANDARD" | "LIMITED" }> = ({ type }) => {
+const StandardProduct: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  const productResponse = useSelector((state: RootState) => state?.manageProduct?.products);
-  const pagination = useSelector((state: any) => state?.manageProduct?.products?.pagination);
+  const { standardProducts, isLoading } = useSelector((state: RootState) => state?.manageProduct);
   const { categories } = useSelector((state: RootState) => state?.manageCategory);
-
-  const products: ProductData[] = productResponse?.data || [];
-  const isLoading = useSelector((state: any) => state?.manageProduct?.isLoading);
   const error = useSelector((state: any) => state?.manageProduct?.error);
+
   const [params, setParams] = useState<ProductParams>({
     page: 1,
-    limit: 10,
-    type: type || " ",
+    limit: 5,
   });
+  const [searchTerm, setSearchTerm] = useState("");
 
+  const pagination = standardProducts?.pagination;
+  const products: ProductData[] = standardProducts?.data || [];
   const filterParentCategory = categories?.data.filter((cat) => !cat.parent_category);
+
+  useEffect(() => {
+    if (searchTerm === "") {
+      setParams((prev) => ({ ...prev, search: undefined, page: 1 }));
+      return;
+    }
+    const delayDebounceFn = setTimeout(() => {
+      setParams((prev) => ({ ...prev, search: searchTerm, page: 1 }));
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    Promise.all([
+      dispatch(getAllStandardProductsThunk(params)),
+      dispatch(getAllCategoriesThunk({ page: 1, limit: 1000 })),
+    ]);
+  }, [dispatch, params]);
 
   const handleToggleVisibility = async (product: ProductData, isActive: boolean) => {
     if (product.variants?.length === 0 || !product.variants) {
@@ -70,33 +88,21 @@ const Product: React.FC<{ type: "STANDARD" | "LIMITED" }> = ({ type }) => {
       updateProductVisibilityThunk({ productId: product.id, isActive }),
     );
     if (result.meta.requestStatus === "fulfilled") {
-      dispatch(
-        getAllProductsThunk({
+      return await dispatch(
+        getAllStandardProductsThunk({
           ...params,
-          type: params.type === " " ? undefined : params.type,
-          category_id: params.category_id === " " ? undefined : params.category_id,
         }),
       );
     }
   };
 
-  useEffect(() => {
-    setParams((prev) => ({ ...prev, type: type, page: 1 }));
-  }, [type]);
-
-  useEffect(() => {
-    dispatch(
-      getAllProductsThunk({
-        ...params,
-        type: params.type === " " ? undefined : params.type,
-        category_id: params.category_id === " " ? undefined : params.category_id,
-      }),
-    );
-  }, [dispatch, params]);
-
-  useEffect(() => {
-    dispatch(getAllCategoriesThunk({ page: 1, limit: 100 }));
-  }, [dispatch]);
+  const handleResetFilters = () => {
+    setParams({
+      page: 1,
+      limit: 5,
+    });
+    setSearchTerm("");
+  };
 
   return (
     <div className="min-h-fit p-4 sm:p-6">
@@ -122,60 +128,38 @@ const Product: React.FC<{ type: "STANDARD" | "LIMITED" }> = ({ type }) => {
             <FaFilter className="text-gray-500" />
             <span className="text-sm font-medium">Filters:</span>
           </div>
-
           <div className="flex-1 min-w-[200px]">
             <Input
-              placeholder="Search by name or description..."
-              // value={searchTerm}
-              // onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search by product name"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full"
             />
           </div>
-
-          <div className="min-w-[150px]">
-            <Select
-              value={params.category_id || " "}
-              onValueChange={(value) => {
-                setParams({ ...params, category_id: value });
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value=" ">All Categories</SelectItem>
-                {filterParentCategory?.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div>
+            <Button variant="outline" onClick={handleResetFilters}>
+              Clear All
+            </Button>
           </div>
-
-          {type === "LIMITED" && (
-            <div className="min-w-[150px]">
-              <Select
-                value={params.status || " "}
-                onValueChange={(value) => {
-                  setParams({ ...params, status: value });
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value=" ">All Status</SelectItem>
-                  <SelectItem value="DRAFT">Draft</SelectItem>
-                  <SelectItem value="SUBMITTED">Submitted</SelectItem>
-                  <SelectItem value="APPROVED">Approved</SelectItem>
-                  <SelectItem value="REVISION">Revision</SelectItem>
-                  <SelectItem value="ACTIVED">Actived</SelectItem>
-                  <SelectItem value="INACTIVED">Inactived</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+        </div>
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Select
+            value={params.category_id ?? ""}
+            onValueChange={(value) => {
+              setParams({ ...params, category_id: value === "" ? undefined : value, page: 1 });
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select Category" />
+            </SelectTrigger>
+            <SelectContent>
+              {filterParentCategory?.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -296,7 +280,7 @@ const Product: React.FC<{ type: "STANDARD" | "LIMITED" }> = ({ type }) => {
                           variant="ghost"
                           size="icon"
                           className=" hover:bg-blue-100"
-                          title="Edit"
+                          title="View"
                           onClick={() => {
                             navigate(`/manage/sale/product/${product.id}`, {
                               state: { data: product },
@@ -354,4 +338,4 @@ const Product: React.FC<{ type: "STANDARD" | "LIMITED" }> = ({ type }) => {
   );
 };
 
-export default Product;
+export default StandardProduct;

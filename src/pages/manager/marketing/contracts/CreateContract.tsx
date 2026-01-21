@@ -378,6 +378,12 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
 
       const hasPaymentMethod = financial_terms.payment_method?.trim();
 
+      // Check deposit proof validation if deposit is marked as paid
+      const isDepositPaid = formData.is_deposit_paid;
+      const hasDepositProof = isDepositPaid
+        ? formData.deposit_proof_url && formData.deposit_proof_url.trim() !== ""
+        : true; // If not paid, no proof required
+
       if (formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR") {
         const hasBasicInfo = !!(hasPaymentMethod && financial_terms.total_cost > 0);
 
@@ -405,7 +411,13 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
         const isBreakdownBalanced =
           Math.abs((financial_terms.total_cost || 0) - breakdownTotal) < 0.01;
 
-        return hasBasicInfo && allItemsValid && isScheduleBalanced && isBreakdownBalanced;
+        return (
+          hasBasicInfo &&
+          allItemsValid &&
+          isScheduleBalanced &&
+          isBreakdownBalanced &&
+          hasDepositProof
+        );
       }
 
       if (formData.type === "AFFILIATE") {
@@ -434,7 +446,7 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
             financial_terms.payment_date !== null &&
             financial_terms.payment_date !== "");
 
-        return hasBasicInfo && hasValidLevels && hasPaymentDate;
+        return hasBasicInfo && hasValidLevels && hasPaymentDate && hasDepositProof;
       }
 
       if (formData.type === "CO_PRODUCING") {
@@ -454,7 +466,7 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
           ) < 0.01
         );
 
-        return validProfitSplit && hasBasicInfo;
+        return validProfitSplit && hasBasicInfo && hasDepositProof;
       }
 
       return false;
@@ -835,6 +847,11 @@ const AddContractPage: React.FC = () => {
             }
           : {}),
         is_deposit_paid: formData.is_deposit_paid,
+        ...(formData.is_deposit_paid && formData.deposit_proof_url?.trim()
+          ? {
+              deposit_proof_url: formData.deposit_proof_url,
+            }
+          : {}),
 
         scope_of_work: {
           general_requirements: formData.scope_of_work?.general_requirements || [],
@@ -889,7 +906,10 @@ const AddContractPage: React.FC = () => {
             items: [
               {
                 title: "Party A (Brand) breaks the rules",
-                details: ["Contract terminates immediately", "Party A forfeits the deposit"],
+                details: [
+                  "Contract terminates immediately",
+                  "Party A forfeits the deposit and must pay for the current milestone",
+                ],
               },
               {
                 title: "Party B (Service Provider) breaks the rules",

@@ -38,6 +38,7 @@ import { PaymentDetailModal } from "@/components/manage/marketing/contract-payme
 const PAGE_SIZE = 5;
 
 const CONTRACT_PAYMENT_STATUS_LABELS: Record<string, string> = {
+  NOT_STARTED: "Not Started",
   PENDING: "Pending",
   PAID: "Paid",
   OVERDUE: "Overdue",
@@ -58,6 +59,7 @@ const CONTRACT_TYPE_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
+  NOT_STARTED: "bg-gray-100 text-gray-800 border-gray-200",
   PAID: "bg-green-100 text-green-800 border-green-200",
   //   CANCELLED: "bg-red-100 text-red-800 border-red-200",
   PENDING: "bg-yellow-100 text-yellow-800 border-yellow-200",
@@ -76,15 +78,6 @@ const CONTRACT_TYPE_COLORS: Record<string, string> = {
   ADVERTISING: "bg-cyan-100 text-cyan-800 border-cyan-200",
   CO_PRODUCING: "bg-violet-100 text-violet-800 border-violet-200",
   AFFILIATE: "bg-pink-100 text-pink-800 border-pink-200",
-};
-
-const getPaymentType = (payment: ContractPayment) => {
-  if (payment.is_deposit) return "Deposit";
-  if (payment.contract_type === "BRAND_AMBASSADOR" || payment.contract_type === "ADVERTISING")
-    return "Scheduled";
-  if (payment.contract_type === "AFFILIATE" || payment.contract_type === "CO_PRODUCING")
-    return "Performance";
-  return "-";
 };
 
 const PayNowMark: React.FC = () => (
@@ -115,16 +108,9 @@ const ContractPaymentPage: React.FC = () => {
   const [allBrands, setAllBrands] = useState<any[]>([]);
   const debouncedBrandSearch = useDebounce(brandSearch, 400);
 
-  //   // Contract DataSelector states
-  //   const [contractSearch, setContractSearch] = useState("");
-  //   const [contractPage, setContractPage] = useState(1);
-  //   const [allContracts, setAllContracts] = useState<any[]>([]);
-  //   const debouncedContractSearch = useDebounce(contractSearch, 400);
-
   const dispatch = useAppDispatch();
   const { contractPayments, loading, pagination } = useContractPayment();
   const { brands, loading: brandLoading, pagination: brandPagination } = useBrand();
-  //   const { contracts, loading: contractLoading, pagination: contractPagination } = useContract();
 
   // Fetch brands for DataSelector
   useEffect(() => {
@@ -150,34 +136,6 @@ const ContractPaymentPage: React.FC = () => {
       setAllBrands((prev) => [...prev, ...brands]);
     }
   }, [brands, brandPage]);
-
-  // Fetch contracts for DataSelector
-  //   useEffect(() => {
-  //     setAllContracts([]);
-  //     setContractPage(1);
-  //   }, [debouncedContractSearch, selectedBrandId]);
-
-  //   useEffect(() => {
-  //     const contractParams: any = {
-  //       page: contractPage,
-  //       limit: 10,
-  //       status: "ACTIVE",
-  //       sort_by: "created_at",
-  //       sort_order: "desc",
-  //       ...(debouncedContractSearch ? { keyword: debouncedContractSearch } : {}),
-  //       ...(selectedBrandId ? { brand_id: selectedBrandId } : {}),
-  //     };
-
-  //     dispatch(fetchContracts(contractParams));
-  //   }, [dispatch, contractPage, debouncedContractSearch, selectedBrandId]);
-
-  //   useEffect(() => {
-  //     if (contractPage === 1) {
-  //       setAllContracts(contracts);
-  //     } else {
-  //       setAllContracts((prev) => [...prev, ...contracts]);
-  //     }
-  //   }, [contracts, contractPage]);
 
   // Fetch contract payments when filters change
   useEffect(() => {
@@ -226,12 +184,6 @@ const ContractPaymentPage: React.FC = () => {
     }
   }, [brandPagination?.has_next, brandLoading]);
 
-  //   const loadMoreContracts = useCallback(() => {
-  //     if (contractPagination?.has_next && !contractLoading) {
-  //       setContractPage((p) => p + 1);
-  //     }
-  //   }, [contractPagination?.has_next, contractLoading]);
-
   const handleBrandSelect = (brandId: string | null) => {
     setSelectedBrandId(brandId);
     // Reset contract selection when brand changes
@@ -239,10 +191,6 @@ const ContractPaymentPage: React.FC = () => {
       setSelectedContractId(null);
     }
   };
-
-  //   const handleContractSelect = (contractId: string | null) => {
-  //     setSelectedContractId(contractId);
-  //   };
 
   const handleResetFilters = () => {
     setSelectedBrandId(null);
@@ -254,7 +202,6 @@ const ContractPaymentPage: React.FC = () => {
     setSortBy("created_at");
     setSortOrder("desc");
     setBrandSearch("");
-    // setContractSearch("");
   };
 
   const handleViewPayment = (paymentId: string) => {
@@ -292,20 +239,6 @@ const ContractPaymentPage: React.FC = () => {
     return (
       <div className="flex flex-col">
         <span className="font-medium">{formatCurrency(payment.amount)}</span>
-        {(payment.base_amount !== undefined || payment.performance_amount !== undefined) && (
-          <div className="mt-1 space-y-0.5">
-            {payment.base_amount !== undefined && (
-              <div className="text-xs text-gray-500">
-                Base: {formatCurrency(payment.base_amount)}
-              </div>
-            )}
-            {payment.performance_amount !== undefined && payment.performance_amount > 0 && (
-              <div className="text-xs text-gray-500">
-                Perf: {formatCurrency(payment.performance_amount)}
-              </div>
-            )}
-          </div>
-        )}
       </div>
     );
   };
@@ -410,6 +343,7 @@ const ContractPaymentPage: React.FC = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">All Status</SelectItem>
+                <SelectItem value="NOT_STARTED">Not Started</SelectItem>
                 <SelectItem value="PENDING">Pending</SelectItem>
                 <SelectItem value="PAID">Paid</SelectItem>
                 <SelectItem value="OVERDUE">Overdue</SelectItem>
@@ -476,7 +410,7 @@ const ContractPaymentPage: React.FC = () => {
               <SelectContent>
                 <SelectItem value="created_at">Created At</SelectItem>
                 <SelectItem value="due_date">Due Date</SelectItem>
-                <SelectItem value="amount">Amount</SelectItem>
+                <SelectItem value="amount">Total Amount</SelectItem>
                 <SelectItem value="status">Status</SelectItem>
               </SelectContent>
             </Select>
@@ -511,8 +445,7 @@ const ContractPaymentPage: React.FC = () => {
                     <TableHead className="font-semibold">Contract</TableHead>
                     <TableHead className="font-semibold">Brand</TableHead>
                     <TableHead className="font-semibold">Type</TableHead>
-                    <TableHead className="font-semibold">Amount</TableHead>
-                    <TableHead className="font-semibold">Payment</TableHead>
+                    <TableHead className="font-semibold">Total Amount</TableHead>
                     <TableHead className="font-semibold">Status</TableHead>
                     <TableHead className="font-semibold">Due Date</TableHead>
                     <TableHead className="font-semibold">Payment Method</TableHead>
@@ -560,9 +493,6 @@ const ContractPaymentPage: React.FC = () => {
                       </TableCell>
                       <TableCell className="py-4">
                         <div>{formatAmount(payment)}</div>
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <span className="text-xs font-medium">{getPaymentType(payment)}</span>
                       </TableCell>
                       <TableCell className="py-4">
                         <Badge
@@ -659,12 +589,8 @@ const ContractPaymentPage: React.FC = () => {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-sm text-gray-500">Amount</div>
+                        <div className="text-sm text-gray-500">Total Amount</div>
                         <div className="text-sm">{formatAmount(payment)}</div>
-                        <div className="text-xs mt-1">
-                          <span className="font-medium">Payment: </span>
-                          {getPaymentType(payment)}
-                        </div>
                       </div>
                     </div>
 

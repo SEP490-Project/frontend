@@ -8,7 +8,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useEffect } from "react";
-import { Calendar, FileText, Package, TriangleAlert } from "lucide-react";
+import { Calendar, FileText, TriangleAlert } from "lucide-react";
 import { useAppDispatch, type RootState } from "@/libs/stores";
 import { getTaskDetailById } from "@/libs/stores/taskManager/thunk";
 import { useSelector } from "react-redux";
@@ -65,7 +65,7 @@ const renderTaskDetails = (description: any) => {
               <div className="flex flex-wrap gap-1">
                 {description.hashtags.map((tag: string, idx: number) => (
                   <Badge key={idx} variant="outline" className="text-xs">
-                    #{tag}
+                    {tag}
                   </Badge>
                 ))}
               </div>
@@ -162,11 +162,11 @@ const renderTaskDetails = (description: any) => {
     // Co-Producing Product Task
     return (
       <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-          <FaBox className="h-4 w-4" />
-          Product Details
-        </h3>
         <div className="bg-violet-50 border border-violet-200 rounded-lg p-4 space-y-3">
+          <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+            <FaBox className="h-4 w-4" />
+            Product Details
+          </h3>
           {description.product_name && (
             <div className="flex items-start gap-2">
               <span className="font-medium text-sm text-gray-700">Product:</span>
@@ -239,7 +239,7 @@ const renderTaskDetails = (description: any) => {
               <div className="flex flex-wrap gap-1">
                 {description.hashtags.map((tag: string, idx: number) => (
                   <Badge key={idx} variant="outline" className="text-xs">
-                    #{tag}
+                    {tag}
                   </Badge>
                 ))}
               </div>
@@ -395,7 +395,7 @@ export const TaskDetailDisplay = ({
             <span className="ml-3 text-gray-600">Loading task details...</span>
           </div>
         ) : task ? (
-          <div className="space-y-6 py-4">
+          <div className="space-y-6">
             {/* Task Header */}
             <div className="space-y-3">
               <div className="flex items-start justify-between gap-4">
@@ -443,27 +443,26 @@ export const TaskDetailDisplay = ({
               {/* KPI Goals Section */}
               {task.description?.kpi_goals && task.description.kpi_goals.length > 0 && (
                 <div className="mt-4">
-                  <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2 mb-3">
-                    <FaBullseye className="h-4 w-4 text-green-600" />
-                    KPI Goals
-                  </h3>
                   <div className="grid grid-cols-1 gap-2">
                     {task.description.kpi_goals.map((kpi: any, idx: number) => (
                       <div
                         key={idx}
-                        className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg"
+                        className=" p-3 bg-green-50 border border-green-200 rounded-lg"
                       >
-                        <div className="flex-1">
-                          <span className="text-sm font-medium text-gray-700">
-                            {kpi.metric?.replace(/_/g, " ") || "Unknown Metric"}
-                          </span>
-                          {kpi.description && (
-                            <p className="text-xs text-gray-500 mt-1">{kpi.description}</p>
-                          )}
+                        <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2 mb-3">
+                          <FaBullseye className="h-4 w-4" />
+                          KPI Goals
+                        </h3>
+                        <div className="flex items-center justify-between capitalize">
+                          <div className="flex-1">
+                            <span className="text-sm font-medium text-gray-700">
+                              {kpi.metric?.replace(/_/g, " ") || "Unknown Metric"}
+                            </span>
+                          </div>
+                          <Badge variant="outline" className="ml-2">
+                            {kpi.target}
+                          </Badge>
                         </div>
-                        <Badge variant="outline" className="ml-2">
-                          {kpi.target}
-                        </Badge>
                       </div>
                     ))}
                   </div>
@@ -493,145 +492,17 @@ export const TaskDetailDisplay = ({
                       {formatDate(task.deadline)}
                     </span>
                   </div>
-                  <div className="flex items-start justify-between pt-2 border-t">
+                  {/* <div className="flex items-start justify-between pt-2 border-t">
                     <span className="text-sm text-gray-600">Created:</span>
                     <span className="text-sm text-gray-900">{formatDate(task.created_at)}</span>
                   </div>
                   <div className="flex items-start justify-between">
                     <span className="text-sm text-gray-600">Updated:</span>
                     <span className="text-sm text-gray-900">{formatDate(task.updated_at)}</span>
-                  </div>
+                  </div> */}
                 </div>
               </div>
             </div>
-
-            {/* Campaign Details */}
-            {task.campaign_details && (
-              <>
-                <Separator />
-                <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    Campaign Information
-                  </h4>
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
-                    <div className="flex items-start justify-between">
-                      <span className="text-sm text-gray-600">Campaign Name:</span>
-                      <span className="text-sm font-semibold text-gray-900">
-                        {task.campaign_details.name}
-                      </span>
-                    </div>
-                    <div className="flex items-start justify-between">
-                      <span className="text-sm text-gray-600">Type:</span>
-                      <Badge className="bg-purple-100 text-purple-800 border border-purple-200">
-                        {task.campaign_details.type.toUpperCase()}
-                      </Badge>
-                    </div>
-                    <div className="flex items-start justify-between">
-                      <span className="text-sm text-gray-600">Status:</span>
-                      <Badge className={getStatusBadgeClass(task.campaign_details.status)}>
-                        {task.campaign_details.status.toUpperCase()}
-                      </Badge>
-                    </div>
-                    <div className="flex items-start justify-between pt-2 border-t">
-                      <span className="text-sm text-gray-600">Period:</span>
-                      <span className="text-sm text-gray-900">
-                        {new Date(task.campaign_details.start_date).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}{" "}
-                        -{" "}
-                        {new Date(task.campaign_details.end_date).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </span>
-                    </div>
-                    {task.campaign_details.description && (
-                      <div className="pt-2 border-t">
-                        <span className="text-sm text-gray-600 block mb-1">Description:</span>
-                        <p className="text-sm text-gray-900 leading-relaxed">
-                          {task.campaign_details.description}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* Milestone Details */}
-            {task.milestone_details && (
-              <>
-                <Separator />
-                <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-2">
-                    <Package className="h-4 w-4" />
-                    Milestone Information
-                  </h4>
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
-                    <div className="flex items-start justify-between">
-                      <span className="text-sm text-gray-600">Status:</span>
-                      <Badge className={getStatusBadgeClass(task.milestone_details.status)}>
-                        {task.milestone_details.status.toUpperCase()}
-                      </Badge>
-                    </div>
-                    <div className="flex items-start justify-between">
-                      <span className="text-sm text-gray-600">Completion:</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-32 bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-blue-600 h-2 rounded-full transition-all"
-                            style={{ width: `${task.milestone_details.completion_percentage}%` }}
-                          />
-                        </div>
-                        <span className="text-sm font-semibold text-gray-900">
-                          {task.milestone_details.completion_percentage}%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-start justify-between pt-2 border-t">
-                      <span className="text-sm text-gray-600">Due Date:</span>
-                      <div className="text-right">
-                        <span
-                          className={`text-sm font-semibold ${
-                            task.milestone_details.behind_schedule
-                              ? "text-red-600"
-                              : "text-gray-900"
-                          }`}
-                        >
-                          {task.milestone_details.behind_schedule && (
-                            <TriangleAlert className="inline h-4 w-4 mr-1" />
-                          )}
-                          {formatDate(task.milestone_details.due_date)}
-                        </span>
-                        {task.milestone_details.behind_schedule && (
-                          <span className="block text-xs text-red-600 mt-1">Behind Schedule</span>
-                        )}
-                      </div>
-                    </div>
-                    {task.milestone_details.completed_at && (
-                      <div className="flex items-start justify-between">
-                        <span className="text-sm text-gray-600">Completed At:</span>
-                        <span className="text-sm text-gray-900">
-                          {formatDate(task.milestone_details.completed_at)}
-                        </span>
-                      </div>
-                    )}
-                    {task.milestone_details.description && (
-                      <div className="pt-2 border-t">
-                        <span className="text-sm text-gray-600 block mb-1">Description:</span>
-                        <p className="text-sm text-gray-900 leading-relaxed">
-                          {task.milestone_details.description}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </>
-            )}
 
             {/* Content & Product IDs */}
             {((task.content_ids && task.content_ids.length > 0) ||

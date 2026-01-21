@@ -29,12 +29,16 @@ interface Props {
 }
 
 function LineChartWidget({ title, data, unit, lineConfig, tooltip }: Props) {
-  if (!Array.isArray(data) || !data.length || !data[0]?.month) {
+  if (!Array.isArray(data) || !data.length) {
     return null;
   }
 
+  // Determine X-axis key (support 'name' from dialogs or 'month' from default widgets)
+  const firstItem = data[0];
+  const xAxisKey = "name" in firstItem ? "name" : "month";
+
   // Check if there's at least one data property besides "month" and "name"
-  const dataKeys = Object.keys(data[0]).filter((key) => key !== "month" && key !== "name");
+  const dataKeys = Object.keys(firstItem).filter((key) => key !== "month" && key !== "name");
   if (!dataKeys.length) {
     return null;
   }
@@ -68,7 +72,7 @@ function LineChartWidget({ title, data, unit, lineConfig, tooltip }: Props) {
         <ResponsiveContainer debounce={250} width="100%" height="100%">
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="month" />
+            <XAxis dataKey={xAxisKey} />
             <YAxis
               type="number"
               tick={{ fontSize: "12px" }}

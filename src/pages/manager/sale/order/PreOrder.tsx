@@ -141,35 +141,41 @@ const PreOrder: React.FC = () => {
 
           <div className="flex-1 min-w-[200px]">
             <Input
-              placeholder="Search by pre-order ID, name, email or phone..."
+              placeholder="Search by pre-order ID or customer name"
               value={params.search}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="w-full"
             />
           </div>
 
-          <div className="min-w-[150px]">
-            <Select
-              value={params.status || " "}
-              onValueChange={(value) => handleStatusChange(value)}
+          <div>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setParams({ page: 1, limit: 5, search: "", status: "" });
+              }}
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value=" ">All Status</SelectItem>
-                <SelectItem value="PENDING">Pending</SelectItem>
-                <SelectItem value="PRE_ORDERED">Pre-Ordered</SelectItem>
-                <SelectItem value="AWAITING_RELEASE">Awaiting Release</SelectItem>
-                <SelectItem value="AWAITING_PICKUP">Awaiting Pickup</SelectItem>
-                <SelectItem value="CONFIRMED">Confirmed</SelectItem>
-                <SelectItem value="CANCELLED">Cancelled</SelectItem>
-                <SelectItem value="IN_TRANSIT">In Transit</SelectItem>
-                <SelectItem value="DELIVERED">Delivered</SelectItem>
-                <SelectItem value="RECEIVED">Received</SelectItem>
-              </SelectContent>
-            </Select>
+              Clear All
+            </Button>
           </div>
+        </div>
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <Select value={params.status || ""} onValueChange={(value) => handleStatusChange(value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="PENDING">Pending</SelectItem>
+              <SelectItem value="PRE_ORDERED">Pre-Ordered</SelectItem>
+              <SelectItem value="AWAITING_RELEASE">Awaiting Release</SelectItem>
+              <SelectItem value="AWAITING_PICKUP">Awaiting Pickup</SelectItem>
+              <SelectItem value="CONFIRMED">Confirmed</SelectItem>
+              <SelectItem value="CANCELLED">Cancelled</SelectItem>
+              <SelectItem value="IN_TRANSIT">In Transit</SelectItem>
+              <SelectItem value="DELIVERED">Delivered</SelectItem>
+              <SelectItem value="RECEIVED">Received</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -181,7 +187,6 @@ const PreOrder: React.FC = () => {
                 <TableHead className="font-semibold">Pre-Order ID</TableHead>
                 <TableHead className="font-semibold">Customer</TableHead>
                 <TableHead className="font-semibold">Total Amount</TableHead>
-                <TableHead className="font-semibold">Type</TableHead>
                 <TableHead className="font-semibold">Status</TableHead>
                 <TableHead className="font-semibold">Created At</TableHead>
                 <TableHead className="font-semibold">Actions</TableHead>
@@ -235,12 +240,6 @@ const PreOrder: React.FC = () => {
                       <div className="font-semibold text-gray-900">
                         {formatCurrency(preOrder.total_amount)}
                       </div>
-                    </TableCell>
-
-                    <TableCell className="py-4">
-                      <Badge className="bg-purple-100 text-purple-800 border border-purple-200 hover:bg-purple-200">
-                        PRE-ORDER
-                      </Badge>
                     </TableCell>
 
                     <TableCell className="py-4">
@@ -383,6 +382,7 @@ const PreOrder: React.FC = () => {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Pre-Order Details</DialogTitle>
+            <DialogDescription>#{selectedPreOrder?.id}</DialogDescription>
           </DialogHeader>
           {selectedPreOrder && <PreOrderDetail preOrder={selectedPreOrder} />}
         </DialogContent>

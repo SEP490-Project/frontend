@@ -93,6 +93,7 @@ interface CreateTaskProps {
   };
   onBack: () => void;
   onNext: () => void;
+  isEditMode?: boolean;
 }
 
 const getTaskTypeOptions = (campaignType: string) => {
@@ -122,8 +123,23 @@ const getTaskTypeOptions = (campaignType: string) => {
 const formatDateForInput = (dateString?: string | null) => {
   if (!dateString) return "";
   try {
-    return format(parseISO(dateString), "yyyy-MM-dd");
-  } catch {
+    // Handle different date formats from API
+    let date: Date;
+
+    if (dateString.includes(" +0000 UTC")) {
+      // Handle "2026-02-18 00:00:00 +0000 UTC" format
+      date = new Date(dateString);
+    } else if (dateString.includes("T")) {
+      // Handle ISO format "2026-01-18T00:00:00.000Z"
+      date = parseISO(dateString);
+    } else {
+      // Handle simple date format "2026-01-18"
+      date = parseISO(dateString);
+    }
+
+    return format(date, "yyyy-MM-dd");
+  } catch (error) {
+    console.warn("Failed to format date:", dateString, error);
     return "";
   }
 };
@@ -137,6 +153,7 @@ const CreateTask: React.FC<CreateTaskProps> = ({
   campaignData,
   onBack,
   onNext,
+  isEditMode = false,
 }) => {
   const taskTypeOptions = getTaskTypeOptions(campaignType);
   const contractStart = formatDateForInput(selectedContract?.start_date);
@@ -1131,7 +1148,7 @@ const CreateTask: React.FC<CreateTaskProps> = ({
             disabled={isReviewDisabled}
             className="w-full sm:w-auto"
           >
-            Review & Submit
+            {isEditMode ? "Review Changes" : "Review & Submit"}
           </Button>
         </div>
       </div>

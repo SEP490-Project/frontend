@@ -1,3 +1,24 @@
+import { type ContractViolation } from "./violation";
+
+// Contract Status Type including violation statuses
+export type ContractStatus =
+  | "DRAFT"
+  | "APPROVED"
+  | "ACTIVE"
+  | "COMPLETED"
+  | "INACTIVE"
+  | "TERMINATED"
+  // Brand Violation Path
+  | "BRAND_VIOLATED"
+  | "BRAND_PENALTY_PENDING"
+  | "BRAND_PENALTY_PAID"
+  // KOL Violation Path
+  | "KOL_VIOLATED"
+  | "KOL_REFUND_PENDING"
+  | "KOL_PROOF_SUBMITTED"
+  | "KOL_PROOF_REJECTED"
+  | "KOL_REFUND_APPROVED";
+
 export interface Brand {
   id: string;
   name: string;
@@ -36,9 +57,11 @@ export interface ContractDetail {
   status: string;
   deposit_amount: number;
   deposit_percent: number;
+  deposit_proof_url: string;
   is_deposit_paid: boolean;
   campaign_id?: string;
   campaign_name?: string;
+  violation?: ContractViolation;
   brand: Brand;
   representative_name: string;
   representative_role: string;

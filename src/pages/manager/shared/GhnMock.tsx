@@ -31,17 +31,17 @@ export const GhnMock = () => {
       if (errStr.includes("corev2_tenant_order_detail") && errStr.includes("code=400")) {
         errStr = errStr.split("-")[1];
       } else {
-        errStr = "Không thể lấy được đơn hàng";
+        errStr = "Can not fetch order details.";
       }
       return errStr;
     } catch (err: any) {
-      return "Không thể lấy được đơn hàng: " + err.message;
+      return "Can not fetch order details: " + err.message;
     }
   };
 
   const submitUpdateStatusAPI = async () => {
     if (!updateStatusPayload.order_code.trim()) {
-      alert("Vui lòng nhập mã đơn hàng");
+      alert("Please enter the order code");
       return;
     }
 
@@ -54,7 +54,7 @@ export const GhnMock = () => {
     });
 
     setIsLoading(true);
-    setResult("⏳ Đang gửi request...");
+    setResult("⏳ Sending request...");
 
     try {
       const response = await dispatch(
@@ -62,9 +62,9 @@ export const GhnMock = () => {
       )
         .unwrap()
         .then(() => fetchAvailableStates(updateStatusPayload.order_code));
-      setResult("✅ Thành công: " + JSON.stringify(response, null, 2));
+      setResult("✅ Success: " + JSON.stringify(response, null, 2));
     } catch (err) {
-      setResult("❌ Lỗi: " + (err as Error).toString());
+      setResult("❌ Error: " + (err as Error).toString());
     } finally {
       setIsLoading(false);
     }
@@ -107,9 +107,9 @@ export const GhnMock = () => {
         }
       }
 
-      setResult("✅ Đã lấy thông tin đơn hàng thành công!");
+      setResult("✅ Successfully fetched order information!");
     } catch (err) {
-      setResult("❌ Lỗi: " + extractErrMsg(err));
+      setResult("❌ Error: " + extractErrMsg(err));
       setOrderInfo(null); // Clear info on error so it collapses
       setAvailableStates(new Map()); // Clear states on error
     } finally {
@@ -146,23 +146,13 @@ export const GhnMock = () => {
   const accentColor = "#FF6A00";
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-6 transition-all duration-500">
-      {/* 
-                Main Container 
-                - Transitions width based on orderInfo presence 
-                - Uses Grid to manage layout
-            */}
+    <div className="flex items-center justify-center p-6 transition-all duration-500 h-full">
       <div
         className={`
                     bg-white rounded-3xl shadow-2xl overflow-hidden transition-all duration-700 ease-in-out
                     ${orderInfo ? "max-w-7xl w-full grid grid-cols-1 lg:grid-cols-12" : "max-w-xl w-full"}
                 `}
       >
-        {/* 
-                    SECTION 1: Search & Status (Always Visible / Left Side)
-                    - Spans full width initially.
-                    - Spans 4/12 columns when expandtác
-                */}
         <div
           className={`
                     p-8 flex flex-col h-full border-t-8 transition-all duration-500
@@ -175,22 +165,20 @@ export const GhnMock = () => {
               <Package size={32} color={primaryColor} />
             </div>
             <h2 className="text-2xl font-bold text-gray-800">GHN Mocking Interface</h2>
-            <p className="text-gray-500 text-sm mt-1">
-              Hệ thống mô phỏng sự tương tác trạng thái đơn hàng
-            </p>
+            <p className="text-gray-500 text-sm mt-1">Simulate GHN order status updates</p>
           </div>
 
-          <div className="space-y-6 flex-1">
+          <div className="space-y-4 flex-1">
             {/* Input Section */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Mã đơn hàng</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Order Code</label>
               <div className="relative">
                 <input
                   name="order_code"
                   value={updateStatusPayload.order_code}
                   onChange={handleInputChange}
                   className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all font-mono tracking-wider"
-                  placeholder="VD: S2Y3D4"
+                  placeholder="E.g.: S2Y3D4"
                 />
                 <Search className="absolute left-3 top-3.5 text-gray-400 h-5 w-5" />
               </div>
@@ -207,7 +195,7 @@ export const GhnMock = () => {
               ) : (
                 <Search className="h-5 w-5" />
               )}
-              Lấy thông tin
+              Get Info
             </button>
 
             {/* Action Section - Only visible if we have info */}
@@ -215,7 +203,7 @@ export const GhnMock = () => {
               className={`transition-all duration-700 delay-100 overflow-hidden ${orderInfo ? "max-h-96 opacity-100 mt-6 pt-6 border-t border-dashed" : "max-h-0 opacity-0"}`}
             >
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Cập nhật trạng thái
+                Update Status
               </label>
 
               {availableStates && availableStates.size > 0 ? (
@@ -246,7 +234,7 @@ export const GhnMock = () => {
                 </select>
               ) : (
                 <div className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-xl mb-4 text-gray-500 text-center">
-                  🚫 Đơn hàng đã kết thúc các trạng thái có thể cập nhật
+                  🚫 The order has reached its final status and cannot be updated
                 </div>
               )}
 
@@ -261,7 +249,7 @@ export const GhnMock = () => {
                 ) : (
                   <Send className="h-5 w-5" />
                 )}
-                Cập nhật
+                Update Status
               </button>
             </div>
 
@@ -278,12 +266,6 @@ export const GhnMock = () => {
             </div>
           </div>
         </div>
-
-        {/* 
-                    SECTION 2: Order Info Display (Right Side)
-                    - Hidden (width 0) initially.
-                    - Expands to 8/12 columns.
-                */}
         <div
           className={`
                     bg-gray-50 flex flex-col transition-all duration-700 ease-in-out
@@ -291,11 +273,11 @@ export const GhnMock = () => {
                 `}
         >
           {orderInfo && (
-            <div className="p-8 h-full flex flex-col">
+            <div className="p-4 h-full flex flex-col">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
                   <span className="w-2 h-8 rounded bg-blue-600 inline-block"></span>
-                  Thông tin chi tiết
+                  Order Information
                 </h3>
                 <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full border border-green-200">
                   RESPONSE: 200 OK
@@ -312,43 +294,6 @@ export const GhnMock = () => {
                   >
                     Copy JSON
                   </button>
-                </div>
-
-                {/* Return Info */}
-                <div className="mb-6">
-                  <h4 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">
-                    Return Info
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Return Name</label>
-                      <p className="text-sm text-gray-900">{orderInfo?.return_name || "-"}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Return Phone</label>
-                      <p className="text-sm text-gray-900">{orderInfo?.return_phone || "-"}</p>
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="text-sm font-medium text-gray-600">Return Address</label>
-                      <p className="text-sm text-gray-900">{orderInfo?.return_address || "-"}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Return Ward</label>
-                      <p className="text-sm text-gray-900">{orderInfo?.return_ward_name || "-"}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Return District</label>
-                      <p className="text-sm text-gray-900">
-                        {orderInfo?.return_district_name || "-"}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Return Province</label>
-                      <p className="text-sm text-gray-900">
-                        {orderInfo?.return_province_name || "-"}
-                      </p>
-                    </div>
-                  </div>
                 </div>
 
                 {/* Sender Info */}
@@ -417,94 +362,6 @@ export const GhnMock = () => {
                     <div>
                       <label className="text-sm font-medium text-gray-600">To Province</label>
                       <p className="text-sm text-gray-900">{orderInfo?.to_province_name || "-"}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Product Info */}
-                <div className="mb-6">
-                  <h4 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">
-                    Product Info
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Weight</label>
-                      <p className="text-sm text-gray-900">{orderInfo?.weight || "-"} g</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">
-                        Dimensions (L x W x H)
-                      </label>
-                      <p className="text-sm text-gray-900">
-                        {orderInfo?.length || "-"} x {orderInfo?.width || "-"} x{" "}
-                        {orderInfo?.height || "-"} cm
-                      </p>
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="text-sm font-medium text-gray-600">Content</label>
-                      <p className="text-sm text-gray-900">{orderInfo?.content || "-"}</p>
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="text-sm font-medium text-gray-600">Order Date</label>
-                      <p className="text-sm text-gray-900">
-                        {orderInfo?.order_date
-                          ? new Date(orderInfo.order_date).toLocaleString()
-                          : "-"}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Items */}
-                  <div>
-                    <label className="text-sm font-medium text-gray-600 mb-2 block">Items</label>
-                    <div className="space-y-3">
-                      {orderInfo?.items?.map((item: any, index: number) => (
-                        <div key={index} className="bg-gray-50 p-4 rounded-lg border">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div>
-                              <span className="text-xs font-medium text-gray-500">Name</span>
-                              <p className="text-sm text-gray-900">{item?.name || "-"}</p>
-                            </div>
-                            <div>
-                              <span className="text-xs font-medium text-gray-500">Quantity</span>
-                              <p className="text-sm text-gray-900">{item?.quantity || "-"}</p>
-                            </div>
-                            <div>
-                              <span className="text-xs font-medium text-gray-500">
-                                Dimensions (L x W x H)
-                              </span>
-                              <p className="text-sm text-gray-900">
-                                {item?.length || "-"} x {item?.width || "-"} x {item?.height || "-"}{" "}
-                                cm
-                              </p>
-                            </div>
-                            <div>
-                              <span className="text-xs font-medium text-gray-500">Weight</span>
-                              <p className="text-sm text-gray-900">{item?.weight || "-"} g</p>
-                            </div>
-                            <div>
-                              <span className="text-xs font-medium text-gray-500">Status</span>
-                              <p className="text-sm text-gray-900">{item?.status || "-"}</p>
-                            </div>
-                            <div>
-                              <span className="text-xs font-medium text-gray-500">
-                                Item Order Code
-                              </span>
-                              <p className="text-sm text-gray-900">
-                                {item?.item_order_code || "-"}
-                              </p>
-                            </div>
-                            <div className="md:col-span-2">
-                              <span className="text-xs font-medium text-gray-500">
-                                Current Warehouse ID
-                              </span>
-                              <p className="text-sm text-gray-900">
-                                {item?.current_warehouse_id || "-"}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )) || <p className="text-sm text-gray-500">No items</p>}
                     </div>
                   </div>
                 </div>

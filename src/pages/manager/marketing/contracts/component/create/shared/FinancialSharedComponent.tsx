@@ -103,11 +103,14 @@ export const PaymentSchedule: React.FC<{
 }> = ({ schedules, totalCost, onUpdate, startDate, endDate, depositPercent = 0 }) => {
   const addSchedule = () => {
     const newId = schedules.length > 0 ? Math.max(...schedules.map((s) => s.id || 0)) + 1 : 1;
+    // Tính phần trăm còn lại
+    const totalPercent = schedules.reduce((sum, s) => sum + (s.percent || 0), 0);
+    const percentLeft = Math.max(0, expectedPercent - totalPercent);
     const newSchedule = {
       id: newId,
       milestone: "",
-      percent: 0,
-      amount: 0,
+      percent: percentLeft,
+      amount: totalCost ? Math.round((totalCost * percentLeft) / 100) : 0,
       due_date: "",
     };
     onUpdate([...schedules, newSchedule]);
@@ -154,18 +157,15 @@ export const PaymentSchedule: React.FC<{
   const percentValid = totalPercent === expectedPercent;
   const amountValid = totalAmount === expectedAmount;
 
+  // Disable add nếu đã đủ percent
+  const canAddMilestone = totalPercent < expectedPercent;
+
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <Label className="text-lg font-medium flex items-center gap-2">
-          <FaCalendarDay className="w-4 h-4" />
-          Payment Schedule
-        </Label>
-        <Button variant="outline" size="sm" onClick={addSchedule}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Milestone
-        </Button>
-      </div>
+      <Label className="text-lg font-medium flex items-center gap-2">
+        <FaCalendarDay className="w-4 h-4" />
+        Payment Schedule
+      </Label>
 
       {depositPercent > 0 && (
         <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-800">
@@ -247,7 +247,20 @@ export const PaymentSchedule: React.FC<{
         </Card>
       ))}
 
-      <Card className="p-4 bg-blue-50 border-blue-200">
+      <div className="mt-2">
+        <Button
+          variant="outline"
+          className="w-full border-dashed border-2"
+          size="lg"
+          onClick={addSchedule}
+          disabled={!canAddMilestone}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Add Milestone
+        </Button>
+      </div>
+
+      <Card className="p-4 bg-blue-50 border-blue-200 mt-2">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
           <div>
             <div className="text-2xl font-bold text-blue-600">{schedules.length}</div>

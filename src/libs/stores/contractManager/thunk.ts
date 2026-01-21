@@ -127,3 +127,16 @@ export const createContract = createAsyncThunk(
     }
   },
 );
+
+export const updateContract = createAsyncThunk(
+  "/contracts/update",
+  async ({ id, req }: { id: string; req: any }, { rejectWithValue }) => {
+    try {
+      const response = await manageContract.updateContract(id, req);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Failed");
+    }
+  },
+);

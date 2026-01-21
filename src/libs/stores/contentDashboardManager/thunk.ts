@@ -15,11 +15,30 @@ interface DashboardParams {
   brand_id?: string;
 }
 
+type Period =
+  | "TODAY"
+  | "YESTERDAY"
+  | "THIS_WEEK"
+  | "LAST_WEEK"
+  | "THIS_MONTH"
+  | "LAST_MONTH"
+  | "THIS_QUARTER"
+  | "LAST_QUARTER"
+  | "THIS_YEAR"
+  | "LAST_YEAR"
+  | "LAST_7_DAYS"
+  | "LAST_30_DAYS"
+  | "CUSTOM";
+type TrendGranularity = "HOUR" | "DAY" | "WEEK" | "MONTH";
+
 interface ChannelDetailsParams {
   channelId: string;
-  period?: string;
-  start_date?: string;
-  end_date?: string;
+  period?: Period | string | undefined;
+  from_date?: string | null;
+  to_date?: string | null;
+  trend_granularity?: TrendGranularity | string | undefined;
+  top_content_limit?: number;
+  recent_content_limit?: number;
 }
 
 interface BatchScheduleParams {

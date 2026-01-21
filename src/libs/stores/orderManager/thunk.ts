@@ -249,6 +249,30 @@ const markLimitedOrderAsInTransitThunk = createAsyncThunk(
   },
 );
 
+const getOrderPriceBreakdownThunk = createAsyncThunk(
+  "orderManager/getOrderPriceBreakdown",
+  async ({ orderId, orderType }: { orderId: string; orderType: string }, { rejectWithValue }) => {
+    try {
+      const response = await manageOrder.getOrderPriceBreakdown(orderId, orderType);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
+const getPreorderPriceBreakdownThunk = createAsyncThunk(
+  "orderManager/getPreorderPriceBreakdown",
+  async (preOrderId: string, { rejectWithValue }) => {
+    try {
+      const response = await manageOrder.getPreorderPriceBreakdown(preOrderId);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
 export {
   getOrderForSaleStaffThunk,
   markOrderIsReadyToPickedUpThunk,
@@ -273,4 +297,8 @@ export {
   refundAPreOrderThunk,
   compensateAPreOrderThunk,
   obligateRefundAPreOrderThunk,
+
+  // Price Breakdown Thunks
+  getOrderPriceBreakdownThunk,
+  getPreorderPriceBreakdownThunk,
 };

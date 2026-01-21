@@ -25,6 +25,7 @@ import {
   FaUserTie,
   FaFileShield,
   FaServer,
+  FaTriangleExclamation,
 } from "react-icons/fa6";
 import { useAuth } from "@/libs/hooks/useAuth";
 import { useAppDispatch } from "@/libs/stores";
@@ -194,12 +195,12 @@ const Sidebar: React.FC<SidebarProps> = ({
       },
       {
         href: "/manage/brand/product-approval",
-        label: "Product Approval",
+        label: "Products",
         icon: <FaBox size={18} />,
       },
       {
         href: "/manage/brand/content-approval",
-        label: "Content Approval",
+        label: "Contents",
         icon: <FaFileSignature size={18} />,
       },
     ],
@@ -219,6 +220,11 @@ const Sidebar: React.FC<SidebarProps> = ({
         href: "/manage/marketing/contract-payment",
         label: "Contract Payment",
         icon: <FaMoneyBillTransfer size={18} />,
+      },
+      {
+        href: "/manage/marketing/violations",
+        label: "Violations",
+        icon: <FaTriangleExclamation size={18} />,
       },
       {
         href: "/manage/marketing/contents-approval",
@@ -340,10 +346,13 @@ const Sidebar: React.FC<SidebarProps> = ({
     ],
   };
 
-  const otherTabs: TabItem[] = [
-    { href: "/manage/account", label: "Account", icon: <FaRegUser size={18} /> },
-    { href: "/manage/ghn-mock", label: "GHN Mocking", icon: <FaShippingFast size={18} /> },
-  ];
+  const otherTabs: Record<string, TabItem[]> = {
+    DEFAULT: [{ href: "/manage/account", label: "Account", icon: <FaRegUser size={18} /> }],
+    ADMIN: [
+      { href: "/manage/account", label: "Account", icon: <FaRegUser size={18} /> },
+      { href: "/manage/ghn-mock", label: "GHN Mocking", icon: <FaShippingFast size={18} /> },
+    ],
+  };
 
   return (
     <>
@@ -381,7 +390,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           />
           <NavSection
             title="Others"
-            items={otherTabs}
+            items={otherTabs[role === "ADMIN" ? "ADMIN" : "DEFAULT"] || []}
             collapsed={collapsed}
             pathname={pathname}
             roleParam={roleParam}
@@ -454,7 +463,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 />
                 <NavSection
                   title="Others"
-                  items={otherTabs}
+                  items={otherTabs[role === "ADMIN" ? "ADMIN" : "DEFAULT"] || []}
                   collapsed={false}
                   pathname={pathname}
                   roleParam={roleParam}

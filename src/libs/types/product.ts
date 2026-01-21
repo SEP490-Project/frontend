@@ -21,14 +21,24 @@ export interface ProductResponse<T> {
   pagination: Pagination;
 }
 
+export type ProductStatus =
+  | "DRAFT"
+  | "SUBMITTED"
+  | "APPROVED"
+  | "REJECTED"
+  | "REVISION"
+  | "ACTIVED"
+  | "INACTIVED";
+
 export interface ProductData {
   id: string;
   brand_id: string;
   brand_logo_url: string;
   brand_name: string;
+  brand_place_holder: string;
   thumbnail_url: string[] | null;
   is_active: boolean;
-  status?: "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED" | "REVISION"; // added optional since not always needed
+  status?: ProductStatus | string | null; // added optional since not always needed
   category: {
     id: string;
     name: string;
@@ -108,7 +118,7 @@ export interface LimitedAttribute {
 }
 
 export interface CreateProductPayload {
-  brand_id: string;
+  brand_id?: string | null;
   category_id: string;
   description?: string | null;
   name: string;
@@ -117,6 +127,10 @@ export interface CreateProductPayload {
 export interface CreateLimitedProductPayload extends CreateProductPayload {
   task_id?: string;
   limited_attribute: LimitedAttribute;
+}
+
+export interface CreateStandardProductPayload extends CreateProductPayload {
+  brand_place_holder: string;
 }
 
 export type CreateVariantImagePayload = FormData;

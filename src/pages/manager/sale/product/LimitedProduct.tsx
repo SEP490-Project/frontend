@@ -35,6 +35,7 @@ import type { LimitedProductParams, ProductData } from "@/libs/types/product";
 import { PaginationTable } from "@/components/global";
 import { SelectAddProductType } from "@/components/manage/sale/product/SelectAddProductType";
 import { getAllCategoriesThunk } from "@/libs/stores/categoryManager/thunk";
+import PlaceholderImage from "public/icon.png";
 
 const LimitedProduct: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -184,8 +185,8 @@ const LimitedProduct: React.FC = () => {
                 <SelectItem value="DRAFT">Draft</SelectItem>
                 <SelectItem value="SUBMITTED">Submitted</SelectItem>
                 <SelectItem value="REVISION">Revision</SelectItem>
-                <SelectItem value="ACTIVED">Actived</SelectItem>
-                <SelectItem value="INACTIVED">Inactived</SelectItem>
+                <SelectItem value="ACTIVED">Active</SelectItem>
+                <SelectItem value="INACTIVED">Deactivated</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -239,10 +240,7 @@ const LimitedProduct: React.FC = () => {
                     <TableCell className="py-4 max-w-xs">
                       <div className="flex items-center">
                         <img
-                          src={
-                            product.thumbnail_url?.[0] ||
-                            "https://cdn.shopify.com/s/files/1/0069/4471/8937/products/Chanel-Coco-Mademoiselle-Intense-EDP-W-50ml-2_de2881cf-4ddb-4a2d-a65a-12b75ff4ec7f_1200x1200.jpg?v=1573190789"
-                          }
+                          src={product.thumbnail_url?.[0] || PlaceholderImage}
                           alt={product.name}
                           className="w-12 h-12 object-cover rounded mr-4 float-left"
                         />
@@ -284,7 +282,12 @@ const LimitedProduct: React.FC = () => {
                             : "bg-red-100 text-red-800 border border-red-200 hover:bg-red-200"
                         }
                       >
-                        {product.status}
+                        {/* {product.status} */}
+                        {product.status === "ACTIVED"
+                          ? "ACTIVE"
+                          : product.status === "INACTIVED"
+                            ? "DEACTIVATED"
+                            : product.status}
                       </Badge>
                     </TableCell>
 

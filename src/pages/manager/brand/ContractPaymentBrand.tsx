@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FaEye, FaListCheck, FaImage } from "react-icons/fa6";
+import { FaEye, FaListCheck, FaImage, FaClipboardCheck } from "react-icons/fa6";
 import { Loader2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import PaginationTable from "@/components/global/PaginationTable";
@@ -27,13 +27,18 @@ import { useAppDispatch } from "@/libs/stores";
 import {
   getContractPaymentBrand,
   createPaymentLink,
+  reviewRefundProof,
 } from "@/libs/stores/contractPaymentManager/thunk";
 import { brand as fetchBrands } from "@/libs/stores/brandManager/thunk";
 import { useDebounce } from "@/libs/hooks/useDebounce";
 import { DatePicker } from "@/components/date-picker";
 import { formatDate } from "@/libs/helper/helper";
 import { motion } from "framer-motion";
-import { PaymentDetailModal, PaymentModal } from "@/components/manage/marketing/contract-payment";
+import {
+  PaymentDetailModal,
+  PaymentModal,
+  ReviewRefundProofModal,
+} from "@/components/manage/marketing/contract-payment";
 import EarlyPaymentWarningModal from "@/components/manage/marketing/contract-payment/EarlyPaymentWarningModal";
 import { toast } from "sonner";
 
@@ -122,6 +127,11 @@ const ContractPaymentBrandPage: React.FC = () => {
     dueDate: string;
     installmentPercentage?: number;
   } | null>(null);
+
+  // Review refund proof modal states
+  const [isReviewRefundModalOpen, setIsReviewRefundModalOpen] = useState(false);
+  const [selectedReviewPayment, setSelectedReviewPayment] = useState<any | null>(null);
+  const [isReviewingRefundProof, setIsReviewingRefundProof] = useState(false);
 
   const handlePayNow = async (
     contract_payment_id: string,
@@ -277,6 +287,62 @@ const ContractPaymentBrandPage: React.FC = () => {
     }
   };
 
+  // Review refund proof handlers
+  const handleOpenReviewRefundModal = (payment: any) => {
+    setSelectedReviewPayment(payment);
+    setIsReviewRefundModalOpen(true);
+  };
+
+  const handleCloseReviewRefundModal = () => {
+    setIsReviewRefundModalOpen(false);
+    setSelectedReviewPayment(null);
+  };
+
+  const handleReviewRefundProof = async (data: { approved: boolean; reject_reason?: string }) => {
+    if (!selectedReviewPayment) return;
+
+    setIsReviewingRefundProof(true);
+    try {
+      const result = await dispatch(
+        reviewRefundProof({
+          contractPaymentId: selectedReviewPayment.id,
+          data,
+        }),
+      );
+
+      if (reviewRefundProof.fulfilled.match(result)) {
+        toast.success(
+          data.approved ? "Refund proof approved successfully" : "Refund proof rejected",
+        );
+        handleCloseReviewRefundModal();
+        // Refresh the list
+        dispatch(
+          getContractPaymentBrand({
+            page,
+            limit: PAGE_SIZE,
+            ...(selectedBrandId && { brand_id: selectedBrandId }),
+            ...(selectedContractId && { contract_id: selectedContractId }),
+            ...(statusFilter !== "ALL" && { status: statusFilter }),
+            ...(paymentMethodFilter !== "ALL" && { payment_method: paymentMethodFilter }),
+            sort_by: sortBy,
+            sort_order: sortOrder,
+          }),
+        );
+      } else {
+        toast.error((result.payload as string) || "Failed to review refund proof");
+      }
+    } catch {
+      toast.error("An error occurred while reviewing refund proof");
+    } finally {
+      setIsReviewingRefundProof(false);
+    }
+  };
+
+  // Check if payment can be reviewed (Brand reviews KOL_PROOF_SUBMITTED)
+  const canReviewRefundProof = (payment: any) => {
+    return payment.status === "KOL_PROOF_SUBMITTED";
+  };
+
   const [brandSearch, setBrandSearch] = useState("");
   const [brandPage, setBrandPage] = useState(1);
   const [allBrands, setAllBrands] = useState<any[]>([]);
@@ -403,7 +469,7 @@ const ContractPaymentBrandPage: React.FC = () => {
 
     return (
       <div className="flex flex-col">
-        <span className="font-medium">{formatCurrency(payment.amount)}</span>
+        <span className="font-medium">{formatCurrency(Math.abs(payment.amount))}</span>
       </div>
     );
   };
@@ -730,6 +796,23 @@ const ContractPaymentBrandPage: React.FC = () => {
                               <p>View Details</p>
                             </TooltipContent>
                           </Tooltip>
+                          {canReviewRefundProof(payment) && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 hover:bg-green-50"
+                                  onClick={() => handleOpenReviewRefundModal(payment)}
+                                >
+                                  <FaClipboardCheck className="h-4 w-4 text-green-600" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Review Refund Proof</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
                           {payment.status === "PENDING" && payment.pay_now && (
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -865,6 +948,23 @@ const ContractPaymentBrandPage: React.FC = () => {
                           <p>View Details</p>
                         </TooltipContent>
                       </Tooltip>
+                      {canReviewRefundProof(payment) && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 hover:bg-green-50"
+                              onClick={() => handleOpenReviewRefundModal(payment)}
+                            >
+                              <FaClipboardCheck className="h-4 w-4 text-green-600" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Review Refund Proof</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
                       {payment.status === "PENDING" && payment.pay_now && (
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -970,6 +1070,13 @@ const ContractPaymentBrandPage: React.FC = () => {
         onConfirm={handleEarlyPaymentConfirm}
         paymentData={pendingPaymentData}
         isLoading={loadingPaymentId !== null || modalPaymentLoading}
+      />
+      <ReviewRefundProofModal
+        isOpen={isReviewRefundModalOpen}
+        onClose={handleCloseReviewRefundModal}
+        payment={selectedReviewPayment}
+        onReview={handleReviewRefundProof}
+        isReviewing={isReviewingRefundProof}
       />
     </div>
   );

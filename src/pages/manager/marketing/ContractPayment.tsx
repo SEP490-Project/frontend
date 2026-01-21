@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FaEye, FaListCheck, FaImage } from "react-icons/fa6";
+import { FaEye, FaListCheck, FaImage, FaUpload } from "react-icons/fa6";
 import { Loader2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import PaginationTable from "@/components/global/PaginationTable";
@@ -25,7 +25,7 @@ import { useContractPayment } from "@/libs/hooks/useContractPayment";
 import { useBrand } from "@/libs/hooks/useBrand";
 // import { useContract } from "@/libs/hooks/useContract";
 import { useAppDispatch } from "@/libs/stores";
-import { getContractPayment } from "@/libs/stores/contractPaymentManager/thunk";
+import { getContractPayment, submitRefundProof } from "@/libs/stores/contractPaymentManager/thunk";
 import { brand as fetchBrands } from "@/libs/stores/brandManager/thunk";
 // import { contract as fetchContracts } from "@/libs/stores/contractManager/thunk";
 import type { ContractPayment } from "@/libs/types/contract-payments";
@@ -33,7 +33,11 @@ import { useDebounce } from "@/libs/hooks/useDebounce";
 import { DatePicker } from "@/components/date-picker";
 import { formatDate } from "@/libs/helper/helper";
 import { motion } from "framer-motion";
-import { PaymentDetailModal } from "@/components/manage/marketing/contract-payment";
+import {
+  PaymentDetailModal,
+  SubmitRefundProofModal,
+} from "@/components/manage/marketing/contract-payment";
+import { toast } from "sonner";
 
 const PAGE_SIZE = 5;
 
@@ -42,7 +46,11 @@ const CONTRACT_PAYMENT_STATUS_LABELS: Record<string, string> = {
   PENDING: "Pending",
   PAID: "Paid",
   OVERDUE: "Overdue",
-  //   CANCELLED: "Cancelled",
+  // CO_PRODUCING refund workflow statuses
+  KOL_PENDING: "Awaiting Refund Proof",
+  KOL_PROOF_SUBMITTED: "Proof Submitted",
+  KOL_PROOF_REJECTED: "Proof Rejected",
+  KOL_REFUND_APPROVED: "Refund Approved",
 };
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
@@ -61,9 +69,13 @@ const CONTRACT_TYPE_LABELS: Record<string, string> = {
 const STATUS_COLORS: Record<string, string> = {
   NOT_STARTED: "bg-gray-100 text-gray-800 border-gray-200",
   PAID: "bg-green-100 text-green-800 border-green-200",
-  //   CANCELLED: "bg-red-100 text-red-800 border-red-200",
   PENDING: "bg-yellow-100 text-yellow-800 border-yellow-200",
   OVERDUE: "bg-orange-100 text-orange-800 border-orange-200",
+  // CO_PRODUCING refund workflow statuses
+  KOL_PENDING: "bg-amber-100 text-amber-800 border-amber-200",
+  KOL_PROOF_SUBMITTED: "bg-blue-100 text-blue-800 border-blue-200",
+  KOL_PROOF_REJECTED: "bg-red-100 text-red-800 border-red-200",
+  KOL_REFUND_APPROVED: "bg-green-100 text-green-800 border-green-200",
 };
 
 const PAYMENT_METHOD_COLORS: Record<string, string> = {
@@ -101,6 +113,11 @@ const ContractPaymentPage: React.FC = () => {
   const [sortOrder, setSortOrder] = useState<string>("desc");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
+
+  // Refund proof modal states
+  const [isRefundProofModalOpen, setIsRefundProofModalOpen] = useState(false);
+  const [selectedRefundPayment, setSelectedRefundPayment] = useState<ContractPayment | null>(null);
+  const [isSubmittingRefundProof, setIsSubmittingRefundProof] = useState(false);
 
   // Brand DataSelector states
   const [brandSearch, setBrandSearch] = useState("");
@@ -214,6 +231,63 @@ const ContractPaymentPage: React.FC = () => {
     setSelectedPaymentId(null);
   };
 
+  // Refund proof handlers
+  const handleOpenRefundProofModal = (payment: ContractPayment) => {
+    setSelectedRefundPayment(payment);
+    setIsRefundProofModalOpen(true);
+  };
+
+  const handleCloseRefundProofModal = () => {
+    setIsRefundProofModalOpen(false);
+    setSelectedRefundPayment(null);
+  };
+
+  const handleSubmitRefundProof = async (data: {
+    refund_proof_url: string;
+    refund_proof_note?: string;
+  }) => {
+    if (!selectedRefundPayment) return;
+
+    setIsSubmittingRefundProof(true);
+    try {
+      const result = await dispatch(
+        submitRefundProof({
+          contractPaymentId: selectedRefundPayment.id,
+          data,
+        }),
+      );
+
+      if (submitRefundProof.fulfilled.match(result)) {
+        toast.success("Refund proof submitted successfully");
+        handleCloseRefundProofModal();
+        // Refresh the list
+        dispatch(
+          getContractPayment({
+            page,
+            limit: PAGE_SIZE,
+            ...(selectedBrandId && { brand_id: selectedBrandId }),
+            ...(selectedContractId && { contract_id: selectedContractId }),
+            ...(statusFilter !== "ALL" && { status: statusFilter }),
+            ...(paymentMethodFilter !== "ALL" && { payment_method: paymentMethodFilter }),
+            sort_by: sortBy,
+            sort_order: sortOrder,
+          }),
+        );
+      } else {
+        toast.error((result.payload as string) || "Failed to submit refund proof");
+      }
+    } catch {
+      toast.error("An error occurred while submitting refund proof");
+    } finally {
+      setIsSubmittingRefundProof(false);
+    }
+  };
+
+  // Check if payment can submit refund proof (Marketing staff)
+  const canSubmitRefundProof = (payment: ContractPayment) => {
+    return payment.status === "KOL_PENDING" || payment.status === "KOL_PROOF_REJECTED";
+  };
+
   const toISOStringDate = (dateStr: string) => {
     if (!dateStr) return "";
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return "";
@@ -238,7 +312,7 @@ const ContractPaymentPage: React.FC = () => {
 
     return (
       <div className="flex flex-col">
-        <span className="font-medium">{formatCurrency(payment.amount)}</span>
+        <span className="font-medium">{formatCurrency(Math.abs(payment.amount))}</span>
       </div>
     );
   };
@@ -531,6 +605,27 @@ const ContractPaymentPage: React.FC = () => {
                               <p>View Details</p>
                             </TooltipContent>
                           </Tooltip>
+                          {canSubmitRefundProof(payment) && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 hover:bg-amber-50"
+                                  onClick={() => handleOpenRefundProofModal(payment)}
+                                >
+                                  <FaUpload className="h-4 w-4 text-amber-600" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>
+                                  {payment.status === "KOL_PROOF_REJECTED"
+                                    ? "Resubmit Refund Proof"
+                                    : "Submit Refund Proof"}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
                         </div>
                       </TableCell>
                     </motion.tr>
@@ -627,6 +722,27 @@ const ContractPaymentPage: React.FC = () => {
                           <p>View Details</p>
                         </TooltipContent>
                       </Tooltip>
+                      {canSubmitRefundProof(payment) && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 hover:bg-amber-50"
+                              onClick={() => handleOpenRefundProofModal(payment)}
+                            >
+                              <FaUpload className="h-4 w-4 text-amber-600" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>
+                              {payment.status === "KOL_PROOF_REJECTED"
+                                ? "Resubmit Refund Proof"
+                                : "Submit Refund Proof"}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
                     </div>
                   </motion.div>
                 ))}
@@ -678,6 +794,13 @@ const ContractPaymentPage: React.FC = () => {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         paymentId={selectedPaymentId}
+      />
+      <SubmitRefundProofModal
+        isOpen={isRefundProofModalOpen}
+        onClose={handleCloseRefundProofModal}
+        payment={selectedRefundPayment}
+        onSubmit={handleSubmitRefundProof}
+        isSubmitting={isSubmittingRefundProof}
       />
     </div>
   );

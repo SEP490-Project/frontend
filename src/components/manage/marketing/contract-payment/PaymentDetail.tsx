@@ -158,7 +158,7 @@ function PaymentDetailModal({
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Total Amount</p>
                   <p className="text-2xl font-bold text-primary">
-                    {formatCurrency(contractPaymentDetail.amount)}
+                    {formatCurrency(Math.abs(contractPaymentDetail.amount))}
                   </p>
                   {(contractPaymentDetail.base_amount !== undefined ||
                     contractPaymentDetail.performance_amount !== undefined) && (

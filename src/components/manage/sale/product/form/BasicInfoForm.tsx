@@ -308,7 +308,6 @@ export const BasicInfoForm = ({
           htmlFor="productDescription"
           className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end"
         >
-          <span className="text-red-600">*</span>
           Description
         </label>
         <Textarea

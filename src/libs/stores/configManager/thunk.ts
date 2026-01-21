@@ -76,3 +76,16 @@ export const bulkUpdateConfigs = createAsyncThunk(
     }
   },
 );
+
+export const getValueByConfigKey = createAsyncThunk(
+  "configs/get-value-by-key",
+  async (key: string, { rejectWithValue }) => {
+    try {
+      const response = await manageConfig.getValueByConfigKey(key);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Failed");
+    }
+  },
+);

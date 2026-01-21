@@ -198,7 +198,6 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
   };
 
   const onFormSubmit = (data: ProductVariant) => {
-    console.log("Form submitted:", data);
     if (onSubmit) {
       onSubmit(data);
     }

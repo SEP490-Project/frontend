@@ -79,34 +79,31 @@ const Review = () => {
 
           <div className="min-w-[150px]">
             <Select
-              value={params.category_id || " "}
-              onValueChange={(value) => {
-                setParams({ ...params, category_id: value });
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value=" ">All Category</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="min-w-[150px]">
-            <Select
               value={params.type || " "}
               onValueChange={(value) => {
                 setParams({ ...params, type: value });
               }}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Type" />
+                <SelectValue placeholder="Rating" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value=" ">All Types</SelectItem>
-                <SelectItem value="STANDARD">Standard</SelectItem>
-                <SelectItem value="LIMITED">Limited</SelectItem>
+                <SelectItem value=" ">All Ratings</SelectItem>
+                <SelectItem value="1">
+                  1 <FaStar className="inline text-yellow-500 mr-1" size={16} />
+                </SelectItem>
+                <SelectItem value="2">
+                  2 <FaStar className="inline text-yellow-500 mr-1" size={16} />
+                </SelectItem>
+                <SelectItem value="3">
+                  3 <FaStar className="inline text-yellow-500 mr-1" size={16} />
+                </SelectItem>
+                <SelectItem value="4">
+                  4 <FaStar className="inline text-yellow-500 mr-1" size={16} />
+                </SelectItem>
+                <SelectItem value="5">
+                  5 <FaStar className="inline text-yellow-500 mr-1" size={16} />
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>

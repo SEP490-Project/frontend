@@ -7,4 +7,5 @@ export const manageConfig = {
   getPrivacyPolicy: () => api.get("configs/public/privacy-policy"),
   updateConfig: (key: string, value: string) => api.put(`/configs/${key}`, { value }),
   bulkUpdateConfigs: (configs: Record<string, string>) => api.put("/configs", configs),
+  getValueByConfigKey: (key: string) => api.get(`configs/public/${key}/value`),
 };

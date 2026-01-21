@@ -12,6 +12,8 @@ export interface PreOrderData {
   user_id: string;
   variant_id: string;
   quantity: number;
+  company_revenue: number;
+  kol_revenue: number;
   unit_price: number;
   total_amount: number;
   full_name: string;

@@ -34,6 +34,7 @@ import PreOrderDetail from "@/components/manage/sale/pre-order/PreOrderDetail";
 import { SquarePen } from "lucide-react";
 import type { PreOrderData } from "@/libs/types/pre-order";
 import ChangePreOrderStatusModal from "@/components/manage/sale/pre-order/ChangePreOrderStatusModal";
+import { convertNumberToCurrency } from "@/libs/helper/helper";
 
 const PreOrder: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -186,7 +187,7 @@ const PreOrder: React.FC = () => {
               <TableRow className="border-b bg-gray-50">
                 <TableHead className="font-semibold">Pre-Order ID</TableHead>
                 <TableHead className="font-semibold">Customer</TableHead>
-                <TableHead className="font-semibold">Total Amount</TableHead>
+                <TableHead className="font-semibold">Total Amount (Brand / System)</TableHead>
                 <TableHead className="font-semibold">Status</TableHead>
                 <TableHead className="font-semibold">Created At</TableHead>
                 <TableHead className="font-semibold">Actions</TableHead>
@@ -238,7 +239,10 @@ const PreOrder: React.FC = () => {
 
                     <TableCell className="py-4">
                       <div className="font-semibold text-gray-900">
-                        {formatCurrency(preOrder.total_amount)}
+                        {formatCurrency(preOrder.total_amount)} (
+                        {convertNumberToCurrency(String(preOrder.company_revenue))}
+                        {" / "}
+                        {convertNumberToCurrency(String(preOrder.kol_revenue))})
                       </div>
                     </TableCell>
 

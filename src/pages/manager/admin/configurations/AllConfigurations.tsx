@@ -341,17 +341,31 @@ const AllConfigurations = ({ showHeader = true }: AllConfigurationsProps) => {
       return;
     }
 
-    // Prepare values for submission
+    // Prepare values for submission - only include changed values
     const updatePayload: Record<string, string> = {};
     items.forEach((item) => {
       if (!isEditableConfig(item.value_type)) return;
 
-      const preparedValue = prepareValueForSubmit(
-        formValues[item.key],
-        item.value_type as EditableValueType,
-      );
-      updatePayload[item.key] = preparedValue;
+      const currentValue = formValues[item.key];
+      const originalValue = parseValueForEdit(item.value, item.value_type as EditableValueType);
+
+      // Only include if value has changed
+      if (currentValue !== originalValue) {
+        const preparedValue = prepareValueForSubmit(
+          currentValue,
+          item.value_type as EditableValueType,
+        );
+        updatePayload[item.key] = preparedValue;
+      }
     });
+
+    // If nothing changed, just close the edit mode
+    if (Object.keys(updatePayload).length === 0) {
+      toast.info("No changes to save");
+      setEditingSection(null);
+      setFormValues({});
+      return;
+    }
 
     try {
       await dispatch(bulkUpdateConfigs(updatePayload)).unwrap();
@@ -389,8 +403,45 @@ const AllConfigurations = ({ showHeader = true }: AllConfigurationsProps) => {
         return (
           <Input
             type="number"
-            value={value}
-            onChange={(e) => handleValueChange(item.key, e.target.valueAsNumber || 0)}
+            value={value ?? ""}
+            onChange={(e) => {
+              const inputValue = e.target.value;
+              if (inputValue === "") {
+                handleValueChange(item.key, "");
+              } else {
+                const numValue = Number(inputValue);
+                if (!isNaN(numValue)) {
+                  handleValueChange(item.key, numValue);
+                }
+              }
+            }}
+            onKeyDown={(e) => {
+              // Allow: backspace, delete, tab, escape, enter, arrows
+              const allowedKeys = [
+                "Backspace",
+                "Delete",
+                "Tab",
+                "Escape",
+                "Enter",
+                "ArrowLeft",
+                "ArrowRight",
+                "ArrowUp",
+                "ArrowDown",
+                "Home",
+                "End",
+              ];
+              // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+              if (
+                allowedKeys.includes(e.key) ||
+                (e.ctrlKey && ["a", "c", "v", "x"].includes(e.key.toLowerCase()))
+              ) {
+                return;
+              }
+              // Allow: numbers, minus sign, decimal point
+              if (!/^[\d.-]$/.test(e.key)) {
+                e.preventDefault();
+              }
+            }}
             placeholder={placeholder}
             className={inputClassName}
           />

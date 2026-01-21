@@ -90,7 +90,11 @@ const ProductApprovalPage: React.FC = () => {
       ACTIVED: "bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200",
       INACTIVED: "bg-orange-100 text-orange-800 border border-orange-200 hover:bg-orange-200",
     };
-    return <Badge className={statusColors[status] || "bg-gray-100 text-gray-800"}>{status}</Badge>;
+    return (
+      <Badge className={statusColors[status] || "bg-gray-100 text-gray-800"}>
+        {status === "ACTIVED" ? "ACTIVE" : status === "INACTIVED" ? "DEACTIVATED" : status}
+      </Badge>
+    );
   };
 
   const formatDate = (dateString: string) => {
@@ -171,8 +175,8 @@ const ProductApprovalPage: React.FC = () => {
                 <SelectItem value="SUBMITTED">Submitted</SelectItem>
                 <SelectItem value="APPROVED">Approved</SelectItem>
                 <SelectItem value="REVISION">Revision</SelectItem>
-                <SelectItem value="ACTIVED">Actived</SelectItem>
-                <SelectItem value="INACTIVED">Inactived</SelectItem>
+                <SelectItem value="ACTIVED">Active</SelectItem>
+                <SelectItem value="INACTIVED">Deactivated</SelectItem>
                 <SelectItem value="REJECTED">Rejected</SelectItem>
               </SelectContent>
             </Select>

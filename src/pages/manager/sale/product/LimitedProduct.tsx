@@ -185,8 +185,8 @@ const LimitedProduct: React.FC = () => {
                 <SelectItem value="DRAFT">Draft</SelectItem>
                 <SelectItem value="SUBMITTED">Submitted</SelectItem>
                 <SelectItem value="REVISION">Revision</SelectItem>
-                <SelectItem value="ACTIVED">Actived</SelectItem>
-                <SelectItem value="INACTIVED">Inactived</SelectItem>
+                <SelectItem value="ACTIVED">Active</SelectItem>
+                <SelectItem value="INACTIVED">Deactivated</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -282,7 +282,12 @@ const LimitedProduct: React.FC = () => {
                             : "bg-red-100 text-red-800 border border-red-200 hover:bg-red-200"
                         }
                       >
-                        {product.status}
+                        {/* {product.status} */}
+                        {product.status === "ACTIVED"
+                          ? "ACTIVE"
+                          : product.status === "INACTIVED"
+                            ? "DEACTIVATED"
+                            : product.status}
                       </Badge>
                     </TableCell>
 

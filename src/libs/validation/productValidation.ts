@@ -1,16 +1,18 @@
 import * as yup from "yup";
 import type {
-  CreateProductPayload,
   CreateLimitedProductPayload,
+  CreateStandardProductPayload,
   ProductVariant,
 } from "../types/product";
 
-export const createStandardProductSchema: yup.ObjectSchema<CreateProductPayload> = yup.object({
-  name: yup.string().required("Product name is required"),
-  category_id: yup.string().required("Category is required"),
-  brand_id: yup.string().required("Brand is required"),
-  description: yup.string().nullable().optional(),
-});
+export const createStandardProductSchema: yup.ObjectSchema<CreateStandardProductPayload> =
+  yup.object({
+    name: yup.string().required("Product name is required"),
+    category_id: yup.string().required("Category is required"),
+    brand_id: yup.string().nullable().optional(),
+    brand_place_holder: yup.string().required("Brand name is required"),
+    description: yup.string().nullable().optional(),
+  });
 
 export const createLimitedProductSchema: yup.ObjectSchema<CreateLimitedProductPayload> = yup.object(
   {

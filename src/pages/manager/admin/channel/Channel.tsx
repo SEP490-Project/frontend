@@ -14,8 +14,6 @@ const Channel = () => {
   const dispatch = useAppDispatch();
   const channels = useSelector((state: RootState) => state?.manageChannel?.channel);
 
-  const currentDate = new Date();
-
   useEffect(() => {
     dispatch(channelList());
   }, [dispatch]);
@@ -123,26 +121,12 @@ const Channel = () => {
                     </span>
                   </div>
 
-                  {((channelData?.name.toLowerCase() === "tiktok" &&
-                    currentDate >
-                      new Date(channelData?.token_info?.access_token_expires_at as string)) ||
-                    (channelData?.name.toLowerCase() === "facebook" &&
-                      currentDate >
-                        new Date(channelData?.token_info?.access_token_expires_at as string))) && (
+                  {(channel.name === "Facebook" || channel.name === "TikTok") && (
                     <Button
                       onClick={() => handleResetToken(channel.name)}
                       className={`text-xs font-medium ${channel.color} text-white ${channel.hoverColor} transition-colors duration-200`}
                     >
-                      Reset Token
-                    </Button>
-                  )}
-                  {(channel.name === "Website" ||
-                    currentDate <
-                      new Date(channelData?.token_info?.access_token_expires_at as string)) && (
-                    <Button
-                      className={`text-xs font-medium  ${channel.color} text-white ${channel.hoverColor} transition-colors duration-200`}
-                    >
-                      Manage
+                      Refresh Token
                     </Button>
                   )}
                 </div>

@@ -22,6 +22,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { productVariantSchema } from "@/libs/validation/productValidation";
 import { VariationForm } from "@/components/manage/sale/product/form/VariationForm";
 import type {
+  LimitedProductData,
   ProductData,
   ProductResponse,
   ProductVariant,
@@ -39,10 +40,13 @@ import { getItem, setItem } from "@/libs/local-storage";
 import { toast } from "sonner";
 import { convertNumberToCurrency } from "@/libs/helper/helper";
 import { useSelector } from "react-redux";
+import { getValueByConfigKey } from "@/libs/stores/configManager/thunk";
 
 const VariantsStep = () => {
   const dispatch = useAppDispatch();
+
   const { productDetail } = useSelector((state: RootState) => state?.manageProduct);
+  const { configValue } = useSelector((state: RootState) => state.manageConfig);
 
   const [variants, setVariants] = useState<VariantWithImage[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -57,8 +61,6 @@ const VariantsStep = () => {
     state: any;
     setIsDisabled: React.Dispatch<React.SetStateAction<boolean>>;
   }>();
-
-  console.log("Product Type in VariantsStep:", state?.productType);
 
   const form = useForm<ProductVariant>({
     resolver: yupResolver(productVariantSchema),
@@ -86,6 +88,10 @@ const VariantsStep = () => {
       width: null,
     },
   });
+
+  useEffect(() => {
+    dispatch(getValueByConfigKey("product_maximum_variants"));
+  }, [dispatch]);
 
   useEffect(() => {
     const productId = String(
@@ -176,8 +182,29 @@ const VariantsStep = () => {
       return;
     }
 
-    if (productDetail?.data.variants && productDetail?.data?.variants?.length > 2) {
-      toast.error("You can only add up to 3 variants per product.");
+    if (!data) {
+      toast.error("Invalid variant data. Please check the form and try again.");
+      return;
+    }
+
+    if (
+      productDetail?.data.variants &&
+      productDetail?.data?.variants?.length > Number(configValue) - 1
+    ) {
+      toast.error(`You can only add up to ${configValue} variants per product.`);
+      return;
+    }
+
+    if (data.type === "STANDARD" && data.price && data.price > 5_000_000) {
+      toast.error("Price must be between 0 and 5,000,000 for standard variants.");
+      return;
+    }
+
+    const achievableQuantity =
+      (productDetail?.data as LimitedProductData)?.limited_product?.achievable_quantity || 1;
+
+    if (data.type === "LIMITED" && data.input_stock && data.input_stock <= achievableQuantity) {
+      toast.error("Stock must be greater than achievable quantity for limited variants.");
       return;
     }
 

@@ -23,12 +23,14 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Task } from "@/libs/types/task";
-import type { ProductVariant } from "@/libs/types/product";
+import type { LimitedProductData, ProductVariant } from "@/libs/types/product";
 import { updateProductStateThunk } from "@/libs/stores/stateManager/thunk";
 import UpdateConceptSection from "@/components/manage/sale/product/update-section/UpdateConceptSection";
+import { getValueByConfigKey } from "@/libs/stores/configManager/thunk";
 
 const updateProductBasicInfoSchema = yup.object({
-  brand_id: yup.string().required("Brand is required"),
+  brand_id: yup.string().nullable(),
+  brand_place_holder: yup.string().required("Brand is required"),
   category_id: yup.string().required("Category is required"),
   name: yup.string().required("Product name is required"),
   description: yup.string().nullable(),
@@ -49,7 +51,7 @@ const updateLimitedProductBasicInfoSchema = yup.object({
     .required("Achievable quantity is required"),
 });
 
-const updateLimitedProductVariantSchema = yup.object({
+export const updateLimitedProductVariantSchema = yup.object({
   capacity: yup.number().required("Capacity is required").positive("Capacity must be positive"),
   capacity_unit: yup.string().required("Capacity unit is required"),
   container_type: yup.string().required("Container type is required"),
@@ -57,7 +59,7 @@ const updateLimitedProductVariantSchema = yup.object({
   expiry_date: yup.string().required("Expiry date is required"),
   height: yup.number().required("Height is required").positive("Height must be positive"),
   input_stock: yup.number().required("Input stock is required").min(0, "Stock cannot be negative"),
-  instrucstions: yup.string().nullable(),
+  instructions: yup.string().nullable(),
   is_default: yup.boolean().required("Is default is required"),
   length: yup.number().required("Length is required").positive("Length must be positive"),
   manufacturing_date: yup.string().required("Manufacturing date is required"),
@@ -72,7 +74,7 @@ const updateLimitedProductVariantSchema = yup.object({
   width: yup.number().required("Width is required").positive("Width must be positive"),
 });
 
-const updateStandardProductVariantSchema = yup.object({
+export const updateStandardProductVariantSchema = yup.object({
   capacity: yup.number().required("Capacity is required").positive("Capacity must be positive"),
   capacity_unit: yup.string().required("Capacity unit is required"),
   container_type: yup.string().required("Container type is required"),
@@ -80,7 +82,7 @@ const updateStandardProductVariantSchema = yup.object({
   expiry_date: yup.date().required("Expiry date is required"),
   height: yup.number().required("Height is required").positive("Height must be positive"),
   // input_stock: yup.number().required("Input stock is required").min(0, "Stock cannot be negative"),
-  instrucstions: yup.string().nullable(),
+  instructions: yup.string().nullable(),
   is_default: yup.boolean().required("Is default is required"),
   length: yup.number().required("Length is required").positive("Length must be positive"),
   manufacturing_date: yup.date().required("Manufacturing date is required"),
@@ -103,6 +105,7 @@ const EditProduct = () => {
   const { brands, loading: brandsLoading } = useBrand();
 
   const { productDetail, isLoading } = useSelector((state: RootState) => state.manageProduct);
+  const { configValue } = useSelector((state: RootState) => state.manageConfig);
   const { categories, loading: categoriesLoading } = useSelector(
     (state: RootState) => state.manageCategory,
   );
@@ -120,9 +123,15 @@ const EditProduct = () => {
   });
   const limitedVariantForm = useForm({
     resolver: yupResolver(updateLimitedProductVariantSchema),
+    defaultValues: {
+      is_default: false,
+    },
   });
   const standardVariantForm = useForm({
     resolver: yupResolver(updateStandardProductVariantSchema),
+    defaultValues: {
+      is_default: false,
+    },
   });
 
   useEffect(() => {
@@ -130,6 +139,10 @@ const EditProduct = () => {
       dispatch(getProductDetailThunk(productId));
     }
   }, [dispatch, productId]);
+
+  useEffect(() => {
+    dispatch(getValueByConfigKey("product_maximum_variants"));
+  }, [dispatch]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -179,6 +192,7 @@ const EditProduct = () => {
         standardBasicInfoForm.reset({
           brand_id: data.brand_id || "",
           category_id: data.category?.id || "",
+          brand_place_holder: data.brand_place_holder || "",
           name: data.name || "",
           description: data.description || "",
         });
@@ -203,6 +217,20 @@ const EditProduct = () => {
 
   const handleUpdateVariant = async (variantId: string, isLimited: boolean, data: any) => {
     if (!productId) return;
+
+    if (!isLimitedProduct && data.price && data.price > 5_000_000) {
+      toast.error("Price must be between 0 and 5,000,000 for standard variants.");
+      return;
+    }
+
+    const achievableQuantity =
+      (productDetail?.data as LimitedProductData)?.limited_product?.achievable_quantity || 1;
+
+    if (isLimitedProduct && data.input_stock && data.input_stock <= achievableQuantity) {
+      toast.error("Stock must be greater than achievable quantity for limited variants.");
+      return;
+    }
+
     try {
       if (isLimited) {
         await dispatch(updateLimitedProductVariantThunk({ variantId, data })).unwrap();
@@ -217,6 +245,28 @@ const EditProduct = () => {
 
   const handleCreateVariant = async (data: ProductVariant) => {
     if (!productId) return;
+
+    if (
+      productDetail?.data.variants &&
+      productDetail?.data?.variants?.length > Number(configValue) - 1
+    ) {
+      toast.error(`You can only add up to ${configValue} variants per product.`);
+      return;
+    }
+
+    if (!isLimitedProduct && data.price && data.price > 5_000_000) {
+      toast.error("Price must be between 0 and 5,000,000 for standard variants.");
+      return;
+    }
+
+    const achievableQuantity =
+      (productDetail?.data as LimitedProductData)?.limited_product?.achievable_quantity || 1;
+
+    if (isLimitedProduct && data.input_stock && data.input_stock <= achievableQuantity) {
+      toast.error("Stock must be greater than achievable quantity for limited variants.");
+      return;
+    }
+
     try {
       await dispatch(
         createVariantProductThunk({
@@ -331,7 +381,7 @@ const EditProduct = () => {
             onSubmit={handleUpdateVariant}
             onCreateVariant={handleCreateVariant}
           />
-          {productDetail?.data.type === "LIMITED" &&
+          {isLimitedProduct &&
             ["REVISION", "DRAFT"].includes(productDetail?.data?.status || "") && (
               <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t shadow-lg z-20">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">

@@ -162,27 +162,36 @@ export const UpdateBasicInfoSection = ({
               Brand
             </Label>
             <div className="col-span-3">
-              <Controller
-                name="brand_id"
-                control={control}
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger
-                      disabled={true}
-                      className={`h-11 bg-slate-100 border-slate-200 ${errors.brand_id ? "border-red-500" : ""}`}
-                    >
-                      <SelectValue placeholder="Select a brand" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-70">
-                      {brands?.map((brand) => (
-                        <SelectItem key={brand.id} value={brand.id.toString()}>
-                          {brand.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
+              {!isLimitedProduct ? (
+                <Input
+                  id="brand_place_holder"
+                  placeholder="Enter brand name"
+                  {...register("brand_place_holder")}
+                  className={`h-11 bg-slate-50/50 border-slate-200 focus:bg-white transition-colors ${errors.brand_place_holder ? "border-red-500 focus:ring-red-500" : "focus:border-primary focus:ring-primary"}`}
+                />
+              ) : (
+                <Controller
+                  name="brand_id"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger
+                        disabled={true}
+                        className={`h-11 bg-slate-100 border-slate-200 ${errors.brand_id ? "border-red-500" : ""}`}
+                      >
+                        <SelectValue placeholder="Select a brand" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-70">
+                        {brands?.map((brand) => (
+                          <SelectItem key={brand.id} value={brand.id.toString()}>
+                            {brand.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              )}
               {errors.brand_id && (
                 <p className="text-sm text-red-500 mt-1.5 flex items-center gap-1">
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">

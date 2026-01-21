@@ -6,6 +6,7 @@ import {
   getTermsOfService,
   updateConfig,
   bulkUpdateConfigs,
+  getValueByConfigKey,
 } from "./thunk";
 import type { RepresentativeConfig } from "@/libs/types/config";
 
@@ -16,6 +17,7 @@ interface stateType {
   representativeConfig: RepresentativeConfig | null;
   termsOfService: any | null;
   privacyPolicy: any | null;
+  configValue?: any | null;
 }
 
 const initialState: stateType = {
@@ -90,6 +92,16 @@ export const manageConfigSlice = createSlice({
       })
       .addCase(bulkUpdateConfigs.rejected, (state) => {
         state.updating = false;
+      })
+      .addCase(getValueByConfigKey.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(getValueByConfigKey.fulfilled, (state, action) => {
+        state.loading = false;
+        state.configValue = action.payload.data;
+      })
+      .addCase(getValueByConfigKey.rejected, (state) => {
+        state.loading = false;
       });
   },
 });

@@ -26,7 +26,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { UseFormReturn } from "react-hook-form";
-import { Controller, useForm } from "react-hook-form";
+import { Controller } from "react-hook-form";
 import { useSelector } from "react-redux";
 import { useAppDispatch, type RootState } from "@/libs/stores";
 import { Badge } from "@/components/ui/badge";
@@ -37,8 +37,6 @@ import { FaMoneyBill } from "react-icons/fa6";
 import { fetchAllProductOptionTypesThunk } from "@/libs/stores/productOptionManager/thunk";
 import type { VariantWithImage, ProductVariant } from "@/libs/types/product";
 import { VariationForm } from "../form/VariationForm";
-import { yupResolver } from "@hookform/resolvers/yup";
-import { productVariantSchema } from "@/libs/validation/productValidation";
 import {
   deleteVariantImageThunk,
   createVariantImageThunk,
@@ -76,16 +74,6 @@ export const UpdateVariantSection = ({
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const newVariantForm = useForm<ProductVariant>({
-    resolver: yupResolver(productVariantSchema),
-    context: { isLimited: isLimitedProduct },
-    defaultValues: {
-      is_default: false,
-      attributes: [],
-      type: isLimitedProduct ? "LIMITED" : "STANDARD",
-    },
-  });
-
   const {
     handleSubmit,
     control,
@@ -117,8 +105,8 @@ export const UpdateVariantSection = ({
         expiry_date: formatDate(variant.expiry_date),
         height: variant.height,
         input_stock: variant.current_stock,
-        instrucstions: variant.instructions || "",
-        is_default: variant.is_default,
+        instructions: variant.instructions || "",
+        is_default: variant.is_default || false,
         length: variant.length,
         manufacturing_date: formatDate(variant.manufacturing_date),
         pre_order_limit: isLimitedProduct ? (variant as any).pre_order_limit : undefined,
@@ -142,11 +130,9 @@ export const UpdateVariantSection = ({
   };
 
   const handleCreateVariant = (data: ProductVariant) => {
-    console.log("Creating new variant:", data);
     if (onCreateVariant) {
       onCreateVariant(data);
       setIsCreateDialogOpen(false);
-      newVariantForm.reset();
     }
   };
 
@@ -830,13 +816,13 @@ export const UpdateVariantSection = ({
                         </div>
                         <div className="space-y-4">
                           <div className="space-y-2">
-                            <Label htmlFor="instrucstions">Instructions</Label>
+                            <Label htmlFor="instructions">Instructions</Label>
                             <Controller
-                              name="instrucstions"
+                              name="instructions"
                               control={control}
                               render={({ field }) => (
                                 <Textarea
-                                  id="instrucstions"
+                                  id="instructions"
                                   placeholder="How to use this product..."
                                   rows={3}
                                   {...field}
@@ -910,7 +896,7 @@ export const UpdateVariantSection = ({
           </div>
           <div className="p-6">
             <VariationForm
-              form={newVariantForm}
+              form={form}
               onSubmit={handleCreateVariant}
               state={{ productType: isLimitedProduct ? "LIMITED" : "STANDARD" }}
               dispatch={dispatch}

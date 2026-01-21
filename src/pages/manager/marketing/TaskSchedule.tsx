@@ -11,12 +11,14 @@ import type { TaskListMarketing } from "@/libs/types/task";
 import type { ContractBase } from "@/libs/types/contract";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
+import { useAuth } from "@/libs/hooks/useAuth";
 
 const TaskSchedule: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [activeFilter, setActiveFilter] = useState("ALL");
+  const { user } = useAuth();
 
   // Contract filtering states
   const [selectedContract, setSelectedContract] = useState<ContractBase | null>(null);
@@ -169,6 +171,12 @@ const TaskSchedule: React.FC = () => {
     });
   };
 
+  // Check if a date has tasks assigned to current user
+  const hasUserAssignedTasks = (date: Date): boolean => {
+    const tasksForDate = getTasksForDate(date);
+    return tasksForDate.some((task) => task.assigned_to_id === user?.id);
+  };
+
   // Simplified task counts (not used for display anymore)
   const getTaskCounts = () => {
     return {
@@ -211,6 +219,7 @@ const TaskSchedule: React.FC = () => {
             contractLoading={contractLoading}
             onContractLoadMore={contractPagination?.has_next ? loadMoreContracts : undefined}
             taskLoading={taskLoading}
+            hasUserAssignedTasks={hasUserAssignedTasks}
           />
         </div>
       </div>

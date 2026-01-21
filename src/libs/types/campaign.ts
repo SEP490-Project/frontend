@@ -98,6 +98,7 @@ export interface CampaignRequest {
       deadline: string;
       name: string;
       type: string;
+      assigned_to_id?: string;
       description: {
         // Common fields
         kpi_goals?: { metric: string; target: string }[] | null;
@@ -152,6 +153,7 @@ export interface CampaignSuggestion {
             type: string;
             deadline: string;
             description_json: object;
+            assigned_to_id?: string;
           },
         ];
       },

@@ -458,7 +458,10 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                     <div className="col-span-2 flex items-center">
                       <User className="w-4 h-4 mr-2 text-gray-400" />
                       <span className="text-gray-600">
-                        {content.blog?.author?.username || "System"}
+                        {/* {content.blog?.author?.username || "System"} */}
+                        {content.type === "BLOG"
+                          ? content.blog?.author?.username || "System"
+                          : content.created_by?.username || "System"}
                       </span>
                     </div>
 

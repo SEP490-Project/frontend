@@ -423,7 +423,7 @@ const ContentDetail: React.FC = () => {
                   </Badge>
                 ))
               ) : (
-                <span className="text-sm text-gray-400 italic">No tags</span>
+                <span className="text-sm text-gray-400 italic"></span>
               )}
             </div>
           </div>

@@ -1,7 +1,20 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { format, parseISO, isAfter, isBefore, startOfDay, endOfDay } from "date-fns";
-import { Calendar, Clock, Filter, RefreshCw, X, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Calendar,
+  Clock,
+  Filter,
+  RefreshCw,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Settings,
+  Trash2,
+  Globe,
+  Loader2,
+} from "lucide-react";
 import { useSelector } from "react-redux";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,12 +33,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DatePicker } from "@/components/date-picker";
+import { WarningDialog } from "@/components/global";
 import { useAppDispatch, type RootState } from "@/libs/stores";
-import { fetchSchedules } from "@/libs/stores/scheduleManager";
-import type { ScheduleStatus } from "@/libs/types/schedule";
+import { fetchSchedules, cancelSchedule } from "@/libs/stores/scheduleManager";
+import { publishContent } from "@/libs/stores/contentManager/thunk";
+import type { ScheduleStatus, ScheduleItem } from "@/libs/types/schedule";
 
 const STATUS_OPTIONS: { value: ScheduleStatus | "ALL"; label: string }[] = [
   { value: "ALL", label: "All Statuses" },
@@ -53,17 +73,56 @@ const getStatusColor = (status: string): string => {
   }
 };
 
+const getChannelDisplay = (channel: string) => {
+  switch (channel?.toLowerCase()) {
+    case "facebook":
+      return {
+        name: "Facebook",
+        icon: (
+          <div className="w-4 h-4 bg-blue-600 rounded text-white text-xs flex items-center justify-center font-bold">
+            f
+          </div>
+        ),
+        color: "text-blue-600",
+      };
+    case "tiktok":
+      return {
+        name: "TikTok",
+        icon: (
+          <div className="w-4 h-4 bg-black rounded text-white text-xs flex items-center justify-center font-bold">
+            T
+          </div>
+        ),
+        color: "text-black",
+      };
+    case "website":
+    default:
+      return {
+        name: "Website",
+        icon: <Globe className="w-4 h-4 text-green-600" />,
+        color: "text-green-600",
+      };
+  }
+};
+
 const ITEMS_PER_PAGE = 20;
 
 export const ScheduleManagement: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { schedules, loading } = useSelector((state: RootState) => state.manageSchedule);
+  const { schedules, loading, cancelLoading } = useSelector(
+    (state: RootState) => state.manageSchedule,
+  );
 
   // Filter state (frontend only)
   const [statusFilter, setStatusFilter] = useState<ScheduleStatus | "ALL">("ALL");
   const [fromDate, setFromDate] = useState<string | undefined>(undefined);
   const [toDate, setToDate] = useState<string | undefined>(undefined);
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Action states
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [scheduleToCancel, setScheduleToCancel] = useState<ScheduleItem | null>(null);
+  const [isPublishing, setIsPublishing] = useState<string | null>(null);
 
   // Fetch all schedules on mount only
   useEffect(() => {
@@ -136,6 +195,49 @@ export const ScheduleManagement: React.FC = () => {
   const handleRefresh = useCallback(() => {
     dispatch(fetchSchedules({ limit: 1000 }));
   }, [dispatch]);
+
+  // Handle cancel schedule
+  const handleCancelClick = (schedule: ScheduleItem) => {
+    setScheduleToCancel(schedule);
+    setShowCancelDialog(true);
+  };
+
+  const handleCancelConfirm = async () => {
+    if (!scheduleToCancel) return;
+
+    try {
+      await dispatch(cancelSchedule(scheduleToCancel.schedule_id)).unwrap();
+      toast.success("Schedule cancelled successfully");
+      dispatch(fetchSchedules({ limit: 1000 }));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to cancel schedule");
+    } finally {
+      setShowCancelDialog(false);
+      setScheduleToCancel(null);
+    }
+  };
+
+  // Handle publish content now
+  const handlePublishNow = async (schedule: ScheduleItem) => {
+    if (!schedule.content_details?.content_id) {
+      toast.error("Content ID not found");
+      return;
+    }
+
+    setIsPublishing(schedule.schedule_id);
+    try {
+      await dispatch(publishContent({ id: schedule.content_details.content_id })).unwrap();
+      toast.success(
+        `Content "${schedule.content_details.content_title}" has been published successfully.`,
+      );
+      // Refresh schedules to update status
+      dispatch(fetchSchedules({ limit: 1000 }));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to publish content");
+    } finally {
+      setIsPublishing(null);
+    }
+  };
 
   const hasActiveFilters = statusFilter !== "ALL" || fromDate || toDate;
 
@@ -225,6 +327,7 @@ export const ScheduleManagement: React.FC = () => {
                 <TableHead>Scheduled At</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Created By</TableHead>
+                <TableHead className="text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -247,11 +350,14 @@ export const ScheduleManagement: React.FC = () => {
                     <TableCell>
                       <Skeleton className="h-4 w-24" />
                     </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-8 w-8 ml-auto" />
+                    </TableCell>
                   </TableRow>
                 ))
               ) : paginatedSchedules.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                     <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
                     <p>No schedules found</p>
                   </TableCell>
@@ -270,9 +376,19 @@ export const ScheduleManagement: React.FC = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">
-                        {schedule.content_details?.channel_name || "—"}
-                      </Badge>
+                      {(() => {
+                        const channelInfo = getChannelDisplay(
+                          schedule.content_details?.channel_name || "website",
+                        );
+                        return (
+                          <div className="flex items-center gap-2">
+                            {channelInfo.icon}
+                            <span className={`text-sm font-medium ${channelInfo.color}`}>
+                              {channelInfo.name}
+                            </span>
+                          </div>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1.5 text-sm">
@@ -291,6 +407,47 @@ export const ScheduleManagement: React.FC = () => {
                       <span className="text-sm text-muted-foreground">
                         {schedule.created_by_name || schedule.created_by}
                       </span>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {schedule.status === "PENDING" || schedule.status === "FAILED" ? (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="p-1 h-8 w-8 hover:bg-gray-100"
+                            >
+                              <Settings className="w-4 h-4 text-gray-600" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {schedule.status === "PENDING" && (
+                              <DropdownMenuItem
+                                onClick={() => handlePublishNow(schedule)}
+                                disabled={isPublishing === schedule.schedule_id}
+                                className="text-blue-600 hover:text-blue-700"
+                              >
+                                {isPublishing === schedule.schedule_id ? (
+                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                ) : (
+                                  <Globe className="w-4 h-4 mr-2" />
+                                )}
+                                Post Now
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem
+                              onClick={() => handleCancelClick(schedule)}
+                              disabled={cancelLoading}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              {schedule.status === "PENDING" ? "Cancel Schedule" : "Delete"}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">—</span>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))
@@ -333,6 +490,23 @@ export const ScheduleManagement: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Cancel Confirmation Dialog */}
+      <WarningDialog
+        isOpen={showCancelDialog}
+        onOpenChange={setShowCancelDialog}
+        title="Cancel Schedule"
+        description={`Are you sure you want to cancel the scheduled publish for "${scheduleToCancel?.content_details?.content_title}"?`}
+        warningMessage="This action cannot be undone."
+        onConfirm={handleCancelConfirm}
+        onCancel={() => {
+          setShowCancelDialog(false);
+          setScheduleToCancel(null);
+        }}
+        confirmText="Cancel Schedule"
+        cancelText="Keep Schedule"
+        confirmButtonVariant="destructive"
+      />
     </div>
   );
 };

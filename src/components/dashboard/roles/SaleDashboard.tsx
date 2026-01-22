@@ -23,7 +23,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { BadgePercent, Banknote, BanknoteArrowDown, Filter, Loader2, X } from "lucide-react";
+import {
+  BadgePercent,
+  Banknote,
+  BanknoteArrowDown,
+  Filter,
+  Loader2,
+  TrendingUp,
+  X,
+} from "lucide-react";
 import { DatePicker } from "@/components/date-picker";
 import { Button } from "@/components/ui/button";
 import { convertNumberToCurrency } from "@/libs/helper/helper";
@@ -251,6 +259,9 @@ const OverviewTab: React.FC<TabProps> = ({ startDate, endDate, periodGap = "day"
     returning_customer_count: {
       value: financialsDashboard?.summary.returning_customer_count,
     },
+    limited_net_revenue: {
+      value: financialsDashboard?.summary.limited_net_revenue,
+    },
   };
 
   const formatPieChartData = {
@@ -346,7 +357,7 @@ const OverviewTab: React.FC<TabProps> = ({ startDate, endDate, periodGap = "day"
           tooltip="Total revenue generated from all product sales including both standard and limited edition products"
         />
         <KPIWidget
-          title="Limited Product Revenue"
+          title="Limited Product Revenue (GROSS)"
           data={formatCardData.limited_revenue}
           mode="currency"
           icon={<Banknote size={20} />}
@@ -355,7 +366,7 @@ const OverviewTab: React.FC<TabProps> = ({ startDate, endDate, periodGap = "day"
           tooltip="Revenue generated specifically from limited edition and exclusive product sales with higher profit margins"
         />
         <KPIWidget
-          title="Standard Product Revenue"
+          title="Standard Product Revenue (NET)"
           data={formatCardData.standard_revenue}
           mode="currency"
           icon={<Banknote size={20} />}
@@ -372,15 +383,6 @@ const OverviewTab: React.FC<TabProps> = ({ startDate, endDate, periodGap = "day"
           iconBg="bg-red-100"
           tooltip="Total amount refunded to customers due to returns, cancellations, or product issues"
         />
-        {/* <KPIWidget
-          title="Revenue Growth"
-          data={formatCardData.revenue_growth}
-          mode="percent"
-          icon={<ChartLine size={20} />}
-          iconColor="text-teal-700"
-          iconBg="bg-teal-100"
-          tooltip="Percentage change in revenue compared to the previous period, indicating business growth or decline"
-        /> */}
         <KPIWidget
           title="Average Order Value"
           data={formatCardData.average_order_value}
@@ -389,6 +391,15 @@ const OverviewTab: React.FC<TabProps> = ({ startDate, endDate, periodGap = "day"
           iconColor="text-purple-700"
           iconBg="bg-purple-100"
           tooltip="Average monetary value of each customer order, indicating customer spending patterns and purchase behavior"
+        />
+        <KPIWidget
+          title="Limited Product Revenue (NET)"
+          data={formatCardData.limited_net_revenue}
+          mode="currency"
+          icon={<TrendingUp size={20} />}
+          iconColor="text-teal-700"
+          iconBg="bg-teal-100"
+          tooltip="Total amount refunded to customers due to returns, cancellations, or product issues"
         />
         {/* <KPIWidget
           title="New Customers"

@@ -36,20 +36,20 @@ interface PostingFrequencyCardProps {
 // Skeleton component
 export const PostingFrequencyCardSkeleton: React.FC = () => {
   return (
-    <Card className="rounded-2xl shadow-sm">
-      <CardHeader className="pb-4 px-6 pt-6">
-        <Skeleton className="h-6 w-36 mb-1" />
-        <Skeleton className="h-4 w-28" />
+    <Card className="rounded-2xl shadow-sm border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+      <CardHeader className="pb-3 px-5 pt-5 lg:px-6 lg:pt-6">
+        <Skeleton className="h-6 w-40 mb-1" />
+        <Skeleton className="h-4 w-32" />
       </CardHeader>
-      <CardContent className="px-6 pb-6">
-        <div className="flex items-center justify-between mb-3">
-          <Skeleton className="h-9 w-12" />
-          <Skeleton className="h-5 w-24" />
+      <CardContent className="px-5 pb-5 lg:px-6 lg:pb-6">
+        <div className="flex items-center justify-between mb-4">
+          <Skeleton className="h-10 w-14" />
+          <Skeleton className="h-5 w-28" />
         </div>
-        <Skeleton className="h-2.5 w-full rounded-full mb-3" />
+        <Skeleton className="h-3 w-full rounded-full mb-4" />
         <div className="flex items-center justify-between">
-          <Skeleton className="h-6 w-20 rounded-full" />
-          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-7 w-24 rounded-full" />
+          <Skeleton className="h-4 w-20" />
         </div>
       </CardContent>
     </Card>
@@ -71,22 +71,22 @@ export const PostingFrequencyCard: React.FC<PostingFrequencyCardProps> = ({
 
   return (
     <motion.div variants={itemVariants} initial="hidden" animate="visible">
-      <Card className="rounded-2xl shadow-sm h-full">
-        <CardHeader className="pb-4 px-6 pt-6">
+      <Card className="rounded-2xl shadow-sm border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 h-full hover:shadow-md transition-shadow duration-300">
+        <CardHeader className="pb-3 px-5 pt-5 lg:px-6 lg:pt-6 border-b border-gray-50 dark:border-gray-700">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-medium">
+            <CardTitle className="text-base lg:text-lg font-semibold text-gray-800 dark:text-gray-100">
               <div className="flex items-center gap-2">
                 Posting Frequency
                 <HelpTooltip>{METRIC_HELP_TEXT.POSTING_FREQUENCY}</HelpTooltip>
               </div>
             </CardTitle>
           </div>
-          <p className="text-sm text-gray-500">Progress toward target</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Progress toward target</p>
         </CardHeader>
-        <CardContent className="px-6 pb-6">
-          <div className="flex items-center justify-between mb-3">
+        <CardContent className="px-5 pb-5 lg:px-6 lg:pb-6 pt-4">
+          <div className="flex items-center justify-between mb-4">
             <motion.span
-              className="text-3xl font-bold text-gray-900"
+              className="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
@@ -96,7 +96,7 @@ export const PostingFrequencyCard: React.FC<PostingFrequencyCardProps> = ({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="text-gray-500 cursor-help flex items-center gap-1.5">
+                  <span className="text-gray-500 dark:text-gray-400 cursor-help flex items-center gap-1.5 text-sm font-medium">
                     {sourceInfo.icon}/ {postingFrequency?.expected || 0} expected
                   </span>
                 </TooltipTrigger>
@@ -107,9 +107,9 @@ export const PostingFrequencyCard: React.FC<PostingFrequencyCardProps> = ({
               </Tooltip>
             </TooltipProvider>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2.5 mb-3 overflow-hidden">
+          <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-3 mb-4 overflow-hidden">
             <motion.div
-              className="bg-blue-600 h-2.5 rounded-full"
+              className="bg-pink-500 h-3 rounded-full shadow-sm"
               initial={{ width: 0 }}
               animate={{ width: `${progressWidth}%` }}
               transition={{ duration: 0.8, ease: "easeOut", delay: 0.3 }}
@@ -117,11 +117,13 @@ export const PostingFrequencyCard: React.FC<PostingFrequencyCardProps> = ({
           </div>
           <div className="flex items-center justify-between">
             <span
-              className={`text-sm px-2 py-1 rounded-full ${getPostingFrequencyColor(postingFrequency?.status || "")}`}
+              className={`text-xs font-semibold px-3 py-1.5 rounded-full ${getPostingFrequencyColor(postingFrequency?.status || "")}`}
             >
               {postingFrequency?.status?.replace("_", " ") || "N/A"}
             </span>
-            <span className="text-sm text-gray-500">{(ratio * 100).toFixed(0)}% complete</span>
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              {(ratio * 100).toFixed(0)}% complete
+            </span>
           </div>
         </CardContent>
       </Card>

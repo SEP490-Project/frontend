@@ -192,104 +192,104 @@ const ContentDashboard: React.FC = () => {
   const isLoading = loadingDashboard && !dashboard;
 
   return (
-    <motion.div
-      className="p-4 sm:p-6 lg:p-8 w-full flex flex-col gap-8"
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-    >
-      {/* Header with refresh and sync buttons */}
-      <DashboardHeader
-        period={period}
-        selectedPeriod={selectedPeriod}
-        customStartDate={customStartDate ?? undefined}
-        customEndDate={customEndDate ?? undefined}
-        unreadAlertsCount={unreadAlertsCount}
-        isLoading={isLoading}
-        isRefreshing={isRefreshing || (loadingDashboard && !!dashboard)}
-        isSyncing={isSyncing}
-        onPeriodChange={handlePeriodChange}
-        onRefresh={handleRefresh}
-        onSync={handleSync}
-      />
-
-      {/* KPI Cards Section - Full Width */}
-      <motion.section variants={slideInLeftVariants} initial="hidden" animate="visible">
-        <KPICards quickStats={quickStats} period={period} isLoading={isLoading} />
-      </motion.section>
-
-      {/* Quick Stats Row - Posting Frequency & Pending Content */}
-      <motion.section
-        className="grid grid-cols-1 xl:grid-cols-2 gap-6"
-        variants={slideInLeftVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        <PostingFrequencyCard
-          postingFrequency={quickStats?.posting_frequency}
+    <motion.div className="w-full" variants={containerVariants} initial="hidden" animate="visible">
+      <div className="p-6 sm:p-8 lg:p-10 w-full max-w-[1920px] mx-auto flex flex-col gap-8">
+        {/* Header with refresh and sync buttons */}
+        <DashboardHeader
+          period={period}
+          selectedPeriod={selectedPeriod}
+          customStartDate={customStartDate ?? undefined}
+          customEndDate={customEndDate ?? undefined}
+          unreadAlertsCount={unreadAlertsCount}
           isLoading={isLoading}
+          isRefreshing={isRefreshing || (loadingDashboard && !!dashboard)}
+          isSyncing={isSyncing}
+          onPeriodChange={handlePeriodChange}
+          onRefresh={handleRefresh}
+          onSync={handleSync}
         />
-        <PendingContentCard
-          pendingCount={quickStats?.pending_content || 0}
-          compareLabel={period?.compare_label || ""}
-          isLoading={isLoading}
-        />
-      </motion.section>
 
-      {/* Main Grid Layout */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-        {/* Left Column - Charts and Performance */}
-        <motion.div
-          className="xl:col-span-9 space-y-8"
+        {/* KPI Cards Section - Full Width */}
+        <motion.section variants={slideInLeftVariants} initial="hidden" animate="visible">
+          <KPICards quickStats={quickStats} period={period} isLoading={isLoading} />
+        </motion.section>
+
+        {/* Quick Stats Row - Posting Frequency & Pending Content */}
+        <motion.section
+          className="grid grid-cols-1 lg:grid-cols-2 gap-6"
           variants={slideInLeftVariants}
           initial="hidden"
           animate="visible"
         >
-          {/* Charts Section */}
+          <PostingFrequencyCard
+            postingFrequency={quickStats?.posting_frequency}
+            isLoading={isLoading}
+          />
+          <PendingContentCard
+            pendingCount={quickStats?.pending_content || 0}
+            compareLabel={period?.compare_label || ""}
+            isLoading={isLoading}
+          />
+        </motion.section>
+
+        {/* Charts Section - Full Width */}
+        <motion.section variants={slideInLeftVariants} initial="hidden" animate="visible">
           <ContentChartsSection
             channelDistribution={channelDistribution}
             trendData={trendData}
             isLoading={isLoading}
           />
+        </motion.section>
 
-          {/* Channel Performance Cards */}
+        {/* Channel Performance Cards - Full Width */}
+        <motion.section variants={slideInLeftVariants} initial="hidden" animate="visible">
           <ChannelPerformanceCards
             channelMetrics={channelMetrics}
             isLoading={isLoading}
             onChannelClick={handleChannelClick}
           />
-        </motion.div>
+        </motion.section>
 
-        {/* Right Column - Sidebar */}
-        <motion.div
-          className="xl:col-span-3 space-y-6"
-          variants={slideInRightVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          {/* Upcoming Schedules */}
-          <UpcomingSchedulesCard upcomingSchedule={upcomingSchedule} isLoading={isLoading} />
+        {/* Bottom Section: Top Content + Schedules & Alerts */}
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 lg:gap-8">
+          {/* Left Column - Top Performing Content */}
+          <motion.div
+            className="xl:col-span-7 lg:col-span-8"
+            variants={slideInLeftVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <TopContentCard topContent={topContent} isLoading={isLoading} />
+          </motion.div>
 
-          {/* Recent Alerts */}
-          <RecentAlertsCard
-            alerts={alerts}
-            unreadCount={unreadAlertsCount}
-            isLoading={isLoading}
-            onViewDetails={handleViewAlertDetails}
-            onViewReference={handleViewReference}
-          />
+          {/* Right Column - Upcoming Schedules & Recent Alerts */}
+          <motion.div
+            className="xl:col-span-5 lg:col-span-4 space-y-6"
+            variants={slideInRightVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {/* Upcoming Schedules */}
+            <UpcomingSchedulesCard upcomingSchedule={upcomingSchedule} isLoading={isLoading} />
 
-          {/* Top Content */}
-          <TopContentCard topContent={topContent} isLoading={isLoading} />
-        </motion.div>
+            {/* Recent Alerts */}
+            <RecentAlertsCard
+              alerts={alerts}
+              unreadCount={unreadAlertsCount}
+              isLoading={isLoading}
+              onViewDetails={handleViewAlertDetails}
+              onViewReference={handleViewReference}
+            />
+          </motion.div>
+        </div>
+
+        {/* Channel Details Dialog */}
+        <ChannelDetailsDialog
+          channelId={selectedChannelForDialog}
+          open={channelDialogOpen}
+          onOpenChange={setChannelDialogOpen}
+        />
       </div>
-
-      {/* Channel Details Dialog */}
-      <ChannelDetailsDialog
-        channelId={selectedChannelForDialog}
-        open={channelDialogOpen}
-        onOpenChange={setChannelDialogOpen}
-      />
     </motion.div>
   );
 };

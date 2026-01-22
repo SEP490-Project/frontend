@@ -97,7 +97,6 @@ const BrandAmbassadorScope: React.FC<BrandAmbassadorScopeProps> = ({ formData, o
                           </div>
                           <div className="text-xs text-green-700 mt-1 space-y-1">
                             <div>
-                              📅{" "}
                               {event.date
                                 ? new Date(event.date).toLocaleDateString("vi-VN") +
                                   " " +
@@ -107,8 +106,8 @@ const BrandAmbassadorScope: React.FC<BrandAmbassadorScopeProps> = ({ formData, o
                                   })
                                 : "Date TBD"}
                             </div>
-                            <div>📍 {event.location || "Location TBD"}</div>
-                            <div>⏱️ {event.expected_duration || "Duration TBD"}</div>
+                            <div>{event.location || "Location TBD"}</div>
+                            <div>{event.expected_duration || "Duration TBD"}</div>
                           </div>
                         </div>
                         <div className="text-xs bg-green-100 px-2 py-1 rounded">Event #{i + 1}</div>
@@ -124,9 +123,9 @@ const BrandAmbassadorScope: React.FC<BrandAmbassadorScopeProps> = ({ formData, o
                   : ` Minimum 1, Maximum ${numberOfEvents} milestones allowed`}
               </div>
               <p className="text-green-700 text-xs mt-2 bg-green-100 p-2 rounded">
-                💡 <strong>Payment Rules:</strong> Each event can only be linked to ONE milestone.
-                Each milestone can link to multiple events. Payment dates must be scheduled after
-                the linked event dates.
+                <strong>Payment Rules:</strong> Each event can only be linked to ONE milestone. Each
+                milestone can link to multiple events. Payment dates must be scheduled after the
+                linked event dates.
               </p>
             </div>
           </Card>

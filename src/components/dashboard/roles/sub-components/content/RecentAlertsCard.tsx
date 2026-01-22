@@ -55,19 +55,22 @@ const getSeverityVariant = (
 // Skeleton component
 export const RecentAlertsCardSkeleton: React.FC = () => {
   return (
-    <Card className="rounded-2xl shadow-sm h-full">
-      <CardHeader className="pb-4 px-6 pt-6">
+    <Card className="rounded-2xl shadow-sm border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+      <CardHeader className="pb-3 px-5 pt-5">
         <div className="flex items-center gap-2">
-          <Skeleton className="h-5 w-5" />
-          <Skeleton className="h-6 w-28" />
-          <Skeleton className="h-5 w-12 rounded-full" />
+          <Skeleton className="h-5 w-5 rounded" />
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-5 w-14 rounded-full" />
         </div>
-        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-4 w-44 mt-1" />
       </CardHeader>
-      <CardContent className="px-6 pb-6">
+      <CardContent className="px-5 pb-5">
         <div className="space-y-3">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="p-3 rounded-lg border bg-gray-50">
+            <div
+              key={i}
+              className="p-3 rounded-xl border bg-gray-50 dark:bg-gray-700/30 border-gray-100 dark:border-gray-600"
+            >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2">
@@ -77,12 +80,12 @@ export const RecentAlertsCardSkeleton: React.FC = () => {
                   <Skeleton className="h-3 w-full mb-1" />
                   <Skeleton className="h-3 w-2/3" />
                 </div>
-                <Skeleton className="h-6 w-6 rounded" />
+                <Skeleton className="h-6 w-6 rounded-md" />
               </div>
               <div className="flex flex-wrap items-center gap-2 mt-3">
-                <Skeleton className="h-5 w-16 rounded" />
-                <Skeleton className="h-5 w-20 rounded" />
-                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-5 w-18 rounded-md" />
+                <Skeleton className="h-5 w-16 rounded-md" />
+                <Skeleton className="h-4 w-20" />
               </div>
             </div>
           ))}
@@ -195,26 +198,35 @@ const AlertItemComponent: React.FC<AlertItemComponentProps> = ({
       {/* Metadata Row: Category + Severity + Time */}
       <div className="flex flex-wrap items-center gap-1.5 mt-2">
         {/* Category Badge */}
-        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 gap-1 font-normal">
+        <Badge
+          variant="outline"
+          className="text-[10px] px-2 py-0 h-5 gap-1 font-semibold border-gray-200 dark:border-gray-600"
+        >
           {getCategoryIcon(alert.category)}
           <span className="hidden sm:inline">{formatCategory(alert.category)}</span>
         </Badge>
 
         {/* Severity Badge */}
-        <Badge variant={getSeverityVariant(alert.severity)} className="text-[10px] px-1.5 py-0 h-5">
+        <Badge
+          variant={getSeverityVariant(alert.severity)}
+          className="text-[10px] px-2 py-0 h-5 font-semibold"
+        >
           {alert.severity}
         </Badge>
 
         {/* Reference Type (if exists) */}
         {alert.reference_type && (
-          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 hidden md:flex">
+          <Badge
+            variant="secondary"
+            className="text-[10px] px-2 py-0 h-5 hidden md:flex font-medium"
+          >
             {formatCategory(alert.reference_type)}
           </Badge>
         )}
 
         {/* Timestamp */}
         <span
-          className="text-[10px] text-gray-500 ml-auto"
+          className="text-[10px] text-gray-500 dark:text-gray-400 ml-auto font-medium"
           title={format(new Date(alert.created_at), "PPpp")}
         >
           {formatDistanceToNow(new Date(alert.created_at), { addSuffix: true })}
@@ -238,11 +250,13 @@ export const RecentAlertsCard: React.FC<RecentAlertsCardProps> = ({
 
   return (
     <motion.div variants={itemVariants} initial="hidden" animate="visible">
-      <Card className="rounded-2xl shadow-sm h-full flex flex-col">
-        <CardHeader className="pb-4 px-6 pt-6 flex-shrink-0">
-          <CardTitle className="text-base sm:text-lg font-medium flex items-center gap-2 flex-wrap">
+      <Card className="rounded-2xl shadow-sm border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 hover:shadow-md transition-shadow duration-300 overflow-hidden">
+        <CardHeader className="pb-3 px-5 pt-5 border-b border-gray-50 dark:border-gray-700">
+          <CardTitle className="text-base font-semibold flex items-center gap-2 flex-wrap text-gray-800 dark:text-gray-100">
             <div className="flex items-center gap-2">
-              <FaBell className="text-yellow-600 flex-shrink-0" />
+              <div className="p-1.5 bg-pink-50 dark:bg-pink-900/30 rounded-lg">
+                <FaBell className="text-pink-600 dark:text-pink-400 flex-shrink-0" size={14} />
+              </div>
               <span>Recent Alerts</span>
               {unreadCount > 0 && (
                 <motion.div
@@ -250,7 +264,10 @@ export const RecentAlertsCard: React.FC<RecentAlertsCardProps> = ({
                   animate={{ scale: 1 }}
                   transition={{ type: "spring", stiffness: 300, damping: 15 }}
                 >
-                  <Badge variant="destructive" className="text-xs text-white">
+                  <Badge
+                    variant="destructive"
+                    className="text-[10px] text-white font-semibold px-2"
+                  >
                     {unreadCount} new
                   </Badge>
                 </motion.div>
@@ -260,16 +277,18 @@ export const RecentAlertsCard: React.FC<RecentAlertsCardProps> = ({
               </HelpTooltip>
             </div>
           </CardTitle>
-          <p className="text-xs sm:text-sm text-gray-500">System notifications and warnings</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            System notifications and warnings
+          </p>
         </CardHeader>
 
-        <CardContent className="flex-1 overflow-hidden px-6 pb-6">
+        <CardContent className="px-5 pb-5 pt-4">
           {alerts.length > 0 ? (
             <motion.div
               variants={containerVariants}
               initial="hidden"
               animate="visible"
-              className="space-y-2 sm:space-y-3 overflow-y-auto max-h-[400px] pr-1"
+              className="space-y-2.5 overflow-y-auto max-h-[400px] pr-1"
             >
               {alerts.slice(0, maxItems).map((alert, index) => (
                 <AlertItemComponent
@@ -286,12 +305,12 @@ export const RecentAlertsCard: React.FC<RecentAlertsCardProps> = ({
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.3 }}
-                  className="text-center pt-2"
+                  className="text-center pt-3"
                 >
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-xs text-primary hover:text-primary/80"
+                    className="text-xs text-primary hover:text-primary/80 font-semibold"
                     onClick={() => onViewDetails?.("")}
                   >
                     View all {alerts.length} alerts
@@ -304,11 +323,13 @@ export const RecentAlertsCard: React.FC<RecentAlertsCardProps> = ({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="flex flex-col items-center justify-center py-8 text-gray-400"
+              className="flex flex-col items-center justify-center py-10 text-gray-400 dark:text-gray-500"
             >
-              <FaCheckCircle className="mb-2 text-2xl sm:text-3xl text-green-500" />
-              <p className="text-sm font-medium text-gray-600">All Clear!</p>
-              <p className="text-xs text-gray-400 mt-1">No active alerts</p>
+              <div className="w-12 h-12 mx-auto mb-3 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
+                <FaCheckCircle className="text-xl text-green-500" />
+              </div>
+              <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">All Clear!</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">No active alerts</p>
             </motion.div>
           )}
         </CardContent>

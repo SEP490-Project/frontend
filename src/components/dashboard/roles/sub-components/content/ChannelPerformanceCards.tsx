@@ -25,30 +25,33 @@ interface ChannelPerformanceCardsProps {
 // Skeleton component
 export const ChannelPerformanceCardsSkeleton: React.FC = () => {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
       {[...Array(3)].map((_, i) => (
-        <Card key={i} className="rounded-2xl shadow-sm">
-          <CardHeader className="pb-4">
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-5 w-5 rounded" />
-              <Skeleton className="h-5 w-24" />
+        <Card
+          key={i}
+          className="rounded-2xl shadow-sm border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800"
+        >
+          <CardHeader className="pb-3 px-5 pt-5">
+            <div className="flex items-center gap-2.5">
+              <Skeleton className="h-8 w-8 rounded-xl" />
+              <Skeleton className="h-5 w-28" />
             </div>
-            <Skeleton className="h-4 w-28 mt-1" />
+            <Skeleton className="h-5 w-20 mt-2 rounded-md" />
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Skeleton className="h-3 w-12 mb-1" />
+          <CardContent className="space-y-4 px-5 pb-5">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-700/30">
+                <Skeleton className="h-3 w-10 mb-2" />
                 <Skeleton className="h-6 w-16" />
               </div>
-              <div>
-                <Skeleton className="h-3 w-16 mb-1" />
+              <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-700/30">
+                <Skeleton className="h-3 w-16 mb-2" />
                 <Skeleton className="h-6 w-16" />
               </div>
             </div>
-            <div className="pt-2 border-t border-gray-100">
-              <Skeleton className="h-3 w-8 mb-1" />
-              <Skeleton className="h-6 w-14" />
+            <div className="pt-3 border-t border-gray-100 dark:border-gray-700">
+              <Skeleton className="h-3 w-8 mb-2" />
+              <Skeleton className="h-5 w-14" />
             </div>
           </CardContent>
         </Card>
@@ -68,8 +71,8 @@ export const ChannelPerformanceCards: React.FC<ChannelPerformanceCardsProps> = (
 
   if (channelMetrics.length === 0) {
     return (
-      <Card className="rounded-2xl shadow-sm p-8 text-center col-span-full">
-        <p className="text-gray-400">No channel metrics available</p>
+      <Card className="rounded-2xl shadow-sm border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-8 text-center col-span-full">
+        <p className="text-gray-400 dark:text-gray-500 font-medium">No channel metrics available</p>
       </Card>
     );
   }
@@ -79,7 +82,7 @@ export const ChannelPerformanceCards: React.FC<ChannelPerformanceCardsProps> = (
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"
+      className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6"
     >
       {channelMetrics.map((channel, index) => {
         // Growth indicators
@@ -98,42 +101,42 @@ export const ChannelPerformanceCards: React.FC<ChannelPerformanceCardsProps> = (
             onClick={() => onChannelClick?.(channel.channel_id)}
             className={onChannelClick ? "cursor-pointer" : ""}
           >
-            <Card className="rounded-2xl shadow-sm h-full hover:shadow-md transition-shadow duration-200 group border-gray-100">
+            <Card className="rounded-2xl shadow-sm h-full border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 hover:shadow-lg hover:border-pink-200 dark:hover:border-pink-800 transition-all duration-300 group overflow-hidden">
               {/* Header */}
-              <CardHeader className="pb-4 px-6 pt-6 bg-white rounded-t-2xl">
-                <CardTitle className="text-base font-semibold flex items-center justify-between">
+              <CardHeader className="pb-3 px-5 pt-5 bg-white dark:bg-gray-800 rounded-t-2xl border-b border-gray-50 dark:border-gray-700">
+                <CardTitle className="text-sm font-semibold flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="p-1.5 bg-gray-50 rounded-lg">
+                    <div className="p-2 bg-gray-50 dark:bg-gray-700 rounded-xl shadow-sm border border-gray-100 dark:border-gray-600">
                       {getChannelIcon(channel.channel_code)}
                     </div>
-                    <span className="text-gray-900">{channel.channel_name}</span>
+                    <span className="text-gray-800 dark:text-gray-100">{channel.channel_name}</span>
                     <HelpTooltip>{`Performance metrics for ${channel.channel_name}`}</HelpTooltip>
                   </div>
                   {onChannelClick && (
                     <FaExternalLinkAlt
-                      className="text-gray-300 group-hover:text-blue-500 transition-colors"
-                      size={12}
+                      className="text-gray-300 dark:text-gray-600 group-hover:text-pink-500 transition-colors"
+                      size={11}
                     />
                   )}
                 </CardTitle>
                 <div className="flex items-center justify-between mt-2">
-                  <p className="text-xs font-medium text-gray-500 bg-gray-50 px-2 py-1 rounded-md">
+                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2.5 py-1 rounded-lg">
                     {formatNumber(channel.post_count)} posts
                   </p>
                 </div>
               </CardHeader>
 
-              <CardContent className="space-y-5 px-6 pb-6 pt-2">
+              <CardContent className="space-y-4 px-5 pb-5 pt-4">
                 {/* Main KPIs Grid */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   {/* Reach */}
-                  <div className="p-3 bg-blue-50/50 rounded-xl">
-                    <p className="text-xs font-medium text-gray-500 mb-1 flex items-center gap-1">
-                      <FaEye size={10} className="text-blue-400" /> Reach
+                  <div className="p-3 bg-pink-50 dark:bg-pink-900/20 rounded-xl border border-pink-100 dark:border-pink-800/30">
+                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
+                      <FaEye size={10} className="text-pink-500" /> Reach
                     </p>
                     <div className="flex items-end gap-2">
                       <motion.p
-                        className="text-lg font-bold text-gray-900 leading-none"
+                        className="text-lg font-bold text-gray-800 dark:text-gray-100 leading-none"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.3 + index * 0.1 }}
@@ -141,7 +144,7 @@ export const ChannelPerformanceCards: React.FC<ChannelPerformanceCardsProps> = (
                         {formatNumber(channel.total_reach)}
                       </motion.p>
                       <span
-                        className={`text-xs font-medium mb-0.5 ${reachGrowth.color} flex items-center`}
+                        className={`text-[10px] font-semibold mb-0.5 ${reachGrowth.color} flex items-center`}
                       >
                         {getGrowthIcon(
                           channel.reach_growth > 0
@@ -156,13 +159,13 @@ export const ChannelPerformanceCards: React.FC<ChannelPerformanceCardsProps> = (
                   </div>
 
                   {/* Engagement */}
-                  <div className="p-3 bg-purple-50/50 rounded-xl">
-                    <p className="text-xs font-medium text-gray-500 mb-1 flex items-center gap-1">
-                      <FaChartLine size={10} className="text-purple-400" /> Engagement
+                  <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-100 dark:border-purple-800/30">
+                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
+                      <FaChartLine size={10} className="text-purple-500" /> Engagement
                     </p>
                     <div className="flex items-end gap-2">
                       <motion.p
-                        className="text-lg font-bold text-gray-900 leading-none"
+                        className="text-lg font-bold text-gray-800 dark:text-gray-100 leading-none"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.35 + index * 0.1 }}
@@ -170,7 +173,7 @@ export const ChannelPerformanceCards: React.FC<ChannelPerformanceCardsProps> = (
                         {formatNumber(channel.total_engagement)}
                       </motion.p>
                       <span
-                        className={`text-xs font-medium mb-0.5 ${engagementGrowth.color} flex items-center`}
+                        className={`text-[10px] font-semibold mb-0.5 ${engagementGrowth.color} flex items-center`}
                       >
                         {getGrowthIcon(
                           channel.engagement_growth > 0
@@ -186,26 +189,28 @@ export const ChannelPerformanceCards: React.FC<ChannelPerformanceCardsProps> = (
                 </div>
 
                 {/* Secondary Metrics */}
-                <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-100">
+                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100 dark:border-gray-700">
                   {/* CTR */}
                   <div>
-                    <p className="text-xs text-gray-400 mb-1">CTR</p>
-                    <p className="text-sm font-semibold text-gray-700">{channel.ctr.toFixed(2)}%</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mb-1 font-medium">CTR</p>
+                    <p className="text-sm font-bold text-gray-700 dark:text-gray-200">
+                      {channel.ctr.toFixed(2)}%
+                    </p>
                   </div>
 
                   {/* Followers */}
                   {channel.channel_code !== "WEBSITE" && (
                     <div>
-                      <p className="text-xs text-gray-400 mb-1 flex items-center gap-1">
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mb-1 flex items-center gap-1 font-medium">
                         <FaUsers size={10} /> Followers
                       </p>
                       <div className="flex items-center gap-1.5">
-                        <p className="text-sm font-semibold text-gray-700">
+                        <p className="text-sm font-bold text-gray-700 dark:text-gray-200">
                           {formatNumber(channel.followers_count)}
                         </p>
                         {channel.followers_trend && channel.followers_trend.percentage !== 0 && (
                           <span
-                            className={`text-[10px] ${
+                            className={`text-[10px] font-semibold ${
                               channel.followers_trend.value > 0 ? "text-green-600" : "text-red-600"
                             }`}
                           >
@@ -220,30 +225,30 @@ export const ChannelPerformanceCards: React.FC<ChannelPerformanceCardsProps> = (
 
                 {/* Detailed Metrics (Likes, Comments, Shares) */}
                 {channel.mapped_metrics && Object.keys(channel.mapped_metrics).length > 0 && (
-                  <div className="flex flex-wrap gap-3 pt-2">
+                  <div className="flex flex-wrap gap-2 pt-3">
                     {typeof channel.mapped_metrics.LIKES === "number" &&
                       channel.mapped_metrics.LIKES > 0 && (
-                        <div className="flex items-center gap-1 text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded">
+                        <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 px-2.5 py-1.5 rounded-lg border border-gray-100 dark:border-gray-600">
                           <FaHeart className="text-pink-500" size={10} />
-                          <span className="font-medium">
+                          <span className="font-semibold">
                             {formatNumber(channel.mapped_metrics.LIKES)}
                           </span>
                         </div>
                       )}
                     {typeof channel.mapped_metrics.COMMENTS === "number" &&
                       channel.mapped_metrics.COMMENTS > 0 && (
-                        <div className="flex items-center gap-1 text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded">
+                        <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 px-2.5 py-1.5 rounded-lg border border-gray-100 dark:border-gray-600">
                           <FaComment className="text-blue-500" size={10} />
-                          <span className="font-medium">
+                          <span className="font-semibold">
                             {formatNumber(channel.mapped_metrics.COMMENTS)}
                           </span>
                         </div>
                       )}
                     {typeof channel.mapped_metrics.SHARES === "number" &&
                       channel.mapped_metrics.SHARES > 0 && (
-                        <div className="flex items-center gap-1 text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded">
+                        <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 px-2.5 py-1.5 rounded-lg border border-gray-100 dark:border-gray-600">
                           <FaShare className="text-green-500" size={10} />
-                          <span className="font-medium">
+                          <span className="font-semibold">
                             {formatNumber(channel.mapped_metrics.SHARES)}
                           </span>
                         </div>
@@ -254,26 +259,26 @@ export const ChannelPerformanceCards: React.FC<ChannelPerformanceCardsProps> = (
                 {/* Top Post Preview */}
                 {channel.top_post && (
                   <motion.div
-                    className="pt-3 border-t border-gray-100 mt-1"
+                    className="pt-3 border-t border-gray-100 dark:border-gray-700 mt-1"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 + index * 0.1 }}
                   >
-                    <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-1.5 font-bold">
+                    <p className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2 font-bold">
                       Top Performing Post
                     </p>
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-1.5">
                       <p
-                        className="text-xs font-medium text-gray-800 line-clamp-1"
+                        className="text-xs font-semibold text-gray-700 dark:text-gray-200 line-clamp-1"
                         title={channel.top_post.title}
                       >
                         {channel.top_post.title}
                       </p>
-                      <div className="flex items-center gap-3 text-[10px] text-gray-500">
-                        <span className="flex items-center gap-1 bg-gray-50 px-1.5 py-0.5 rounded">
+                      <div className="flex items-center gap-2 text-[10px] text-gray-500 dark:text-gray-400">
+                        <span className="flex items-center gap-1 bg-gray-50 dark:bg-gray-700/50 px-2 py-0.5 rounded-md border border-gray-100 dark:border-gray-600">
                           <FaEye size={8} /> {formatNumber(channel.top_post.views)}
                         </span>
-                        <span className="flex items-center gap-1 bg-gray-50 px-1.5 py-0.5 rounded">
+                        <span className="flex items-center gap-1 bg-gray-50 dark:bg-gray-700/50 px-2 py-0.5 rounded-md border border-gray-100 dark:border-gray-600">
                           <FaHeart size={8} /> {formatNumber(channel.top_post.likes)}
                         </span>
                       </div>

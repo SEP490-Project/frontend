@@ -93,6 +93,12 @@ const NoDataMessage: React.FC<{ message?: string }> = ({
 );
 
 const AdminDashboard: React.FC = () => {
+  const defaultStartDate = new Date();
+  defaultStartDate.setMonth(defaultStartDate.getMonth() - 1);
+  defaultStartDate.setHours(0, 0, 0, 0);
+  const defaultEndDate = new Date();
+  defaultEndDate.setHours(23, 59, 59, 999);
+
   const [revenueChartMode, setRevenueChartMode] = useState<ChartMode>("percent");
   const [roleChartMode, setRoleChartMode] = useState<ChartMode>("percent");
 
@@ -113,15 +119,15 @@ const AdminDashboard: React.FC = () => {
   } = useAdminAnalytic();
 
   const [revenueFilter, setRevenueFilter] = useState<RevenueFilter>({
-    start_date: "",
-    end_date: "",
-    granularity: "MONTH",
+    start_date: defaultStartDate.toISOString(),
+    end_date: defaultEndDate.toISOString(),
+    granularity: "DAY",
   });
 
   const [userGrowthFilter, setUserGrowthFilter] = useState<UserGrowthFilter>({
-    start_date: "",
-    end_date: "",
-    granularity: "MONTH",
+    start_date: defaultStartDate.toISOString(),
+    end_date: defaultEndDate.toISOString(),
+    granularity: "DAY",
     role: "ALL",
   });
 
@@ -411,6 +417,21 @@ const AdminDashboard: React.FC = () => {
   const isAnyLoading =
     loading || loadingRevenue || loadingUserGrowth || loadingUserOverview || loadingSystemOverview;
 
+  const handleChangeGapPeriod = (periodGap: string, setFilter: any) => {
+    const startDate = new Date();
+    const endDate = new Date();
+    if (periodGap === "DAY") {
+      startDate.setDate(startDate.getMonth() - 1);
+    } else if (periodGap === "MONTH") {
+      startDate.setFullYear(startDate.getFullYear() - 1);
+    }
+    setFilter({
+      start_date: startDate.toISOString(),
+      end_date: endDate.toISOString(),
+      granularity: periodGap,
+    });
+  };
+
   return (
     <div className="p-2 sm:p-6 w-full flex flex-col gap-6 relative">
       {isAnyLoading && (
@@ -494,7 +515,7 @@ const AdminDashboard: React.FC = () => {
               <Select
                 value={revenueFilter.granularity}
                 onValueChange={(value: Granularity) =>
-                  setRevenueFilter((prev) => ({ ...prev, granularity: value }))
+                  handleChangeGapPeriod(value, setRevenueFilter)
                 }
               >
                 <SelectTrigger className="w-[100px] h-8 text-xs">
@@ -502,7 +523,6 @@ const AdminDashboard: React.FC = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="DAY">Daily</SelectItem>
-                  <SelectItem value="WEEK">Weekly</SelectItem>
                   <SelectItem value="MONTH">Monthly</SelectItem>
                 </SelectContent>
               </Select>
@@ -510,7 +530,11 @@ const AdminDashboard: React.FC = () => {
                 variant="outline"
                 size="sm"
                 onClick={() =>
-                  setRevenueFilter({ start_date: "", end_date: "", granularity: "MONTH" })
+                  setRevenueFilter({
+                    start_date: defaultStartDate.toISOString(),
+                    end_date: defaultEndDate.toISOString(),
+                    granularity: "DAY",
+                  })
                 }
                 className="h-8 text-xs"
               >
@@ -729,7 +753,7 @@ const AdminDashboard: React.FC = () => {
               <Select
                 value={userGrowthFilter.granularity}
                 onValueChange={(value: Granularity) =>
-                  setUserGrowthFilter((prev) => ({ ...prev, granularity: value }))
+                  handleChangeGapPeriod(value, setUserGrowthFilter)
                 }
               >
                 <SelectTrigger className="w-[100px] h-8 text-xs">
@@ -737,7 +761,6 @@ const AdminDashboard: React.FC = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="DAY">Daily</SelectItem>
-                  <SelectItem value="WEEK">Weekly</SelectItem>
                   <SelectItem value="MONTH">Monthly</SelectItem>
                 </SelectContent>
               </Select>
@@ -765,9 +788,9 @@ const AdminDashboard: React.FC = () => {
                 size="sm"
                 onClick={() =>
                   setUserGrowthFilter({
-                    start_date: "",
-                    end_date: "",
-                    granularity: "MONTH",
+                    start_date: defaultStartDate.toISOString(),
+                    end_date: defaultEndDate.toISOString(),
+                    granularity: "DAY",
                     role: "ALL",
                   })
                 }
@@ -885,7 +908,7 @@ const AdminDashboard: React.FC = () => {
             tooltip="Current connection status to the messaging system"
           />
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
           <Card className="p-4 relative">
             <div className="flex flex-col gap-4">
               <h2 className="text-lg font-semibold">Queue Distribution</h2>

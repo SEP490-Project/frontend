@@ -15,6 +15,12 @@ const BrandAmbassadorScope: React.FC<BrandAmbassadorScopeProps> = ({ formData, o
   const start_date = formData?.start_date;
   const end_date = formData?.end_date;
 
+  // Get number of events from scope of work
+  const scope_of_work = formData?.scope_of_work || {};
+  const deliverables = scope_of_work.deliverables || {};
+  const events = Array.isArray(deliverables.events) ? deliverables.events : [];
+  const numberOfEvents = events.length;
+
   useEffect(() => {
     const updates: any = {};
     if (financial_terms.payment_method !== "BANK_TRANSFER") {
@@ -69,6 +75,62 @@ const BrandAmbassadorScope: React.FC<BrandAmbassadorScopeProps> = ({ formData, o
           </p>
         </div>
 
+        {numberOfEvents > 0 && (
+          <Card className="p-4 bg-green-50 border-green-200">
+            <h4 className="font-medium text-green-900 mb-3">Event & Milestone Overview</h4>
+            <div className="text-sm space-y-3">
+              <div>
+                <span className="font-medium">Number of Events:</span> {numberOfEvents}
+              </div>
+              <div>
+                <span className="font-medium">Event List:</span>
+                <div className="mt-2 space-y-2">
+                  {events.map((event: any, i: number) => (
+                    <div
+                      key={event.id || i}
+                      className="bg-white p-2 rounded border border-green-200"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="font-medium text-green-900">
+                            {event.name || `Event #${i + 1}`}
+                          </div>
+                          <div className="text-xs text-green-700 mt-1 space-y-1">
+                            <div>
+                              {event.date
+                                ? new Date(event.date).toLocaleDateString("vi-VN") +
+                                  " " +
+                                  new Date(event.date).toLocaleTimeString("vi-VN", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })
+                                : "Date TBD"}
+                            </div>
+                            <div>{event.location || "Location TBD"}</div>
+                            <div>{event.expected_duration || "Duration TBD"}</div>
+                          </div>
+                        </div>
+                        <div className="text-xs bg-green-100 px-2 py-1 rounded">Event #{i + 1}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <span className="font-medium">Milestone Requirements:</span>
+                {numberOfEvents === 1
+                  ? " Maximum 1 milestone allowed"
+                  : ` Minimum 1, Maximum ${numberOfEvents} milestones allowed`}
+              </div>
+              <p className="text-green-700 text-xs mt-2 bg-green-100 p-2 rounded">
+                <strong>Payment Rules:</strong> Each event can only be linked to ONE milestone. Each
+                milestone can link to multiple events. Payment dates must be scheduled after the
+                linked event dates.
+              </p>
+            </div>
+          </Card>
+        )}
+
         <PaymentSchedule
           schedules={financial_terms.schedule || []}
           totalCost={financial_terms.total_cost || 0}
@@ -78,6 +140,8 @@ const BrandAmbassadorScope: React.FC<BrandAmbassadorScopeProps> = ({ formData, o
           startDate={start_date}
           endDate={end_date}
           depositPercent={formData.deposit_percent || 0}
+          numberOfEvents={numberOfEvents}
+          events={events}
         />
       </CardContent>
     </Card>

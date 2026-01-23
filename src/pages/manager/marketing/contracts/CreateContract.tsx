@@ -411,11 +411,31 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
         const isBreakdownBalanced =
           Math.abs((financial_terms.total_cost || 0) - breakdownTotal) < 0.01;
 
+        // Check event linking for BRAND_AMBASSADOR
+        let allEventsLinked = true;
+        if (formData.type === "BRAND_AMBASSADOR") {
+          const scope_of_work = formData.scope_of_work || {};
+          const deliverables = scope_of_work.deliverables || {};
+          const events = Array.isArray(deliverables.events) ? deliverables.events : [];
+
+          if (events.length > 0) {
+            // Get all linked event IDs from schedule
+            const linkedEventIds = new Set<number>();
+            schedule.forEach((milestone: any) => {
+              (milestone.linked_event_ids || []).forEach((id: number) => linkedEventIds.add(id));
+            });
+
+            // Check if all events are linked
+            allEventsLinked = events.every((event: any) => linkedEventIds.has(event.id));
+          }
+        }
+
         return (
           hasBasicInfo &&
           allItemsValid &&
           isScheduleBalanced &&
           isBreakdownBalanced &&
+          allEventsLinked &&
           hasDepositProof
         );
       }

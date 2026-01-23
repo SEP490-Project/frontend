@@ -146,13 +146,28 @@ export const PaymentSchedule: React.FC<{
     // Tính phần trăm còn lại
     const currentTotalPercent = schedules.reduce((sum, s) => sum + (s.percent || 0), 0);
     const percentLeft = Math.max(0, expectedPercent - currentTotalPercent);
+
+    // Auto-link logic: if this is the first milestone and there are events, link them
+    let autoLinkedEventIds: number[] = [];
+    if (schedules.length === 0 && events.length > 0) {
+      // First milestone - link all events
+      autoLinkedEventIds = events.map((e) => e.id);
+    } else if (schedules.length > 0) {
+      // Find unlinked events
+      const linkedEventIds = new Set<number>();
+      schedules.forEach((schedule) => {
+        (schedule.linked_event_ids || []).forEach((id) => linkedEventIds.add(id));
+      });
+      autoLinkedEventIds = events.filter((e) => !linkedEventIds.has(e.id)).map((e) => e.id);
+    }
+
     const newSchedule = {
       id: newId,
       milestone: "",
       percent: percentLeft,
       amount: totalCost ? Math.round((totalCost * percentLeft) / 100) : 0,
       due_date: "",
-      linked_event_ids: [] as number[], // Thêm field để liên kết với events
+      linked_event_ids: autoLinkedEventIds, // Auto-link events
     };
     onUpdate([...schedules, newSchedule]);
   };
@@ -203,6 +218,23 @@ export const PaymentSchedule: React.FC<{
   const minMilestones = getMinMilestones();
   const canAddMilestone = totalPercent < expectedPercent && schedules.length < maxMilestones;
 
+  // Check if all events are linked to milestones
+  const getAllLinkedEventIds = (): Set<number> => {
+    const linkedIds = new Set<number>();
+    schedules.forEach((schedule) => {
+      (schedule.linked_event_ids || []).forEach((id) => linkedIds.add(id));
+    });
+    return linkedIds;
+  };
+
+  const getUnlinkedEvents = (): EventType[] => {
+    const linkedIds = getAllLinkedEventIds();
+    return events.filter((event) => !linkedIds.has(event.id));
+  };
+
+  const unlinkedEvents = getUnlinkedEvents();
+  const allEventsLinked = numberOfEvents === 0 || unlinkedEvents.length === 0;
+
   // Helper function để tính minDate cho payment dựa trên linked events
   const getMinPaymentDate = (schedule: ScheduleType, index: number): string | undefined => {
     const linkedEventIds = schedule.linked_event_ids || [];
@@ -222,12 +254,15 @@ export const PaymentSchedule: React.FC<{
       });
 
       if (latestEventDate) {
-        // Payment date phải sau event date
+        // Payment date must be AT LEAST the day after the latest event
+        // If the event has time, we need to ensure milestone is on the next day or later
         const dayAfterEvent = new Date(latestEventDate);
         dayAfterEvent.setDate(dayAfterEvent.getDate() + 1);
+        // Reset time to start of day for date comparison
+        dayAfterEvent.setHours(0, 0, 0, 0);
         const dayAfterEventStr = dayAfterEvent.toISOString().split("T")[0];
 
-        // Chọn date muộn hơn giữa calculatedMinDate và dayAfterEvent
+        // Choose the later date between calculatedMinDate and dayAfterEvent
         if (!calculatedMinDate || dayAfterEventStr > calculatedMinDate) {
           calculatedMinDate = dayAfterEventStr;
         }
@@ -286,10 +321,25 @@ export const PaymentSchedule: React.FC<{
                 : `Minimum 1, Maximum ${maxMilestones} milestones allowed`}
             </div>
             <div className="text-xs mt-1 space-y-1">
-              <div>• Each event can only be linked to ONE milestone.</div>
-              <div>• Each milestone can be linked to one or multiple events.</div>
+              <div>• Each event must be linked to at least one milestone.</div>
+              <div>• Each milestone can be linked to multiple events.</div>
               <div>• Payment date must be after the latest linked event date.</div>
             </div>
+
+            {!allEventsLinked && (
+              <div className="mt-2 p-2 bg-red-100 border border-red-200 rounded text-red-700">
+                <strong>⚠️ Warning:</strong> {unlinkedEvents.length} event(s) not linked to any
+                milestone:
+                <ul className="list-disc ml-4 mt-1">
+                  {unlinkedEvents.map((event) => (
+                    <li key={event.id}>{event.name || `Event #${event.id}`}</li>
+                  ))}
+                </ul>
+                <div className="text-xs mt-1">
+                  All events must be linked to milestones before proceeding.
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -362,7 +412,7 @@ export const PaymentSchedule: React.FC<{
                               {event.name || `Event #${eventIdx + 1}`}
                             </div>
                             <div className="text-xs text-gray-500">
-                              📅 {eventDate} {eventTime} | 📍 {event.location || "TBD"} | ⏱️{" "}
+                              {eventDate} {eventTime} | {event.location || "TBD"} |{" "}
                               {event.expected_duration || "Duration TBD"}
                             </div>
                           </div>
@@ -372,12 +422,12 @@ export const PaymentSchedule: React.FC<{
                   </div>
                   {linkedEventIds.length > 0 && (
                     <p className="text-xs text-green-600 mt-1">
-                      💡 Payment date must be after the latest linked event date.
+                      Payment date must be after the latest linked event date.
                     </p>
                   )}
                   {linkedEventIds.length === 0 && (
                     <p className="text-xs text-amber-600 mt-1">
-                      ⚠️ No events linked. Payment date will follow standard contract timeline.
+                      No events linked. Payment date will follow standard contract timeline.
                     </p>
                   )}
                 </div>
@@ -460,10 +510,19 @@ export const PaymentSchedule: React.FC<{
           disabled={!canAddMilestone}
         >
           <Plus className="w-4 h-4 mr-2" />
-          Add Milestone
+          Add {schedules.length === 0 ? "First " : ""}Milestone
           {numberOfEvents > 0 && (
             <span className="ml-2 text-xs">
               ({schedules.length}/{maxMilestones})
+              {schedules.length === 0 && numberOfEvents > 0 && (
+                <span className="text-green-600"> - will auto-link all events</span>
+              )}
+              {schedules.length > 0 && unlinkedEvents.length > 0 && (
+                <span className="text-green-600">
+                  {" "}
+                  - will auto-link {unlinkedEvents.length} unlinked events
+                </span>
+              )}
             </span>
           )}
         </Button>
@@ -510,12 +569,19 @@ export const PaymentSchedule: React.FC<{
 
         {(!percentValid ||
           !amountValid ||
+          !allEventsLinked ||
           (numberOfEvents >= 2 && schedules.length < minMilestones)) && (
           <div className="mt-3 text-center text-xs text-red-600 space-y-1">
             {numberOfEvents >= 2 && schedules.length < minMilestones && (
               <div>
                 Minimum {minMilestones} milestone{minMilestones > 1 ? "s" : ""} required for{" "}
                 {numberOfEvents} events.
+              </div>
+            )}
+            {!allEventsLinked && (
+              <div>
+                {unlinkedEvents.length} event(s) must be linked to milestones:{" "}
+                {unlinkedEvents.map((e) => e.name || `Event #${e.id}`).join(", ")}
               </div>
             )}
             {!percentValid && (

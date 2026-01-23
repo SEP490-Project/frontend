@@ -480,7 +480,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                           <Video className="w-4 h-4 mr-1 text-purple-500" />
                         )}
                         <span className="text-gray-600 capitalize">
-                          {content.blog ? "blog" : "video"}
+                          {content.blog ? "Post" : "Video"}
                         </span>
                       </div>
                     </div>

@@ -53,7 +53,7 @@ const PaymentTransactionPage: React.FC = () => {
   const [params, setParams] = useState<TransactionParams>({
     page: 1,
     limit: 5,
-    reference_type: "CONTRACT_PAYMENT",
+    reference_types: "CONTRACT_PAYMENT,CONTRACT_VIOLATION,KOL_VIOLATION_REFUNDING",
     payer_id: user?.id,
   });
 
@@ -74,6 +74,7 @@ const PaymentTransactionPage: React.FC = () => {
       PENDING: "bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200",
       CANCELLED: "bg-red-100 text-red-800 border-red-200 hover:bg-red-200",
       EXPIRED: "bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200",
+      REFUNDED: "bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200",
     };
 
     return <Badge className={statusColors[status] || "bg-gray-100 text-gray-800"}>{status}</Badge>;
@@ -91,6 +92,26 @@ const PaymentTransactionPage: React.FC = () => {
       <Badge className={methodColors[method] || "bg-gray-100 text-gray-800"}>
         {method?.replace(/_/g, " ")}
       </Badge>
+    );
+  };
+
+  // Get amount with color
+  // Inverse the amount negativity for brand side
+  const getAmount = (transaction: TransactionData, amount: string | number) => {
+    if (typeof amount === "string") {
+      amount = parseFloat(amount);
+    }
+    if (
+      (user?.id === transaction?.received_by_id && amount < 0) ||
+      (user?.id === transaction?.payer_id && amount > 0)
+    ) {
+      amount = -amount;
+    }
+
+    return (
+      <span className={amount >= 0 ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
+        {formatCurrency(amount.toString())}
+      </span>
     );
   };
 
@@ -283,11 +304,12 @@ const PaymentTransactionPage: React.FC = () => {
                     </TableCell>
 
                     <TableCell className="py-4 font-mono text-sm">
+                      <p className="text-sm font-semibold">{transaction.reference_type}</p>
                       {transaction.reference_id}
                     </TableCell>
 
                     <TableCell className="py-4">
-                      <span className="font-semibold">{formatCurrency(transaction.amount)}</span>
+                      {getAmount(transaction, transaction.amount)}
                     </TableCell>
 
                     <TableCell className="py-4">{getMethodBadge(transaction.method)}</TableCell>

@@ -19,6 +19,8 @@ export interface TransactionData {
   gateway_ref: string;
   gateway_id: string;
   updated_at: string;
+  payer_id?: string;
+  received_by_id?: string;
 }
 
 export interface ReferenceInfo {
@@ -82,8 +84,16 @@ export interface Pagination {
   has_prev: boolean;
 }
 
+export type TransactionReferenceType =
+  | "ORDER"
+  | "CONTRACT_PAYMENT"
+  | "PREORDER"
+  | "CONTRACT_VIOLATION"
+  | "KOL_VIOLATION_REFUNDING";
+
 export interface TransactionParams {
-  reference_type?: "ORDER" | "CONTRACT_PAYMENT" | "PREORDER";
+  reference_type?: TransactionReferenceType | string;
+  reference_types?: string;
   reference_id?: string;
   payer_id?: string;
   status?: "PENDING" | "COMPLETED" | "CANCELLED" | "EXPRIRED";

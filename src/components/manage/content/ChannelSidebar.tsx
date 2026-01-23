@@ -103,7 +103,7 @@ const ChannelSidebar: React.FC<ChannelSidebarProps> = ({
           <div className="mt-3 pt-3 border-t">
             <p className="text-xs text-gray-500">
               {contentType === "blog"
-                ? "Select the channel where your blog post will be published."
+                ? "Select the channel where your post will be published."
                 : "Select the channel where your video will be published."}
             </p>
           </div>

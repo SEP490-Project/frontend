@@ -186,7 +186,7 @@ export const ContentCreationModal: React.FC<ContentCreationModalProps> = ({
               </p>
 
               <div className="grid grid-cols-2 gap-4">
-                {/* Blog Card */}
+                {/* Post Card */}
                 <Card
                   className={cn(
                     "cursor-pointer transition-all duration-300 ease-out",
@@ -214,7 +214,7 @@ export const ContentCreationModal: React.FC<ContentCreationModalProps> = ({
                         />
                       </div>
                       <div className="flex items-center gap-2">
-                        <CardTitle className="text-lg">Blog Post</CardTitle>
+                        <CardTitle className="text-lg">Post</CardTitle>
                         {selectedContentType === "blog" && (
                           <Check className="w-5 h-5 text-primary animate-in zoom-in-50 duration-200" />
                         )}

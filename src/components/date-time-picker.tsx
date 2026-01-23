@@ -17,12 +17,48 @@ interface DateTimePickerProps {
   disabled?: boolean;
   minDate?: string;
   maxDate?: string;
+  minDateTime?: string; // Full datetime string for time validation (e.g., "2026-01-24 12:09")
   className?: string;
 }
 
 const createLocalDate = (dateStr: string): Date => {
   const [y, m, d] = dateStr.split("-").map(Number);
   return new Date(y, m - 1, d);
+};
+
+// Parse minDateTime to get minimum time for a specific date
+const parseMinDateTime = (
+  minDateTime?: string,
+): { date: Date; hours: number; minutes: number } | null => {
+  if (!minDateTime) return null;
+  try {
+    const [datePart, timePart] = minDateTime.split(" ");
+    const [y, m, d] = datePart.split("-").map(Number);
+    const [h, min] = (timePart || "00:00").split(":").map(Number);
+    return { date: new Date(y, m - 1, d), hours: h, minutes: min };
+  } catch {
+    return null;
+  }
+};
+
+// Check if two dates are the same day
+const isSameDay = (date1: Date, date2: Date): boolean => {
+  return (
+    date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getDate() === date2.getDate()
+  );
+};
+
+// Get minimum time string for input if on the same day as minDateTime
+const getMinTime = (selectedDate: Date | undefined, minDateTime?: string): string | undefined => {
+  if (!selectedDate || !minDateTime) return undefined;
+  const parsed = parseMinDateTime(minDateTime);
+  if (!parsed) return undefined;
+  if (isSameDay(selectedDate, parsed.date)) {
+    return `${String(parsed.hours).padStart(2, "0")}:${String(parsed.minutes).padStart(2, "0")}`;
+  }
+  return undefined;
 };
 
 const parseDateTime = (dateTimeString?: string): { date?: Date; time?: string } => {
@@ -74,11 +110,15 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
   disabled = false,
   minDate,
   maxDate,
+  minDateTime,
   className = "",
 }) => {
   const [isDateOpen, setIsDateOpen] = useState(false);
 
   const { date: selectedDate, time: selectedTime } = parseDateTime(value);
+
+  // Calculate minimum time based on selected date and minDateTime
+  const minTime = getMinTime(selectedDate, minDateTime);
 
   const handleDateSelect = (date?: Date) => {
     if (!date) {
@@ -91,7 +131,19 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
     if (minDate && localDate < createLocalDate(minDate)) return;
     if (maxDate && localDate > createLocalDate(maxDate)) return;
 
-    const time = selectedTime || "09:00";
+    // Determine the appropriate time for the new date
+    let time = selectedTime || "09:00";
+
+    // If selecting the minimum date, ensure time is not before minimum time
+    const newMinTime = getMinTime(localDate, minDateTime);
+    if (newMinTime) {
+      const [minH, minM] = newMinTime.split(":").map(Number);
+      const [curH, curM] = time.split(":").map(Number);
+      if (curH < minH || (curH === minH && curM < minM)) {
+        time = newMinTime;
+      }
+    }
+
     const [hours, minutes] = time.split(":");
     const newDateTime = new Date(localDate);
     newDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
@@ -103,10 +155,19 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
   const handleTimeChange = (timeValue: string) => {
     if (!timeValue) return;
 
-    const [hours, minutes] = timeValue.split(":");
+    const [hours, minutes] = timeValue.split(":").map(Number);
     const date = selectedDate || new Date();
     const newDateTime = new Date(date);
-    newDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    newDateTime.setHours(hours, minutes, 0, 0);
+
+    // Validate against minimum datetime if on the same day
+    if (minTime && selectedDate) {
+      const [minH, minM] = minTime.split(":").map(Number);
+      if (hours < minH || (hours === minH && minutes < minM)) {
+        // Set to minimum time instead
+        newDateTime.setHours(minH, minM, 0, 0);
+      }
+    }
 
     onChange(formatToOutput(newDateTime));
   };

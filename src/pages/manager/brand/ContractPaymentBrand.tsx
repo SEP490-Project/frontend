@@ -39,7 +39,6 @@ import {
   PaymentModal,
   ReviewRefundProofModal,
 } from "@/components/manage/marketing/contract-payment";
-import EarlyPaymentWarningModal from "@/components/manage/marketing/contract-payment/EarlyPaymentWarningModal";
 import { toast } from "sonner";
 
 const PAGE_SIZE = 5;
@@ -118,15 +117,7 @@ const ContractPaymentBrandPage: React.FC = () => {
   const [loadingPaymentId, setLoadingPaymentId] = useState<string | null>(null);
   const [modalPaymentLoading, setModalPaymentLoading] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [isEarlyPaymentWarningOpen, setIsEarlyPaymentWarningOpen] = useState(false);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
-  const [pendingPaymentData, setPendingPaymentData] = useState<{
-    contractPaymentId: string;
-    amount: number;
-    contractNumber: string;
-    dueDate: string;
-    installmentPercentage?: number;
-  } | null>(null);
 
   // Review refund proof modal states
   const [isReviewRefundModalOpen, setIsReviewRefundModalOpen] = useState(false);
@@ -137,23 +128,8 @@ const ContractPaymentBrandPage: React.FC = () => {
     contract_payment_id: string,
     amount?: number,
     contractNumber?: string,
-    dueDate?: string,
-    installmentPercentage?: number,
   ) => {
-    // Check if this is an early payment (more than 10 days before due date)
-    if (dueDate && isEarlyPayment(dueDate)) {
-      setPendingPaymentData({
-        contractPaymentId: contract_payment_id,
-        amount: amount || 0,
-        contractNumber: contractNumber || "",
-        dueDate,
-        installmentPercentage,
-      });
-      setIsEarlyPaymentWarningOpen(true);
-      return;
-    }
-
-    // Proceed with normal payment flow
+    // Proceed with payment flow
     await proceedWithPayment(contract_payment_id, amount, contractNumber);
   };
 
@@ -201,23 +177,7 @@ const ContractPaymentBrandPage: React.FC = () => {
   };
 
   const handlePayNowFromModal = async (contract_payment_id: string) => {
-    const found = contractPayments.find((p: any) => p.id === contract_payment_id);
-
-    // Check if this is an early payment (more than 10 days before due date)
-    if (found && found.due_date && isEarlyPayment(found.due_date)) {
-      setPendingPaymentData({
-        contractPaymentId: contract_payment_id,
-        amount: found.amount || 0,
-        contractNumber: found.contract_number || "",
-        dueDate: found.due_date,
-        installmentPercentage: found.installment_percentage,
-      });
-      setIsModalOpen(false);
-      setIsEarlyPaymentWarningOpen(true);
-      return;
-    }
-
-    // Proceed with normal payment flow
+    // Proceed with payment flow
     await proceedWithPaymentFromModal(contract_payment_id);
   };
 
@@ -257,33 +217,6 @@ const ContractPaymentBrandPage: React.FC = () => {
       toast.error("An error occurred while creating payment link.");
     } finally {
       setModalPaymentLoading(false);
-    }
-  };
-
-  const handleEarlyPaymentConfirm = async () => {
-    if (!pendingPaymentData) return;
-
-    setIsEarlyPaymentWarningOpen(false);
-
-    if (isModalOpen) {
-      await proceedWithPaymentFromModal(pendingPaymentData.contractPaymentId);
-    } else {
-      await proceedWithPayment(
-        pendingPaymentData.contractPaymentId,
-        pendingPaymentData.amount,
-        pendingPaymentData.contractNumber,
-      );
-    }
-
-    setPendingPaymentData(null);
-  };
-
-  const handleEarlyPaymentCancel = () => {
-    setIsEarlyPaymentWarningOpen(false);
-    setPendingPaymentData(null);
-    // Re-open the detail modal if it was open before
-    if (selectedPaymentId) {
-      setIsModalOpen(true);
     }
   };
 
@@ -467,9 +400,12 @@ const ContractPaymentBrandPage: React.FC = () => {
       return <span className="text-sm italic text-gray-600">To be calculated by performance</span>;
     }
 
+    const amount = payment.amount;
+    const colorClass = amount >= 0 ? "text-red-600" : "text-green-600";
+
     return (
       <div className="flex flex-col">
-        <span className="font-medium">{formatCurrency(Math.abs(payment.amount))}</span>
+        <span className={`font-semibold ${colorClass}`}>{formatCurrency(amount)}</span>
       </div>
     );
   };
@@ -483,20 +419,6 @@ const ContractPaymentBrandPage: React.FC = () => {
     if (isNaN(due.getTime())) return false;
 
     return due.getTime() < now.getTime();
-  };
-
-  const isEarlyPayment = (dueDate: string) => {
-    if (!dueDate) return false;
-
-    const now = new Date();
-    const due = new Date(dueDate);
-
-    if (isNaN(due.getTime())) return false;
-
-    const diffMs = due.getTime() - now.getTime();
-    const tenDaysMs = 10 * 24 * 60 * 60 * 1000;
-
-    return diffMs > tenDaysMs;
   };
 
   const handleViewPayment = (paymentId: string) => {
@@ -734,7 +656,9 @@ const ContractPaymentBrandPage: React.FC = () => {
                         <div>
                           <div className="font-medium text-gray-900 flex items-center gap-2">
                             {payment.contract_number}
-                            {payment.pay_now && <PayNowMark />}
+                            {payment.pay_now === true && payment.status === "PENDING" && (
+                              <PayNowMark />
+                            )}
                             {payment.is_deposit && (
                               <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-xs px-1.5 py-0.5">
                                 Deposit
@@ -830,8 +754,6 @@ const ContractPaymentBrandPage: React.FC = () => {
                                       payment.id,
                                       payment.amount,
                                       payment.contract_number,
-                                      payment.due_date,
-                                      payment.installment_percentage,
                                     )
                                   }
                                 >
@@ -882,7 +804,9 @@ const ContractPaymentBrandPage: React.FC = () => {
                       <div className="flex-1">
                         <div className="font-semibold text-gray-900 flex items-center gap-2 flex-wrap">
                           {payment.contract_number}
-                          {payment.pay_now && <PayNowMark />}
+                          {payment.pay_now === true && payment.status === "PENDING" && (
+                            <PayNowMark />
+                          )}
                           {payment.is_deposit && (
                             <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-xs px-1.5 py-0.5">
                               Deposit
@@ -979,13 +903,7 @@ const ContractPaymentBrandPage: React.FC = () => {
                                   : "bg-primary"
                               }`}
                               onClick={() =>
-                                handlePayNow(
-                                  payment.id,
-                                  payment.amount,
-                                  payment.contract_number,
-                                  payment.due_date,
-                                  payment.installment_percentage,
-                                )
+                                handlePayNow(payment.id, payment.amount, payment.contract_number)
                               }
                             >
                               {loadingPaymentId === payment.id ? (
@@ -1065,13 +983,6 @@ const ContractPaymentBrandPage: React.FC = () => {
         isOpen={isPaymentModalOpen}
         onClose={() => setIsPaymentModalOpen(false)}
         paymentData={paymentLink}
-      />
-      <EarlyPaymentWarningModal
-        isOpen={isEarlyPaymentWarningOpen}
-        onClose={handleEarlyPaymentCancel}
-        onConfirm={handleEarlyPaymentConfirm}
-        paymentData={pendingPaymentData}
-        isLoading={loadingPaymentId !== null || modalPaymentLoading}
       />
       <ReviewRefundProofModal
         isOpen={isReviewRefundModalOpen}

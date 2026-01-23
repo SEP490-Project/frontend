@@ -82,6 +82,27 @@ function PaymentDetailModal({
       currency: "VND",
     }).format(amount);
 
+  // Check if payment can be made based on user role
+  const canShowPayNowButton = () => {
+    if (!contractPaymentDetail) return false;
+
+    if (role === "MARKETING_STAFF") {
+      // Marketing staff logic: status is PENDING AND pay_now is true AND amount is negative (refund)
+      return (
+        contractPaymentDetail.status === "PENDING" &&
+        contractPaymentDetail.pay_now === true &&
+        contractPaymentDetail.amount < 0
+      );
+    }
+
+    if (role === "BRAND_PARTNER") {
+      // Brand partner logic: pay_now is true AND status is PENDING
+      return contractPaymentDetail.pay_now === true && contractPaymentDetail.status === "PENDING";
+    }
+
+    return false;
+  };
+
   const isAffiliateBreakdown = (breakdown: any): breakdown is AffiliateBreakdown => {
     return breakdown && "total_clicks" in breakdown && "breakdown" in breakdown;
   };
@@ -599,24 +620,18 @@ function PaymentDetailModal({
         )}
 
         <div className="flex justify-end gap-3 pt-4 border-t">
-          {showPayNowButton &&
-            contractPaymentDetail?.pay_now === true &&
-            contractPaymentDetail?.status === "PENDING" &&
-            onPayNow && (
-              <Button
-                onClick={() => onPayNow(contractPaymentDetail.id)}
-                disabled={isPaymentLoading}
-              >
-                {isPaymentLoading ? (
-                  <>
-                    <Loader2 className="animate-spin h-4 w-4 mr-2" />
-                    Processing...
-                  </>
-                ) : (
-                  "Pay now"
-                )}
-              </Button>
-            )}
+          {showPayNowButton && canShowPayNowButton() && onPayNow && contractPaymentDetail && (
+            <Button onClick={() => onPayNow(contractPaymentDetail.id)} disabled={isPaymentLoading}>
+              {isPaymentLoading ? (
+                <>
+                  <Loader2 className="animate-spin h-4 w-4 mr-2" />
+                  Processing...
+                </>
+              ) : (
+                "Pay now"
+              )}
+            </Button>
+          )}
 
           <Button variant="outline" onClick={onClose}>
             Close

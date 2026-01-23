@@ -551,11 +551,21 @@ const CoProducingScope: React.FC<ScopeOfWorkProps> = ({ formData, onUpdateScopeO
                             <div>
                               <ContractUploader
                                 userId={user?.id || "unknown"}
-                                accept="image/*,video/*,.zip"
+                                accept="image/*,video/*,.zip, .rar"
                                 multiple={true}
                                 maxFiles={20}
                                 maxSize={200}
-                                allowedTypes={["jpg", "jpeg", "png", "webp", "mp4", "mov", "avi"]}
+                                allowedTypes={[
+                                  "jpg",
+                                  "jpeg",
+                                  "png",
+                                  "webp",
+                                  "mp4",
+                                  "mov",
+                                  "avi",
+                                  "zip",
+                                  "rar",
+                                ]}
                                 title="Upload concept materials"
                                 context={`coproducing-concept-${i + 1}-${j + 1}`}
                                 initialUrls={c.material_url || []}

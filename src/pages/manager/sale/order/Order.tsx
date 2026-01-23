@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { useAppDispatch, type RootState } from "@/libs/stores";
 import { getOrderForSaleStaffThunk } from "@/libs/stores/orderManager/thunk";
+import { brand } from "@/libs/stores/brandManager/thunk";
 import { useSelector } from "react-redux";
 import type { OrderData, OrderRequestQuery } from "@/libs/types/order";
 import { PaginationTable } from "@/components/global";
@@ -41,12 +42,13 @@ import {
   getWardsThunk,
 } from "@/libs/stores/locationManager/thunk";
 import type { Province, District, Ward } from "@/libs/types/location";
+import { useBrand } from "@/libs/hooks/useBrand";
 
 const Order: React.FC = () => {
   const dispatch = useAppDispatch();
+  const { brands } = useBrand();
+
   const orderResponse = useSelector((state: RootState) => state?.manageOrder?.ordersForSaleStaff);
-  const pagination = orderResponse?.pagination;
-  const orders: OrderData[] = orderResponse?.data || [];
   const isLoading = useSelector((state: RootState) => state?.manageOrder?.loading);
   const error = useSelector((state: RootState) => state?.manageOrder?.errors);
   const provinces: Province[] = useSelector(
@@ -56,6 +58,9 @@ const Order: React.FC = () => {
     (state: RootState) => state?.manageLocation?.districts || [],
   );
   const wards: Ward[] = useSelector((state: RootState) => state?.manageLocation?.wards || []);
+
+  const pagination = orderResponse?.pagination;
+  const orders: OrderData[] = orderResponse?.data || [];
 
   const [params, setParams] = useState<OrderRequestQuery>({
     page: 1,
@@ -70,14 +75,16 @@ const Order: React.FC = () => {
     phone: "",
     order_type: "",
     full_name: "",
+    brand_id: undefined,
   });
   const [selectedOrder, setSelectedOrder] = useState<OrderData | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [isChangeStatusModalOpen, setIsChangeStatusModalOpen] = useState(false);
 
-  // Load provinces on mount
+  // Load provinces and brands on mount
   useEffect(() => {
     dispatch(getProvincesThunk());
+    dispatch(brand({ limit: 100, page: 1 }));
   }, [dispatch]);
 
   // Load districts when province changes
@@ -140,6 +147,10 @@ const Order: React.FC = () => {
 
     if (params.full_name && params.full_name.trim() !== "") {
       queryParams.full_name = params.full_name.trim();
+    }
+
+    if (params.brand_id && params.brand_id !== "") {
+      queryParams.brand_id = params.brand_id;
     }
 
     dispatch(getOrderForSaleStaffThunk(queryParams));
@@ -381,6 +392,23 @@ const Order: React.FC = () => {
               </SelectContent>
             </Select>
           </div>
+          <div>
+            <Select
+              value={params.brand_id || ""}
+              onValueChange={(value) => setParams({ ...params, brand_id: value, page: 1 })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select Brand" />
+              </SelectTrigger>
+              <SelectContent>
+                {brands.map((brand) => (
+                  <SelectItem key={brand.id} value={brand.id}>
+                    {brand.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
@@ -404,7 +432,7 @@ const Order: React.FC = () => {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
+                  <TableCell colSpan={10} className="text-center py-8">
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
                       <span className="ml-2">Loading orders...</span>
@@ -413,13 +441,13 @@ const Order: React.FC = () => {
                 </TableRow>
               ) : error ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-red-600">
+                  <TableCell colSpan={10} className="text-center py-8 text-red-600">
                     Error: {error?.message || "Failed to load orders"}
                   </TableCell>
                 </TableRow>
               ) : !orders || orders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                  <TableCell colSpan={10} className="text-center py-8 text-gray-500">
                     No orders found
                   </TableCell>
                 </TableRow>
@@ -447,7 +475,9 @@ const Order: React.FC = () => {
 
                     <TableCell className="py-4">
                       <div className="font-semibold text-gray-900">
-                        {order.order_type === "LIMITED" ? order.order_items[0].brand.name : "-"}
+                        {order.order_type === "LIMITED"
+                          ? order.order_items[0].brand.name
+                          : order.order_items[0].brand_place_holder || "-"}
                       </div>
                     </TableCell>
 
@@ -494,7 +524,9 @@ const Order: React.FC = () => {
 
                     <TableCell className="py-4">
                       <Badge className={getStatusBadgeClass(order.status)}>
-                        {order.status.toUpperCase()}
+                        {order.status.toUpperCase() === "SHIPPED"
+                          ? "PICKED_UP"
+                          : order.status.toUpperCase()}
                       </Badge>
                     </TableCell>
 

@@ -15,7 +15,7 @@ const ShipOrder = ({ order }: ShipOrderProps) => {
   const shippingSteps = [
     {
       status: "SHIPPED" as const,
-      label: "Shipped",
+      label: "Picked Up",
       icon: Package,
       description: "Package has been picked up by GHN",
     },

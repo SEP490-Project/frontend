@@ -127,6 +127,16 @@ function PaymentDetailModal({
             <FaMoneyBillWave className="text-primary" />
             Payment Details
           </DialogTitle>
+          {/* Contract Payment Status Badge */}
+          {contractPaymentDetail && (
+            <div className="mt-2 flex items-center gap-2">
+              <span
+                className={`inline-block px-3 py-1 rounded-full text-xs font-semibold border ${STATUS_COLORS[contractPaymentDetail.status] || "bg-gray-100 text-gray-800 border-gray-200"}`}
+              >
+                {STATUS_LABELS[contractPaymentDetail.status] || contractPaymentDetail.status}
+              </span>
+            </div>
+          )}
         </DialogHeader>
 
         {detailLoading ? (
@@ -147,11 +157,8 @@ function PaymentDetailModal({
               variants={itemVariants}
               className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg"
             >
-              <div className="flex justify-between items-center mb-4">
+              <div className="mb-4">
                 <h3 className="font-semibold text-lg">Payment Information</h3>
-                <Badge className={`border ${STATUS_COLORS[contractPaymentDetail.status]}`}>
-                  {STATUS_LABELS[contractPaymentDetail.status]}
-                </Badge>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -25,10 +25,29 @@ export function Calendar({ currentDate, setCurrentDate }: CalendarProps) {
   const lastDayOfPrevMonth = new Date(year, month, 0);
   const daysInPrevMonth = lastDayOfPrevMonth.getDate();
 
-  // Function to check if a date has tasks (by created_at)
+  // Function to check if a date has tasks (by deadline)
   const hasTasksOnDate = (date: Date): boolean => {
     return tasks.some((task) => {
-      const taskDate = new Date(task.created_at);
+      if (!task.deadline) {
+        return false;
+      }
+
+      // Handle deadline format: "2025-12-27 00:00:00 +0000 UTC"
+      let taskDate;
+      if (task.deadline.includes("+0000 UTC")) {
+        // Parse the specific format "YYYY-MM-DD HH:mm:ss +0000 UTC"
+        const dateStr = task.deadline.replace(" +0000 UTC", "Z");
+        taskDate = new Date(dateStr);
+      } else {
+        // Fallback for other formats
+        const isoString = task.deadline.replace(" ", "T");
+        taskDate = new Date(isoString);
+      }
+
+      if (isNaN(taskDate.getTime())) {
+        return false;
+      }
+
       return (
         taskDate.getFullYear() === date.getFullYear() &&
         taskDate.getMonth() === date.getMonth() &&

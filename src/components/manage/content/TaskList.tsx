@@ -66,7 +66,7 @@ export function TaskList({ currentDate, onViewTask, statusFilter = "ALL" }: Task
     return days;
   };
 
-  // Get tasks for a specific date (by created_at)
+  // Get tasks for a specific date (by deadline)
   const getTasksForDate = (date: Date): Task[] => {
     // Format target date to YYYY-MM-DD
     const year = date.getFullYear();
@@ -75,15 +75,26 @@ export function TaskList({ currentDate, onViewTask, statusFilter = "ALL" }: Task
     const targetDateStr = `${year}-${month}-${day}`;
 
     return filteredTasks.filter((task) => {
-      if (!task.created_at) return false;
+      if (!task.deadline) {
+        return false;
+      }
 
-      // Convert API date string to YYYY-MM-DD
-      // We handle potential "space vs T" issues for Firefox/Zen
-      const isoString = task.created_at.replace(" ", "T");
-      const d = new Date(isoString);
+      // Handle deadline format: "2025-12-27 00:00:00 +0000 UTC"
+      let d;
+      if (task.deadline.includes("+0000 UTC")) {
+        // Parse the specific format "YYYY-MM-DD HH:mm:ss +0000 UTC"
+        const dateStr = task.deadline.replace(" +0000 UTC", "Z");
+        d = new Date(dateStr);
+      } else {
+        // Fallback for other formats
+        const isoString = task.deadline.replace(" ", "T");
+        d = new Date(isoString);
+      }
 
       // If the date is invalid, don't crash
-      if (isNaN(d.getTime())) return false;
+      if (isNaN(d.getTime())) {
+        return false;
+      }
 
       const tYear = d.getFullYear();
       const tMonth = String(d.getMonth() + 1).padStart(2, "0");

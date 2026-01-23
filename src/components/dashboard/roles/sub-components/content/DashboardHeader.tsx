@@ -85,7 +85,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 size="icon"
                 onClick={onSync}
                 disabled={isSyncing || isRefreshing}
-                className="relative h-9 w-9 sm:h-10 sm:w-10 border-gray-200 dark:border-gray-700 hover:bg-pink-50 dark:hover:bg-pink-900/20 hover:border-pink-300 transition-all duration-200"
+                className="relative h-9 w-9 sm:h-10 sm:w-10 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 shadow-sm"
               >
                 <FaCloudDownloadAlt
                   size={16}
@@ -109,7 +109,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               size="icon"
               onClick={onRefresh}
               disabled={isRefreshing}
-              className="relative h-9 w-9 sm:h-10 sm:w-10 border-gray-200 dark:border-gray-700 hover:bg-pink-50 dark:hover:bg-pink-900/20 hover:border-pink-300 transition-all duration-200"
+              className="relative h-9 w-9 sm:h-10 sm:w-10 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 shadow-sm"
             >
               <FaSync
                 size={14}
@@ -137,7 +137,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         {unreadAlertsCount > 0 && (
           <Button
             variant="outline"
-            className="relative h-9 w-9 sm:h-10 sm:w-10 p-0 border-gray-200 dark:border-gray-700 hover:bg-pink-50 dark:hover:bg-pink-900/20"
+            className="relative h-9 w-9 sm:h-10 sm:w-10 p-0 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 shadow-sm"
           >
             <FaBell size={14} className="text-gray-600 dark:text-gray-400" />
             <span className="absolute -top-1.5 -right-1.5 bg-pink-500 text-white text-[10px] font-semibold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shadow-sm">

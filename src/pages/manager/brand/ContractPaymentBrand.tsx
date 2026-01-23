@@ -47,7 +47,6 @@ const CONTRACT_PAYMENT_STATUS_LABELS: Record<string, string> = {
   NOT_STARTED: "Not Started",
   PENDING: "Pending",
   PAID: "Paid",
-  OVERDUE: "Overdue",
   // CO_PRODUCING refund workflow statuses
   KOL_PENDING: "Awaiting Refund Proof",
   KOL_PROOF_SUBMITTED: "Proof Submitted",
@@ -65,7 +64,6 @@ const STATUS_COLORS: Record<string, string> = {
   NOT_STARTED: "bg-gray-100 text-gray-800 border-gray-200",
   PAID: "bg-green-100 text-green-800 border-green-200",
   PENDING: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  OVERDUE: "bg-orange-100 text-orange-800 border-orange-200",
   // CO_PRODUCING refund workflow statuses
   KOL_PENDING: "bg-amber-100 text-amber-800 border-amber-200",
   KOL_PROOF_SUBMITTED: "bg-blue-100 text-blue-800 border-blue-200",
@@ -401,24 +399,18 @@ const ContractPaymentBrandPage: React.FC = () => {
     }
 
     const amount = payment.amount;
-    const colorClass = amount >= 0 ? "text-red-600" : "text-green-600";
+    // If amount is positive, display it as negative (red).
+    // If amount is negative, display it as positive (green).
+    // Zero remains neutral.
+    const colorClass =
+      amount > 0 ? "text-red-600" : amount < 0 ? "text-green-600" : "text-gray-600";
+    const displayAmount = amount > 0 ? -Math.abs(amount) : Math.abs(amount);
 
     return (
       <div className="flex flex-col">
-        <span className={`font-semibold ${colorClass}`}>{formatCurrency(amount)}</span>
+        <span className={`font-semibold ${colorClass}`}>{formatCurrency(displayAmount)}</span>
       </div>
     );
-  };
-
-  const isOverdue = (dueDate: string) => {
-    if (!dueDate) return false;
-
-    const now = new Date();
-    const due = new Date(dueDate);
-
-    if (isNaN(due.getTime())) return false;
-
-    return due.getTime() < now.getTime();
   };
 
   const handleViewPayment = (paymentId: string) => {
@@ -535,7 +527,10 @@ const ContractPaymentBrandPage: React.FC = () => {
                 <SelectItem value="NOT_STARTED">Not Started</SelectItem>
                 <SelectItem value="PENDING">Pending</SelectItem>
                 <SelectItem value="PAID">Paid</SelectItem>
-                <SelectItem value="OVERDUE">Overdue</SelectItem>
+                <SelectItem value="KOL_PENDING">Awaiting Refund Proof</SelectItem>
+                <SelectItem value="KOL_PROOF_SUBMITTED">Proof Submitted</SelectItem>
+                <SelectItem value="KOL_PROOF_REJECTED">Proof Rejected</SelectItem>
+                <SelectItem value="KOL_REFUND_APPROVED">Refund Approved</SelectItem>
               </SelectContent>
             </Select>
           </motion.div>
@@ -744,11 +739,7 @@ const ContractPaymentBrandPage: React.FC = () => {
                                 <Button
                                   variant="default"
                                   size="sm"
-                                  className={`h-8 px-3 text-xs font-semibold text-white ${
-                                    isOverdue(payment.due_date)
-                                      ? "bg-red-600 hover:bg-red-700"
-                                      : "bg-primary"
-                                  }`}
+                                  className="h-8 px-3 text-xs font-semibold text-white bg-primary"
                                   onClick={() =>
                                     handlePayNow(
                                       payment.id,
@@ -759,19 +750,13 @@ const ContractPaymentBrandPage: React.FC = () => {
                                 >
                                   {loadingPaymentId === payment.id ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : isOverdue(payment.due_date) ? (
-                                    "Pay Overdue"
                                   ) : (
                                     "Pay Now"
                                   )}
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>
-                                  {isOverdue(payment.due_date)
-                                    ? "This payment is overdue"
-                                    : "Pay this contract payment"}
-                                </p>
+                                <p>Pay this contract payment</p>
                               </TooltipContent>
                             </Tooltip>
                           )}
@@ -897,30 +882,20 @@ const ContractPaymentBrandPage: React.FC = () => {
                             <Button
                               variant="default"
                               size="sm"
-                              className={`h-8 px-3 text-xs font-semibold text-white ${
-                                isOverdue(payment.due_date)
-                                  ? "bg-red-600 hover:bg-red-700"
-                                  : "bg-primary"
-                              }`}
+                              className="h-8 px-3 text-xs font-semibold text-white bg-primary"
                               onClick={() =>
                                 handlePayNow(payment.id, payment.amount, payment.contract_number)
                               }
                             >
                               {loadingPaymentId === payment.id ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : isOverdue(payment.due_date) ? (
-                                "Pay Overdue"
                               ) : (
                                 "Pay Now"
                               )}
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>
-                              {isOverdue(payment.due_date)
-                                ? "This payment is overdue"
-                                : "Pay this contract payment"}
-                            </p>
+                            <p>Pay this contract payment</p>
                           </TooltipContent>
                         </Tooltip>
                       )}

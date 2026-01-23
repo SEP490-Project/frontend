@@ -644,7 +644,7 @@ const ContractPaymentPage: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {contractPayments.map((payment: ContractPayment, index) => (
+                  {contractPayments.map((payment: ContractPayment, index: any) => (
                     <motion.tr
                       key={payment.id}
                       layout="position"

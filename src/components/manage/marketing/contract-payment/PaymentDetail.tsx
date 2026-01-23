@@ -185,29 +185,150 @@ function PaymentDetailModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Total Amount</p>
-                  <p className="text-2xl font-bold text-primary">
-                    {formatCurrency(Math.abs(contractPaymentDetail.amount))}
-                  </p>
+                  {(() => {
+                    const amt = contractPaymentDetail.amount;
+                    let displayAmount = amt;
+                    let amtColor = "text-gray-600";
+
+                    if (role === "BRAND_PARTNER") {
+                      // For brand partners: invert sign and colors
+                      displayAmount = amt < 0 ? Math.abs(amt) : -Math.abs(amt);
+                      amtColor =
+                        amt < 0 ? "text-green-600" : amt > 0 ? "text-red-600" : "text-gray-600";
+                    } else {
+                      // For other roles: normal display
+                      amtColor =
+                        amt > 0 ? "text-green-600" : amt < 0 ? "text-red-600" : "text-gray-600";
+                    }
+
+                    return (
+                      <p className={`text-2xl font-bold ${amtColor}`}>
+                        {formatCurrency(displayAmount)}
+                      </p>
+                    );
+                  })()}
+
                   {(contractPaymentDetail.base_amount !== undefined ||
-                    contractPaymentDetail.performance_amount !== undefined) && (
+                    contractPaymentDetail.performance_amount !== undefined ||
+                    contractPaymentDetail.breakdown) && (
                     <motion.div
                       initial={{ opacity: 0, y: -4 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.2 }}
-                      className="mt-2 space-y-1"
+                      className="mt-2 space-y-1 text-sm text-gray-600"
                     >
                       {contractPaymentDetail.base_amount !== undefined && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <div className="flex items-center gap-2">
                           <FaLayerGroup className="text-xs" />
                           <span>Base: {formatCurrency(contractPaymentDetail.base_amount)}</span>
                         </div>
                       )}
                       {contractPaymentDetail.performance_amount !== undefined && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <div className="flex items-center gap-2">
                           <FaChartLine className="text-xs" />
                           <span>
                             Performance: {formatCurrency(contractPaymentDetail.performance_amount)}
                           </span>
+                        </div>
+                      )}
+
+                      {/* Show calculation if both base and performance amounts exist and performance > 0 */}
+                      {contractPaymentDetail.base_amount !== undefined &&
+                        contractPaymentDetail.performance_amount !== undefined &&
+                        contractPaymentDetail.performance_amount > 0 && (
+                          <div className="mt-1 text-xs text-gray-500 italic">
+                            Calculation: Base ({formatCurrency(contractPaymentDetail.base_amount)})
+                            - Performance (
+                            {formatCurrency(contractPaymentDetail.performance_amount)}) = Total
+                            Amount
+                          </div>
+                        )}
+
+                      {contractPaymentDetail.breakdown && (
+                        <div className="mt-2 bg-gray-50 rounded-md p-3 text-sm">
+                          <div className="font-medium mb-2">Calculated Breakdown</div>
+
+                          {/* Affiliate breakdown fields */}
+                          {isAffiliateBreakdown(contractPaymentDetail.breakdown) && (
+                            <>
+                              {typeof contractPaymentDetail.breakdown.base_amount !==
+                                "undefined" && (
+                                <div className="flex justify-between">
+                                  <span>Base amount</span>
+                                  <span>
+                                    {formatCurrency(contractPaymentDetail.breakdown.base_amount)}
+                                  </span>
+                                </div>
+                              )}
+                              <div className="flex justify-between">
+                                <span>Total clicks</span>
+                                <span>
+                                  {contractPaymentDetail.breakdown.total_clicks.toLocaleString()}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Gross payment</span>
+                                <span>
+                                  {formatCurrency(contractPaymentDetail.breakdown.gross_payment)}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Net payment</span>
+                                <span>
+                                  {formatCurrency(contractPaymentDetail.breakdown.net_payment)}
+                                </span>
+                              </div>
+                            </>
+                          )}
+
+                          {/* CoProducing breakdown fields */}
+                          {isCoProducingBreakdown(contractPaymentDetail.breakdown) && (
+                            <>
+                              {typeof contractPaymentDetail.breakdown.brand_share !==
+                                "undefined" && (
+                                <div
+                                  className={`flex justify-between ${
+                                    role === "MARKETING_STAFF" ? "text-red-600 font-semibold" : ""
+                                  }`}
+                                >
+                                  <span>KOL share</span>
+                                  <span>
+                                    {formatCurrency(contractPaymentDetail.breakdown.brand_share)}
+                                  </span>
+                                </div>
+                              )}
+                              {typeof contractPaymentDetail.breakdown.company_share !==
+                                "undefined" && (
+                                <div
+                                  className={`flex justify-between ${
+                                    role === "BRAND_PARTNER" ? "text-red-600 font-semibold" : ""
+                                  }`}
+                                >
+                                  <span>Company share</span>
+                                  <span>
+                                    {formatCurrency(contractPaymentDetail.breakdown.company_share)}
+                                  </span>
+                                </div>
+                              )}
+                              <div className="flex justify-between">
+                                <span>Total revenue</span>
+                                <span>
+                                  {formatCurrency(contractPaymentDetail.breakdown.total_revenue)}
+                                </span>
+                              </div>
+                              {typeof contractPaymentDetail.breakdown.is_refund_required !==
+                                "undefined" && (
+                                <div className="flex justify-between">
+                                  <span>Refund required</span>
+                                  <span>
+                                    {contractPaymentDetail.breakdown.is_refund_required
+                                      ? "Yes"
+                                      : "No"}
+                                  </span>
+                                </div>
+                              )}
+                            </>
+                          )}
                         </div>
                       )}
                     </motion.div>
@@ -330,7 +451,7 @@ function PaymentDetailModal({
                     </div>
 
                     {/* Summary */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                       <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -352,18 +473,6 @@ function PaymentDetailModal({
                         <p className="text-xs text-gray-600 mb-1">Gross Payment</p>
                         <p className="text-lg font-semibold text-green-600">
                           {formatCurrency(contractPaymentDetail.breakdown.gross_payment)}
-                        </p>
-                      </motion.div>
-
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="bg-white rounded-lg p-4 shadow-sm"
-                      >
-                        <p className="text-xs text-gray-600 mb-1">Tax Amount</p>
-                        <p className="text-lg font-semibold text-orange-600">
-                          {formatCurrency(contractPaymentDetail.breakdown.tax_amount)}
                         </p>
                       </motion.div>
 
@@ -558,7 +667,7 @@ function PaymentDetailModal({
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
                             <Badge className="bg-violet-100 text-violet-800 border-violet-200">
-                              Brand/KOL Share
+                              KOL Share
                             </Badge>
                             <span className="text-sm font-semibold text-gray-700">
                               {contractPaymentDetail.breakdown.brand_percent}%

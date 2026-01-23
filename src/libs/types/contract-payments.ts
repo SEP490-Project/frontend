@@ -50,6 +50,7 @@ export interface AffiliateBreakdown {
   gross_payment: number;
   tax_amount: number;
   net_payment: number;
+  base_amount?: number;
   breakdown: LevelPaymentBreakdown[];
 }
 
@@ -66,6 +67,9 @@ export interface CoProducingBreakdown {
   period_end: string;
   calculated_at: string;
   total_revenue: number;
+  net_amount: number;
+  refund_amount: number;
+  is_refund_required: boolean;
   company_percent: number;
   brand_percent: number;
   company_share: number;

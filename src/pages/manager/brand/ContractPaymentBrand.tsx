@@ -813,7 +813,8 @@ const ContractPaymentBrandPage: React.FC = () => {
                               </TooltipContent>
                             </Tooltip>
                           )}
-                          {payment.status === "PENDING" && payment.pay_now && (
+                          {/* Only show Pay Now button if pay_now is true and status is PENDING */}
+                          {payment.pay_now === true && payment.status === "PENDING" && (
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
@@ -965,7 +966,8 @@ const ContractPaymentBrandPage: React.FC = () => {
                           </TooltipContent>
                         </Tooltip>
                       )}
-                      {payment.status === "PENDING" && payment.pay_now && (
+                      {/* Only show Pay Now button if pay_now is true and status is PENDING */}
+                      {payment.pay_now === true && payment.status === "PENDING" && (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button

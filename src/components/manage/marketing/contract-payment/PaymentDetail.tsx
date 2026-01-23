@@ -592,18 +592,24 @@ function PaymentDetailModal({
         )}
 
         <div className="flex justify-end gap-3 pt-4 border-t">
-          {showPayNowButton && contractPaymentDetail?.status === "PENDING" && onPayNow && (
-            <Button onClick={() => onPayNow(contractPaymentDetail.id)} disabled={isPaymentLoading}>
-              {isPaymentLoading ? (
-                <>
-                  <Loader2 className="animate-spin h-4 w-4 mr-2" />
-                  Processing...
-                </>
-              ) : (
-                "Pay now"
-              )}
-            </Button>
-          )}
+          {showPayNowButton &&
+            contractPaymentDetail?.pay_now === true &&
+            contractPaymentDetail?.status === "PENDING" &&
+            onPayNow && (
+              <Button
+                onClick={() => onPayNow(contractPaymentDetail.id)}
+                disabled={isPaymentLoading}
+              >
+                {isPaymentLoading ? (
+                  <>
+                    <Loader2 className="animate-spin h-4 w-4 mr-2" />
+                    Processing...
+                  </>
+                ) : (
+                  "Pay now"
+                )}
+              </Button>
+            )}
 
           <Button variant="outline" onClick={onClose}>
             Close

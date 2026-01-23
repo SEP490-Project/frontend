@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 export const GhnMock = () => {
   const dispatch = useAppDispatch();
 
-  const [result, setResult] = useState("");
+  const [, setResult] = useState("");
   const [orderInfo, setOrderInfo] = useState<GHNOrderInfo | null>(null); // Typed loosely for now
   const [isLoading, setIsLoading] = useState(false);
   const [updateStatusPayload, setUpdateStatusPayload] = useState({
@@ -253,7 +253,7 @@ export const GhnMock = () => {
               </button>
             </div>
 
-            {/* Result Log */}
+            {/* Result Log
             <div className={`transition-all duration-300 ${result ? "opacity-100" : "opacity-0"}`}>
               <div className="bg-gray-900 rounded-xl p-4 overflow-hidden">
                 <h3 className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">
@@ -263,7 +263,7 @@ export const GhnMock = () => {
                   {result || "Waiting for action..."}
                 </div>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
         <div

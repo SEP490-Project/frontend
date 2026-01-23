@@ -205,11 +205,6 @@ const VariantsStep = () => {
       return;
     }
 
-    if (data.type === "STANDARD" && data.price && data.price > 5_000_000) {
-      toast.error("Price must be between 0 and 5,000,000 for standard variants.");
-      return;
-    }
-
     const achievableQuantity =
       (productDetail?.data as LimitedProductData)?.limited_product?.achievable_quantity || 1;
 

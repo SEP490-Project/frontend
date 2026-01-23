@@ -28,9 +28,18 @@ import type { TransactionData, TransactionParams } from "@/libs/types/transactio
 import { PaginationTable } from "@/components/global";
 import TransactionDetails from "../../../../components/manage/sale/transaction/TransactionDetails";
 import { convertNumberToCurrency, formatDate } from "@/libs/helper/helper";
+import { getItem } from "@/libs/local-storage";
+
+const formatCurrency = (amount: string) => {
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+  }).format(parseFloat(amount));
+};
 
 const Transaction: React.FC<{ type: "ORDER" | "PREORDER" }> = ({ type }) => {
   const dispatch = useAppDispatch();
+
   const transactionResponse = useSelector((state: any) => state?.manageTransaction?.transactions);
   const pagination = useSelector(
     (state: any) => state?.manageTransaction?.transactions?.pagination,
@@ -48,8 +57,11 @@ const Transaction: React.FC<{ type: "ORDER" | "PREORDER" }> = ({ type }) => {
     limit: 5,
     reference_type: type,
   });
-
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+
+  const user = getItem<{
+    id: string;
+  }>("user");
 
   useEffect(() => {
     setParams((prev) => ({ ...prev, reference_type: type, page: 1 }));
@@ -64,12 +76,31 @@ const Transaction: React.FC<{ type: "ORDER" | "PREORDER" }> = ({ type }) => {
     setIsDetailsOpen(true);
   };
 
+  const getAmount = (transaction: TransactionData, amount: string | number) => {
+    if (typeof amount === "string") {
+      amount = parseFloat(amount);
+    }
+    if (
+      (user?.id === transaction?.received_by_id && amount < 0) ||
+      (user?.id === transaction?.payer_id && amount > 0)
+    ) {
+      amount = -amount;
+    }
+
+    return (
+      <span className={amount >= 0 ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
+        {formatCurrency(amount.toString())}
+      </span>
+    );
+  };
+
   const getStatusBadge = (status: string) => {
     const statusColors: Record<string, string> = {
       COMPLETED: "bg-green-100 text-green-800 border-green-200 hover:bg-green-200",
       PENDING: "bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200",
       CANCELLED: "bg-red-100 text-red-800 border-red-200 hover:bg-red-200",
       EXPIRED: "bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200",
+      REFUNDED: "bg-red-100 text-red-800 border-red-200 hover:bg-red-200",
     };
 
     return <Badge className={statusColors[status] || "bg-gray-100 text-gray-800"}>{status}</Badge>;
@@ -149,7 +180,6 @@ const Transaction: React.FC<{ type: "ORDER" | "PREORDER" }> = ({ type }) => {
                 <TableHead className="font-semibold">Payer</TableHead>
                 <TableHead className="font-semibold">Amount</TableHead>
                 <TableHead className="font-semibold">Method</TableHead>
-                {/* <TableHead className="font-semibold">Type</TableHead> */}
                 <TableHead className="font-semibold">Status</TableHead>
                 <TableHead className="font-semibold">Date</TableHead>
                 <TableHead className="font-semibold">Actions</TableHead>
@@ -195,7 +225,7 @@ const Transaction: React.FC<{ type: "ORDER" | "PREORDER" }> = ({ type }) => {
 
                     <TableCell className="py-4">
                       <span className="font-semibold">
-                        {convertNumberToCurrency(transaction.amount.toString())}
+                        {getAmount(transaction, transaction.amount)}
                       </span>
                     </TableCell>
 

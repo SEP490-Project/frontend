@@ -159,11 +159,52 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
                     ],
                     compensation_percent: compensationPercent,
                   },
+                ],
+        },
+        rules: {
+          label: "Rules and Violations",
+          items:
+            formData.legal_terms?.rules?.items?.length > 0
+              ? formData.legal_terms.rules.items
+              : [
                   {
-                    title: "Mutual agreement to terminate",
-                    details: [
-                      "Contract stops with no penalties",
-                      "No compensation required from either party",
+                    title: "For Brand (Party A)",
+                    violations: [
+                      {
+                        name: "Payment Default",
+                        description: "Failure to settle payments by the agreed due date.",
+                      },
+                      {
+                        name: "Support Failure",
+                        description:
+                          "Failure to provide samples or guidelines on time, causing delays.",
+                      },
+                      {
+                        name: "Copyright Infringement",
+                        description: "Using KOL's content outside the agreed scope/platforms.",
+                      },
+                    ],
+                  },
+                  {
+                    title: "For KOL (Party B)",
+                    violations: [
+                      {
+                        name: "Late Submission",
+                        description:
+                          "Failure to submit drafts or post content on the scheduled date.",
+                      },
+                      {
+                        name: "Exclusivity Breach",
+                        description: "Promoting direct competitors during the contract term.",
+                      },
+                      {
+                        name: "Content Removal",
+                        description: "Deleting or hiding posts before the agreed expiry date.",
+                      },
+                      {
+                        name: "Reputation Damage",
+                        description: "Involved in scandals that negatively affect the Brand.",
+                      },
                     ],
                   },
                 ],
@@ -937,7 +978,24 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
 
             <section className="mb-6">
               <h2 className="text-base font-bold uppercase mb-3 text-gray-900">
-                ARTICLE 5: STANDARD LEGAL TERMS
+                ARTICLE 5: RULES AND VIOLATIONS
+              </h2>
+              {(previewData.legal_terms?.rules?.items ?? []).map((ruleGroup: any, i: number) => (
+                <div key={i} className="p-2 mb-3">
+                  <h3 className="text-sm font-bold text-gray-800 mb-2">{ruleGroup.title}</h3>
+                  {(ruleGroup.violations ?? []).map((violation: any, j: number) => (
+                    <div key={j} className="ml-4 mb-2">
+                      <p className="text-xs font-bold text-gray-700">{violation.name}</p>
+                      <p className="text-xs ml-2 text-gray-600">{violation.description}</p>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </section>
+
+            <section className="mb-6">
+              <h2 className="text-base font-bold uppercase mb-3 text-gray-900">
+                ARTICLE 6: STANDARD LEGAL TERMS
               </h2>
               {(previewData.legal_terms?.standard_terms?.items ?? []).map(
                 (term: any, i: number) => (

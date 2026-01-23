@@ -328,7 +328,7 @@ export const PaymentSchedule: React.FC<{
 
             {!allEventsLinked && (
               <div className="mt-2 p-2 bg-red-100 border border-red-200 rounded text-red-700">
-                <strong>⚠️ Warning:</strong> {unlinkedEvents.length} event(s) not linked to any
+                <strong>Warning:</strong> {unlinkedEvents.length} event(s) not linked to any
                 milestone:
                 <ul className="list-disc ml-4 mt-1">
                   {unlinkedEvents.map((event) => (

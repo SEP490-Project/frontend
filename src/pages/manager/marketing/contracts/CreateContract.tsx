@@ -940,11 +940,48 @@ const AddContractPage: React.FC = () => {
                 ],
                 compensation_percent: formData.legal_terms?.compensation_percent,
               },
+            ],
+          },
+          rules: {
+            label: "Rules and Violations",
+            items: [
               {
-                title: "Mutual agreement to terminate",
-                details: [
-                  "Contract stops with no penalties",
-                  "No compensation required from either party",
+                title: "For Brand (Party A)",
+                violations: [
+                  {
+                    name: "Payment Default",
+                    description: "Failure to settle payments by the agreed due date.",
+                  },
+                  {
+                    name: "Support Failure",
+                    description:
+                      "Failure to provide samples or guidelines on time, causing delays.",
+                  },
+                  {
+                    name: "Copyright Infringement",
+                    description: "Using KOL's content outside the agreed scope/platforms.",
+                  },
+                ],
+              },
+              {
+                title: "For KOL (Party B)",
+                violations: [
+                  {
+                    name: "Late Submission",
+                    description: "Failure to submit drafts or post content on the scheduled date.",
+                  },
+                  {
+                    name: "Exclusivity Breach",
+                    description: "Promoting direct competitors during the contract term.",
+                  },
+                  {
+                    name: "Content Removal",
+                    description: "Deleting or hiding posts before the agreed expiry date.",
+                  },
+                  {
+                    name: "Reputation Damage",
+                    description: "Involved in scandals that negatively affect the Brand.",
+                  },
                 ],
               },
             ],

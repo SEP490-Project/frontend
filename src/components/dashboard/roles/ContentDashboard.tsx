@@ -62,8 +62,8 @@ const ContentDashboard: React.FC = () => {
     dispatch(
       fetchContentDashboard({
         period: selectedPeriod,
-        start_date: customStartDate ?? undefined,
-        end_date: customEndDate ?? undefined,
+        from_date: customStartDate ?? undefined,
+        to_date: customEndDate ?? undefined,
       }),
     );
   }, [dispatch, selectedPeriod, customStartDate, customEndDate]);
@@ -93,8 +93,8 @@ const ContentDashboard: React.FC = () => {
       await dispatch(
         fetchContentDashboard({
           period: selectedPeriod,
-          start_date: customStartDate ?? undefined,
-          end_date: customEndDate ?? undefined,
+          from_date: customStartDate ?? undefined,
+          to_date: customEndDate ?? undefined,
         }),
       ).unwrap();
       toast.success("Dashboard refreshed successfully");
@@ -115,8 +115,8 @@ const ContentDashboard: React.FC = () => {
       await dispatch(
         fetchContentDashboard({
           period: selectedPeriod,
-          start_date: customStartDate ?? undefined,
-          end_date: customEndDate ?? undefined,
+          from_date: customStartDate ?? undefined,
+          to_date: customEndDate ?? undefined,
         }),
       ).unwrap();
     } catch {
@@ -179,8 +179,8 @@ const ContentDashboard: React.FC = () => {
           dispatch(
             fetchContentDashboard({
               period: selectedPeriod,
-              start_date: customStartDate ?? undefined,
-              end_date: customEndDate ?? undefined,
+              from_date: customStartDate ?? undefined,
+              to_date: customEndDate ?? undefined,
             }),
           )
         }

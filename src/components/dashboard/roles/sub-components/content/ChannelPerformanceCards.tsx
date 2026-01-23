@@ -7,9 +7,9 @@ import {
   FaHeart,
   FaExternalLinkAlt,
   FaUsers,
-  FaComment,
-  FaShare,
   FaChartLine,
+  FaShare,
+  FaComment,
 } from "react-icons/fa";
 import { containerVariants, itemVariants, formatNumber, getGrowthIndicator } from "./types";
 import { getChannelIcon, getGrowthIcon } from "./icons";
@@ -225,7 +225,7 @@ export const ChannelPerformanceCards: React.FC<ChannelPerformanceCardsProps> = (
 
                 {/* Detailed Metrics (Likes, Comments, Shares) */}
                 {channel.mapped_metrics && Object.keys(channel.mapped_metrics).length > 0 && (
-                  <div className="flex flex-wrap gap-2 pt-3">
+                  <div className="flex flex-wrap gap-3 pt-2">
                     {typeof channel.mapped_metrics.LIKES === "number" &&
                       channel.mapped_metrics.LIKES > 0 && (
                         <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 px-2.5 py-1.5 rounded-lg border border-gray-100 dark:border-gray-600">

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -168,6 +168,19 @@ const FinancialOverview: React.FC<{
 
   const depositProofUrls = formData.deposit_proof_url || "";
 
+  // Auto-calculate deposit_amount when total_cost or percent changes
+  useEffect(() => {
+    const calculatedDepositAmount = Math.round((total * percent) / 100);
+    // Only update if the current deposit_amount is different from calculated
+    if (formData.deposit_amount !== calculatedDepositAmount) {
+      onUpdate({
+        _form_data_updates: {
+          deposit_amount: calculatedDepositAmount,
+        },
+      });
+    }
+  }, [total, percent, formData.deposit_amount, onUpdate]);
+
   return (
     <Card className="border border-gray-200 shadow-md overflow-hidden">
       <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50">
@@ -223,8 +236,10 @@ const FinancialOverview: React.FC<{
                   const newDepositAmount = Math.round((total * newPercent) / 100);
 
                   onUpdate({
-                    deposit_percent: newPercent,
-                    deposit_amount: newDepositAmount,
+                    _form_data_updates: {
+                      deposit_percent: newPercent,
+                      deposit_amount: newDepositAmount,
+                    },
                   });
                 }}
               />
@@ -242,7 +257,11 @@ const FinancialOverview: React.FC<{
                 id="is-paid"
                 checked={paid}
                 onCheckedChange={(checked) => {
-                  onUpdate({ is_deposit_paid: checked });
+                  onUpdate({
+                    _form_data_updates: {
+                      is_deposit_paid: checked,
+                    },
+                  });
                 }}
               />
               <Label htmlFor="is-paid" className="cursor-pointer text-sm">
@@ -278,12 +297,20 @@ const FinancialOverview: React.FC<{
                 initialUrls={depositProofUrls ? [depositProofUrls] : []}
                 onUploadComplete={(urls) => {
                   const newUrl = urls.length > 0 ? urls[0] : "";
-                  onUpdate({ deposit_proof_url: newUrl });
+                  onUpdate({
+                    _form_data_updates: {
+                      deposit_proof_url: newUrl,
+                    },
+                  });
                 }}
                 onFilesRemove={(removedUrls) => {
                   // If the current deposit_proof_url is among the removed files, clear it
                   if (removedUrls.includes(depositProofUrls)) {
-                    onUpdate({ deposit_proof_url: "" });
+                    onUpdate({
+                      _form_data_updates: {
+                        deposit_proof_url: "",
+                      },
+                    });
                   }
                 }}
               />

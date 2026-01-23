@@ -272,6 +272,24 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
       onBrandChange?.();
       return;
     }
+    // Reset brand-related fields when selecting a new brand
+    if (brandId && brandId !== formData.brand_id) {
+      const resetFields = {
+        brand_representative_name: "",
+        brand_representative_role: "",
+        brand_representative_phone: "",
+        brand_representative_email: "",
+        brand_tax_number: "",
+        brand_name: "",
+        brand_address: "",
+        brand_bank_name: "",
+        brand_bank_account_number: "",
+        brand_bank_account_holder: "",
+      };
+      Object.entries(resetFields).forEach(([key, value]) => {
+        onInputChange(key, value);
+      });
+    }
     onInputChange("brand_id", brandId || "");
     if (!brandId) {
       setBrandDetailsOpen(false);
@@ -295,7 +313,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
   }, [formData.brand_id, brand?.id, dispatch]);
 
   useEffect(() => {
-    if (brand && formData.brand_id) {
+    if (brand && formData.brand_id && brand.id === formData.brand_id) {
       const brandRepData = {
         brand_representative_name: brand.representative_name || "",
         brand_representative_role: brand.representative_role || "",
@@ -306,23 +324,14 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
         brand_address: brand.address || "",
       };
 
-      let hasChanges = false;
-      const updates: Record<string, string> = {};
-
+      // Only update fields that have changed to prevent infinite loops
       Object.entries(brandRepData).forEach(([key, value]) => {
-        if (value && !formData[key]) {
-          updates[key] = value;
-          hasChanges = true;
+        if (value && formData[key] !== value) {
+          onInputChange(key, value);
         }
       });
-
-      if (hasChanges) {
-        Object.entries(updates).forEach(([key, value]) => {
-          onInputChange(key, value);
-        });
-      }
     }
-  }, [brand, formData, onInputChange]);
+  }, [brand, formData.brand_id]);
 
   useEffect(() => {
     if (representativeConfig) {
@@ -334,7 +343,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
         }
       });
     }
-  }, [representativeConfig, onInputChange]);
+  }, [representativeConfig]);
 
   const handleFieldChange = async (field: string, value: any) => {
     const updatedForm = { ...formData, [field]: value };

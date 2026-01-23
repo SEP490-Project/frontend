@@ -834,7 +834,26 @@ export const ContractPDF = ({ data }: { data: any }) => {
         </View>
 
         <View>
-          <Text style={styles.sectionHeader}>ARTICLE 5: STANDARD LEGAL TERMS</Text>
+          <Text style={styles.sectionHeader}>ARTICLE 5: RULES AND VIOLATIONS</Text>
+          {(data.legal_terms?.rules?.items ?? []).map((ruleGroup: any, i: number) => (
+            <View key={i} style={styles.penaltySection}>
+              <Text style={styles.penaltyTitle}>{ruleGroup.title}</Text>
+              {(ruleGroup.violations ?? []).map((violation: any, j: number) => (
+                <View key={j} style={{ marginLeft: 10, marginBottom: 4 }}>
+                  <Text style={[styles.textBlock, { fontWeight: "bold", fontSize: 10 }]}>
+                    {violation.name}
+                  </Text>
+                  <Text style={[styles.textBlock, { fontSize: 9, marginLeft: 10 }]}>
+                    {violation.description}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          ))}
+        </View>
+
+        <View>
+          <Text style={styles.sectionHeader}>ARTICLE 6: STANDARD LEGAL TERMS</Text>
           {(data.legal_terms?.standard_terms?.items ?? []).map((term: any, i: number) => (
             <View key={i} style={{ marginBottom: 6 }}>
               <Text style={[styles.textBlock, styles.bold, { textDecoration: "underline" }]}>

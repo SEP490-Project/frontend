@@ -18,7 +18,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FaPenToSquare, FaFilter, FaEye } from "react-icons/fa6";
-import { Trash } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -423,22 +422,24 @@ const LimitedProduct: React.FC = () => {
                         >
                           <FaEye className="text-blue-600" />
                         </Button>
-
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className=" hover:bg-yellow-100"
-                          title="Edit"
-                          onClick={() => {
-                            navigate(`/manage/sale/product/${product.id}/edit`, {
-                              state: { id: product.id, product: product },
-                            });
-                          }}
-                        >
-                          <FaPenToSquare className="text-yellow-600" />
-                        </Button>
-
-                        <Dialog>
+                        {(product.status === "INACTIVED" ||
+                          product.status === "DRAFT" ||
+                          product.status === "REVISION") && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className=" hover:bg-yellow-100"
+                            title="Edit"
+                            onClick={() => {
+                              navigate(`/manage/sale/product/${product.id}/edit`, {
+                                state: { id: product.id, product: product },
+                              });
+                            }}
+                          >
+                            <FaPenToSquare className="text-yellow-600" />
+                          </Button>
+                        )}
+                        {/* <Dialog>
                           <DialogTrigger asChild>
                             <Button
                               variant="ghost"
@@ -449,8 +450,7 @@ const LimitedProduct: React.FC = () => {
                               <Trash className="text-red-600" />
                             </Button>
                           </DialogTrigger>
-                          {/* <DeleteModal name={product.name} /> */}
-                        </Dialog>
+                        </Dialog> */}
                       </div>
                     </TableCell>
                   </TableRow>

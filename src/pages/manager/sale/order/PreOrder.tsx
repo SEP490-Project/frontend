@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { useAppDispatch, type RootState } from "@/libs/stores";
 import { getPreOrdersForSaleStaffThunk } from "@/libs/stores/orderManager/thunk";
+import { brand } from "@/libs/stores/brandManager/thunk";
 import { useSelector } from "react-redux";
 import type { OrderRequestQuery } from "@/libs/types/order";
 import { PaginationTable } from "@/components/global";
@@ -42,12 +43,13 @@ import {
   getWardsThunk,
 } from "@/libs/stores/locationManager/thunk";
 import type { Province, District, Ward } from "@/libs/types/location";
+import { useBrand } from "@/libs/hooks/useBrand";
 
 const PreOrder: React.FC = () => {
   const dispatch = useAppDispatch();
+  const { brands } = useBrand();
+
   const orderResponse = useSelector((state: RootState) => state?.manageOrder?.preOrderForSaleStaff);
-  const pagination = orderResponse?.pagination;
-  const preOrders: PreOrderData[] = orderResponse?.data || [];
   const isLoading = useSelector((state: RootState) => state?.manageOrder?.loading);
   const error = useSelector((state: RootState) => state?.manageOrder?.errors);
   const provinces: Province[] = useSelector(
@@ -57,6 +59,9 @@ const PreOrder: React.FC = () => {
     (state: RootState) => state?.manageLocation?.districts || [],
   );
   const wards: Ward[] = useSelector((state: RootState) => state?.manageLocation?.wards || []);
+
+  const pagination = orderResponse?.pagination;
+  const preOrders: PreOrderData[] = orderResponse?.data || [];
 
   const [params, setParams] = useState<OrderRequestQuery>({
     page: 1,
@@ -70,14 +75,16 @@ const PreOrder: React.FC = () => {
     ward_code: "",
     phone: "",
     full_name: "",
+    brand_id: undefined,
   });
   const [selectedPreOrder, setSelectedPreOrder] = useState<PreOrderData | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
 
-  // Load provinces on mount
+  // Load provinces and brands on mount
   useEffect(() => {
     dispatch(getProvincesThunk());
+    dispatch(brand({ limit: 100, page: 1 }));
   }, [dispatch]);
 
   // Load districts when province changes
@@ -136,6 +143,10 @@ const PreOrder: React.FC = () => {
 
     if (params.full_name && params.full_name.trim() !== "") {
       queryParams.full_name = params.full_name.trim();
+    }
+
+    if (params.brand_id && params.brand_id !== "") {
+      queryParams.brand_id = params.brand_id;
     }
 
     dispatch(getPreOrdersForSaleStaffThunk(queryParams));
@@ -329,6 +340,23 @@ const PreOrder: React.FC = () => {
                 {wards.map((ward) => (
                   <SelectItem key={ward.WardCode} value={ward.WardCode}>
                     {ward.WardName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Select
+              value={params.brand_id || ""}
+              onValueChange={(value) => setParams({ ...params, brand_id: value, page: 1 })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select Brand" />
+              </SelectTrigger>
+              <SelectContent>
+                {brands.map((brand) => (
+                  <SelectItem key={brand.id} value={brand.id}>
+                    {brand.name}
                   </SelectItem>
                 ))}
               </SelectContent>

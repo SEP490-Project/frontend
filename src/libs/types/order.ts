@@ -34,6 +34,7 @@ export interface OrderData {
   payment_transaction: PaymentTransaction;
   order_items: OrderItem[];
   user_resource?: string;
+
   staff_resource?: string;
 }
 
@@ -72,6 +73,7 @@ export interface OrderItem {
   weight: number;
   height: number;
   length: number;
+  brand_place_holder?: string;
   width: number;
   is_reviewed: boolean;
   product_name: string;
@@ -131,6 +133,7 @@ export interface OrderRequestQuery {
   phone?: string;
   order_type?: string;
   full_name?: string;
+  brand_id?: string;
 }
 
 export interface PriceBreakDownResponse {

@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FaEye, FaListCheck, FaImage, FaUpload } from "react-icons/fa6";
+import { FaEye, FaListCheck, FaImage, FaUpload, FaMoneyBillWave } from "react-icons/fa6";
 import { Loader2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import PaginationTable from "@/components/global/PaginationTable";
@@ -25,7 +25,11 @@ import { useContractPayment } from "@/libs/hooks/useContractPayment";
 import { useBrand } from "@/libs/hooks/useBrand";
 // import { useContract } from "@/libs/hooks/useContract";
 import { useAppDispatch } from "@/libs/stores";
-import { getContractPayment, submitRefundProof } from "@/libs/stores/contractPaymentManager/thunk";
+import {
+  getContractPayment,
+  submitRefundProof,
+  createPaymentLink,
+} from "@/libs/stores/contractPaymentManager/thunk";
 import { brand as fetchBrands } from "@/libs/stores/brandManager/thunk";
 // import { contract as fetchContracts } from "@/libs/stores/contractManager/thunk";
 import type { ContractPayment } from "@/libs/types/contract-payments";
@@ -35,6 +39,7 @@ import { formatDate } from "@/libs/helper/helper";
 import { motion } from "framer-motion";
 import {
   PaymentDetailModal,
+  PaymentModal,
   SubmitRefundProofModal,
 } from "@/components/manage/marketing/contract-payment";
 import { toast } from "sonner";
@@ -45,7 +50,6 @@ const CONTRACT_PAYMENT_STATUS_LABELS: Record<string, string> = {
   NOT_STARTED: "Not Started",
   PENDING: "Pending",
   PAID: "Paid",
-  OVERDUE: "Overdue",
   // CO_PRODUCING refund workflow statuses
   KOL_PENDING: "Awaiting Refund Proof",
   KOL_PROOF_SUBMITTED: "Proof Submitted",
@@ -70,7 +74,6 @@ const STATUS_COLORS: Record<string, string> = {
   NOT_STARTED: "bg-gray-100 text-gray-800 border-gray-200",
   PAID: "bg-green-100 text-green-800 border-green-200",
   PENDING: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  OVERDUE: "bg-orange-100 text-orange-800 border-orange-200",
   // CO_PRODUCING refund workflow statuses
   KOL_PENDING: "bg-amber-100 text-amber-800 border-amber-200",
   KOL_PROOF_SUBMITTED: "bg-blue-100 text-blue-800 border-blue-200",
@@ -114,6 +117,11 @@ const ContractPaymentPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
 
+  // Payment-related states
+  const [loadingPaymentId, setLoadingPaymentId] = useState<string | null>(null);
+  const [modalPaymentLoading, setModalPaymentLoading] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
   // Refund proof modal states
   const [isRefundProofModalOpen, setIsRefundProofModalOpen] = useState(false);
   const [selectedRefundPayment, setSelectedRefundPayment] = useState<ContractPayment | null>(null);
@@ -126,8 +134,105 @@ const ContractPaymentPage: React.FC = () => {
   const debouncedBrandSearch = useDebounce(brandSearch, 400);
 
   const dispatch = useAppDispatch();
-  const { contractPayments, loading, pagination } = useContractPayment();
+  const { contractPayments, loading, pagination, paymentLink } = useContractPayment();
   const { brands, loading: brandLoading, pagination: brandPagination } = useBrand();
+
+  // Payment handling functions
+  const handlePayNow = async (
+    contract_payment_id: string,
+    amount?: number,
+    contractNumber?: string,
+  ) => {
+    // Proceed with payment flow
+    await proceedWithPayment(contract_payment_id, amount, contractNumber);
+  };
+
+  const proceedWithPayment = async (
+    contract_payment_id: string,
+    amount?: number,
+    contractNumber?: string,
+  ) => {
+    try {
+      setLoadingPaymentId(contract_payment_id);
+      try {
+        if (amount !== undefined && amount !== null) {
+          sessionStorage.setItem(`payment_amount_${contract_payment_id}`, String(amount));
+        }
+        if (contractNumber) {
+          sessionStorage.setItem(
+            `payment_contractNumber_${contract_payment_id}`,
+            String(contractNumber),
+          );
+        }
+      } catch {
+        // intentionally left blank
+      }
+      const baseUrl = import.meta.env.VITE_APP_BASE_URL || window.location.origin;
+      const returnUrl = `${baseUrl}/payment-success`;
+      const cancelUrl = `${baseUrl}/payment-cancel`;
+
+      const result = await dispatch(
+        createPaymentLink({
+          contract_payment_id,
+          return_url: returnUrl,
+          cancel_url: cancelUrl,
+        }),
+      );
+      if (result?.payload) {
+        setIsPaymentModalOpen(true);
+      } else {
+        toast.error("Could not get payment information. Please try again.");
+      }
+    } catch {
+      toast.error("An error occurred while creating payment link.");
+    } finally {
+      setLoadingPaymentId(null);
+    }
+  };
+
+  const handlePayNowFromModal = async (contract_payment_id: string) => {
+    // Proceed with payment flow
+    await proceedWithPaymentFromModal(contract_payment_id);
+  };
+
+  const proceedWithPaymentFromModal = async (contract_payment_id: string) => {
+    try {
+      setModalPaymentLoading(true);
+      try {
+        const found = contractPayments.find((p: any) => p.id === contract_payment_id);
+        if (found) {
+          sessionStorage.setItem(`payment_amount_${contract_payment_id}`, String(found.amount));
+          sessionStorage.setItem(
+            `payment_contractNumber_${contract_payment_id}`,
+            String(found.contract_number || ""),
+          );
+        }
+      } catch {
+        // intentionally left blank
+      }
+      const baseUrl = import.meta.env.VITE_APP_BASE_URL || window.location.origin;
+      const returnUrl = `${baseUrl}/payment-success`;
+      const cancelUrl = `${baseUrl}/payment-cancel`;
+
+      const result = await dispatch(
+        createPaymentLink({
+          contract_payment_id,
+          return_url: returnUrl,
+          cancel_url: cancelUrl,
+        }),
+      );
+      if (result?.payload) {
+        setIsModalOpen(false);
+        setIsPaymentModalOpen(true);
+      } else {
+        toast.error("Could not get payment information. Please try again.");
+      }
+    } catch {
+      toast.error("An error occurred while creating payment link.");
+    } finally {
+      setModalPaymentLoading(false);
+    }
+  };
 
   // Fetch brands for DataSelector
   useEffect(() => {
@@ -288,6 +393,11 @@ const ContractPaymentPage: React.FC = () => {
     return payment.status === "KOL_PENDING" || payment.status === "KOL_PROOF_REJECTED";
   };
 
+  // Check if payment can show Pay Now button (only for refund payments)
+  const canShowPayNow = (payment: ContractPayment) => {
+    return payment.status === "PENDING" && payment.pay_now === true && payment.amount < 0;
+  };
+
   const toISOStringDate = (dateStr: string) => {
     if (!dateStr) return "";
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return "";
@@ -310,9 +420,12 @@ const ContractPaymentPage: React.FC = () => {
       return <span className="text-sm italic text-gray-600">To be calculated by performance</span>;
     }
 
+    const amount = payment.amount;
+    const colorClass = amount >= 0 ? "text-green-600" : "text-red-600";
+
     return (
       <div className="flex flex-col">
-        <span className="font-medium">{formatCurrency(Math.abs(payment.amount))}</span>
+        <span className={`font-semibold ${colorClass}`}>{formatCurrency(amount)}</span>
       </div>
     );
   };
@@ -420,7 +533,10 @@ const ContractPaymentPage: React.FC = () => {
                 <SelectItem value="NOT_STARTED">Not Started</SelectItem>
                 <SelectItem value="PENDING">Pending</SelectItem>
                 <SelectItem value="PAID">Paid</SelectItem>
-                <SelectItem value="OVERDUE">Overdue</SelectItem>
+                <SelectItem value="KOL_PENDING">Awaiting Refund Proof</SelectItem>
+                <SelectItem value="KOL_PROOF_SUBMITTED">Proof Submitted</SelectItem>
+                <SelectItem value="KOL_PROOF_REJECTED">Proof Rejected</SelectItem>
+                <SelectItem value="KOL_REFUND_APPROVED">Refund Approved</SelectItem>
               </SelectContent>
             </Select>
           </motion.div>
@@ -528,7 +644,7 @@ const ContractPaymentPage: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {contractPayments.map((payment: ContractPayment, index) => (
+                  {contractPayments.map((payment: ContractPayment, index: any) => (
                     <motion.tr
                       key={payment.id}
                       layout="position"
@@ -541,7 +657,7 @@ const ContractPaymentPage: React.FC = () => {
                         <div>
                           <div className="font-medium text-gray-900 flex items-center gap-2">
                             {payment.contract_number}
-                            {payment.pay_now && <PayNowMark />}
+                            {canShowPayNow(payment) && <PayNowMark />}
                             {payment.is_deposit && (
                               <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-xs px-1.5 py-0.5">
                                 Deposit
@@ -655,7 +771,7 @@ const ContractPaymentPage: React.FC = () => {
                       <div className="flex-1">
                         <div className="font-semibold text-gray-900 flex items-center gap-2 flex-wrap">
                           {payment.contract_number}
-                          {payment.pay_now && <PayNowMark />}
+                          {canShowPayNow(payment) && <PayNowMark />}
                           {payment.is_deposit && (
                             <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-xs px-1.5 py-0.5">
                               Deposit
@@ -743,6 +859,30 @@ const ContractPaymentPage: React.FC = () => {
                           </TooltipContent>
                         </Tooltip>
                       )}
+                      {canShowPayNow(payment) && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 hover:bg-green-50"
+                              onClick={() =>
+                                handlePayNow(payment.id, payment.amount, payment.contract_number)
+                              }
+                              disabled={loadingPaymentId === payment.id}
+                            >
+                              {loadingPaymentId === payment.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin text-green-600" />
+                              ) : (
+                                <FaMoneyBillWave className="h-4 w-4 text-green-600" />
+                              )}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{payment.amount < 0 ? "Refund Payment" : "Pay Now"}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
                     </div>
                   </motion.div>
                 ))}
@@ -794,6 +934,9 @@ const ContractPaymentPage: React.FC = () => {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         paymentId={selectedPaymentId}
+        showPayNowButton={true}
+        onPayNow={handlePayNowFromModal}
+        isPaymentLoading={modalPaymentLoading}
       />
       <SubmitRefundProofModal
         isOpen={isRefundProofModalOpen}
@@ -801,6 +944,11 @@ const ContractPaymentPage: React.FC = () => {
         payment={selectedRefundPayment}
         onSubmit={handleSubmitRefundProof}
         isSubmitting={isSubmittingRefundProof}
+      />
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        paymentData={paymentLink}
       />
     </div>
   );

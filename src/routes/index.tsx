@@ -32,6 +32,7 @@ import {
   TaskSchedule,
   ContractPayment,
   Violation,
+  PaymentTransaction,
 } from "@/pages/manager/marketing";
 import ManageLayout from "@/layouts/ManageLayout";
 import Login from "@/pages/authentication/Login";
@@ -214,6 +215,7 @@ const AppRoutes = () => (
           <Route path="task-schedule" element={<TaskSchedule />} />
           <Route path="contract-payment" element={<ContractPayment />} />
           <Route path="violations" element={<Violation />} />
+          <Route path="payment-transaction" element={<PaymentTransaction />} />
         </Route>
       </Route>
 

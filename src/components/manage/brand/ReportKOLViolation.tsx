@@ -94,17 +94,19 @@ export default function ReportKOLViolation({
 
   return (
     <Dialog open={open} onOpenChange={setOpenState}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button
-            variant="outline"
-            className="border-orange-200 text-orange-700 hover:bg-orange-50 hover:text-orange-800 transition-colors"
-          >
-            <AlertTriangle className="h-4 w-4 mr-2" />
-            Report KOL Violation
-          </Button>
-        )}
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          {trigger || (
+            <Button
+              variant="outline"
+              className="border-orange-200 text-orange-700 hover:bg-orange-50 hover:text-orange-800 transition-colors"
+            >
+              <AlertTriangle className="h-4 w-4 mr-2" />
+              Report KOL Violation
+            </Button>
+          )}
+        </DialogTrigger>
+      )}
 
       <DialogContent className="sm:max-w-xl">
         {!showConfirmation ? (

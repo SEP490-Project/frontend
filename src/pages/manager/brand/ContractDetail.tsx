@@ -76,6 +76,7 @@ export default function ContractDetailPage() {
   const [violation, setViolation] = useState<ContractViolation | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isProofReviewModalOpen, setIsProofReviewModalOpen] = useState(false);
+  const [showReportKOLViolation, setShowReportKOLViolation] = useState(false);
 
   // Contract Payments State
   const [paymentPage, setPaymentPage] = useState(1);
@@ -369,17 +370,13 @@ export default function ContractDetailPage() {
             <DropdownMenuContent align="end" className="w-56">
               {/* Report Issue Button - For Active Contracts */}
               {contractDetail.status === "ACTIVE" && id && (
-                <ReportKOLViolation
-                  contractId={id}
-                  contractNumber={contractDetail.contract_number}
-                  onReportSuccess={() => handleViolationSuccess(true)}
-                  trigger={
-                    <DropdownMenuItem className="text-orange-700 hover:bg-orange-50 cursor-pointer">
-                      <AlertTriangle className="mr-2 h-4 w-4" />
-                      Report KOL Violation
-                    </DropdownMenuItem>
-                  }
-                />
+                <DropdownMenuItem
+                  onClick={() => setShowReportKOLViolation(true)}
+                  className="text-orange-700 hover:bg-orange-50 cursor-pointer"
+                >
+                  <AlertTriangle className="mr-2 h-4 w-4" />
+                  Report KOL Violation
+                </DropdownMenuItem>
               )}
 
               {/* Campaign Navigation */}
@@ -681,6 +678,17 @@ export default function ContractDetailPage() {
         onClose={() => setIsPreviewModalOpen(false)}
         contractData={contractDetail}
       />
+
+      {/* Report KOL Violation Modal */}
+      {id && (
+        <ReportKOLViolation
+          contractId={id}
+          contractNumber={contractDetail.contract_number}
+          open={showReportKOLViolation}
+          onOpenChange={setShowReportKOLViolation}
+          onReportSuccess={() => handleViolationSuccess(true)}
+        />
+      )}
 
       {/* Contract Payment Detail Modal */}
       <PaymentDetailModal

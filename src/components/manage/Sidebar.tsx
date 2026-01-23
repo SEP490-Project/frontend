@@ -222,6 +222,11 @@ const Sidebar: React.FC<SidebarProps> = ({
         icon: <FaMoneyBillTransfer size={18} />,
       },
       {
+        href: "/manage/marketing/payment-transaction",
+        label: "Payment Transaction",
+        icon: <FaRightLeft size={18} />,
+      },
+      {
         href: "/manage/marketing/violations",
         label: "Violations",
         icon: <FaTriangleExclamation size={18} />,

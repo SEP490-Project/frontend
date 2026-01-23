@@ -9,8 +9,8 @@ import { AxiosError } from "axios";
 
 interface DashboardParams {
   period?: string;
-  start_date?: string;
-  end_date?: string;
+  from_date?: string;
+  to_date?: string;
   campaign_id?: string;
   brand_id?: string;
 }

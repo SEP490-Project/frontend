@@ -60,6 +60,7 @@ import { BarChartWidget, LineChartWidget } from "@/components/dashboard/chart";
 import { getChannelIcon } from "./icons";
 import { formatNumber, getGrowthIndicator } from "./types";
 import type { ChannelDetailsResponse } from "@/libs/stores/contentDashboardManager/slice";
+import { DatePicker } from "@/components/date-picker";
 
 interface ChannelDetailsDialogProps {
   channelId: string | null;
@@ -217,16 +218,6 @@ export const ChannelDetailsDialog: React.FC<ChannelDetailsDialogProps> = ({
     customEndDate,
   } = useContentDashboard();
 
-  // Helper to format date for input (YYYY-MM-DD)
-  const formatDateForInput = (dateStr: string | null) => {
-    if (!dateStr) return "";
-    try {
-      return format(new Date(dateStr), "yyyy-MM-dd");
-    } catch {
-      return "";
-    }
-  };
-
   // Filter state
   const [filters, setFilters] = useState<FilterState>({
     period: "LAST_30_DAYS",
@@ -334,7 +325,7 @@ export const ChannelDetailsDialog: React.FC<ChannelDetailsDialogProps> = ({
         label: "Followers",
         value: details.followers_count || f.followers_count || 0,
         icon: <FaUsers className="text-indigo-500" />,
-        trend: details.followers_trend,
+        // trend: details.followers_trend,
       },
       {
         id: "views",
@@ -386,6 +377,21 @@ export const ChannelDetailsDialog: React.FC<ChannelDetailsDialogProps> = ({
           id: "aff_clicks",
           label: "Link Clicks",
           value: details.affiliate_stats.total_clicks,
+          icon: <FaLink className="text-teal-500" />,
+        },
+        {
+          id: "aff_unique_clicks",
+          label: "Unique Clicks",
+          value: details.affiliate_stats.unique_users,
+          icon: <FaLink className="text-teal-500" />,
+        },
+        {
+          id: "aff_ctr",
+          label: "Click-Through Rate (CTR)",
+          value:
+            typeof details.affiliate_stats.ctr === "number"
+              ? `${details.affiliate_stats.ctr.toFixed(2)}%`
+              : "0%",
           icon: <FaLink className="text-teal-500" />,
         },
       );
@@ -480,28 +486,26 @@ export const ChannelDetailsDialog: React.FC<ChannelDetailsDialogProps> = ({
 
                     {tempFilters.period === "CUSTOM" && (
                       <div className="grid grid-cols-2 gap-2">
-                        <div className="space-y-1">
-                          <Label className="text-xs">From</Label>
-                          <Input
-                            type="date"
-                            className="h-8 text-xs"
-                            value={formatDateForInput(tempFilters.fromDate)}
-                            onChange={(e) =>
-                              setTempFilters({ ...tempFilters, fromDate: e.target.value })
-                            }
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">To</Label>
-                          <Input
-                            type="date"
-                            className="h-8 text-xs"
-                            value={formatDateForInput(tempFilters.toDate)}
-                            onChange={(e) =>
-                              setTempFilters({ ...tempFilters, toDate: e.target.value })
-                            }
-                          />
-                        </div>
+                        <DatePicker
+                          label="From"
+                          value={tempFilters.fromDate ?? undefined}
+                          onChange={(date) =>
+                            setTempFilters({ ...tempFilters, fromDate: date || null })
+                          }
+                          placeholder="Start date"
+                          maxDate={tempFilters.toDate ?? undefined}
+                          className="text-xs"
+                        />
+                        <DatePicker
+                          label="To"
+                          value={tempFilters.toDate ?? undefined}
+                          onChange={(date) =>
+                            setTempFilters({ ...tempFilters, toDate: date || null })
+                          }
+                          placeholder="End date"
+                          minDate={tempFilters.fromDate ?? undefined}
+                          className="text-xs"
+                        />
                       </div>
                     )}
 
@@ -647,7 +651,7 @@ export const ChannelDetailsDialog: React.FC<ChannelDetailsDialogProps> = ({
                             label={metric.label}
                             value={metric.value as string}
                             icon={metric.icon}
-                            trend={metric.trend}
+                            // trend={metric.trend}
                             className="h-full"
                           />
                         </motion.div>
@@ -771,32 +775,6 @@ export const ChannelDetailsDialog: React.FC<ChannelDetailsDialogProps> = ({
                                 </div>
                               ) : (
                                 <Badge variant="secondary">Unknown</Badge>
-                              )}
-                            </div>
-
-                            <div className="pt-4 border-t">
-                              <p className="text-sm font-medium text-gray-500 mb-2">
-                                Affiliate Status
-                              </p>
-                              {details.affiliate_stats?.has_links ? (
-                                <div className="space-y-3 bg-teal-50/50 p-3 rounded border border-teal-100">
-                                  <div className="flex justify-between items-center text-sm">
-                                    <span className="text-teal-700">CTR</span>
-                                    <span className="font-bold text-teal-900">
-                                      {details.affiliate_stats.ctr}%
-                                    </span>
-                                  </div>
-                                  <div className="flex justify-between items-center text-sm">
-                                    <span className="text-teal-700">Unique Clickers</span>
-                                    <span className="font-bold text-teal-900">
-                                      {formatNumber(details.affiliate_stats.unique_users)}
-                                    </span>
-                                  </div>
-                                </div>
-                              ) : (
-                                <p className="text-xs text-gray-400 italic">
-                                  No affiliate activity detected.
-                                </p>
                               )}
                             </div>
                           </CardContent>

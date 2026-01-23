@@ -353,6 +353,10 @@ const PreOrder: React.FC = () => {
                 <SelectItem value="IN_TRANSIT">In Transit</SelectItem>
                 <SelectItem value="DELIVERED">Delivered</SelectItem>
                 <SelectItem value="RECEIVED">Received</SelectItem>
+                <SelectItem value="REFUND_REQUEST">Refund Request</SelectItem>
+                <SelectItem value="COMPENSATE_REQUEST">Compensate Request</SelectItem>
+                <SelectItem value="COMPENSATED">Compensated</SelectItem>
+                <SelectItem value="REFUNDED">Refunded</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -378,7 +382,7 @@ const PreOrder: React.FC = () => {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
+                  <TableCell colSpan={9} className="text-center py-8">
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
                       <span className="ml-2">Loading pre-orders...</span>
@@ -387,13 +391,13 @@ const PreOrder: React.FC = () => {
                 </TableRow>
               ) : error ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-red-600">
+                  <TableCell colSpan={9} className="text-center py-8 text-red-600">
                     Error: {error?.message || "Failed to load pre-orders"}
                   </TableCell>
                 </TableRow>
               ) : !preOrders || preOrders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                  <TableCell colSpan={9} className="text-center py-8 text-gray-500">
                     No pre-orders found
                   </TableCell>
                 </TableRow>
@@ -473,9 +477,7 @@ const PreOrder: React.FC = () => {
                         {preOrder.status !== "CANCELLED" &&
                           preOrder.status !== "RECEIVED" &&
                           preOrder.status !== "REFUNDED" &&
-                          preOrder.status !== "COMPENSATED" &&
-                          preOrder.status !== "PRE_ORDERED" &&
-                          preOrder.status !== "DELIVERED" && (
+                          preOrder.status !== "COMPENSATED" && (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -529,7 +531,9 @@ const PreOrder: React.FC = () => {
                     </div>
                   </div>
                   <Badge className={getStatusBadgeClass(preOrder.status)}>
-                    {preOrder.status.toUpperCase()}
+                    {preOrder.status.toUpperCase() === "SHIPPED"
+                      ? "PICKED_UP"
+                      : preOrder.status.toUpperCase()}
                   </Badge>
                 </div>
 
@@ -567,9 +571,7 @@ const PreOrder: React.FC = () => {
                       preOrder.status === "CANCELLED" ||
                       preOrder.status === "RECEIVED" ||
                       preOrder.status === "REFUNDED" ||
-                      preOrder.status === "COMPENSATED" ||
-                      preOrder.status === "PRE_ORDERED" ||
-                      preOrder.status === "DELIVERED"
+                      preOrder.status === "COMPENSATED"
                     }
                   >
                     <SquarePen className="text-yellow-600 mr-2" />

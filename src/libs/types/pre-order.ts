@@ -14,6 +14,7 @@ export interface PreOrderData {
   quantity: number;
   company_revenue: number;
   kol_revenue: number;
+  ghn_order_code?: string;
   unit_price: number;
   total_amount: number;
   full_name: string;

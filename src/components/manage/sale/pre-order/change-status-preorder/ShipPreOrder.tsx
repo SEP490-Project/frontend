@@ -1,52 +1,72 @@
-import type { PreOrderData } from "@/libs/types/pre-order";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
-import { Truck, Upload, CheckCircle2, AlertCircle, X } from "lucide-react";
+import { Truck, Package, CheckCircle2, XCircle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { convertNumberToCurrency } from "@/libs/helper/helper";
+import { cn } from "@/libs/utils";
+import type { PreOrderData } from "@/libs/types/pre-order";
 
 interface ShipPreOrderProps {
   preOrder: PreOrderData;
-  onHandle: (file: File) => void;
 }
 
-const ShipPreOrder = ({ preOrder, onHandle }: ShipPreOrderProps) => {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+const ShipPreOrder = ({ preOrder }: ShipPreOrderProps) => {
+  const currentStatus = preOrder.status;
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
+  const shippingSteps = [
+    {
+      status: "SHIPPED" as const,
+      label: "Picked Up",
+      icon: Package,
+      description: "Package has been picked up by GHN",
+    },
+    {
+      status: "IN_TRANSIT" as const,
+      label: "In Transit",
+      icon: Truck,
+      description: "Package is being transported to destination",
+    },
+    {
+      status: "DELIVERED" as const,
+      label: "Delivered",
+      icon: CheckCircle2,
+      description: "Package delivered to destination",
+    },
+  ];
+
+  const getStepStatus = (stepStatus: (typeof shippingSteps)[number]["status"]) => {
+    if (currentStatus === "CANCEL") return "cancelled";
+
+    const currentIndex = shippingSteps.findIndex((s) => s.status === currentStatus);
+    const stepIndex = shippingSteps.findIndex((s) => s.status === stepStatus);
+
+    if (stepIndex < currentIndex) return "completed";
+    if (stepIndex === currentIndex) return "current";
+    return "pending";
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "completed":
+        return "text-green-600";
+      case "current":
+        return "text-blue-600";
+      case "cancelled":
+        return "text-red-600";
+      default:
+        return "text-gray-400";
     }
   };
 
-  const handleRemoveFile = () => {
-    setSelectedFile(null);
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-      setPreviewUrl(null);
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!selectedFile) {
-      alert("Please upload a delivery proof image");
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      await onHandle(selectedFile);
-      handleRemoveFile();
-    } finally {
-      setIsSubmitting(false);
+  const getStatusBgColor = (status: string) => {
+    switch (status) {
+      case "completed":
+        return "bg-green-100 border-green-500";
+      case "current":
+        return "bg-blue-100 border-blue-500";
+      case "cancelled":
+        return "bg-red-100 border-red-500";
+      default:
+        return "bg-gray-100 border-gray-300";
     }
   };
 
@@ -56,23 +76,21 @@ const ShipPreOrder = ({ preOrder, onHandle }: ShipPreOrderProps) => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Truck className="h-5 w-5" />
-            Mark Pre-Order as Delivered
+            GHN Shipping Status
           </CardTitle>
           <CardDescription>
-            Upload delivery proof after the pre-order has been delivered
+            Track the delivery progress managed by GHN (Third-party shipping)
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-sm text-gray-500">Pre-Order ID</p>
+              <p className="text-sm text-gray-500">Order ID</p>
               <p className="font-medium">{preOrder.id}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Status</p>
-              <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-                {preOrder.status}
-              </Badge>
+              <p className="text-sm text-gray-500">GHN Order Code</p>
+              <p className="font-medium">{preOrder?.ghn_order_code || "N/A"}</p>
             </div>
             <div>
               <p className="text-sm text-gray-500">Customer</p>
@@ -89,77 +107,114 @@ const ShipPreOrder = ({ preOrder, onHandle }: ShipPreOrderProps) => {
                 {preOrder.province_name}
               </p>
             </div>
-            <div className="col-span-2">
-              <p className="text-sm text-gray-500">Total Amount</p>
-              <p className="font-medium text-lg">
-                {convertNumberToCurrency(String(preOrder.total_amount))}
-              </p>
-            </div>
           </div>
 
           <Separator />
 
-          <div className="space-y-3">
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5" />
+          {currentStatus === "CANCEL" ? (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex-shrink-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <XCircle className="h-6 w-6 text-red-600" />
+                </div>
                 <div>
-                  <p className="font-medium text-orange-900">Delivery Confirmation Required</p>
-                  <p className="text-sm text-orange-700 mt-1">
-                    Please upload a photo of the delivered pre-order or proof of delivery (e.g.,
-                    delivery note, customer signature).
+                  <h3 className="font-semibold text-red-900 text-lg">Delivery Cancelled</h3>
+                  <p className="text-sm text-red-700 mt-1">
+                    This shipment has been cancelled by GHN or the customer.
                   </p>
                 </div>
               </div>
             </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <Truck className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-blue-900">Third-Party Shipping Service</p>
+                    <p className="text-sm text-blue-700 mt-1">
+                      This order is being handled by GHN (Giao Hàng Nhanh). Staff cannot directly
+                      modify the shipping status. Please monitor the progress below.
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="deliveryProof">Delivery Proof *</Label>
-              {!selectedFile ? (
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-colors">
-                  <input
-                    id="deliveryProof"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-                  <label htmlFor="deliveryProof" className="cursor-pointer">
-                    <Upload className="h-12 w-12 mx-auto text-gray-400 mb-3" />
-                    <p className="text-sm text-gray-600 mb-1">Click to upload or drag and drop</p>
-                    <p className="text-xs text-gray-500">PNG, JPG, JPEG up to 10MB</p>
-                  </label>
-                </div>
-              ) : (
-                <div className="relative border rounded-lg p-4">
-                  <button
-                    onClick={handleRemoveFile}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                  {previewUrl && (
-                    <img
-                      src={previewUrl}
-                      alt="Preview"
-                      className="w-full h-48 object-cover rounded"
-                    />
-                  )}
-                  <p className="text-sm text-gray-600 mt-2 truncate">{selectedFile.name}</p>
-                </div>
-              )}
+              {/* Shipping Progress Steps */}
+              <div className="relative">
+                {shippingSteps.map((step, index) => {
+                  const status = getStepStatus(step.status);
+                  const Icon = step.icon;
+                  const isLast = index === shippingSteps.length - 1;
+
+                  return (
+                    <div key={step.status} className="relative">
+                      {/* Connection Line */}
+                      {!isLast && (
+                        <div
+                          className={cn(
+                            "absolute left-6 top-12 w-0.5 h-16 -ml-px",
+                            status === "completed" ? "bg-green-500" : "bg-gray-300",
+                          )}
+                        />
+                      )}
+
+                      {/* Step Content */}
+                      <div className="flex items-start gap-4 pb-8">
+                        {/* Icon Circle */}
+                        <div
+                          className={cn(
+                            "flex-shrink-0 w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all",
+                            getStatusBgColor(status),
+                          )}
+                        >
+                          <Icon className={cn("h-6 w-6", getStatusColor(status))} />
+                        </div>
+
+                        {/* Step Details */}
+                        <div className="flex-1 pt-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3
+                              className={cn(
+                                "font-semibold text-base",
+                                status === "current" ? "text-blue-900" : "text-gray-900",
+                              )}
+                            >
+                              {step.label}
+                            </h3>
+                            {status === "completed" && (
+                              <Badge
+                                variant="outline"
+                                className="bg-green-50 text-green-700 border-green-200"
+                              >
+                                Completed
+                              </Badge>
+                            )}
+                            {status === "current" && (
+                              <Badge
+                                variant="outline"
+                                className="bg-blue-50 text-blue-700 border-blue-200"
+                              >
+                                In Progress
+                              </Badge>
+                            )}
+                          </div>
+                          <p
+                            className={cn(
+                              "text-sm",
+                              status === "pending" ? "text-gray-500" : "text-gray-700",
+                            )}
+                          >
+                            {step.description}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-
-            <Button
-              onClick={handleSubmit}
-              disabled={isSubmitting || !selectedFile}
-              className="w-full bg-green-600 hover:bg-green-700"
-              size="lg"
-            >
-              <CheckCircle2 className="h-5 w-5 mr-2" />
-              {isSubmitting ? "Processing..." : "Mark as Delivered"}
-            </Button>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -35,10 +35,14 @@ import type { LimitedProductParams, ProductData } from "@/libs/types/product";
 import { PaginationTable } from "@/components/global";
 import { SelectAddProductType } from "@/components/manage/sale/product/SelectAddProductType";
 import { getAllCategoriesThunk } from "@/libs/stores/categoryManager/thunk";
+import { useBrand } from "@/libs/hooks/useBrand";
+import { brand } from "@/libs/stores/brandManager/thunk";
+import { DatePicker } from "@/components/date-picker";
 
 const LimitedProduct: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const { brands } = useBrand();
 
   const { limitedProducts, isLoading, error } = useSelector(
     (state: RootState) => state?.manageProduct,
@@ -71,6 +75,7 @@ const LimitedProduct: React.FC = () => {
     Promise.all([
       dispatch(getAllCategoriesThunk({ limit: 100, page: 1 })),
       dispatch(getAllLimitedProductsThunk(params)),
+      dispatch(brand({ limit: 100, page: 1 })),
     ]);
   }, [dispatch, params]);
 
@@ -121,7 +126,100 @@ const LimitedProduct: React.FC = () => {
             </Button>
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Date Range Filters */}
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div>
+            {/* <label className="block text-sm font-medium mb-2">Premiere Date Range</label> */}
+            <div className="flex gap-2">
+              <DatePicker
+                value={params.premiere_date_from || ""}
+                onChange={(date) => {
+                  setParams({
+                    ...params,
+                    premiere_date_from: date || undefined,
+                    page: 1,
+                  });
+                }}
+                placeholder="Premiere Date From"
+                className="w-full"
+              />
+              <DatePicker
+                value={params.premiere_date_to || ""}
+                onChange={(date) => {
+                  setParams({
+                    ...params,
+                    premiere_date_to: date || undefined,
+                    page: 1,
+                  });
+                }}
+                placeholder="Premiere Date To"
+                className="w-full"
+              />
+            </div>
+          </div>
+
+          <div>
+            {/* <label className="block text-sm font-medium mb-2">Availability Start Date</label> */}
+            <div className="flex gap-2">
+              <DatePicker
+                value={params.availability_start_date_from || ""}
+                onChange={(date) => {
+                  setParams({
+                    ...params,
+                    availability_start_date_from: date || undefined,
+                    page: 1,
+                  });
+                }}
+                placeholder="Start Sale Date From"
+                className="w-full"
+              />
+              <DatePicker
+                value={params.availability_start_date_to || ""}
+                onChange={(date) => {
+                  setParams({
+                    ...params,
+                    availability_start_date_to: date || undefined,
+                    page: 1,
+                  });
+                }}
+                placeholder="Start Sale Date To"
+                className="w-full"
+              />
+            </div>
+          </div>
+
+          <div>
+            {/* <label className="block text-sm font-medium mb-2">Availability End Date</label> */}
+            <div className="flex gap-2">
+              <DatePicker
+                value={params.availability_end_date_from || ""}
+                onChange={(date) => {
+                  setParams({
+                    ...params,
+                    availability_end_date_from: date || undefined,
+                    page: 1,
+                  });
+                }}
+                placeholder="End Sale Date From"
+                className="w-full"
+              />
+              <DatePicker
+                value={params.availability_end_date_to || ""}
+                onChange={(date) => {
+                  setParams({
+                    ...params,
+                    availability_end_date_to: date || undefined,
+                    page: 1,
+                  });
+                }}
+                placeholder="End Sale Date To"
+                className="w-full"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <Select
               value={params.filter_preorder ? "Pre-order" : params.filter_order ? "Order" : ""}
@@ -186,6 +284,26 @@ const LimitedProduct: React.FC = () => {
                 <SelectItem value="REVISION">Revision</SelectItem>
                 <SelectItem value="ACTIVED">Active</SelectItem>
                 <SelectItem value="INACTIVED">Deactivated</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="min-w-[150px]">
+            <Select
+              value={params.brand_id || ""}
+              onValueChange={(value) => {
+                setParams({ ...params, brand_id: value === "" ? undefined : value, page: 1 });
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select Brand" />
+              </SelectTrigger>
+              <SelectContent>
+                {brands.map((brand) => (
+                  <SelectItem key={brand.id} value={brand.id}>
+                    {brand.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

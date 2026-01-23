@@ -25,8 +25,8 @@ export interface createCategoryPayload {
 }
 
 export interface ProductCategoryParams {
-  page: number;
-  limit: number;
+  page?: number;
+  limit?: number;
   search?: string;
   deleted?: boolean;
 }

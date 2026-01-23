@@ -162,7 +162,7 @@ export const LayeredPeriodSelect: React.FC<LayeredPeriodSelectProps> = ({
   }, [onChange]);
 
   return (
-    <div className={cn("flex items-center gap-2 flex-wrap", className)}>
+    <div className={cn("flex items-center gap-2 flex-nowrap", className)}>
       {/* Main Period Selector */}
       <Select
         value={isCustom ? "CUSTOM" : value}
@@ -197,7 +197,7 @@ export const LayeredPeriodSelect: React.FC<LayeredPeriodSelectProps> = ({
 
       {/* Custom Date Range Pickers */}
       {isCustom && (
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-nowrap">
           {/* Start Date Picker */}
           <Popover open={startPickerOpen} onOpenChange={setStartPickerOpen}>
             <PopoverTrigger asChild>

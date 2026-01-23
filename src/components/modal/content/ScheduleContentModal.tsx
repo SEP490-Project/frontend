@@ -52,11 +52,16 @@ export const ScheduleContentModal: React.FC<ScheduleContentModalProps> = ({
   );
   const [channelSchedules, setChannelSchedules] = useState<Record<string, string>>({});
 
-  // Get minimum date (now + 5 minutes)
+  // Get minimum date (now + 5 minutes) using local time
   const minDateTime = useMemo(() => {
     const now = new Date();
     now.setMinutes(now.getMinutes() + 5);
-    return now.toISOString().slice(0, 16).replace("T", " ");
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+    return `${year}-${month}-${day} ${hours}:${minutes}`;
   }, []);
 
   // Toggle channel selection
@@ -151,6 +156,7 @@ export const ScheduleContentModal: React.FC<ScheduleContentModalProps> = ({
               onChange={setSameTimeValue}
               placeholder="Select date and time"
               minDate={minDateTime.split(" ")[0]}
+              minDateTime={minDateTime}
               required
             />
           </div>
@@ -195,6 +201,7 @@ export const ScheduleContentModal: React.FC<ScheduleContentModalProps> = ({
                       onChange={(time) => updateChannelTime(channel.channel_id, time)}
                       placeholder="Select time for this channel"
                       minDate={minDateTime.split(" ")[0]}
+                      minDateTime={minDateTime}
                     />
                   </div>
                 )}

@@ -384,12 +384,17 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order }) => {
                         )}
 
                         <div className="flex gap-4">
-                          {item.brand && (
+                          {item.brand ? (
                             <div className="flex items-center gap-1 text-xs text-gray-600">
                               <FaStore className="w-3 h-3" />
                               <span>{item.brand.name}</span>
                             </div>
-                          )}
+                          ) : item.brand_place_holder ? (
+                            <div className="flex items-center gap-1 text-xs text-gray-600">
+                              <FaStore className="w-3 h-3" />
+                              <span>{item.brand_place_holder}</span>
+                            </div>
+                          ) : null}
                           {item.category && (
                             <div className="flex items-center gap-1 text-xs text-gray-600">
                               <FaTag className="w-3 h-3" />

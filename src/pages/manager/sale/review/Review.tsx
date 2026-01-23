@@ -1,7 +1,6 @@
 import { PaginationTable } from "@/components/global";
 import { ReviewDetailModal } from "@/components/manage/sale/review/ReviewDetailModal";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -20,28 +19,78 @@ import {
 import { formatDate } from "@/libs/helper/helper";
 import { useAppDispatch, type RootState } from "@/libs/stores";
 import { getReviewsForStaffThunk } from "@/libs/stores/reviewManager/thunk";
-import type { ProductParams } from "@/libs/types/product";
-import type { ReviewData } from "@/libs/types/review";
+import type { ReviewData, ReviewQueryParams } from "@/libs/types/review";
 import { Trash } from "lucide-react";
+import { DatePicker } from "@/components/date-picker";
+import { brand } from "@/libs/stores/brandManager/thunk";
 
 import { useEffect, useState } from "react";
 import { FaEye, FaFilter, FaStar } from "react-icons/fa6";
 import { useSelector } from "react-redux";
+import { useBrand } from "@/libs/hooks/useBrand";
+import { Input } from "@/components/ui/input";
 
 const Review = () => {
   const dispatch = useAppDispatch();
 
   const { reviews, loading } = useSelector((state: RootState) => state.manageReview);
+  const { brands } = useBrand();
 
   const [showDetails, setShowDetails] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedReview, setSelectedReview] = useState<ReviewData | null>(null);
-  const [params, setParams] = useState<ProductParams>({
+  const [params, setParams] = useState<ReviewQueryParams>({
     page: 1,
     limit: 5,
+    brand_id: "",
+    from_date: "",
+    to_date: "",
+    rating_stars_min: undefined,
+    rating_stars_max: undefined,
+    order_by: "created_at",
+    order_direction: "desc",
   });
 
+  // Load brands on mount
   useEffect(() => {
-    dispatch(getReviewsForStaffThunk());
+    dispatch(brand({ limit: 100, page: 1 }));
+  }, [dispatch]);
+
+  useEffect(() => {
+    const queryParams: ReviewQueryParams = {
+      page: params.page,
+      limit: params.limit,
+    };
+
+    if (params.brand_id && params.brand_id !== "") {
+      queryParams.brand_id = params.brand_id;
+    }
+
+    if (params.from_date && params.from_date !== "") {
+      queryParams.from_date = params.from_date;
+    }
+
+    if (params.to_date && params.to_date !== "") {
+      queryParams.to_date = params.to_date;
+    }
+
+    if (params.rating_stars_min !== undefined) {
+      queryParams.rating_stars_min = params.rating_stars_min;
+    }
+
+    if (params.rating_stars_max !== undefined) {
+      queryParams.rating_stars_max = params.rating_stars_max;
+    }
+
+    if (params.order_by) {
+      queryParams.order_by = params.order_by;
+    }
+
+    if (params.order_direction) {
+      queryParams.order_direction = params.order_direction;
+    }
+
+    dispatch(getReviewsForStaffThunk(queryParams));
   }, [dispatch, params]);
 
   if (loading) {
@@ -70,40 +119,145 @@ const Review = () => {
 
           <div className="flex-1 min-w-[200px]">
             <Input
-              placeholder="Search by name or description..."
-              // value={searchTerm}
-              // onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search by product name"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full"
             />
           </div>
 
-          <div className="min-w-[150px]">
-            <Select
-              value={params.type || " "}
-              onValueChange={(value) => {
-                setParams({ ...params, type: value });
+          <div>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setParams({
+                  page: 1,
+                  limit: 5,
+                  brand_id: "",
+                  from_date: "",
+                  to_date: "",
+                  rating_stars_min: undefined,
+                  rating_stars_max: undefined,
+                  order_by: "created_at",
+                  order_direction: "desc",
+                });
               }}
             >
+              Clear All
+            </Button>
+          </div>
+        </div>
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <Select
+              value={params.brand_id || ""}
+              onValueChange={(value) => setParams({ ...params, brand_id: value, page: 1 })}
+            >
               <SelectTrigger>
-                <SelectValue placeholder="Rating" />
+                <SelectValue placeholder="Select Brand" />
+              </SelectTrigger>
+              <SelectContent className="h-[50vh] overflow-y-scroll">
+                {brands.map((brand) => (
+                  <SelectItem key={brand.id} value={brand.id}>
+                    {brand.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <DatePicker
+              value={params.from_date}
+              onChange={(date) => setParams({ ...params, from_date: date, page: 1 })}
+              placeholder="Select from date"
+              onlyPast={true}
+            />
+          </div>
+          <div>
+            <DatePicker
+              value={params.to_date}
+              onChange={(date) => setParams({ ...params, to_date: date, page: 1 })}
+              placeholder="Select to date"
+              onlyPast={true}
+            />
+          </div>
+          <div>
+            <Select
+              value={params.rating_stars_min?.toString() || ""}
+              onValueChange={(value) =>
+                setParams({
+                  ...params,
+                  rating_stars_min: value ? parseInt(value) : undefined,
+                  page: 1,
+                })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Min Rating" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value=" ">All Ratings</SelectItem>
-                <SelectItem value="1">
-                  1 <FaStar className="inline text-yellow-500 mr-1" size={16} />
-                </SelectItem>
-                <SelectItem value="2">
-                  2 <FaStar className="inline text-yellow-500 mr-1" size={16} />
-                </SelectItem>
-                <SelectItem value="3">
-                  3 <FaStar className="inline text-yellow-500 mr-1" size={16} />
-                </SelectItem>
-                <SelectItem value="4">
-                  4 <FaStar className="inline text-yellow-500 mr-1" size={16} />
-                </SelectItem>
-                <SelectItem value="5">
-                  5 <FaStar className="inline text-yellow-500 mr-1" size={16} />
-                </SelectItem>
+                <SelectItem value="1">1 star</SelectItem>
+                <SelectItem value="2">2 stars</SelectItem>
+                <SelectItem value="3">3 stars</SelectItem>
+                <SelectItem value="4">4 stars</SelectItem>
+                <SelectItem value="5">5 stars</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <Select
+              value={params.rating_stars_max?.toString() || ""}
+              onValueChange={(value) =>
+                setParams({
+                  ...params,
+                  rating_stars_max: value ? parseInt(value) : undefined,
+                  page: 1,
+                })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Max Rating" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">1 star</SelectItem>
+                <SelectItem value="2">2 stars</SelectItem>
+                <SelectItem value="3">3 stars</SelectItem>
+                <SelectItem value="4">4 stars</SelectItem>
+                <SelectItem value="5">5 stars</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Select
+              value={params.order_by || ""}
+              onValueChange={(value) =>
+                setParams({ ...params, order_by: value as "created_at" | "rating_stars", page: 1 })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Sort By" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="created_at">Date</SelectItem>
+                <SelectItem value="rating_stars">Rating</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Select
+              value={params.order_direction || ""}
+              onValueChange={(value) =>
+                setParams({ ...params, order_direction: value as "asc" | "desc", page: 1 })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Sort Order" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="desc">Descending</SelectItem>
+                <SelectItem value="asc">Ascending</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -117,6 +271,7 @@ const Review = () => {
               <TableRow className="border-b bg-gray-50">
                 <TableHead className="font-semibold">User & Product</TableHead>
                 <TableHead className="font-semibold">Rating & Reviews</TableHead>
+                <TableHead className="font-semibold">Brand</TableHead>
                 <TableHead className="font-semibold">Posted Date</TableHead>
                 <TableHead className="font-semibold">Action</TableHead>
               </TableRow>
@@ -148,6 +303,9 @@ const Review = () => {
                       </span>
                       <span className="text-sm text-gray-500">{review.review_content.comment}</span>
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    {review.product.brand?.name ? review.product.brand.name : "-"}
                   </TableCell>
                   <TableCell>
                     <span className="text-sm text-gray-500">

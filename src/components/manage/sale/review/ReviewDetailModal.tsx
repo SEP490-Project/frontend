@@ -114,7 +114,9 @@ export const ReviewDetailModal = ({ isOpen, onClose, review }: ReviewDetailModal
               </div>
               <div>
                 <p className="text-sm text-gray-600">Brand</p>
-                <p className="font-medium">{review.product.brand.name}</p>
+                <p className="font-medium">
+                  {review.product.brand?.name ? review.product.brand.name : "-"}
+                </p>
               </div>
               {review.product.capacity_unit && (
                 <div>
@@ -131,7 +133,7 @@ export const ReviewDetailModal = ({ isOpen, onClose, review }: ReviewDetailModal
             </div>
 
             {/* Brand Details */}
-            {review.product.brand.logo_url && (
+            {review.product.brand?.logo_url && (
               <div className="flex items-center gap-3 p-3 bg-white border rounded-lg">
                 <img
                   src={review.product.brand.logo_url}

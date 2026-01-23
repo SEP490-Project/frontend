@@ -421,7 +421,7 @@ const ContentApprovalPage: React.FC = () => {
                           <Video className="w-4 h-4 mr-1 text-purple-500" />
                         )}
                         <span className="text-gray-600 capitalize">
-                          {content.blog || content.type === "POST" ? "blog" : "video"}
+                          {content.blog || content.type === "POST" ? "Post" : "Video"}
                         </span>
                       </div>
                     </div>
@@ -545,7 +545,7 @@ const ContentApprovalPage: React.FC = () => {
                           </div>
                           <span className="font-medium">Type:</span>
                           <span className="ml-1 capitalize">
-                            {content.blog || content.type === "POST" ? "blog" : "video"}
+                            {content.blog || content.type === "POST" ? "Post" : "Video"}
                           </span>
                         </div>
 

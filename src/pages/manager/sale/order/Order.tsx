@@ -34,6 +34,13 @@ import OrderDetail from "@/components/manage/sale/order/OrderDetail";
 import { SquarePen } from "lucide-react";
 import { convertNumberToCurrency } from "@/libs/helper/helper";
 import ChangeOrderStatusModal from "@/components/manage/sale/order/ChangeOrderStatusModal";
+import { DatePicker } from "@/components/date-picker";
+import {
+  getProvincesThunk,
+  getDistrictsThunk,
+  getWardsThunk,
+} from "@/libs/stores/locationManager/thunk";
+import type { Province, District, Ward } from "@/libs/types/location";
 
 const Order: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -42,16 +49,52 @@ const Order: React.FC = () => {
   const orders: OrderData[] = orderResponse?.data || [];
   const isLoading = useSelector((state: RootState) => state?.manageOrder?.loading);
   const error = useSelector((state: RootState) => state?.manageOrder?.errors);
+  const provinces: Province[] = useSelector(
+    (state: RootState) => state?.manageLocation?.provinces || [],
+  );
+  const districts: District[] = useSelector(
+    (state: RootState) => state?.manageLocation?.districts || [],
+  );
+  const wards: Ward[] = useSelector((state: RootState) => state?.manageLocation?.wards || []);
 
   const [params, setParams] = useState<OrderRequestQuery>({
     page: 1,
     limit: 5,
     search: "",
     status: "",
+    created_from: "",
+    created_to: "",
+    province_id: undefined,
+    district_id: undefined,
+    ward_code: "",
+    phone: "",
+    order_type: "",
+    full_name: "",
   });
   const [selectedOrder, setSelectedOrder] = useState<OrderData | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [isChangeStatusModalOpen, setIsChangeStatusModalOpen] = useState(false);
+
+  // Load provinces on mount
+  useEffect(() => {
+    dispatch(getProvincesThunk());
+  }, [dispatch]);
+
+  // Load districts when province changes
+  useEffect(() => {
+    if (params.province_id) {
+      dispatch(getDistrictsThunk(params.province_id));
+      setParams((prev) => ({ ...prev, district_id: undefined, ward_code: "" }));
+    }
+  }, [params.province_id, dispatch]);
+
+  // Load wards when district changes
+  useEffect(() => {
+    if (params.district_id) {
+      dispatch(getWardsThunk(params.district_id));
+      setParams((prev) => ({ ...prev, ward_code: "" }));
+    }
+  }, [params.district_id, dispatch]);
 
   useEffect(() => {
     const queryParams: OrderRequestQuery = {
@@ -65,6 +108,38 @@ const Order: React.FC = () => {
 
     if (params.status && params.status !== "") {
       queryParams.status = params.status;
+    }
+
+    if (params.created_from && params.created_from !== "") {
+      queryParams.created_from = params.created_from;
+    }
+
+    if (params.created_to && params.created_to !== "") {
+      queryParams.created_to = params.created_to;
+    }
+
+    if (params.province_id) {
+      queryParams.province_id = params.province_id;
+    }
+
+    if (params.district_id) {
+      queryParams.district_id = params.district_id;
+    }
+
+    if (params.ward_code && params.ward_code !== "") {
+      queryParams.ward_code = params.ward_code;
+    }
+
+    if (params.phone && params.phone.trim() !== "") {
+      queryParams.phone = params.phone.trim();
+    }
+
+    if (params.order_type && params.order_type !== "") {
+      queryParams.order_type = params.order_type;
+    }
+
+    if (params.full_name && params.full_name.trim() !== "") {
+      queryParams.full_name = params.full_name.trim();
     }
 
     dispatch(getOrderForSaleStaffThunk(queryParams));
@@ -161,14 +236,118 @@ const Order: React.FC = () => {
             <Button
               variant="outline"
               onClick={() => {
-                setParams({ page: 1, limit: 5, search: "", status: "" });
+                setParams({
+                  page: 1,
+                  limit: 5,
+                  search: "",
+                  status: "",
+                  created_from: "",
+                  created_to: "",
+                  province_id: undefined,
+                  district_id: undefined,
+                  ward_code: "",
+                  phone: "",
+                  order_type: "",
+                  full_name: "",
+                });
               }}
             >
               Clear All
             </Button>
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <Input
+              placeholder="Search by phone number"
+              value={params.phone || ""}
+              onChange={(e) => setParams({ ...params, phone: e.target.value, page: 1 })}
+              className="w-full"
+            />
+          </div>
+          <div>
+            <Input
+              placeholder="Search by customer name"
+              value={params.full_name || ""}
+              onChange={(e) => setParams({ ...params, full_name: e.target.value, page: 1 })}
+              className="w-full"
+            />
+          </div>
+          <div>
+            <DatePicker
+              value={params.created_from}
+              onChange={(date) => setParams({ ...params, created_from: date, page: 1 })}
+              placeholder="Select from date"
+              onlyPast={true}
+            />
+          </div>
+          <div>
+            <DatePicker
+              value={params.created_to}
+              onChange={(date) => setParams({ ...params, created_to: date, page: 1 })}
+              placeholder="Select to date"
+              onlyPast={true}
+            />
+          </div>
+        </div>
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <Select
+              value={String(params.province_id || "")}
+              onValueChange={(value) =>
+                setParams({ ...params, province_id: value ? parseInt(value) : undefined, page: 1 })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select Province" />
+              </SelectTrigger>
+              <SelectContent className="h-[50vh] overflow-y-scroll">
+                {provinces.map((province) => (
+                  <SelectItem key={province.ProvinceID} value={String(province.ProvinceID)}>
+                    {province.ProvinceName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Select
+              value={String(params.district_id || "")}
+              onValueChange={(value) =>
+                setParams({ ...params, district_id: value ? parseInt(value) : undefined, page: 1 })
+              }
+              disabled={!params.province_id}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select District" />
+              </SelectTrigger>
+              <SelectContent className="h-[50vh] overflow-y-scroll">
+                {districts.map((district) => (
+                  <SelectItem key={district.DistrictID} value={String(district.DistrictID)}>
+                    {district.DistrictName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Select
+              value={params.ward_code || ""}
+              onValueChange={(value) => setParams({ ...params, ward_code: value, page: 1 })}
+              disabled={!params.district_id}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select Ward" />
+              </SelectTrigger>
+              <SelectContent className="h-[50vh] overflow-y-scroll">
+                {wards.map((ward) => (
+                  <SelectItem key={ward.WardCode} value={ward.WardCode}>
+                    {ward.WardName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div>
             <Select
               value={params.status || ""}
@@ -183,6 +362,22 @@ const Order: React.FC = () => {
                     {status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <Select
+              value={params.order_type || ""}
+              onValueChange={(value) => setParams({ ...params, order_type: value, page: 1 })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select Order Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="STANDARD">Standard</SelectItem>
+                <SelectItem value="LIMITED">Limited</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -257,13 +452,21 @@ const Order: React.FC = () => {
                     </TableCell>
 
                     <TableCell className="py-4">
-                      <div className="font-semibold text-green-700">
+                      {order.order_type === "LIMITED" && (
+                        <div className="font-medium text-green-700">
+                          {(order.company_revenue / order.total_amount) * 100}%
+                        </div>
+                      )}
+                      <div className="text-sm text-green-600">
                         {convertNumberToCurrency(String(order.company_revenue))}
                       </div>
                     </TableCell>
 
                     <TableCell className="py-4">
-                      <div className="font-semibold text-blue-700">
+                      <div className="font-medium text-blue-700">
+                        {(order.kol_revenue / order.total_amount) * 100}%
+                      </div>
+                      <div className="text-sm text-blue-600">
                         {convertNumberToCurrency(String(order.kol_revenue))}
                       </div>
                     </TableCell>

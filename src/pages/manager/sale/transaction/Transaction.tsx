@@ -29,6 +29,7 @@ import { PaginationTable } from "@/components/global";
 import TransactionDetails from "../../../../components/manage/sale/transaction/TransactionDetails";
 import { convertNumberToCurrency, formatDate } from "@/libs/helper/helper";
 import { getItem } from "@/libs/local-storage";
+import { DatePicker } from "@/components/date-picker";
 
 const formatCurrency = (amount: string) => {
   return new Intl.NumberFormat("vi-VN", {
@@ -56,12 +57,61 @@ const Transaction: React.FC<{ type: "ORDER" | "PREORDER" }> = ({ type }) => {
     page: 1,
     limit: 5,
     reference_type: type,
+    reference_id: undefined,
+    status: undefined,
+    method: undefined,
+    transaction_from_date: undefined,
+    transaction_to_date: undefined,
+    sort_by: "transaction_date",
+    sort_order: "desc",
   });
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   const user = getItem<{
     id: string;
   }>("user");
+
+  useEffect(() => {
+    setParams((prev) => ({ ...prev, reference_type: type, page: 1 }));
+  }, [type]);
+
+  useEffect(() => {
+    const queryParams: TransactionParams = {
+      page: params.page,
+      limit: params.limit,
+      reference_type: params.reference_type,
+    };
+
+    if (params.reference_id && params.reference_id.trim() !== "") {
+      queryParams.reference_id = params.reference_id.trim();
+    }
+
+    if (params.status) {
+      queryParams.status = params.status;
+    }
+
+    if (params.method) {
+      queryParams.method = params.method;
+    }
+
+    if (params.transaction_from_date && params.transaction_from_date !== "") {
+      queryParams.transaction_from_date = params.transaction_from_date;
+    }
+
+    if (params.transaction_to_date && params.transaction_to_date !== "") {
+      queryParams.transaction_to_date = params.transaction_to_date;
+    }
+
+    if (params.sort_by) {
+      queryParams.sort_by = params.sort_by;
+    }
+
+    if (params.sort_order) {
+      queryParams.sort_order = params.sort_order;
+    }
+
+    dispatch(getOrderTransactionsForSaleStaffThunk(queryParams));
+  }, [dispatch, params]);
 
   useEffect(() => {
     setParams((prev) => ({ ...prev, reference_type: type, page: 1 }));
@@ -144,13 +194,37 @@ const Transaction: React.FC<{ type: "ORDER" | "PREORDER" }> = ({ type }) => {
             />
           </div>
 
-          <div className="min-w-[150px]">
+          <div>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setParams({
+                  page: 1,
+                  limit: 5,
+                  reference_type: type,
+                  reference_id: undefined,
+                  status: undefined,
+                  method: undefined,
+                  transaction_from_date: undefined,
+                  transaction_to_date: undefined,
+                  sort_by: "transaction_date",
+                  sort_order: "desc",
+                });
+              }}
+            >
+              Clear All
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
             <Select
-              value={params.status || " "}
+              value={params.status || ""}
               onValueChange={(value) => {
                 setParams({
                   ...params,
-                  status: value === " " ? undefined : (value as any),
+                  status: value === "" ? undefined : (value as any),
                   page: 1,
                 });
               }}
@@ -159,11 +233,81 @@ const Transaction: React.FC<{ type: "ORDER" | "PREORDER" }> = ({ type }) => {
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value=" ">All Status</SelectItem>
                 <SelectItem value="COMPLETED">Completed</SelectItem>
                 <SelectItem value="PENDING">Pending</SelectItem>
                 <SelectItem value="CANCELLED">Cancelled</SelectItem>
                 <SelectItem value="EXPIRED">Expired</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Select
+              value={params.method || ""}
+              onValueChange={(value) => {
+                setParams({
+                  ...params,
+                  method: value === "" ? undefined : (value as any),
+                  page: 1,
+                });
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Payment Method" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="BANK_TRANSFER">Bank Transfer</SelectItem>
+                <SelectItem value="CREDIT_CARD">Credit Card</SelectItem>
+                <SelectItem value="E_WALLET">E-Wallet</SelectItem>
+                <SelectItem value="PAYOS">PayOS</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <DatePicker
+              value={params.transaction_from_date}
+              onChange={(date) => setParams({ ...params, transaction_from_date: date, page: 1 })}
+              placeholder="From Date"
+              onlyPast={true}
+            />
+          </div>
+          <div>
+            <DatePicker
+              value={params.transaction_to_date}
+              onChange={(date) => setParams({ ...params, transaction_to_date: date, page: 1 })}
+              placeholder="To Date"
+              onlyPast={true}
+            />
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <Select
+              value={params.sort_by || "transaction_date"}
+              onValueChange={(value) => setParams({ ...params, sort_by: value, page: 1 })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Sort By" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="transaction_date">Date</SelectItem>
+                <SelectItem value="amount">Amount</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Select
+              value={params.sort_order || "desc"}
+              onValueChange={(value) =>
+                setParams({ ...params, sort_order: value as "asc" | "desc", page: 1 })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Sort Order" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="desc">Descending</SelectItem>
+                <SelectItem value="asc">Ascending</SelectItem>
               </SelectContent>
             </Select>
           </div>

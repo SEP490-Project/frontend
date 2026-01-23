@@ -51,11 +51,15 @@ const Category = () => {
   const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
   const [categoryToEdit, setCategoryToEdit] = useState<string | null>(null);
   const [categoryToAssign, setCategoryToAssign] = useState<string | null>(null);
-  const [params, setParams] = useState({ page: 1, limit: 5 });
+  const [params, setParams] = useState({ page: 1, limit: 5, deleted: false });
 
   useEffect(() => {
+    if (searchTerm) {
+      dispatch(getAllCategoriesThunk({ search: searchTerm }));
+      return;
+    }
     dispatch(getAllCategoriesThunk(params));
-  }, [dispatch, params]);
+  }, [dispatch, params, searchTerm, selectedParentFilter]);
 
   const filteredCategories = useMemo(() => {
     if (!categories?.data) return [];

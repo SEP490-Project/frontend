@@ -149,6 +149,7 @@ export interface ProductParams {
 export interface LimitedProductParams extends ProductParams {
   filter_preorder?: boolean;
   filter_order?: boolean;
+  premiere_date_from?: string;
   premiere_date_to?: string;
   availability_start_date_from?: string;
   availability_start_date_to?: string;

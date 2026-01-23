@@ -123,8 +123,14 @@ export interface OrderRequestQuery {
   limit?: number;
   search?: string;
   status?: string;
-  createdFrom?: string;
-  createdTo?: string;
+  created_from?: string;
+  created_to?: string;
+  district_id?: number;
+  province_id?: number;
+  ward_code?: string;
+  phone?: string;
+  order_type?: string;
+  full_name?: string;
 }
 
 export interface PriceBreakDownResponse {

@@ -1,7 +1,6 @@
 import type { PreOrderData } from "@/libs/types/pre-order";
 import ConfirmPreOrder from "./change-status-preorder/ConfirmPreOrder";
 import AwaitingPickupPreOrder from "./change-status-preorder/AwaitingPickupPreOrder";
-import ShipPreOrder from "./change-status-preorder/ShipPreOrder";
 import CompleteSelfPickupPreOrder from "./change-status-preorder/CompleteSelfPickupPreOrder";
 import RefundRequestPreOrder from "./change-status-preorder/RefundRequestPreOrder";
 import CompensateRequestPreOrder from "./change-status-preorder/CompensateRequestPreOrder";
@@ -9,7 +8,7 @@ import { useAppDispatch } from "@/libs/stores";
 import {
   approvePreOrderThunk,
   compensateAPreOrderThunk,
-  deliveredSelfDeliveryPreOrderThunk,
+  // deliveredSelfDeliveryPreOrderThunk,
   getPreOrdersForSaleStaffThunk,
   obligateRefundAPreOrderThunk,
   receivedSelfPickupPreOrderThunk,
@@ -18,6 +17,7 @@ import {
 import { toast } from "sonner";
 import { useState } from "react";
 import type { OrderRequestQuery } from "@/libs/types/order";
+import ShipPreOrder from "./change-status-preorder/ShipPreOrder";
 
 interface ChangeStatusModalProps {
   preOrder: PreOrderData | null;
@@ -66,21 +66,21 @@ const ChangePreOrderStatusModal = ({ preOrder, onSuccess }: ChangeStatusModalPro
     }
   };
 
-  const handleShipPreorder = async (file: File) => {
-    const formData = new FormData();
-    formData.append("file", file);
+  // const handleShipPreorder = async (file: File) => {
+  //   const formData = new FormData();
+  //   formData.append("file", file);
 
-    const result = await dispatch(
-      deliveredSelfDeliveryPreOrderThunk({ id: preOrder!.id, file: formData }),
-    );
-    if (result.meta.requestStatus === "fulfilled") {
-      toast.success("Pre-order marked as delivered successfully");
-      onSuccess?.();
-      dispatch(getPreOrdersForSaleStaffThunk(params));
-    } else {
-      toast.error("Failed to mark pre-order as delivered");
-    }
-  };
+  //   const result = await dispatch(
+  //     deliveredSelfDeliveryPreOrderThunk({ id: preOrder!.id, file: formData }),
+  //   );
+  //   if (result.meta.requestStatus === "fulfilled") {
+  //     toast.success("Pre-order marked as delivered successfully");
+  //     onSuccess?.();
+  //     dispatch(getPreOrdersForSaleStaffThunk(params));
+  //   } else {
+  //     toast.error("Failed to mark pre-order as delivered");
+  //   }
+  // };
 
   const handleCompensateRequestOrder = async (file: File, isApproved: boolean, reason: string) => {
     const formData = new FormData();
@@ -144,13 +144,17 @@ const ChangePreOrderStatusModal = ({ preOrder, onSuccess }: ChangeStatusModalPro
       if (preOrder.is_self_picked_up) {
         return <AwaitingPickupPreOrder preOrder={preOrder} onHandle={handleMarkReadyForPickup} />;
       }
-      return <ShipPreOrder preOrder={preOrder} onHandle={handleShipPreorder} />;
+      return <ShipPreOrder preOrder={preOrder} />;
     case "AWAITING_PICKUP":
       return (
         <CompleteSelfPickupPreOrder preOrder={preOrder} onHandle={handleCompletePickupPreorder} />
       );
     case "IN_TRANSIT":
-      return <ShipPreOrder preOrder={preOrder} onHandle={handleShipPreorder} />;
+    case "PRE_ORDERED":
+    case "SHIPPED":
+    case "DELIVERED":
+      return <ShipPreOrder preOrder={preOrder} />;
+
     case "REFUND_REQUEST":
       return <RefundRequestPreOrder preOrder={preOrder} onHandle={handleRefundRequestOrder} />;
     case "COMPENSATE_REQUEST":
@@ -161,3 +165,6 @@ const ChangePreOrderStatusModal = ({ preOrder, onSuccess }: ChangeStatusModalPro
 };
 
 export default ChangePreOrderStatusModal;
+
+// case "IN_TRANSIT":
+//   return <ShipPreOrder preOrder={preOrder} onHandle={handleShipPreorder} />;

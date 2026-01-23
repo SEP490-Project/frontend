@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { useAppDispatch, type RootState } from "@/libs/stores";
 import { getPreOrdersForSaleStaffThunk } from "@/libs/stores/orderManager/thunk";
+import { brand } from "@/libs/stores/brandManager/thunk";
 import { useSelector } from "react-redux";
 import type { OrderRequestQuery } from "@/libs/types/order";
 import { PaginationTable } from "@/components/global";
@@ -42,12 +43,13 @@ import {
   getWardsThunk,
 } from "@/libs/stores/locationManager/thunk";
 import type { Province, District, Ward } from "@/libs/types/location";
+import { useBrand } from "@/libs/hooks/useBrand";
 
 const PreOrder: React.FC = () => {
   const dispatch = useAppDispatch();
+  const { brands } = useBrand();
+
   const orderResponse = useSelector((state: RootState) => state?.manageOrder?.preOrderForSaleStaff);
-  const pagination = orderResponse?.pagination;
-  const preOrders: PreOrderData[] = orderResponse?.data || [];
   const isLoading = useSelector((state: RootState) => state?.manageOrder?.loading);
   const error = useSelector((state: RootState) => state?.manageOrder?.errors);
   const provinces: Province[] = useSelector(
@@ -57,6 +59,9 @@ const PreOrder: React.FC = () => {
     (state: RootState) => state?.manageLocation?.districts || [],
   );
   const wards: Ward[] = useSelector((state: RootState) => state?.manageLocation?.wards || []);
+
+  const pagination = orderResponse?.pagination;
+  const preOrders: PreOrderData[] = orderResponse?.data || [];
 
   const [params, setParams] = useState<OrderRequestQuery>({
     page: 1,
@@ -70,14 +75,16 @@ const PreOrder: React.FC = () => {
     ward_code: "",
     phone: "",
     full_name: "",
+    brand_id: undefined,
   });
   const [selectedPreOrder, setSelectedPreOrder] = useState<PreOrderData | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
 
-  // Load provinces on mount
+  // Load provinces and brands on mount
   useEffect(() => {
     dispatch(getProvincesThunk());
+    dispatch(brand({ limit: 100, page: 1 }));
   }, [dispatch]);
 
   // Load districts when province changes
@@ -136,6 +143,10 @@ const PreOrder: React.FC = () => {
 
     if (params.full_name && params.full_name.trim() !== "") {
       queryParams.full_name = params.full_name.trim();
+    }
+
+    if (params.brand_id && params.brand_id !== "") {
+      queryParams.brand_id = params.brand_id;
     }
 
     dispatch(getPreOrdersForSaleStaffThunk(queryParams));
@@ -336,6 +347,23 @@ const PreOrder: React.FC = () => {
           </div>
           <div>
             <Select
+              value={params.brand_id || ""}
+              onValueChange={(value) => setParams({ ...params, brand_id: value, page: 1 })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select Brand" />
+              </SelectTrigger>
+              <SelectContent>
+                {brands.map((brand) => (
+                  <SelectItem key={brand.id} value={brand.id}>
+                    {brand.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Select
               value={params.status || ""}
               onValueChange={(value) => handleStatusChange(value)}
             >
@@ -353,6 +381,10 @@ const PreOrder: React.FC = () => {
                 <SelectItem value="IN_TRANSIT">In Transit</SelectItem>
                 <SelectItem value="DELIVERED">Delivered</SelectItem>
                 <SelectItem value="RECEIVED">Received</SelectItem>
+                <SelectItem value="REFUND_REQUEST">Refund Request</SelectItem>
+                <SelectItem value="COMPENSATE_REQUEST">Compensate Request</SelectItem>
+                <SelectItem value="COMPENSATED">Compensated</SelectItem>
+                <SelectItem value="REFUNDED">Refunded</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -378,7 +410,7 @@ const PreOrder: React.FC = () => {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
+                  <TableCell colSpan={9} className="text-center py-8">
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
                       <span className="ml-2">Loading pre-orders...</span>
@@ -387,13 +419,13 @@ const PreOrder: React.FC = () => {
                 </TableRow>
               ) : error ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-red-600">
+                  <TableCell colSpan={9} className="text-center py-8 text-red-600">
                     Error: {error?.message || "Failed to load pre-orders"}
                   </TableCell>
                 </TableRow>
               ) : !preOrders || preOrders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                  <TableCell colSpan={9} className="text-center py-8 text-gray-500">
                     No pre-orders found
                   </TableCell>
                 </TableRow>
@@ -473,9 +505,7 @@ const PreOrder: React.FC = () => {
                         {preOrder.status !== "CANCELLED" &&
                           preOrder.status !== "RECEIVED" &&
                           preOrder.status !== "REFUNDED" &&
-                          preOrder.status !== "COMPENSATED" &&
-                          preOrder.status !== "PRE_ORDERED" &&
-                          preOrder.status !== "DELIVERED" && (
+                          preOrder.status !== "COMPENSATED" && (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -529,7 +559,9 @@ const PreOrder: React.FC = () => {
                     </div>
                   </div>
                   <Badge className={getStatusBadgeClass(preOrder.status)}>
-                    {preOrder.status.toUpperCase()}
+                    {preOrder.status.toUpperCase() === "SHIPPED"
+                      ? "PICKED_UP"
+                      : preOrder.status.toUpperCase()}
                   </Badge>
                 </div>
 
@@ -567,9 +599,7 @@ const PreOrder: React.FC = () => {
                       preOrder.status === "CANCELLED" ||
                       preOrder.status === "RECEIVED" ||
                       preOrder.status === "REFUNDED" ||
-                      preOrder.status === "COMPENSATED" ||
-                      preOrder.status === "PRE_ORDERED" ||
-                      preOrder.status === "DELIVERED"
+                      preOrder.status === "COMPENSATED"
                     }
                   >
                     <SquarePen className="text-yellow-600 mr-2" />

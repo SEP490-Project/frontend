@@ -34,6 +34,7 @@ import contentDashboardReducer from "./contentDashboardManager/slice";
 import { ghnManagerReducer } from "./ghnManager/slice";
 import { scheduleReducer } from "./scheduleManager/slice";
 import { productOptionManagerReducer } from "./productOptionManager/slice";
+import { manageLocationReducer } from "./locationManager/slice";
 
 export const rootReducer = combineReducers({
   manageAuthen: manageAuthenReducer,
@@ -72,4 +73,5 @@ export const rootReducer = combineReducers({
   manageGHN: ghnManagerReducer,
   manageSchedule: scheduleReducer,
   manageProductOption: productOptionManagerReducer,
+  manageLocation: manageLocationReducer,
 });

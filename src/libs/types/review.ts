@@ -78,3 +78,16 @@ export interface Pagination {
   has_next: boolean;
   has_prev: boolean;
 }
+
+export interface ReviewQueryParams {
+  page?: number;
+  limit?: number;
+  brand_id?: string;
+  // product_id?: string;
+  from_date?: string;
+  to_date?: string;
+  rating_stars_min?: number;
+  rating_stars_max?: number;
+  order_by?: "created_at" | "rating_stars";
+  order_direction?: "asc" | "desc";
+}

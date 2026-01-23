@@ -303,6 +303,12 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
             Posted
           </Badge>
         );
+      case "SCHEDULED":
+        return (
+          <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200 hover:bg-indigo-100">
+            Scheduled
+          </Badge>
+        );
       default:
         return (
           <Badge variant="outline" className="text-gray-600">
@@ -408,6 +414,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                 <SelectItem value="AWAIT_BRAND">Awaiting Brand</SelectItem>
                 <SelectItem value="APPROVED">Approved</SelectItem>
                 <SelectItem value="REJECTED">Rejected</SelectItem>
+                <SelectItem value="SCHEDULED">Scheduled</SelectItem>
                 <SelectItem value="POSTED">Posted</SelectItem>
               </SelectContent>
             </Select>
@@ -480,7 +487,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                           <Video className="w-4 h-4 mr-1 text-purple-500" />
                         )}
                         <span className="text-gray-600 capitalize">
-                          {content.blog ? "blog" : "video"}
+                          {content.blog ? "Post" : "Video"}
                         </span>
                       </div>
                     </div>

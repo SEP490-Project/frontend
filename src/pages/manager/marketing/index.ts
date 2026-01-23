@@ -5,6 +5,7 @@ export { default as ContentApproval } from "./ContentApproval";
 export { default as TaskSchedule } from "./TaskSchedule";
 export { default as ContractPayment } from "./ContractPayment";
 export { default as Violation } from "./Violation";
+export { default as PaymentTransaction } from "./PaymentTransaction";
 
 export * from "./contracts";
 export * from "./campaigns";

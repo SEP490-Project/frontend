@@ -218,11 +218,6 @@ const EditProduct = () => {
   const handleUpdateVariant = async (variantId: string, isLimited: boolean, data: any) => {
     if (!productId) return;
 
-    if (!isLimitedProduct && data.price && data.price > 5_000_000) {
-      toast.error("Price must be between 0 and 5,000,000 for standard variants.");
-      return;
-    }
-
     const achievableQuantity =
       (productDetail?.data as LimitedProductData)?.limited_product?.achievable_quantity || 1;
 
@@ -251,11 +246,6 @@ const EditProduct = () => {
       productDetail?.data?.variants?.length > Number(configValue) - 1
     ) {
       toast.error(`You can only add up to ${configValue} variants per product.`);
-      return;
-    }
-
-    if (!isLimitedProduct && data.price && data.price > 5_000_000) {
-      toast.error("Price must be between 0 and 5,000,000 for standard variants.");
       return;
     }
 

@@ -167,6 +167,7 @@ const PreOrder: React.FC = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="PENDING">Pending</SelectItem>
+              <SelectItem value="PAID">Paid</SelectItem>
               <SelectItem value="PRE_ORDERED">Pre-Ordered</SelectItem>
               <SelectItem value="AWAITING_RELEASE">Awaiting Release</SelectItem>
               <SelectItem value="AWAITING_PICKUP">Awaiting Pickup</SelectItem>
@@ -187,7 +188,10 @@ const PreOrder: React.FC = () => {
               <TableRow className="border-b bg-gray-50">
                 <TableHead className="font-semibold">Pre-Order ID</TableHead>
                 <TableHead className="font-semibold">Customer</TableHead>
-                <TableHead className="font-semibold">Total Amount (Brand / System)</TableHead>
+                <TableHead className="font-semibold">Brand</TableHead>
+                <TableHead className="font-semibold">Brand Share</TableHead>
+                <TableHead className="font-semibold">System Share</TableHead>
+                <TableHead className="font-semibold">Total Amount</TableHead>
                 <TableHead className="font-semibold">Status</TableHead>
                 <TableHead className="font-semibold">Created At</TableHead>
                 <TableHead className="font-semibold">Actions</TableHead>
@@ -238,11 +242,24 @@ const PreOrder: React.FC = () => {
                     </TableCell>
 
                     <TableCell className="py-4">
-                      <div className="font-semibold text-gray-900">
-                        {formatCurrency(preOrder.total_amount)} (
+                      <div className="font-semibold text-gray-900">{preOrder.brand.name}</div>
+                    </TableCell>
+
+                    <TableCell className="py-4">
+                      <div className="font-semibold text-green-700">
                         {convertNumberToCurrency(String(preOrder.company_revenue))}
-                        {" / "}
-                        {convertNumberToCurrency(String(preOrder.kol_revenue))})
+                      </div>
+                    </TableCell>
+
+                    <TableCell className="py-4">
+                      <div className="font-semibold text-blue-700">
+                        {convertNumberToCurrency(String(preOrder.kol_revenue))}
+                      </div>
+                    </TableCell>
+
+                    <TableCell className="py-4">
+                      <div className="font-semibold text-gray-900">
+                        {formatCurrency(preOrder.total_amount)}
                       </div>
                     </TableCell>
 

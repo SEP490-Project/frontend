@@ -16,15 +16,18 @@ interface KPICardsProps {
 // Skeleton component for KPI cards
 export const KPICardsSkeleton: React.FC = () => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
       {[...Array(4)].map((_, i) => (
-        <div key={i} className="rounded-2xl bg-white shadow-sm p-6">
+        <div
+          key={i}
+          className="rounded-2xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6"
+        >
           <div className="flex items-center justify-between mb-4">
-            <Skeleton className="h-12 w-12 rounded-full" />
-            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-11 w-11 rounded-xl" />
+            <Skeleton className="h-5 w-16 rounded-full" />
           </div>
-          <Skeleton className="h-8 w-20 mb-2" />
-          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-8 w-24 mb-2" />
+          <Skeleton className="h-4 w-20" />
         </div>
       ))}
     </div>
@@ -92,7 +95,7 @@ export const KPICards: React.FC<KPICardsProps> = ({ quickStats, period, isLoadin
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6"
     >
       {kpiData.map((kpi, index) => (
         <motion.div key={index} variants={itemVariants}>

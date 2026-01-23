@@ -131,31 +131,40 @@ export const ScheduleManagement: React.FC = () => {
 
   // Filter schedules on frontend
   const filteredSchedules = useMemo(() => {
-    return schedules.filter((schedule) => {
-      // Status filter
-      if (statusFilter !== "ALL" && schedule.status !== statusFilter) {
-        return false;
-      }
+    return (
+      schedules
+        .filter((schedule) => {
+          // Status filter
+          if (statusFilter !== "ALL" && schedule.status !== statusFilter) {
+            return false;
+          }
 
-      // Date filters
-      const scheduleDate = parseISO(schedule.scheduled_at);
+          // Date filters
+          const scheduleDate = parseISO(schedule.scheduled_at);
 
-      if (fromDate) {
-        const fromDateStart = startOfDay(parseISO(fromDate));
-        if (isBefore(scheduleDate, fromDateStart)) {
-          return false;
-        }
-      }
+          if (fromDate) {
+            const fromDateStart = startOfDay(parseISO(fromDate));
+            if (isBefore(scheduleDate, fromDateStart)) {
+              return false;
+            }
+          }
 
-      if (toDate) {
-        const toDateEnd = endOfDay(parseISO(toDate));
-        if (isAfter(scheduleDate, toDateEnd)) {
-          return false;
-        }
-      }
+          if (toDate) {
+            const toDateEnd = endOfDay(parseISO(toDate));
+            if (isAfter(scheduleDate, toDateEnd)) {
+              return false;
+            }
+          }
 
-      return true;
-    });
+          return true;
+        })
+        // Sort by newest first
+        .sort((a, b) => {
+          const dateA = parseISO(a.scheduled_at);
+          const dateB = parseISO(b.scheduled_at);
+          return dateB.getTime() - dateA.getTime();
+        })
+    );
   }, [schedules, statusFilter, fromDate, toDate]);
 
   // Paginate filtered results

@@ -63,17 +63,19 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       variants={fadeInVariants}
       initial="hidden"
       animate="visible"
-      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2"
     >
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Content Dashboard</h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+          Content Dashboard
+        </h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1.5 font-medium">
           {period
             ? `${period.preset_label} • ${format(new Date(period.current_start), "MMM dd, yyyy")} - ${format(new Date(period.current_end), "MMM dd, yyyy")}`
             : "Content performance overview"}
         </p>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
         {/* Sync Button - Triggers content metrics poller job */}
         {onSync && (
           <Tooltip>
@@ -83,9 +85,14 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 size="icon"
                 onClick={onSync}
                 disabled={isSyncing || isRefreshing}
-                className="relative"
+                className="relative h-9 w-9 sm:h-10 sm:w-10 border-gray-200 dark:border-gray-700 hover:bg-pink-50 dark:hover:bg-pink-900/20 hover:border-pink-300 transition-all duration-200"
               >
-                <FaCloudDownloadAlt size={16} className={isSyncing ? "animate-pulse" : ""} />
+                <FaCloudDownloadAlt
+                  size={16}
+                  className={
+                    isSyncing ? "animate-pulse text-pink-500" : "text-gray-600 dark:text-gray-400"
+                  }
+                />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -102,9 +109,14 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               size="icon"
               onClick={onRefresh}
               disabled={isRefreshing}
-              className="relative"
+              className="relative h-9 w-9 sm:h-10 sm:w-10 border-gray-200 dark:border-gray-700 hover:bg-pink-50 dark:hover:bg-pink-900/20 hover:border-pink-300 transition-all duration-200"
             >
-              <FaSync size={16} className={isRefreshing ? "animate-spin" : ""} />
+              <FaSync
+                size={14}
+                className={
+                  isRefreshing ? "animate-spin text-pink-500" : "text-gray-600 dark:text-gray-400"
+                }
+              />
             </Button>
           </TooltipTrigger>
           <TooltipContent>
@@ -123,10 +135,13 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
         {/* Alerts Button */}
         {unreadAlertsCount > 0 && (
-          <Button variant="outline" className="relative">
-            <FaBell size={16} />
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-              {unreadAlertsCount}
+          <Button
+            variant="outline"
+            className="relative h-9 w-9 sm:h-10 sm:w-10 p-0 border-gray-200 dark:border-gray-700 hover:bg-pink-50 dark:hover:bg-pink-900/20"
+          >
+            <FaBell size={14} className="text-gray-600 dark:text-gray-400" />
+            <span className="absolute -top-1.5 -right-1.5 bg-pink-500 text-white text-[10px] font-semibold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shadow-sm">
+              {unreadAlertsCount > 99 ? "99+" : unreadAlertsCount}
             </span>
           </Button>
         )}

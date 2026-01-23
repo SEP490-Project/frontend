@@ -411,11 +411,31 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
         const isBreakdownBalanced =
           Math.abs((financial_terms.total_cost || 0) - breakdownTotal) < 0.01;
 
+        // Check event linking for BRAND_AMBASSADOR
+        let allEventsLinked = true;
+        if (formData.type === "BRAND_AMBASSADOR") {
+          const scope_of_work = formData.scope_of_work || {};
+          const deliverables = scope_of_work.deliverables || {};
+          const events = Array.isArray(deliverables.events) ? deliverables.events : [];
+
+          if (events.length > 0) {
+            // Get all linked event IDs from schedule
+            const linkedEventIds = new Set<number>();
+            schedule.forEach((milestone: any) => {
+              (milestone.linked_event_ids || []).forEach((id: number) => linkedEventIds.add(id));
+            });
+
+            // Check if all events are linked
+            allEventsLinked = events.every((event: any) => linkedEventIds.has(event.id));
+          }
+        }
+
         return (
           hasBasicInfo &&
           allItemsValid &&
           isScheduleBalanced &&
           isBreakdownBalanced &&
+          allEventsLinked &&
           hasDepositProof
         );
       }
@@ -920,11 +940,48 @@ const AddContractPage: React.FC = () => {
                 ],
                 compensation_percent: formData.legal_terms?.compensation_percent,
               },
+            ],
+          },
+          rules: {
+            label: "Rules and Violations",
+            items: [
               {
-                title: "Mutual agreement to terminate",
-                details: [
-                  "Contract stops with no penalties",
-                  "No compensation required from either party",
+                title: "For Brand (Party A)",
+                violations: [
+                  {
+                    name: "Payment Default",
+                    description: "Failure to settle payments by the agreed due date.",
+                  },
+                  {
+                    name: "Support Failure",
+                    description:
+                      "Failure to provide samples or guidelines on time, causing delays.",
+                  },
+                  {
+                    name: "Copyright Infringement",
+                    description: "Using KOL's content outside the agreed scope/platforms.",
+                  },
+                ],
+              },
+              {
+                title: "For KOL (Party B)",
+                violations: [
+                  {
+                    name: "Late Submission",
+                    description: "Failure to submit drafts or post content on the scheduled date.",
+                  },
+                  {
+                    name: "Exclusivity Breach",
+                    description: "Promoting direct competitors during the contract term.",
+                  },
+                  {
+                    name: "Content Removal",
+                    description: "Deleting or hiding posts before the agreed expiry date.",
+                  },
+                  {
+                    name: "Reputation Damage",
+                    description: "Involved in scandals that negatively affect the Brand.",
+                  },
                 ],
               },
             ],

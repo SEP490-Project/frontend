@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/select";
 import { FaPenToSquare, FaFilter, FaEye } from "react-icons/fa6";
 import { Switch } from "@/components/ui/switch";
-import { Trash } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -286,22 +285,22 @@ const StandardProduct: React.FC = () => {
                         >
                           <FaEye className="text-blue-600" />
                         </Button>
-
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className=" hover:bg-yellow-100"
-                          title="Edit"
-                          onClick={() => {
-                            navigate(`/manage/sale/product/${product.id}/edit`, {
-                              state: { id: product.id, product: product },
-                            });
-                          }}
-                        >
-                          <FaPenToSquare className="text-yellow-600" />
-                        </Button>
-
-                        <Dialog>
+                        {!product.is_active && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className=" hover:bg-yellow-100"
+                            title="Edit"
+                            onClick={() => {
+                              navigate(`/manage/sale/product/${product.id}/edit`, {
+                                state: { id: product.id, product: product },
+                              });
+                            }}
+                          >
+                            <FaPenToSquare className="text-yellow-600" />
+                          </Button>
+                        )}
+                        {/* <Dialog>
                           <DialogTrigger asChild>
                             <Button
                               variant="ghost"
@@ -312,8 +311,7 @@ const StandardProduct: React.FC = () => {
                               <Trash className="text-red-600" />
                             </Button>
                           </DialogTrigger>
-                          {/* <DeleteModal name={product.name} /> */}
-                        </Dialog>
+                        </Dialog> */}
                       </div>
                     </TableCell>
                   </TableRow>

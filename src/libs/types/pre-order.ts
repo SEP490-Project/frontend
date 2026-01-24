@@ -24,6 +24,7 @@ export interface PreOrderData {
   address_line2: string;
   city: string;
   ghn_province_id: number;
+  shipping_fee: number;
   ghn_district_id: number;
   ghn_ward_code: string;
   province_name: string;

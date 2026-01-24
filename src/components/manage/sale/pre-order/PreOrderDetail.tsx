@@ -191,14 +191,22 @@ const PreOrderDetail: React.FC<PreOrderDetailProps> = ({ preOrder }) => {
             Shipping Information
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div>
-            <span className="text-sm text-gray-500">Delivery Method:</span>
-            <Badge
-              className={`ml-2 ${preOrder.is_self_picked_up ? "bg-orange-100 text-orange-800 border border-orange-200" : "bg-blue-100 text-blue-800 border border-blue-200"}`}
-            >
-              {preOrder.is_self_picked_up ? "In-Store Pickup" : "Home Delivery"}
-            </Badge>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <span className="text-sm text-gray-500">Delivery Method:</span>
+              <Badge
+                className={`ml-2 ${preOrder.is_self_picked_up ? "bg-orange-100 text-orange-800 border border-orange-200" : "bg-blue-100 text-blue-800 border border-blue-200"}`}
+              >
+                {preOrder.is_self_picked_up ? "In-Store Pickup" : "Home Delivery"}
+              </Badge>
+            </div>
+            <div>
+              <span className="text-sm text-gray-500">Shipping Fee:</span>
+              <p className="text-sm font-semibold text-gray-900 mt-1">
+                {formatCurrency(preOrder.shipping_fee)}
+              </p>
+            </div>
           </div>
           {!preOrder.is_self_picked_up && (
             <div className="space-y-2">
@@ -663,7 +671,7 @@ const PreOrderDetail: React.FC<PreOrderDetailProps> = ({ preOrder }) => {
                       </div>
                       <div>
                         <p className="text-xs text-gray-700">
-                          KOL Share{" "}
+                          System Share{" "}
                           <span className="text-xs text-gray-500">
                             ({breakdown.kol_percentage}%)
                           </span>

@@ -402,6 +402,7 @@ const PreOrder: React.FC = () => {
                 <TableHead className="font-semibold">Brand Share</TableHead>
                 <TableHead className="font-semibold">System Share</TableHead>
                 <TableHead className="font-semibold">Total Amount</TableHead>
+                <TableHead className="font-semibold">Shipping Fee</TableHead>
                 <TableHead className="font-semibold">Status</TableHead>
                 <TableHead className="font-semibold">Created At</TableHead>
                 <TableHead className="font-semibold">Actions</TableHead>
@@ -410,7 +411,7 @@ const PreOrder: React.FC = () => {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8">
+                  <TableCell colSpan={10} className="text-center py-8">
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
                       <span className="ml-2">Loading pre-orders...</span>
@@ -419,13 +420,13 @@ const PreOrder: React.FC = () => {
                 </TableRow>
               ) : error ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-red-600">
+                  <TableCell colSpan={10} className="text-center py-8 text-red-600">
                     Error: {error?.message || "Failed to load pre-orders"}
                   </TableCell>
                 </TableRow>
               ) : !preOrders || preOrders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                  <TableCell colSpan={10} className="text-center py-8 text-gray-500">
                     No pre-orders found
                   </TableCell>
                 </TableRow>
@@ -476,6 +477,12 @@ const PreOrder: React.FC = () => {
                     <TableCell className="py-4">
                       <div className="font-semibold text-gray-900">
                         {formatCurrency(preOrder.total_amount)}
+                      </div>
+                    </TableCell>
+
+                    <TableCell className="py-4">
+                      <div className="font-medium text-gray-900">
+                        {formatCurrency(preOrder.shipping_fee)}
                       </div>
                     </TableCell>
 
@@ -574,6 +581,9 @@ const PreOrder: React.FC = () => {
                 <div className="space-y-1">
                   <div className="font-semibold text-gray-900">
                     Total: {formatCurrency(preOrder.total_amount)}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    Shipping: {formatCurrency(preOrder.shipping_fee)}
                   </div>
                 </div>
 

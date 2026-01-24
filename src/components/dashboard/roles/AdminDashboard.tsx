@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   KPIWidget,
-  LineChartWidget,
+  // LineChartWidget,
   TableWidget,
-  BarChartWidget,
+  // BarChartWidget,
   PieChartWidget,
 } from "@/components/dashboard/chart";
 import {
@@ -36,8 +36,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import DatePicker from "@/components/date-picker";
+// import { Button } from "@/components/ui/button";
+// import DatePicker from "@/components/date-picker";
 
 type Granularity = "DAY" | "WEEK" | "MONTH";
 
@@ -55,7 +55,7 @@ interface RevenueFilter extends RangeFilter {
 const formatCurrency = (value: number | null | undefined) =>
   typeof value === "number" ? value.toLocaleString("vi-VN") : "-";
 
-const formatDateInput = (value?: string) => (value ? value.substring(0, 10) : "");
+// const formatDateInput = (value?: string) => (value ? value.substring(0, 10) : "");
 
 const isEmptyData = (data: any[]) => {
   return (
@@ -85,7 +85,7 @@ const AdminDashboard: React.FC = () => {
   const defaultEndDate = new Date();
   defaultEndDate.setHours(23, 59, 59, 999);
 
-  const [revenueChartMode, setRevenueChartMode] = useState<ChartMode>("percent");
+  // const [revenueChartMode, setRevenueChartMode] = useState<ChartMode>("percent");
   const [roleChartMode, setRoleChartMode] = useState<ChartMode>("percent");
 
   const dispatch = useAppDispatch();
@@ -103,7 +103,7 @@ const AdminDashboard: React.FC = () => {
     systemOverview,
   } = useAdminAnalytic();
 
-  const [revenueFilter, setRevenueFilter] = useState<RevenueFilter>({
+  const [revenueFilter] = useState<RevenueFilter>({
     start_date: defaultStartDate.toISOString(),
     end_date: defaultEndDate.toISOString(),
     granularity: "DAY",
@@ -170,52 +170,52 @@ const AdminDashboard: React.FC = () => {
     [revenue],
   );
 
-  const revenueBreakdownData = useMemo(() => {
-    if (!revenue?.revenue_breakdown) return [];
-    const r = revenue.revenue_breakdown;
-    const data = [
-      { name: "Advertising", value: Math.round(r.advertising_revenue) },
-      { name: "Affiliate", value: Math.round(r.affiliate_revenue) },
-      { name: "Ambassador", value: Math.round(r.ambassador_revenue) },
-      { name: "Co-Produce", value: Math.round(r.co_producing_revenue) },
-      { name: "Standard Product", value: Math.round(r.standard_product_revenue) },
-      { name: "Limited Product", value: Math.round(r.limited_product_revenue) },
-    ];
-    return data.filter((item) => item.value > 0);
-  }, [revenue?.revenue_breakdown]);
+  // const revenueBreakdownData = useMemo(() => {
+  //   if (!revenue?.revenue_breakdown) return [];
+  //   const r = revenue.revenue_breakdown;
+  //   const data = [
+  //     { name: "Advertising", value: Math.round(r.advertising_revenue) },
+  //     { name: "Affiliate", value: Math.round(r.affiliate_revenue) },
+  //     { name: "Ambassador", value: Math.round(r.ambassador_revenue) },
+  //     { name: "Co-Produce", value: Math.round(r.co_producing_revenue) },
+  //     { name: "Standard Product", value: Math.round(r.standard_product_revenue) },
+  //     { name: "Limited Product", value: Math.round(r.limited_product_revenue) },
+  //   ];
+  //   return data.filter((item) => item.value > 0);
+  // }, [revenue?.revenue_breakdown]);
 
-  const rawRevenueShareData = useMemo(() => {
-    if (!revenue?.revenue_breakdown || !revenue.total_revenue) return [];
-    const r = revenue.revenue_breakdown;
-    const data = [
-      { type: "Contract Revenue", value: Number(r.total_contract_revenue) },
-      { type: "Product Revenue", value: Number(r.total_product_revenue) },
-    ];
-    return data.filter((item) => item.value > 0);
-  }, [revenue?.revenue_breakdown, revenue?.total_revenue]);
+  // const rawRevenueShareData = useMemo(() => {
+  //   if (!revenue?.revenue_breakdown || !revenue.total_revenue) return [];
+  //   const r = revenue.revenue_breakdown;
+  //   const data = [
+  //     { type: "Contract Revenue", value: Number(r.total_contract_revenue) },
+  //     { type: "Product Revenue", value: Number(r.total_product_revenue) },
+  //   ];
+  //   return data.filter((item) => item.value > 0);
+  // }, [revenue?.revenue_breakdown, revenue?.total_revenue]);
 
-  const revenueShareData = useMemo(() => {
-    if (!rawRevenueShareData.length) return [];
-    if (revenueChartMode === "count") return rawRevenueShareData;
+  // const revenueShareData = useMemo(() => {
+  //   if (!rawRevenueShareData.length) return [];
+  //   if (revenueChartMode === "count") return rawRevenueShareData;
 
-    const total = rawRevenueShareData.reduce((sum, item) => sum + item.value, 0);
-    return rawRevenueShareData.map((item) => ({
-      type: item.type,
-      value: total ? Number(((item.value / total) * 100).toFixed(1)) : 0,
-    }));
-  }, [rawRevenueShareData, revenueChartMode]);
+  //   const total = rawRevenueShareData.reduce((sum, item) => sum + item.value, 0);
+  //   return rawRevenueShareData.map((item) => ({
+  //     type: item.type,
+  //     value: total ? Number(((item.value / total) * 100).toFixed(1)) : 0,
+  //   }));
+  // }, [rawRevenueShareData, revenueChartMode]);
 
-  const revenueTrendData = useMemo(
-    () =>
-      revenue?.revenue_trend?.map((item: any) => ({
-        month: new Date(item.date).toLocaleDateString("default", {
-          month: "short",
-          day: "numeric",
-        }),
-        value: Math.round(item.revenue),
-      })) || [],
-    [revenue?.revenue_trend],
-  );
+  // const revenueTrendData = useMemo(
+  //   () =>
+  //     revenue?.revenue_trend?.map((item: any) => ({
+  //       month: new Date(item.date).toLocaleDateString("default", {
+  //         month: "short",
+  //         day: "numeric",
+  //       }),
+  //       value: Math.round(item.revenue),
+  //     })) || [],
+  //   [revenue?.revenue_trend],
+  // );
 
   // const userGrowthData = useMemo(
   //   () =>
@@ -392,20 +392,20 @@ const AdminDashboard: React.FC = () => {
   const isAnyLoading =
     loading || loadingRevenue || loadingUserGrowth || loadingUserOverview || loadingSystemOverview;
 
-  const handleChangeGapPeriod = (periodGap: string, setFilter: any) => {
-    const startDate = new Date();
-    const endDate = new Date();
-    if (periodGap === "DAY") {
-      startDate.setDate(startDate.getMonth() - 1);
-    } else if (periodGap === "MONTH") {
-      startDate.setFullYear(startDate.getFullYear() - 1);
-    }
-    setFilter({
-      start_date: startDate.toISOString(),
-      end_date: endDate.toISOString(),
-      granularity: periodGap,
-    });
-  };
+  // const handleChangeGapPeriod = (periodGap: string, setFilter: any) => {
+  //   const startDate = new Date();
+  //   const endDate = new Date();
+  //   if (periodGap === "DAY") {
+  //     startDate.setDate(startDate.getMonth() - 1);
+  //   } else if (periodGap === "MONTH") {
+  //     startDate.setFullYear(startDate.getFullYear() - 1);
+  //   }
+  //   setFilter({
+  //     start_date: startDate.toISOString(),
+  //     end_date: endDate.toISOString(),
+  //     granularity: periodGap,
+  //   });
+  // };
 
   return (
     <div className="p-2 sm:p-6 w-full flex flex-col gap-6 relative">
@@ -455,7 +455,7 @@ const AdminDashboard: React.FC = () => {
         />
       </div>
 
-      <Card className="p-4">
+      {/* <Card className="p-4">
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center flex-wrap gap-2">
             <h2 className="text-lg font-semibold">Total Revenue Trend</h2>
@@ -534,9 +534,9 @@ const AdminDashboard: React.FC = () => {
             />
           )}
         </div>
-      </Card>
+      </Card> */}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="p-4">
           <div className="flex flex-col gap-4">
             <h2 className="text-lg font-semibold">Contract & Order Revenue Breakdown</h2>
@@ -572,7 +572,7 @@ const AdminDashboard: React.FC = () => {
             )}
           </div>
         </Card>
-      </div>
+      </div> */}
 
       <Card className="p-4">
         <div className="flex flex-col gap-4">

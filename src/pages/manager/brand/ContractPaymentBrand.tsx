@@ -38,6 +38,7 @@ import {
   PaymentDetailModal,
   PaymentModal,
   ReviewRefundProofModal,
+  EarlyPaymentWarningModal,
 } from "@/components/manage/marketing/contract-payment";
 import { toast } from "sonner";
 
@@ -47,6 +48,7 @@ const CONTRACT_PAYMENT_STATUS_LABELS: Record<string, string> = {
   NOT_STARTED: "Not Started",
   PENDING: "Pending",
   PAID: "Paid",
+  OVERDUE: "Overdue",
   // CO_PRODUCING refund workflow statuses
   KOL_PENDING: "Awaiting Refund Proof",
   KOL_PROOF_SUBMITTED: "Proof Submitted",
@@ -64,6 +66,7 @@ const STATUS_COLORS: Record<string, string> = {
   NOT_STARTED: "bg-gray-100 text-gray-800 border-gray-200",
   PAID: "bg-green-100 text-green-800 border-green-200",
   PENDING: "bg-yellow-100 text-yellow-800 border-yellow-200",
+  OVERDUE: "bg-orange-100 text-orange-800 border-orange-200",
   // CO_PRODUCING refund workflow statuses
   KOL_PENDING: "bg-amber-100 text-amber-800 border-amber-200",
   KOL_PROOF_SUBMITTED: "bg-blue-100 text-blue-800 border-blue-200",
@@ -115,7 +118,15 @@ const ContractPaymentBrandPage: React.FC = () => {
   const [loadingPaymentId, setLoadingPaymentId] = useState<string | null>(null);
   const [modalPaymentLoading, setModalPaymentLoading] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isEarlyPaymentWarningOpen, setIsEarlyPaymentWarningOpen] = useState(false);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
+  const [pendingPaymentData, setPendingPaymentData] = useState<{
+    contractPaymentId: string;
+    amount: number;
+    contractNumber: string;
+    dueDate: string;
+    installmentPercentage?: number;
+  } | null>(null);
 
   // Review refund proof modal states
   const [isReviewRefundModalOpen, setIsReviewRefundModalOpen] = useState(false);
@@ -126,8 +137,23 @@ const ContractPaymentBrandPage: React.FC = () => {
     contract_payment_id: string,
     amount?: number,
     contractNumber?: string,
+    dueDate?: string,
+    installmentPercentage?: number,
   ) => {
-    // Proceed with payment flow
+    // Check if this is an early payment (more than 10 days before due date)
+    if (dueDate && isEarlyPayment(dueDate)) {
+      setPendingPaymentData({
+        contractPaymentId: contract_payment_id,
+        amount: amount || 0,
+        contractNumber: contractNumber || "",
+        dueDate,
+        installmentPercentage,
+      });
+      setIsEarlyPaymentWarningOpen(true);
+      return;
+    }
+
+    // Proceed with normal payment flow
     await proceedWithPayment(contract_payment_id, amount, contractNumber);
   };
 
@@ -175,7 +201,23 @@ const ContractPaymentBrandPage: React.FC = () => {
   };
 
   const handlePayNowFromModal = async (contract_payment_id: string) => {
-    // Proceed with payment flow
+    const found = contractPayments.find((p: any) => p.id === contract_payment_id);
+
+    // Check if this is an early payment (more than 10 days before due date)
+    if (found && found.due_date && isEarlyPayment(found.due_date)) {
+      setPendingPaymentData({
+        contractPaymentId: contract_payment_id,
+        amount: found.amount || 0,
+        contractNumber: found.contract_number || "",
+        dueDate: found.due_date,
+        installmentPercentage: found.installment_percentage,
+      });
+      setIsModalOpen(false);
+      setIsEarlyPaymentWarningOpen(true);
+      return;
+    }
+
+    // Proceed with normal payment flow
     await proceedWithPaymentFromModal(contract_payment_id);
   };
 
@@ -215,6 +257,33 @@ const ContractPaymentBrandPage: React.FC = () => {
       toast.error("An error occurred while creating payment link.");
     } finally {
       setModalPaymentLoading(false);
+    }
+  };
+
+  const handleEarlyPaymentConfirm = async () => {
+    if (!pendingPaymentData) return;
+
+    setIsEarlyPaymentWarningOpen(false);
+
+    if (isModalOpen) {
+      await proceedWithPaymentFromModal(pendingPaymentData.contractPaymentId);
+    } else {
+      await proceedWithPayment(
+        pendingPaymentData.contractPaymentId,
+        pendingPaymentData.amount,
+        pendingPaymentData.contractNumber,
+      );
+    }
+
+    setPendingPaymentData(null);
+  };
+
+  const handleEarlyPaymentCancel = () => {
+    setIsEarlyPaymentWarningOpen(false);
+    setPendingPaymentData(null);
+    // Re-open the detail modal if it was open before
+    if (selectedPaymentId) {
+      setIsModalOpen(true);
     }
   };
 
@@ -398,19 +467,36 @@ const ContractPaymentBrandPage: React.FC = () => {
       return <span className="text-sm italic text-gray-600">To be calculated by performance</span>;
     }
 
-    const amount = payment.amount;
-    // If amount is positive, display it as negative (red).
-    // If amount is negative, display it as positive (green).
-    // Zero remains neutral.
-    const colorClass =
-      amount > 0 ? "text-red-600" : amount < 0 ? "text-green-600" : "text-gray-600";
-    const displayAmount = amount > 0 ? -Math.abs(amount) : Math.abs(amount);
-
     return (
       <div className="flex flex-col">
-        <span className={`font-semibold ${colorClass}`}>{formatCurrency(displayAmount)}</span>
+        <span className="font-medium">{formatCurrency(Math.abs(payment.amount))}</span>
       </div>
     );
+  };
+
+  const isOverdue = (dueDate: string) => {
+    if (!dueDate) return false;
+
+    const now = new Date();
+    const due = new Date(dueDate);
+
+    if (isNaN(due.getTime())) return false;
+
+    return due.getTime() < now.getTime();
+  };
+
+  const isEarlyPayment = (dueDate: string) => {
+    if (!dueDate) return false;
+
+    const now = new Date();
+    const due = new Date(dueDate);
+
+    if (isNaN(due.getTime())) return false;
+
+    const diffMs = due.getTime() - now.getTime();
+    const tenDaysMs = 10 * 24 * 60 * 60 * 1000;
+
+    return diffMs > tenDaysMs;
   };
 
   const handleViewPayment = (paymentId: string) => {
@@ -527,10 +613,7 @@ const ContractPaymentBrandPage: React.FC = () => {
                 <SelectItem value="NOT_STARTED">Not Started</SelectItem>
                 <SelectItem value="PENDING">Pending</SelectItem>
                 <SelectItem value="PAID">Paid</SelectItem>
-                <SelectItem value="KOL_PENDING">Awaiting Refund Proof</SelectItem>
-                <SelectItem value="KOL_PROOF_SUBMITTED">Proof Submitted</SelectItem>
-                <SelectItem value="KOL_PROOF_REJECTED">Proof Rejected</SelectItem>
-                <SelectItem value="KOL_REFUND_APPROVED">Refund Approved</SelectItem>
+                <SelectItem value="OVERDUE">Overdue</SelectItem>
               </SelectContent>
             </Select>
           </motion.div>
@@ -651,9 +734,7 @@ const ContractPaymentBrandPage: React.FC = () => {
                         <div>
                           <div className="font-medium text-gray-900 flex items-center gap-2">
                             {payment.contract_number}
-                            {payment.pay_now === true && payment.status === "PENDING" && (
-                              <PayNowMark />
-                            )}
+                            {payment.pay_now && payment.status === "PENDING" && <PayNowMark />}
                             {payment.is_deposit && (
                               <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-xs px-1.5 py-0.5">
                                 Deposit
@@ -733,33 +814,45 @@ const ContractPaymentBrandPage: React.FC = () => {
                             </Tooltip>
                           )}
                           {/* Only show Pay Now button if pay_now is true and status is PENDING */}
-                          {payment.pay_now === true && payment.status === "PENDING" && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="default"
-                                  size="sm"
-                                  className="h-8 px-3 text-xs font-semibold text-white bg-primary"
-                                  onClick={() =>
-                                    handlePayNow(
-                                      payment.id,
-                                      payment.amount,
-                                      payment.contract_number,
-                                    )
-                                  }
-                                >
-                                  {loadingPaymentId === payment.id ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    "Pay Now"
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Pay this contract payment</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          )}
+                          {/* {payment.status === "PENDING" && payment.pay_now && ( */}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className={`h-8 px-3 text-xs font-semibold text-white ${
+                                  isOverdue(payment.due_date)
+                                    ? "bg-red-600 hover:bg-red-700"
+                                    : "bg-primary"
+                                }`}
+                                onClick={() =>
+                                  handlePayNow(
+                                    payment.id,
+                                    payment.amount,
+                                    payment.contract_number,
+                                    payment.due_date,
+                                    payment.installment_percentage,
+                                  )
+                                }
+                              >
+                                {loadingPaymentId === payment.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : isOverdue(payment.due_date) ? (
+                                  "Pay Overdue"
+                                ) : (
+                                  "Pay Now"
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>
+                                {isOverdue(payment.due_date)
+                                  ? "This payment is overdue"
+                                  : "Pay this contract payment"}
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                          {/* )} */}
                         </div>
                       </TableCell>
                     </motion.tr>
@@ -789,9 +882,7 @@ const ContractPaymentBrandPage: React.FC = () => {
                       <div className="flex-1">
                         <div className="font-semibold text-gray-900 flex items-center gap-2 flex-wrap">
                           {payment.contract_number}
-                          {payment.pay_now === true && payment.status === "PENDING" && (
-                            <PayNowMark />
-                          )}
+                          {payment.pay_now && payment.status === "PENDING" && <PayNowMark />}
                           {payment.is_deposit && (
                             <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-xs px-1.5 py-0.5">
                               Deposit
@@ -876,26 +967,42 @@ const ContractPaymentBrandPage: React.FC = () => {
                         </Tooltip>
                       )}
                       {/* Only show Pay Now button if pay_now is true and status is PENDING */}
-                      {payment.pay_now === true && payment.status === "PENDING" && (
+                      {payment.status === "PENDING" && payment.pay_now && (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
                               variant="default"
                               size="sm"
-                              className="h-8 px-3 text-xs font-semibold text-white bg-primary"
+                              className={`h-8 px-3 text-xs font-semibold text-white ${
+                                isOverdue(payment.due_date)
+                                  ? "bg-red-600 hover:bg-red-700"
+                                  : "bg-primary"
+                              }`}
                               onClick={() =>
-                                handlePayNow(payment.id, payment.amount, payment.contract_number)
+                                handlePayNow(
+                                  payment.id,
+                                  payment.amount,
+                                  payment.contract_number,
+                                  payment.due_date,
+                                  payment.installment_percentage,
+                                )
                               }
                             >
                               {loadingPaymentId === payment.id ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : isOverdue(payment.due_date) ? (
+                                "Pay Overdue"
                               ) : (
                                 "Pay Now"
                               )}
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>Pay this contract payment</p>
+                            <p>
+                              {isOverdue(payment.due_date)
+                                ? "This payment is overdue"
+                                : "Pay this contract payment"}
+                            </p>
                           </TooltipContent>
                         </Tooltip>
                       )}
@@ -958,6 +1065,13 @@ const ContractPaymentBrandPage: React.FC = () => {
         isOpen={isPaymentModalOpen}
         onClose={() => setIsPaymentModalOpen(false)}
         paymentData={paymentLink}
+      />
+      <EarlyPaymentWarningModal
+        isOpen={isEarlyPaymentWarningOpen}
+        onClose={handleEarlyPaymentCancel}
+        onConfirm={handleEarlyPaymentConfirm}
+        paymentData={pendingPaymentData}
+        isLoading={loadingPaymentId !== null || modalPaymentLoading}
       />
       <ReviewRefundProofModal
         isOpen={isReviewRefundModalOpen}

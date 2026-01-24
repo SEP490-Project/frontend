@@ -172,8 +172,12 @@ const MarketingDashboard: React.FC = () => {
     status: "up" as const,
     statusText: selectedPeriod.replace("_", " ").toLowerCase(),
   };
+
+  const originalNetRevenue = netRevenue?.net_revenue || 0;
+  const isNetRevenueNegative = originalNetRevenue < 0;
+
   const netRevenueData = {
-    value: netRevenue?.net_revenue || 0,
+    value: Math.abs(originalNetRevenue), // Always show positive number
     status: "up" as const,
     statusText: `Refunds: ${(netRevenue?.total_refunds || 0).toLocaleString()} ₫`,
   };
@@ -430,9 +434,10 @@ const MarketingDashboard: React.FC = () => {
           data={netRevenueData}
           mode="currency"
           icon={<FaChartLine size={20} />}
-          iconColor="text-green-600"
-          iconBg="bg-green-100"
+          iconColor={isNetRevenueNegative ? "text-red-600" : "text-green-600"}
+          iconBg={isNetRevenueNegative ? "bg-red-100" : "bg-green-100"}
           tooltip="Net contract revenue after subtracting refunds"
+          valueColor={isNetRevenueNegative ? "text-red-600" : "text-green-600"}
         />
         {/* Placeholder or another KPI */}
       </div>

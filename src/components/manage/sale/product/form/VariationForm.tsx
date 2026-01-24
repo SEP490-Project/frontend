@@ -601,7 +601,7 @@ export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationForm
                             <SelectTrigger>
                               <SelectValue placeholder="Select ingredient" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="h-[50vh] overflow-y-scroll">
                               {variantAttributes?.map((ingredient) => (
                                 <SelectItem key={ingredient.id} value={ingredient.id}>
                                   {ingredient.ingredient}

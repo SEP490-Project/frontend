@@ -141,6 +141,18 @@ export const GhnMock = () => {
     });
   };
 
+  const getStatusColor = (status: string) => {
+    const statusColors: Record<string, string> = {
+      storing: " bg-yellow-200 text-yellow-800 border-yellow-200",
+      picking: " bg-gray-200 text-gray-800 border-gray-200",
+      delivering: " bg-blue-200 text-blue-800 border-blue-200",
+      delivered: " bg-green-200 text-green-800 border-green-200",
+      cancelled: " bg-red-200 text-red-800 border-red-200",
+      returned: " bg-purple-200 text-purple-800 border-purple-200",
+    };
+    return statusColors[status] || " bg-gray-200 text-gray-800";
+  };
+
   // --- Styles constants ---
   const primaryColor = "#004AAD";
   const accentColor = "#FF6A00";
@@ -279,8 +291,10 @@ export const GhnMock = () => {
                   <span className="w-2 h-8 rounded bg-blue-600 inline-block"></span>
                   Order Information
                 </h3>
-                <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full border border-green-200">
-                  RESPONSE: 200 OK
+                <span
+                  className={`px-3 py-1 ${getStatusColor(orderInfo.status)} text-xs font-bold rounded-full border border-green-200`}
+                >
+                  {orderInfo.status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
                 </span>
               </div>
 
@@ -363,6 +377,41 @@ export const GhnMock = () => {
                       <label className="text-sm font-medium text-gray-600">To Province</label>
                       <p className="text-sm text-gray-900">{orderInfo?.to_province_name || "-"}</p>
                     </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">
+                    Order Items
+                  </h4>
+                  <div className="space-y-4">
+                    {orderInfo?.items && orderInfo.items.length > 0 ? (
+                      orderInfo.items.map((item, index) => (
+                        <div key={index} className="p-4 bg-gray-50 rounded-lg flex gap-4">
+                          <p className="text-sm text-gray-900">
+                            <span className="font-medium">Name:</span> {item.name || "-"}
+                          </p>
+                          <p className="text-sm text-gray-900">
+                            <span className="font-medium">Quantity:</span> {item.quantity || "-"}
+                          </p>
+                          <p className="text-sm text-gray-900">
+                            <span className="font-medium">Weight (grams):</span>{" "}
+                            {item.weight || "-"}
+                          </p>
+                          <p className="text-sm text-gray-900">
+                            <span className="font-medium">Width (cm):</span> {item.width || "-"}
+                          </p>
+                          <p className="text-sm text-gray-900">
+                            <span className="font-medium">Height (cm):</span> {item.height || "-"}
+                          </p>
+                          <p className="text-sm text-gray-900">
+                            <span className="font-medium">Length (cm):</span> {item.length || "-"}
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-gray-500">No items found in this order.</p>
+                    )}
                   </div>
                 </div>
               </div>

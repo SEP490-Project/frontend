@@ -22,6 +22,7 @@ import { useAppDispatch } from "@/libs/stores";
 import {
   getProductDetailThunk,
   openEarlyPreorderProductDeliveryThunk,
+  openEarlyPreorderProductPremiereDateThunk,
 } from "@/libs/stores/productManager/thunk";
 import { useSelector } from "react-redux";
 import type {
@@ -118,6 +119,12 @@ const ProductDetail: React.FC = () => {
 
   const handleOpenEarlyDelivery = async () => {
     dispatch(openEarlyPreorderProductDeliveryThunk(id as string));
+    navigate("/manage/sale/product");
+  };
+
+  const handleOpenPreorderPremiereDate = async () => {
+    dispatch(openEarlyPreorderProductPremiereDateThunk(id as string));
+    navigate("/manage/sale/product");
   };
 
   return (
@@ -128,7 +135,11 @@ const ProductDetail: React.FC = () => {
             variant="outline"
             className="bg-white"
             size="sm"
-            onClick={() => navigate("/manage/sale/product")}
+            onClick={() =>
+              productDetail?.data.type === "STANDARD"
+                ? navigate("/manage/sale/product")
+                : navigate("/manage/sale/product/limited")
+            }
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Products
@@ -138,13 +149,23 @@ const ProductDetail: React.FC = () => {
             <p className="text-sm text-gray-600 mt-1">{productDetail?.data?.name}</p>
           </div>
         </div>
-        {(product as LimitedProductData).type === "LIMITED" &&
-          new Date((product as LimitedProductData).limited_product?.availability_start_date || "") >
-            new Date() && (
-            <Button variant="default" onClick={handleOpenEarlyDelivery}>
-              Set Start Date to Today
-            </Button>
-          )}
+        <div className="flex gap-4">
+          {(product as LimitedProductData).type === "LIMITED" &&
+            new Date((product as LimitedProductData).limited_product?.premiere_date || "") >
+              new Date() && (
+              <Button variant="default" onClick={handleOpenPreorderPremiereDate}>
+                Set Premiere Date to Today
+              </Button>
+            )}
+          {(product as LimitedProductData).type === "LIMITED" &&
+            new Date(
+              (product as LimitedProductData).limited_product?.availability_start_date || "",
+            ) > new Date() && (
+              <Button variant="default" onClick={handleOpenEarlyDelivery}>
+                Set Start Date to Today
+              </Button>
+            )}
+        </div>
       </div>
 
       <div className="lg:col-span-2">

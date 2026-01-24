@@ -299,7 +299,7 @@ const MarketingDashboard: React.FC = () => {
     loadingContractRevenueBreakdown;
 
   return (
-    <div className="p-2 sm:p-6 w-full flex flex-col gap-6 relative">
+    <div className="p-3 sm:p-6 w-full flex flex-col gap-6 relative">
       {isAnyLoading && (
         <div className="fixed inset-0 bg-white/70 flex items-center justify-center z-50 rounded-lg">
           <div className="text-center bg-white p-6 rounded-lg shadow-lg">
@@ -395,7 +395,7 @@ const MarketingDashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         <KPIWidget
           title="Active Brands"
           data={activeBrandsData}
@@ -439,11 +439,10 @@ const MarketingDashboard: React.FC = () => {
           tooltip="Net contract revenue after subtracting refunds"
           valueColor={isNetRevenueNegative ? "text-red-600" : "text-green-600"}
         />
-        {/* Placeholder or another KPI */}
       </div>
 
       {/* Violations & Refunds Overview */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPIWidget
           title="Brand Violations (Pending)"
           data={{
@@ -536,8 +535,7 @@ const MarketingDashboard: React.FC = () => {
           <div className="flex justify-between items-center flex-wrap gap-2">
             <h2 className="text-lg font-semibold text-gray-800">Revenue Analysis</h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
-          <div className="mt-4">
+          <div className="mt-2">
             {breakdownChartData.length > 0 && (
               <ComposedChartWidget
                 title="Contract Revenue Breakdown Over Time"

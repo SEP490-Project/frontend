@@ -51,6 +51,8 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({
   if (loading || !transaction) return null;
 
   const ref = transaction.reference_info;
+  const hasBrandInfo = !!ref?.brand_info;
+  const hasBankInfo = !!ref?.bank_info;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -116,50 +118,56 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({
           <Separator />
 
           {/* Brand Info */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3">Brand Information</h3>
-            <div className="grid grid-cols-2 gap-4">
+          {hasBrandInfo && (
+            <>
               <div>
-                <label className="text-sm text-gray-500">Brand Name</label>
-                <p className="mt-1 font-medium">{ref?.brand_info?.name}</p>
+                <h3 className="text-lg font-semibold mb-3">Brand Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm text-gray-500">Brand Name</label>
+                    <p className="mt-1 font-medium">{ref?.brand_info?.name}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-500">Representative</label>
+                    <p className="mt-1">{ref?.brand_info?.representative_name}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-500">Email</label>
+                    <p className="mt-1">{ref?.brand_info?.contact_email}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-500">Phone</label>
+                    <p className="mt-1">{ref?.brand_info?.contact_phone}</p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="text-sm text-gray-500">Representative</label>
-                <p className="mt-1">{ref?.brand_info?.representative_name}</p>
-              </div>
-              <div>
-                <label className="text-sm text-gray-500">Email</label>
-                <p className="mt-1">{ref?.brand_info?.contact_email}</p>
-              </div>
-              <div>
-                <label className="text-sm text-gray-500">Phone</label>
-                <p className="mt-1">{ref?.brand_info?.contact_phone}</p>
-              </div>
-            </div>
-          </div>
-
-          <Separator />
+              <Separator />
+            </>
+          )}
 
           {/* Bank Info */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3">Bank Information</h3>
-            <div className="grid grid-cols-2 gap-4">
+          {hasBankInfo && (
+            <>
               <div>
-                <label className="text-sm text-gray-500">Bank Name</label>
-                <p className="mt-1">{ref?.bank_info?.bank_name}</p>
+                <h3 className="text-lg font-semibold mb-3">Bank Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm text-gray-500">Bank Name</label>
+                    <p className="mt-1">{ref?.bank_info?.bank_name}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-500">Account Holder</label>
+                    <p className="mt-1">{ref?.bank_info?.bank_account_holder}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-sm text-gray-500">Account Number</label>
+                    <p className="mt-1 font-mono">{ref?.bank_info?.bank_account}</p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="text-sm text-gray-500">Account Holder</label>
-                <p className="mt-1">{ref?.bank_info?.bank_account_holder}</p>
-              </div>
-              <div className="col-span-2">
-                <label className="text-sm text-gray-500">Account Number</label>
-                <p className="mt-1 font-mono">{ref?.bank_info?.bank_account}</p>
-              </div>
-            </div>
-          </div>
-
-          <Separator />
+              <Separator />
+            </>
+          )}
 
           {/* Gateway */}
           <div>

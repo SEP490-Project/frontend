@@ -25,7 +25,6 @@ import {
   adminContracts,
   adminHealth,
   adminRevenue,
-  adminUserGrowth,
   adminUserOverview,
   adminSystemOverview,
 } from "@/libs/stores/adminAnalyticManager/thunk";
@@ -41,14 +40,6 @@ import { Button } from "@/components/ui/button";
 import DatePicker from "@/components/date-picker";
 
 type Granularity = "DAY" | "WEEK" | "MONTH";
-type Role =
-  | "ALL"
-  | "ADMIN"
-  | "MARKETING_STAFF"
-  | "SALES_STAFF"
-  | "CONTENT_STAFF"
-  | "BRAND_PARTNER"
-  | "CUSTOMER";
 
 type ChartMode = "count" | "percent";
 
@@ -59,11 +50,6 @@ interface RangeFilter {
 
 interface RevenueFilter extends RangeFilter {
   granularity: Granularity;
-}
-
-interface UserGrowthFilter extends RangeFilter {
-  granularity: Granularity;
-  role: Role;
 }
 
 const formatCurrency = (value: number | null | undefined) =>
@@ -113,7 +99,6 @@ const AdminDashboard: React.FC = () => {
     contracts,
     health,
     revenue,
-    userGrowth,
     userOverview,
     systemOverview,
   } = useAdminAnalytic();
@@ -124,12 +109,12 @@ const AdminDashboard: React.FC = () => {
     granularity: "DAY",
   });
 
-  const [userGrowthFilter, setUserGrowthFilter] = useState<UserGrowthFilter>({
-    start_date: defaultStartDate.toISOString(),
-    end_date: defaultEndDate.toISOString(),
-    granularity: "DAY",
-    role: "ALL",
-  });
+  // const [userGrowthFilter, setUserGrowthFilter] = useState<UserGrowthFilter>({
+  //   start_date: defaultStartDate.toISOString(),
+  //   end_date: defaultEndDate.toISOString(),
+  //   granularity: "DAY",
+  //   role: "ALL",
+  // });
 
   useEffect(() => {
     dispatch(adminCampaigns());
@@ -146,16 +131,6 @@ const AdminDashboard: React.FC = () => {
     if (granularity) payload.granularity = granularity;
     dispatch(adminRevenue(payload));
   }, [dispatch, revenueFilter]);
-
-  useEffect(() => {
-    const { start_date, end_date, granularity, role } = userGrowthFilter;
-    const payload: any = {};
-    if (start_date) payload.start_date = start_date;
-    if (end_date) payload.end_date = end_date;
-    if (granularity) payload.granularity = granularity;
-    if (role && role !== "ALL") payload.role = role;
-    dispatch(adminUserGrowth(payload));
-  }, [dispatch, userGrowthFilter]);
 
   useEffect(() => {
     dispatch(adminUserOverview({}));
@@ -242,17 +217,17 @@ const AdminDashboard: React.FC = () => {
     [revenue?.revenue_trend],
   );
 
-  const userGrowthData = useMemo(
-    () =>
-      userGrowth?.map((item: any) => ({
-        month: new Date(item.date).toLocaleDateString("default", {
-          month: "short",
-          day: "numeric",
-        }),
-        value: item.new_users,
-      })) || [],
-    [userGrowth],
-  );
+  // const userGrowthData = useMemo(
+  //   () =>
+  //     userGrowth?.map((item: any) => ({
+  //       month: new Date(item.date).toLocaleDateString("default", {
+  //         month: "short",
+  //         day: "numeric",
+  //       }),
+  //       value: item.new_users,
+  //     })) || [],
+  //   [userGrowth],
+  // );
 
   const rawRoleData = useMemo(() => {
     if (!userOverview?.role_breakdown) return [];
@@ -718,7 +693,7 @@ const AdminDashboard: React.FC = () => {
         </div>
       </Card>
 
-      <Card className="p-4 relative">
+      {/* <Card className="p-4 relative">
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center flex-wrap gap-2">
             <h2 className="text-lg font-semibold">User Growth</h2>
@@ -816,7 +791,7 @@ const AdminDashboard: React.FC = () => {
             />
           )}
         </div>
-      </Card>
+      </Card> */}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="p-4 relative">

@@ -36,8 +36,12 @@ const manageProduct = {
     api.patch(`products/variants/${variantId}`, data),
   updateLimitedProductVariant: (variantId: string, data: any) =>
     api.patch(`products/variants/limited/${variantId}`, data),
+
+  //Preorder product management
   openEarlyPreorderProductDelivery: (productId: string) =>
     api.patch(`/preorders/staff/products/${productId}/open-early`),
+  openEarlyPreorderProductPremiereDate: (productId: string) =>
+    api.patch(`/products/limited/${productId}/premiere-today`),
 
   //Get Product (New API)
   getAllStandardProducts: (params: ProductParams) => api.get("products/standard", { params }),

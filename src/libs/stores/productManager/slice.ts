@@ -18,6 +18,7 @@ import {
   createVariantImageThunk,
   getAllStandardProductsThunk,
   getAllLimitedProductsThunk,
+  openEarlyPreorderProductPremiereDateThunk,
 } from "./thunk";
 import { setItem } from "@/libs/local-storage";
 import { toast } from "sonner";
@@ -278,6 +279,20 @@ const productManagerSlice = createSlice({
       .addCase(getAllLimitedProductsThunk.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message || "Failed to fetch limited products";
+      })
+      .addCase(openEarlyPreorderProductPremiereDateThunk.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(openEarlyPreorderProductPremiereDateThunk.fulfilled, (state) => {
+        state.isLoading = false;
+        state.error = null;
+        toast.success("Early preorder product premiere date set to today successfully");
+      })
+      .addCase(openEarlyPreorderProductPremiereDateThunk.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || "Failed to set early preorder product premiere date";
+        toast.error(state.error);
       });
   },
 });

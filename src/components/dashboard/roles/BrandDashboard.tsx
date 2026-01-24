@@ -167,8 +167,12 @@ const BrandDashboard: React.FC = () => {
       : "Total Revenue",
   };
 
+  // Net Revenue display logic: positive = green, negative = red (show as positive number)
+  const originalNetRevenue = netIncome?.net_income || 0;
+  const isNetRevenueNegative = originalNetRevenue < 0;
+
   const netIncomeData = {
-    value: netIncome?.net_income || 0,
+    value: Math.abs(originalNetRevenue), // Always show positive number
     statusText: `Deductions: ${formatCurrency(netIncome?.total_contract_payments || 0)}`,
   };
 
@@ -412,9 +416,10 @@ const BrandDashboard: React.FC = () => {
           data={netIncomeData}
           mode="currency"
           icon={<FaChartLine size={20} />}
-          iconColor="text-green-600"
-          iconBg="bg-green-100"
+          iconColor={isNetRevenueNegative ? "text-red-600" : "text-green-600"}
+          iconBg={isNetRevenueNegative ? "bg-red-100" : "bg-green-100"}
           tooltip="Net revenue after refunds and violation penalties"
+          valueColor={isNetRevenueNegative ? "text-red-600" : "text-green-600"}
         />
         <KPIWidget
           title="Affiliate Links"

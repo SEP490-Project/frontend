@@ -515,11 +515,20 @@ function PaymentDetailModal({
                               {formatCurrency(tier.tier_payment)}
                             </span>
                           </div>
-                          <div className="grid grid-cols-3 gap-4 text-sm">
+                          <div className="grid grid-cols-4 gap-4 text-sm">
                             <div>
                               <p className="text-gray-600">Clicks</p>
                               <p className="font-semibold">
                                 {tier.clicks_in_tier.toLocaleString()}
+                                {/* {tier.clicks_in_tier.toLocaleString()} /{" "} */}
+                                {/* {tier.max_clicks?.toLocaleString() || "∞"} */}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-gray-600">Max Clicks</p>
+                              <p className="font-semibold">
+                                {tier.current_clicks.toLocaleString()} /{" "}
+                                {tier.max_clicks?.toLocaleString() || "∞"}
                               </p>
                             </div>
                             <div>

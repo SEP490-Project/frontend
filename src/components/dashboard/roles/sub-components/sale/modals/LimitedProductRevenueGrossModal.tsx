@@ -81,6 +81,10 @@ export const LimitedProductRevenueGrossModal: React.FC<LimitedProductRevenueGros
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Limited Product Revenue (Gross)</DialogTitle>
+          <p className="text-sm text-gray-600">
+            The system will responsible for the shipping fee of limited products, the shipping fee
+            will not count in the limited product revenue gross between brand and system
+          </p>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -123,10 +127,10 @@ export const LimitedProductRevenueGrossModal: React.FC<LimitedProductRevenueGros
                     <tr className="border-b">
                       <th className="text-left p-2">Customer</th>
                       <th className="text-left p-2">Email</th>
-                      <th className="text-right p-2">Total Amount</th>
+                      <th className="text-right p-2">Gross Amount</th>
                       {/* <th className="text-right p-2">Net Amount</th> */}
-                      <th className="text-right p-2">Shipping</th>
-                      <th className="text-right p-2">Type</th>
+                      {/* <th className="text-right p-2">Shipping</th> */}
+                      <th className="text-left p-2">Type</th>
                       <th className="text-left p-2">Status</th>
                       <th className="text-left p-2">Date</th>
                     </tr>
@@ -144,15 +148,13 @@ export const LimitedProductRevenueGrossModal: React.FC<LimitedProductRevenueGros
                         <td className="p-2">{item.customer_name}</td>
                         <td className="p-2 text-sm">{item.customer_email}</td>
                         <td className="text-right p-2 font-semibold">
-                          {convertNumberToCurrency(item.total_amount.toFixed(2))}
+                          {convertNumberToCurrency(String(item.total_amount))}
                         </td>
-                        {/* <td className="text-right p-2">
-                          {convertNumberToCurrency(item.net_amount.toFixed(2))}
+
+                        {/* <td className="text-right p-2 font-semibold">
+                          {convertNumberToCurrency(String(item.shipping_fee))}
                         </td> */}
 
-                        <td className="text-right p-2">
-                          {convertNumberToCurrency(item.shipping_fee.toFixed(2))}
-                        </td>
                         <td className="p-2">
                           <span
                             className={`text-xs px-2 py-1 ${item.source === "ORDER" ? "bg-green-100 text-green-800" : "bg-blue-100 text-blue-800"} rounded`}
@@ -212,7 +214,12 @@ export const LimitedProductRevenueGrossModal: React.FC<LimitedProductRevenueGros
           )}
         </div>
       </DialogContent>
-      <DetailModal isOpen={showDetail} onClose={() => setShowDetail(false)} data={selectedItem} />
+      <DetailModal
+        isOpen={showDetail}
+        onClose={() => setShowDetail(false)}
+        data={selectedItem}
+        type="limited_product_revenue_gross_modal"
+      />
     </Dialog>
   );
 };

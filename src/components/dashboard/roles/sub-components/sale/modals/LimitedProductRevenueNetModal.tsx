@@ -81,6 +81,10 @@ export const LimitedProductRevenueNetModal: React.FC<LimitedProductRevenueNetMod
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Limited Product Revenue (Net)</DialogTitle>
+          <p className="text-sm text-gray-600">
+            The system will be responsible for the shipping fee of limited products, in this view,
+            the net revenue is calculated after deducting the shipping fee and brand revenue share.
+          </p>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -123,9 +127,9 @@ export const LimitedProductRevenueNetModal: React.FC<LimitedProductRevenueNetMod
                     <tr className="border-b">
                       <th className="text-left p-2">Customer</th>
                       <th className="text-left p-2">Email</th>
-                      <th className="text-right p-2">Total Amount</th>
+                      {/* <th className="text-right p-2">Total Amount</th> */}
                       <th className="text-right p-2">Net Amount</th>
-                      <th className="text-right p-2">KOL %</th>
+                      <th className="text-left p-2">Type</th>
                       <th className="text-left p-2">Status</th>
                       <th className="text-left p-2">Date</th>
                     </tr>
@@ -142,15 +146,21 @@ export const LimitedProductRevenueNetModal: React.FC<LimitedProductRevenueNetMod
                       >
                         <td className="p-2">{item.customer_name}</td>
                         <td className="p-2 text-sm">{item.customer_email}</td>
-                        <td className="text-right p-2 font-semibold">
+                        {/* <td className="text-right p-2 font-semibold">
                           {convertNumberToCurrency(String(item.total_amount))}
-                        </td>
+                        </td> */}
                         <td
                           className={`text-right p-2 ${item.net_amount < 0 ? "text-red-600" : "text-green-600"}`}
                         >
-                          {convertNumberToCurrency(String(item.net_amount))}
+                          {convertNumberToCurrency(String(Math.abs(item.net_amount)))}
                         </td>
-                        <td className="text-right p-2">{item.kol_percent}%</td>
+                        <td className="p-2">
+                          <span
+                            className={`text-xs px-2 py-1 ${item.source === "ORDER" ? "bg-green-100 text-green-800" : "bg-blue-100 text-blue-800"} rounded`}
+                          >
+                            {item.source}
+                          </span>
+                        </td>
                         <td className="p-2">
                           <span className="px-2 py-1 text-xs font-semibold bg-purple-100 text-purple-800 rounded">
                             {item.status}
@@ -203,7 +213,12 @@ export const LimitedProductRevenueNetModal: React.FC<LimitedProductRevenueNetMod
           )}
         </div>
       </DialogContent>
-      <DetailModal isOpen={showDetail} onClose={() => setShowDetail(false)} data={selectedItem} />
+      <DetailModal
+        isOpen={showDetail}
+        onClose={() => setShowDetail(false)}
+        data={selectedItem}
+        type="limited_product_revenue_net_modal"
+      />
     </Dialog>
   );
 };

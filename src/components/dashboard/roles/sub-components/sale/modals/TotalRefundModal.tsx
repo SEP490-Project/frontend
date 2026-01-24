@@ -143,7 +143,7 @@ export const TotalRefundModal: React.FC<TotalRefundModalProps> = ({
                           {convertNumberToCurrency(String(item.total_amount))}
                         </td> */}
                         <td className="text-right p-2 text-red-600 font-semibold">
-                          -{convertNumberToCurrency(String(item.total_amount))}
+                          {convertNumberToCurrency(String(item.total_amount))}
                         </td>
                         <td className="p-2">
                           <span className="px-2 py-1 text-xs font-semibold bg-red-100 text-red-800 rounded">
@@ -194,7 +194,12 @@ export const TotalRefundModal: React.FC<TotalRefundModalProps> = ({
           )}
         </div>
       </DialogContent>
-      <DetailModal isOpen={showDetail} onClose={() => setShowDetail(false)} data={selectedItem} />
+      <DetailModal
+        isOpen={showDetail}
+        onClose={() => setShowDetail(false)}
+        data={selectedItem}
+        type="total_refund_modal"
+      />
     </Dialog>
   );
 };

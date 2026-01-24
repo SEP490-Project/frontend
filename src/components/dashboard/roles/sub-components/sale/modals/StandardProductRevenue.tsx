@@ -81,6 +81,10 @@ export const StandardProductRevenue: React.FC<StandardProductRevenueProps> = ({
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Standard Product Revenue</DialogTitle>
+          <p className="text-sm text-gray-600">
+            Customers pay the shipping fee for standard products, and the system does not include it
+            in Net Amount.{" "}
+          </p>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -124,8 +128,8 @@ export const StandardProductRevenue: React.FC<StandardProductRevenueProps> = ({
                     <tr className="border-b">
                       <th className="text-left p-2">Customer</th>
                       <th className="text-left p-2">Email</th>
-                      <th className="text-right p-2">Total Amount</th>
-                      <th className="text-right p-2">Shipping Fee</th>
+                      <th className="text-right p-2">Net Amount</th>
+                      {/* <th className="text-right p-2">Shipping Fee</th> */}
                       <th className="text-left p-2">Status</th>
                       <th className="text-left p-2">Date</th>
                     </tr>
@@ -145,9 +149,9 @@ export const StandardProductRevenue: React.FC<StandardProductRevenueProps> = ({
                         <td className="text-right p-2 font-semibold">
                           {convertNumberToCurrency(String(item.total_amount))}
                         </td>
-                        <td className="text-right p-2">
+                        {/* <td className="text-right p-2">
                           {convertNumberToCurrency(String(item.shipping_fee))}
-                        </td>
+                        </td> */}
                         <td className="p-2">
                           <span className="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded">
                             {item.status}
@@ -200,7 +204,12 @@ export const StandardProductRevenue: React.FC<StandardProductRevenueProps> = ({
           )}
         </div>
       </DialogContent>
-      <DetailModal isOpen={showDetail} onClose={() => setShowDetail(false)} data={selectedItem} />
+      <DetailModal
+        isOpen={showDetail}
+        onClose={() => setShowDetail(false)}
+        data={selectedItem}
+        type="standard_product_revenue"
+      />
     </Dialog>
   );
 };

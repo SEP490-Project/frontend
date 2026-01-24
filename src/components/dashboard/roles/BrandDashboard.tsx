@@ -1,33 +1,41 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect } from "react";
 import {
   KPIWidget,
   TableWidget,
   BarChartWidget,
   LineChartWidget,
+  PieChartWidget,
 } from "@/components/dashboard/chart";
 import {
   FaLink,
   FaFile,
   FaChartLine,
-  FaMoneyBillWave,
-  FaBullhorn,
-  FaFileContract,
   FaTriangleExclamation,
-  FaBox,
+  FaMoneyBillWave,
+  FaStar,
+  FaReceipt,
 } from "react-icons/fa6";
-import { useAppDispatch } from "@/libs/stores";
 import {
   brandAffiliates,
   brandCampaigns,
   brandContent,
   brandContracts,
   brandTopProduct,
-  brandRevenueTrend,
-  brandDashboard,
+  brandTopRatingProducts,
+  brandGrossIncome,
+  brandNetIncome,
+  brandContractStatusDistribution,
+  brandTaskStatusDistribution,
+  brandRevenueOverTime,
+  brandRefundViolationStats,
 } from "@/libs/stores/brandAnalyticManager/thunk";
+import {
+  setPeriod,
+  setCustomDateRange,
+  setTrendGranularity,
+} from "@/libs/stores/brandAnalyticManager/slice";
 import { useBrandAnalytic } from "@/libs/hooks/useBrandAnalytic";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -36,13 +44,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, ShoppingCart, CreditCard } from "lucide-react";
-import DatePicker from "@/components/date-picker";
+import { Loader2, RefreshCw } from "lucide-react";
+import { useAppDispatch } from "@/libs/stores";
+import { useNavigate } from "react-router-dom";
+import { DatePicker } from "@/components/date-picker";
 
+/* Helper Functions */
 const formatCurrency = (value: number | null | undefined) =>
-  typeof value === "number" ? value.toLocaleString("vi-VN") : "-";
-
-const formatDateInput = (value?: string) => (value ? value.substring(0, 10) : "");
+  typeof value === "number" ? value.toLocaleString("vi-VN") + " ₫" : "-";
 
 const isEmptyData = (data: any[]) => {
   return (
@@ -68,140 +77,82 @@ const NoDataMessage: React.FC<{ message?: string }> = ({
 
 const BrandDashboard: React.FC = () => {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const {
     loadingAffiliates,
     loadingCampaigns,
     loadingContent,
     loadingContracts,
-    loadingRevenueTrend,
     loadingTopProducts,
-    loadingDashboard,
+    loadingTopRatingProducts,
+    loadingContractStatus,
+    loadingTaskStatus,
+    loadingRevenueOverTime,
+    loadingRefundViolation,
+    loadingGrossIncome,
+    loadingNetIncome,
     affiliates,
     campaigns,
     content,
     contracts,
-    revenueTrend,
     topProducts,
-    dashboard,
+    topRatingProducts,
+    contractStatusDistribution,
+    taskStatusDistribution,
+    revenueOverTime,
+    refundViolationStats,
+    grossIncome,
+    netIncome,
+    selectedPeriod,
+    customStartDate,
+    customEndDate,
+    trendGranularity,
   } = useBrandAnalytic();
 
-  const [dashboardFilter, setDashboardFilter] = useState({
-    year: new Date().getFullYear(),
-    month: new Date().getMonth() + 1,
-  });
+  // Handle period change
+  const handlePeriodChange = useCallback(
+    (value: string) => {
+      dispatch(setPeriod(value));
+      // Reset custom dates if not custom
+      if (value !== "CUSTOM") {
+        dispatch(setCustomDateRange({ startDate: null, endDate: null }));
+      }
+    },
+    [dispatch],
+  );
 
-  const [affiliateContentFilter, setAffiliateContentFilter] = useState({
-    start_date: "",
-    end_date: "",
-  });
+  const fetchAllAnalytics = useCallback(() => {
+    const filter = {
+      period: selectedPeriod,
+      from_date: customStartDate,
+      to_date: customEndDate,
+      trend_granularity: trendGranularity,
+    };
 
-  const [campaignFilter, setCampaignFilter] = useState({
-    start_date: "",
-    end_date: "",
-    status: "ALL" as
-      | "ALL"
-      | "DRAFT"
-      | "ACTIVE"
-      | "IN_PROGRESS"
-      | "PENDING"
-      | "FINISHED"
-      | "CANCELLED",
-    limit: 10,
-  });
-
-  const [contractFilter, setContractFilter] = useState({
-    status: "ALL" as "ALL" | "DRAFT" | "PENDING" | "ACTIVE" | "COMPLETED" | "CANCELLED",
-    limit: 10,
-  });
-
-  const [topProductFilter, setTopProductFilter] = useState({
-    start_date: "",
-    end_date: "",
-    limit: 10,
-  });
-
-  const [revenueTrendFilter, setRevenueTrendFilter] = useState({
-    start_date: "",
-    end_date: "",
-    granularity: "MONTH" as "DAY" | "WEEK" | "MONTH",
-  });
-
-  const fetchDashboard = () => {
-    dispatch(brandDashboard(dashboardFilter));
-  };
-
-  const fetchAffiliatesAndContent = () => {
-    const filter: any = {};
-    if (affiliateContentFilter.start_date) filter.start_date = affiliateContentFilter.start_date;
-    if (affiliateContentFilter.end_date) filter.end_date = affiliateContentFilter.end_date;
+    // Dispatch all actions
     dispatch(brandAffiliates(filter));
+    dispatch(brandCampaigns({ ...filter, limit: 10 })); // Show top 10 recent
     dispatch(brandContent(filter));
-  };
-
-  const fetchCampaigns = () => {
-    const filter: any = { limit: campaignFilter.limit };
-    if (campaignFilter.start_date) filter.start_date = campaignFilter.start_date;
-    if (campaignFilter.end_date) filter.end_date = campaignFilter.end_date;
-    if (campaignFilter.status && campaignFilter.status !== "ALL") {
-      filter.status = campaignFilter.status;
-    }
-    dispatch(brandCampaigns(filter));
-  };
-
-  const fetchContracts = () => {
-    const filter: any = { limit: contractFilter.limit };
-    if (contractFilter.status && contractFilter.status !== "ALL") {
-      filter.status = contractFilter.status;
-    }
-    dispatch(brandContracts(filter));
-  };
-
-  const fetchTopProducts = () => {
-    const filter: any = { limit: topProductFilter.limit };
-    if (topProductFilter.start_date) filter.start_date = topProductFilter.start_date;
-    if (topProductFilter.end_date) filter.end_date = topProductFilter.end_date;
-    dispatch(brandTopProduct(filter));
-  };
-
-  const fetchRevenueTrend = () => {
-    const filter: any = { granularity: revenueTrendFilter.granularity };
-    if (revenueTrendFilter.start_date) filter.start_date = revenueTrendFilter.start_date;
-    if (revenueTrendFilter.end_date) filter.end_date = revenueTrendFilter.end_date;
-    dispatch(brandRevenueTrend(filter));
-  };
+    dispatch(brandContracts({ ...filter, limit: 10 })); // Show top 10 recent
+    dispatch(brandTopProduct({ ...filter, limit: 5 })); // Top 5 products by revenue
+    dispatch(brandTopRatingProducts({ ...filter, limit: 5 })); // Top 5 rated products
+    dispatch(brandGrossIncome(filter));
+    dispatch(brandNetIncome(filter));
+    dispatch(brandContractStatusDistribution(filter));
+    dispatch(brandTaskStatusDistribution(filter));
+    dispatch(brandRevenueOverTime(filter));
+    dispatch(brandRefundViolationStats(filter));
+  }, [dispatch, selectedPeriod, customStartDate, customEndDate, trendGranularity]);
 
   useEffect(() => {
-    fetchDashboard();
-  }, [dispatch, dashboardFilter]);
+    fetchAllAnalytics();
+  }, [dispatch, fetchAllAnalytics]);
 
-  useEffect(() => {
-    fetchAffiliatesAndContent();
-  }, [dispatch, affiliateContentFilter]);
-
-  useEffect(() => {
-    fetchCampaigns();
-  }, [dispatch, campaignFilter]);
-
-  useEffect(() => {
-    fetchContracts();
-  }, [dispatch, contractFilter]);
-
-  useEffect(() => {
-    fetchTopProducts();
-  }, [dispatch, topProductFilter]);
-
-  useEffect(() => {
-    fetchRevenueTrend();
-  }, [dispatch, revenueTrendFilter]);
+  /* Data Preparation */
 
   const affiliatesKPIData = {
     value: affiliates?.total_links || 0,
     statusText: `${affiliates?.active_links || 0} active links`,
-  };
-
-  const clicksKPIData = {
-    value: affiliates?.total_clicks || 0,
-    statusText: "Total clicks",
   };
 
   const contentKPIData = {
@@ -209,26 +160,108 @@ const BrandDashboard: React.FC = () => {
     statusText: `${content?.posted_content || 0} posted`,
   };
 
-  const engagementKPIData = {
-    value: content?.engagement_rate ? `${(content.engagement_rate * 100).toFixed(1)}%` : "0%",
-    statusText: "Engagement rate",
+  const grossIncomeData = {
+    value: grossIncome?.gross_income || 0,
+    statusText: grossIncome?.period_change_percent
+      ? `${grossIncome.period_change_percent > 0 ? "+" : ""}${grossIncome.period_change_percent.toFixed(1)}% vs previous`
+      : "Total Revenue",
   };
+
+  const netIncomeData = {
+    value: netIncome?.net_income || 0,
+    statusText: `Deductions: ${formatCurrency(
+      (netIncome?.total_refunds || 0) +
+        (netIncome?.total_contract_payments || 0) +
+        (netIncome?.violation_refunds_received || 0),
+    )}`,
+  };
+
+  const revenueOverTimeData = Array.isArray(revenueOverTime)
+    ? revenueOverTime.map((r: any) => ({
+        name: new Date(r.date).toLocaleDateString("default", { month: "short", day: "numeric" }),
+        Revenue: r.revenue,
+      }))
+    : [];
+
+  const topProductsData = Array.isArray(topProducts)
+    ? topProducts.map((p: any) => ({
+        name: p.product_name, // BarChartWidget expects 'name'
+        value: p.revenue, // BarChartWidget expects 'value'
+      }))
+    : [];
+
+  // Top Rating Products Table Data
+  const topRatingProductsData = Array.isArray(topRatingProducts)
+    ? topRatingProducts.map((p: any, idx: number) => ({
+        id: p.product_id,
+        rank: idx + 1,
+        name: p.product_name,
+        type: {
+          type: "badge" as const,
+          value: p.type,
+          variant: "productType" as const,
+        },
+        rating: `⭐ ${(p.average_rating || 0).toFixed(1)}`,
+        action: {
+          type: "action" as const,
+          label: "View",
+          href: `/manage/brand/products/${p.product_id}`,
+        },
+      }))
+    : [];
+
+  // Refund/Violation Stats Data for display
+  const refundViolationData = refundViolationStats
+    ? {
+        totalRefunds: refundViolationStats.total_refunds || 0,
+        refundCount: refundViolationStats.refund_count || 0,
+        brandViolations: refundViolationStats.brand_violations || 0,
+        kolViolations: refundViolationStats.kol_violations || 0,
+        violationPenalties: refundViolationStats.violation_penalties || 0,
+      }
+    : null;
+
+  // Contract Status Distribution for Pie Chart
+  const contractStatusData = contractStatusDistribution
+    ? [
+        { type: "Draft", value: contractStatusDistribution.draft || 0 },
+        { type: "Active", value: contractStatusDistribution.active || 0 },
+        { type: "Completed", value: contractStatusDistribution.completed || 0 },
+        { type: "Terminated", value: contractStatusDistribution.terminated || 0 },
+        {
+          type: "Violations",
+          value:
+            (contractStatusDistribution.brand_violations || 0) +
+            (contractStatusDistribution.kol_violations || 0),
+        },
+      ].filter((item) => item.value > 0)
+    : [];
+
+  // Task Status Distribution for Pie Chart
+  const taskStatusData = taskStatusDistribution
+    ? [
+        { type: "To Do", value: taskStatusDistribution.todo || 0 },
+        { type: "In Progress", value: taskStatusDistribution.in_progress || 0 },
+        { type: "Done", value: taskStatusDistribution.done || 0 },
+        { type: "Cancelled", value: taskStatusDistribution.cancelled || 0 },
+      ].filter((item) => item.value > 0)
+    : [];
 
   const campaignsTableData = Array.isArray(campaigns)
     ? campaigns.map((c: any) => ({
         id: c.campaign_id,
         name: c.campaign_name,
         status: {
-          type: "badge",
+          type: "badge" as const,
           value: c.status,
-          variant: "campaignStatus",
+          variant: "campaignStatus" as const,
         },
         duration: `${new Date(c.start_date).toLocaleDateString()} → ${new Date(
           c.end_date,
         ).toLocaleDateString()}`,
-        progress: `${c.completed_tasks}/${c.task_count} (${c.completion_rate}%)`,
+        progress: `${c.completed_tasks}/${c.task_count}`,
         action: {
-          type: "action",
+          type: "action" as const,
           label: "View",
           href: `/manage/brand/campaigns/${c.campaign_id}`,
         },
@@ -240,615 +273,369 @@ const BrandDashboard: React.FC = () => {
         id: c.contract_id,
         number: c.contract_number,
         type: {
-          type: "badge",
+          type: "badge" as const,
           value: c.type,
-          variant: "contractType",
+          variant: "contractType" as const,
         },
         status: {
-          type: "badge",
+          type: "badge" as const,
           value: c.status,
-          variant: "contractStatus",
+          variant: "contractStatus" as const,
         },
         value: formatCurrency(c.total_value),
-        paid: formatCurrency(c.paid_amount),
-        pending: formatCurrency(c.pending_amount),
-        duration: `${new Date(c.start_date).toLocaleDateString()} → ${new Date(
-          c.end_date,
-        ).toLocaleDateString()}`,
         action: {
-          type: "action",
+          type: "action" as const,
           label: "View",
           href: `/manage/brand/contracts/${c.contract_id}`,
         },
       }))
     : [];
 
-  const topProductsData = Array.isArray(topProducts)
-    ? topProducts.map((p: any) => ({
-        name: p.product_name,
-        value: p.revenue,
-      }))
-    : [];
-
-  const revenueTrendData = Array.isArray(revenueTrend)
-    ? revenueTrend.map((r: any) => ({
-        month: new Date(r.date).toLocaleDateString("default", { month: "short", day: "numeric" }),
-        value: r.revenue,
-      }))
-    : [];
-
   const isAnyLoading =
-    loadingDashboard ||
     loadingAffiliates ||
     loadingCampaigns ||
     loadingContent ||
     loadingContracts ||
-    loadingRevenueTrend ||
-    loadingTopProducts;
-
-  const generateYearOptions = () => {
-    const currentYear = new Date().getFullYear();
-    const years = [];
-    for (let year = currentYear; year >= 2020; year--) {
-      years.push(year);
-    }
-    return years;
-  };
-
-  const generateMonthOptions = () => {
-    return [
-      { value: 1, label: "January" },
-      { value: 2, label: "February" },
-      { value: 3, label: "March" },
-      { value: 4, label: "April" },
-      { value: 5, label: "May" },
-      { value: 6, label: "June" },
-      { value: 7, label: "July" },
-      { value: 8, label: "August" },
-      { value: 9, label: "September" },
-      { value: 10, label: "October" },
-      { value: 11, label: "November" },
-      { value: 12, label: "December" },
-    ];
-  };
-
-  const overviewData = dashboard?.overview || {};
-  const topSoldProducts = dashboard?.top_sold_products || [];
-  const topRatingProducts = dashboard?.top_rating_products || [];
-
-  const topSoldProductsChartData = topSoldProducts.map((p: any) => ({
-    name: p.product_name,
-    value: p.total_revenue,
-  }));
-
-  const topRatingProductsChartData = topRatingProducts.map((p: any) => ({
-    name: p.product_name,
-    value: p.average_rating,
-  }));
+    loadingTopProducts ||
+    loadingTopRatingProducts ||
+    loadingContractStatus ||
+    loadingTaskStatus ||
+    loadingRevenueOverTime ||
+    loadingRefundViolation ||
+    loadingGrossIncome ||
+    loadingNetIncome;
 
   return (
     <div className="p-2 sm:p-6 w-full flex flex-col gap-6 relative">
       {isAnyLoading && (
-        <div className="fixed inset-0 bg-white/70 flex items-center justify-center">
-          <div className="text-center">
+        <div className="fixed inset-0 bg-white/70 flex items-center justify-center z-50 rounded-lg">
+          <div className="text-center bg-white p-6 rounded-lg shadow-lg">
             <Loader2 className="mx-auto mb-4 h-12 w-12 text-primary animate-spin" />
-            <p className="text-gray-600">Loading...</p>
+            <p className="text-gray-600 font-medium">Updating analytics...</p>
           </div>
         </div>
       )}
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-xl sm:text-2xl font-semibold">Brand Partner Dashboard</h1>
-        <div className="flex gap-2 items-center">
-          <Select
-            value={dashboardFilter.year.toString()}
-            onValueChange={(value) =>
-              setDashboardFilter((prev) => ({ ...prev, year: parseInt(value) }))
-            }
-          >
-            <SelectTrigger className="w-[100px] h-8 text-xs">
-              <SelectValue />
+      {/* Header and Global Filter Bar */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-800">
+            Brand Partner Dashboard
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Performance overview for {selectedPeriod.replace(/_/g, " ").toLowerCase()}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          {/* Period Selector */}
+          <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
+            <SelectTrigger className="w-[160px] bg-white">
+              <SelectValue placeholder="Select period" />
             </SelectTrigger>
             <SelectContent>
-              {generateYearOptions().map((year) => (
-                <SelectItem key={year} value={year.toString()}>
-                  {year}
-                </SelectItem>
-              ))}
+              <SelectItem value="TODAY">Today</SelectItem>
+              <SelectItem value="YESTERDAY">Yesterday</SelectItem>
+              <SelectItem value="THIS_WEEK">This Week</SelectItem>
+              <SelectItem value="LAST_WEEK">Last Week</SelectItem>
+              <SelectItem value="THIS_MONTH">This Month</SelectItem>
+              <SelectItem value="LAST_MONTH">Last Month</SelectItem>
+              <SelectItem value="THIS_QUARTER">This Quarter</SelectItem>
+              <SelectItem value="LAST_QUARTER">Last Quarter</SelectItem>
+              <SelectItem value="THIS_YEAR">This Year</SelectItem>
+              <SelectItem value="LAST_YEAR">Last Year</SelectItem>
+              <SelectItem value="LAST_7_DAYS">Last 7 Days</SelectItem>
+              <SelectItem value="LAST_30_DAYS">Last 30 Days</SelectItem>
+              <SelectItem value="CUSTOM">Custom Range</SelectItem>
             </SelectContent>
           </Select>
+
+          {/* Custom Date Inputs */}
+          {selectedPeriod === "CUSTOM" && (
+            <div className="flex items-center gap-2">
+              <DatePicker
+                value={customStartDate || undefined}
+                onChange={(date) =>
+                  dispatch(setCustomDateRange({ startDate: date, endDate: customEndDate }))
+                }
+                placeholder="Start Date"
+                className="w-[140px]"
+              />
+              <span className="text-gray-400">-</span>
+              <DatePicker
+                value={customEndDate || undefined}
+                onChange={(date) =>
+                  dispatch(setCustomDateRange({ startDate: customStartDate, endDate: date }))
+                }
+                placeholder="End Date"
+                className="w-[140px]"
+              />
+            </div>
+          )}
+
+          {/* Granularity Selector */}
           <Select
-            value={dashboardFilter.month.toString()}
-            onValueChange={(value) =>
-              setDashboardFilter((prev) => ({ ...prev, month: parseInt(value) }))
-            }
+            value={trendGranularity}
+            onValueChange={(val) => dispatch(setTrendGranularity(val))}
           >
-            <SelectTrigger className="w-[120px] h-8 text-xs">
-              <SelectValue />
+            <SelectTrigger className="w-[130px] bg-white">
+              <SelectValue placeholder="Granularity" />
             </SelectTrigger>
             <SelectContent>
-              {generateMonthOptions().map((month) => (
-                <SelectItem key={month.value} value={month.value.toString()}>
-                  {month.label}
-                </SelectItem>
-              ))}
+              <SelectItem value="DAY">Daily</SelectItem>
+              <SelectItem value="WEEK">Weekly</SelectItem>
+              <SelectItem value="MONTH">Monthly</SelectItem>
             </SelectContent>
           </Select>
+
           <Button
             variant="outline"
-            size="sm"
-            onClick={() =>
-              setDashboardFilter({
-                year: new Date().getFullYear(),
-                month: new Date().getMonth() + 1,
-              })
-            }
-            className="h-8 text-xs"
+            size="icon"
+            onClick={fetchAllAnalytics}
+            title="Refresh Data"
+            className="shrink-0"
           >
-            Reset
+            <RefreshCw className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
+      {/* KPI Widgets Row 1: Financials */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPIWidget
-          title="Total Campaigns"
-          data={{
-            value: overviewData.total_campaigns || 0,
-            statusText: `${overviewData.active_campaigns || 0} active`,
-          }}
-          icon={<FaBullhorn size={20} />}
-          iconColor="text-purple-600"
-          iconBg="bg-purple-100"
-          tooltip="Total number of marketing campaigns your brand is involved in, including active and completed campaigns"
-        />
-        <KPIWidget
-          title="Total Contracts"
-          data={{
-            value: overviewData.total_contracts || 0,
-            statusText: `${overviewData.active_contracts || 0} active`,
-          }}
-          icon={<FaFileContract size={20} />}
-          iconColor="text-blue-600"
-          iconBg="bg-blue-100"
-          tooltip="Total number of contracts your brand has signed, showing how many are currently active and generating business"
-        />
-        <KPIWidget
-          title="Total Products"
-          data={{
-            value: overviewData.total_products || 0,
-            statusText: "Products",
-          }}
-          icon={<FaBox size={20} />}
-          iconColor="text-green-600"
-          iconBg="bg-green-100"
-          tooltip="Total number of products in your brand portfolio available for sale and promotion"
-        />
-        <KPIWidget
-          title="Total Orders"
-          data={{
-            value: overviewData.total_orders || 0,
-            statusText: "Orders",
-          }}
-          icon={<ShoppingCart size={20} />}
-          iconColor="text-orange-600"
-          iconBg="bg-orange-100"
-          tooltip="Total number of orders received for your products across all sales channels"
-        />
-        <KPIWidget
-          title="Total Revenue"
-          data={{
-            value: overviewData.total_revenue || 0,
-            statusText: "Total earned",
-          }}
+          title="Gross Revenue"
+          data={grossIncomeData}
           mode="currency"
           icon={<FaMoneyBillWave size={20} />}
           iconColor="text-indigo-600"
           iconBg="bg-indigo-100"
-          tooltip="Total revenue generated from your brand partnerships, product sales, and marketing activities"
+          tooltip="Total revenue generated from contracts and sales"
         />
         <KPIWidget
-          title="Pending Payments"
-          data={{
-            value: overviewData.pending_payments || 0,
-            statusText: "Pending",
-          }}
+          title="Net Revenue"
+          data={netIncomeData}
           mode="currency"
-          icon={<CreditCard size={20} />}
-          iconColor="text-red-600"
-          iconBg="bg-red-100"
-          tooltip="Total amount of payments pending to be received from completed transactions and contracts"
+          icon={<FaChartLine size={20} />}
+          iconColor="text-green-600"
+          iconBg="bg-green-100"
+          tooltip="Net revenue after refunds and violation penalties"
+        />
+        <KPIWidget
+          title="Affiliate Links"
+          data={affiliatesKPIData}
+          icon={<FaLink size={20} />}
+          iconColor="text-blue-600"
+          iconBg="bg-blue-100"
+          tooltip="Total number of affiliate tracking links generated"
+        />
+        <KPIWidget
+          title="Content Posted"
+          data={contentKPIData}
+          icon={<FaFile size={20} />}
+          iconColor="text-purple-600"
+          iconBg="bg-purple-100"
+          tooltip="Total content pieces created and posted by KOLs"
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="p-4">
-          {isEmptyData(topSoldProductsChartData) ? (
-            <div className="flex flex-col">
-              <h2 className="text-lg font-semibold mb-4">Top Sold Products</h2>
-              <NoDataMessage message="No sold products data available" />
+      {/* Income Breakdown Card */}
+      {netIncome && (
+        <Card className="p-4 border-none shadow-sm bg-white">
+          <div className="flex flex-col gap-4">
+            <h2 className="text-lg font-semibold text-gray-800">Income Breakdown</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              <div className="bg-green-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500">Gross Income</p>
+                <p className="text-lg font-bold text-green-600">
+                  {formatCurrency(netIncome.gross_income || 0)}
+                </p>
+              </div>
+              <div className="bg-blue-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500">Order Revenue</p>
+                <p className="text-lg font-bold text-blue-600">
+                  {formatCurrency(netIncome.order_revenue || 0)}
+                </p>
+              </div>
+              <div className="bg-purple-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500">Pre-order Revenue</p>
+                <p className="text-lg font-bold text-purple-600">
+                  {formatCurrency(netIncome.preorder_revenue || 0)}
+                </p>
+              </div>
+              <div className="bg-red-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500">Refunds</p>
+                <p className="text-lg font-bold text-red-600">
+                  -{formatCurrency(netIncome.total_refunds || 0)}
+                </p>
+              </div>
+              <div className="bg-orange-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500">Contract Payments</p>
+                <p className="text-lg font-bold text-orange-600">
+                  -{formatCurrency(netIncome.total_contract_payments || 0)}
+                </p>
+              </div>
+              <div className="bg-teal-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500">KOL Violation Refunds</p>
+                <p className="text-lg font-bold text-teal-600">
+                  +{formatCurrency(netIncome.violation_refunds_received || 0)}
+                </p>
+              </div>
             </div>
-          ) : (
-            <BarChartWidget
-              title="Top Sold Products"
-              data={topSoldProductsChartData}
-              unit="VND"
-              tooltip="Top performing products by total revenue generated, showing which products contribute most to your business income"
-            />
-          )}
+          </div>
         </Card>
+      )}
 
-        <Card className="p-4">
-          {isEmptyData(topRatingProductsChartData) ? (
-            <div className="flex flex-col">
-              <h2 className="text-lg font-semibold mb-4">Top Rating Products</h2>
-              <NoDataMessage message="No rating products data available" />
-            </div>
-          ) : (
-            <BarChartWidget
-              title="Top Rating Products"
-              data={topRatingProductsChartData}
-              unit="★"
-              maxValue={5}
-              tooltip="Products with the highest customer ratings, indicating customer satisfaction and product quality"
-            />
-          )}
-        </Card>
-      </div>
-
-      <Card className="p-4">
+      {/* Revenue Trend Chart */}
+      <Card className="p-4 border-none shadow-sm bg-white">
         <div className="flex flex-col gap-4">
-          <div className="flex justify-between items-center flex-wrap gap-2">
-            <h2 className="text-lg font-semibold">Affiliate & Content Metrics</h2>
-            <div className="flex gap-2 items-center flex-wrap">
-              <DatePicker
-                value={formatDateInput(affiliateContentFilter.start_date)}
-                onChange={(date) =>
-                  setAffiliateContentFilter((prev) => ({
-                    ...prev,
-                    start_date: date ? new Date(date).toISOString() : "",
-                  }))
-                }
-                dateFormat="dd/MM/yyyy"
-                className="w-[150px]"
-                placeholder="Start date"
-                maxDate={new Date().toISOString()}
-              />
-              <span className="text-sm">to</span>
-              <DatePicker
-                value={formatDateInput(affiliateContentFilter.end_date)}
-                onChange={(date) =>
-                  setAffiliateContentFilter((prev) => ({
-                    ...prev,
-                    end_date: date ? new Date(date).toISOString() : "",
-                  }))
-                }
-                dateFormat="dd/MM/yyyy"
-                className="w-[150px]"
-                placeholder="End date"
-                maxDate={new Date().toISOString()}
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setAffiliateContentFilter({ start_date: "", end_date: "" })}
-                className="h-8 text-xs"
-              >
-                Reset
-              </Button>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <KPIWidget
-              title="Affiliate Links"
-              data={affiliatesKPIData}
-              icon={<FaLink size={20} />}
-              iconColor="text-blue-600"
-              iconBg="bg-blue-100"
-              tooltip="Total number of affiliate links created for your brand, showing how many are currently active and driving traffic"
-            />
-            <KPIWidget
-              title="Total Clicks"
-              data={clicksKPIData}
-              icon={<FaChartLine size={20} />}
-              iconColor="text-green-600"
-              iconBg="bg-green-100"
-              tooltip="Total number of clicks received on all your affiliate links, indicating customer engagement and interest"
-            />
-            <KPIWidget
-              title="Content Created"
-              data={contentKPIData}
-              icon={<FaFile size={20} />}
-              iconColor="text-purple-600"
-              iconBg="bg-purple-100"
-              tooltip="Total content pieces created for your brand including posts, articles, videos, and other marketing materials"
-            />
-            <KPIWidget
-              title="Engagement Rate"
-              data={engagementKPIData}
-              icon={<FaChartLine size={20} />}
-              iconColor="text-amber-600"
-              iconBg="bg-amber-100"
-              tooltip="Average engagement rate across all your content showing likes, comments, shares, and other interactions as a percentage"
-            />
-          </div>
-        </div>
-      </Card>
-
-      <Card className="p-4">
-        <div className="flex flex-col gap-4">
-          <div className="flex justify-between items-center flex-wrap gap-2">
-            <h2 className="text-lg font-semibold">Revenue Trend</h2>
-            <div className="flex gap-2 items-center flex-wrap">
-              <DatePicker
-                value={formatDateInput(revenueTrendFilter.start_date)}
-                onChange={(date) =>
-                  setRevenueTrendFilter((prev) => ({
-                    ...prev,
-                    start_date: date ? new Date(date).toISOString() : "",
-                  }))
-                }
-                dateFormat="dd/MM/yyyy"
-                className="w-[150px]"
-                placeholder="Start date"
-                maxDate={new Date().toISOString()}
-              />
-              <span className="text-sm">to</span>
-              <DatePicker
-                value={formatDateInput(revenueTrendFilter.end_date)}
-                onChange={(date) =>
-                  setRevenueTrendFilter((prev) => ({
-                    ...prev,
-                    end_date: date ? new Date(date).toISOString() : "",
-                  }))
-                }
-                dateFormat="dd/MM/yyyy"
-                className="w-[150px]"
-                placeholder="End date"
-                maxDate={new Date().toISOString()}
-              />
-              <Select
-                value={revenueTrendFilter.granularity}
-                onValueChange={(value: "DAY" | "WEEK" | "MONTH") =>
-                  setRevenueTrendFilter((prev) => ({ ...prev, granularity: value }))
-                }
-              >
-                <SelectTrigger className="w-[100px] h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="DAY">Daily</SelectItem>
-                  <SelectItem value="WEEK">Weekly</SelectItem>
-                  <SelectItem value="MONTH">Monthly</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  setRevenueTrendFilter({ start_date: "", end_date: "", granularity: "MONTH" })
-                }
-                className="h-8 text-xs"
-              >
-                Reset
-              </Button>
-            </div>
-          </div>
-          {isEmptyData(revenueTrendData) ? (
-            <NoDataMessage message="No revenue data available for the selected time period" />
+          <h2 className="text-lg font-semibold text-gray-800">Revenue Trend</h2>
+          {isEmptyData(revenueOverTimeData) ? (
+            <NoDataMessage message="No revenue data available for selected period" />
           ) : (
             <LineChartWidget
               title=""
-              data={revenueTrendData}
-              unit="VND"
-              lineConfig={{
-                value: {
-                  label: "Brand Revenue",
-                  color: "#6366f1",
-                },
-              }}
-              tooltip="Revenue trend showing how your brand's earnings have changed over the selected time period from all partnership activities"
+              data={revenueOverTimeData}
+              lineConfig={{ Revenue: { label: "Revenue", color: "#6366f1" } }}
+              tooltip="Revenue performance over time"
             />
           )}
         </div>
       </Card>
 
-      <Card className="p-4">
-        <div className="flex flex-col gap-4">
-          <div className="flex justify-between items-center flex-wrap gap-2">
-            <h2 className="text-lg font-semibold">Top Products by Revenue</h2>
-            <div className="flex gap-2 items-center flex-wrap">
-              <DatePicker
-                value={formatDateInput(topProductFilter.start_date)}
-                onChange={(date) =>
-                  setTopProductFilter((prev) => ({
-                    ...prev,
-                    start_date: date ? new Date(date).toISOString() : "",
-                  }))
-                }
-                dateFormat="dd/MM/yyyy"
-                className="w-[150px]"
-                placeholder="Start date"
-                maxDate={new Date().toISOString()}
+      {/* Status Distributions */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card className="p-4 border-none shadow-sm bg-white">
+          <div className="flex flex-col gap-4">
+            <h2 className="text-lg font-semibold text-gray-800">Contract Status</h2>
+            {isEmptyData(contractStatusData) ? (
+              <NoDataMessage message="No contract status data" />
+            ) : (
+              <PieChartWidget
+                title=""
+                data={contractStatusData}
+                tooltip="Distribution of contracts by current status"
               />
-              <span className="text-sm">to</span>
-              <DatePicker
-                value={formatDateInput(topProductFilter.end_date)}
-                onChange={(date) =>
-                  setTopProductFilter((prev) => ({
-                    ...prev,
-                    end_date: date ? new Date(date).toISOString() : "",
-                  }))
-                }
-                dateFormat="dd/MM/yyyy"
-                className="w-[150px]"
-                placeholder="End date"
-                maxDate={new Date().toISOString()}
-              />
-              <Input
-                type="number"
-                value={topProductFilter.limit}
-                onChange={(e) =>
-                  setTopProductFilter((prev) => ({
-                    ...prev,
-                    limit: parseInt(e.target.value) || 10,
-                  }))
-                }
-                className="w-20 h-8 text-xs"
-                min={1}
-                max={50}
-                placeholder="10"
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setTopProductFilter({ start_date: "", end_date: "", limit: 10 })}
-                className="h-8 text-xs"
-              >
-                Reset
-              </Button>
-            </div>
+            )}
           </div>
+        </Card>
+        <Card className="p-4 border-none shadow-sm bg-white">
+          <div className="flex flex-col gap-4">
+            <h2 className="text-lg font-semibold text-gray-800">Task Status</h2>
+            {isEmptyData(taskStatusData) ? (
+              <NoDataMessage message="No task status data" />
+            ) : (
+              <PieChartWidget
+                title=""
+                data={taskStatusData}
+                tooltip="Distribution of tasks by current progress status"
+              />
+            )}
+          </div>
+        </Card>
+      </div>
+
+      {/* Top Products */}
+      <Card className="p-4 border-none shadow-sm bg-white">
+        <div className="flex flex-col gap-4">
+          <h2 className="text-lg font-semibold text-gray-800">Top Products by Revenue</h2>
           {isEmptyData(topProductsData) ? (
-            <NoDataMessage message="No product revenue data available for the selected period" />
+            <NoDataMessage message="No product revenue data" />
           ) : (
             <BarChartWidget
               title=""
               data={topProductsData}
               unit="VND"
-              tooltip="Ranking of your products by revenue generated, helping identify which products are performing best in the market"
+              tooltip="Best selling or highest revenue generating products"
             />
           )}
         </div>
       </Card>
 
-      <Card className="p-4">
-        <div className="flex flex-col gap-4">
-          <div className="flex justify-between items-center flex-wrap gap-2">
-            <h2 className="text-lg font-semibold">Campaigns</h2>
-            <div className="flex gap-2 items-center flex-wrap">
-              <DatePicker
-                value={formatDateInput(campaignFilter.start_date)}
-                onChange={(date) =>
-                  setCampaignFilter((prev) => ({
-                    ...prev,
-                    start_date: date ? new Date(date).toISOString() : "",
-                  }))
-                }
-                dateFormat="dd/MM/yyyy"
-                className="w-[120px]"
-                placeholder="Start date"
-                maxDate={new Date().toISOString()}
-              />
-              <DatePicker
-                value={formatDateInput(campaignFilter.end_date)}
-                onChange={(date) =>
-                  setCampaignFilter((prev) => ({
-                    ...prev,
-                    end_date: date ? new Date(date).toISOString() : "",
-                  }))
-                }
-                dateFormat="dd/MM/yyyy"
-                className="w-[120px]"
-                placeholder="End date"
-                maxDate={new Date().toISOString()}
-              />
-              <Select
-                value={campaignFilter.status}
-                onValueChange={(
-                  value:
-                    | "ALL"
-                    | "DRAFT"
-                    | "ACTIVE"
-                    | "IN_PROGRESS"
-                    | "PENDING"
-                    | "FINISHED"
-                    | "CANCELLED",
-                ) => setCampaignFilter((prev) => ({ ...prev, status: value }))}
-              >
-                <SelectTrigger className="w-[100px] h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">All</SelectItem>
-                  <SelectItem value="DRAFT">Draft</SelectItem>
-                  <SelectItem value="ACTIVE">Active</SelectItem>
-                  <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                  <SelectItem value="PENDING">Pending</SelectItem>
-                  <SelectItem value="FINISHED">Finished</SelectItem>
-                  <SelectItem value="CANCELLED">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
-              <Input
-                type="number"
-                value={campaignFilter.limit}
-                onChange={(e) =>
-                  setCampaignFilter((prev) => ({
-                    ...prev,
-                    limit: parseInt(e.target.value) || 10,
-                  }))
-                }
-                className="w-16 h-8 text-xs"
-                min={1}
-                max={50}
-                placeholder="10"
-              />
+      {/* Top Rating Products & Refund/Violation Stats */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card className="p-4 border-none shadow-sm bg-white">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-2">
+              <FaStar className="h-5 w-5 text-yellow-500" />
+              <h2 className="text-lg font-semibold text-gray-800">Top Rated Products</h2>
             </div>
+            {isEmptyData(topRatingProductsData) ? (
+              <NoDataMessage message="No product rating data" />
+            ) : (
+              <TableWidget title="" data={topRatingProductsData} navigate={navigate} />
+            )}
           </div>
-          {isEmptyData(campaignsTableData) ? (
-            <NoDataMessage message="No campaign data available" />
-          ) : (
-            <TableWidget title="" data={campaignsTableData as any} />
-          )}
-        </div>
-      </Card>
+        </Card>
+        <Card className="p-4 border-none shadow-sm bg-white">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-2">
+              <FaReceipt className="h-5 w-5 text-orange-500" />
+              <h2 className="text-lg font-semibold text-gray-800">Refunds & Violations</h2>
+            </div>
+            {refundViolationData ? (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-red-50 rounded-lg p-4">
+                  <p className="text-sm text-gray-600">Total Refunds</p>
+                  <p className="text-xl font-bold text-red-600">
+                    {formatCurrency(refundViolationData.totalRefunds)}
+                  </p>
+                  <p className="text-xs text-gray-500">{refundViolationData.refundCount} orders</p>
+                </div>
+                <div className="bg-orange-50 rounded-lg p-4">
+                  <p className="text-sm text-gray-600">Violation Penalties</p>
+                  <p className="text-xl font-bold text-orange-600">
+                    {formatCurrency(refundViolationData.violationPenalties)}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {refundViolationData.brandViolations + refundViolationData.kolViolations}{" "}
+                    violations
+                  </p>
+                </div>
+                <div className="bg-yellow-50 rounded-lg p-4">
+                  <p className="text-sm text-gray-600">Brand Violations</p>
+                  <p className="text-xl font-bold text-yellow-600">
+                    {refundViolationData.brandViolations}
+                  </p>
+                  <p className="text-xs text-gray-500">contracts breached by brand</p>
+                </div>
+                <div className="bg-purple-50 rounded-lg p-4">
+                  <p className="text-sm text-gray-600">KOL Violations</p>
+                  <p className="text-xl font-bold text-purple-600">
+                    {refundViolationData.kolViolations}
+                  </p>
+                  <p className="text-xs text-gray-500">contracts breached by KOL</p>
+                </div>
+              </div>
+            ) : (
+              <NoDataMessage message="No refund/violation data" />
+            )}
+          </div>
+        </Card>
+      </div>
 
-      <Card className="p-4">
-        <div className="flex flex-col gap-4">
-          <div className="flex justify-between items-center flex-wrap gap-2">
-            <h2 className="text-lg font-semibold">Contracts</h2>
-            <div className="flex gap-2 items-center flex-wrap">
-              <Select
-                value={contractFilter.status}
-                onValueChange={(
-                  value: "ALL" | "DRAFT" | "PENDING" | "ACTIVE" | "COMPLETED" | "CANCELLED",
-                ) => setContractFilter((prev) => ({ ...prev, status: value }))}
-              >
-                <SelectTrigger className="w-[100px] h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">All</SelectItem>
-                  <SelectItem value="DRAFT">Draft</SelectItem>
-                  <SelectItem value="PENDING">Pending</SelectItem>
-                  <SelectItem value="ACTIVE">Active</SelectItem>
-                  <SelectItem value="COMPLETED">Completed</SelectItem>
-                  <SelectItem value="CANCELLED">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
-              <Input
-                type="number"
-                value={contractFilter.limit}
-                onChange={(e) =>
-                  setContractFilter((prev) => ({
-                    ...prev,
-                    limit: parseInt(e.target.value) || 10,
-                  }))
-                }
-                className="w-16 h-8 text-xs"
-                min={1}
-                max={50}
-                placeholder="10"
-              />
-            </div>
+      {/* Recent Campaigns and Contracts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card className="p-4 border-none shadow-sm bg-white">
+          <div className="flex flex-col gap-4">
+            <h2 className="text-lg font-semibold text-gray-800">Recent Campaigns</h2>
+            {isEmptyData(campaignsTableData) ? (
+              <NoDataMessage message="No campaigns found" />
+            ) : (
+              <TableWidget title="" data={campaignsTableData} navigate={navigate} />
+            )}
           </div>
-          {isEmptyData(contractsTableData) ? (
-            <NoDataMessage message="No contract data available" />
-          ) : (
-            <TableWidget title="" data={contractsTableData as any} />
-          )}
-        </div>
-      </Card>
+        </Card>
+        <Card className="p-4 border-none shadow-sm bg-white">
+          <div className="flex flex-col gap-4">
+            <h2 className="text-lg font-semibold text-gray-800">Recent Contracts</h2>
+            {isEmptyData(contractsTableData) ? (
+              <NoDataMessage message="No contracts found" />
+            ) : (
+              <TableWidget title="" data={contractsTableData} navigate={navigate} />
+            )}
+          </div>
+        </Card>
+      </div>
     </div>
   );
 };

@@ -48,6 +48,8 @@ export const manageBrandAnalytic = {
   getBrandRevenueTrend: (params: any) =>
     api.get("/analytics/brand-partner/revenue-trend", { params }),
   getBrandTopProduct: (params: any) => api.get("/analytics/brand-partner/top-products", { params }),
+  getBrandTopRatingProducts: (params: any) =>
+    api.get("/analytics/brand-partner/top-rating-products", { params }),
   getBrandDashboard: (params: any) => api.get("/analytics/brand-partner/dashboard", { params }),
   // New dashboard refactor endpoints
   getContractStatusDistribution: (params: any) =>

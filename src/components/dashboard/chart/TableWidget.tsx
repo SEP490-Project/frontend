@@ -9,7 +9,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { HelpCircle } from "lucide-react";
 
-export type BadgeVariant = "campaignStatus" | "contractStatus" | "contractType";
+export type BadgeVariant = "campaignStatus" | "contractStatus" | "contractType" | "productType";
 
 export type TableCellValue =
   | string
@@ -54,6 +54,10 @@ const BADGE_STYLES: Record<BadgeVariant, Record<string, string>> = {
     RUNNING: "bg-yellow-100 text-yellow-800 border-yellow-200",
     DRAFT: "bg-gray-100 text-gray-800 border-gray-200",
     PAUSED: "bg-orange-100 text-orange-800 border-orange-200",
+  },
+  productType: {
+    STANDARD: "bg-blue-100 text-blue-800 border-blue-300",
+    LIMITED: "bg-amber-100 text-amber-800 border-amber-300",
   },
 };
 

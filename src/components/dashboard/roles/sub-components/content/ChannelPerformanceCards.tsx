@@ -87,7 +87,7 @@ export const ChannelPerformanceCards: React.FC<ChannelPerformanceCardsProps> = (
       {channelMetrics.map((channel, index) => {
         // Growth indicators
         const reachGrowth = getGrowthIndicator(
-          channel.reach_growth > 0 ? "up" : channel.reach_growth < 0 ? "down" : "stable",
+          channel.views_growth > 0 ? "up" : channel.views_growth < 0 ? "down" : "stable",
         );
         const engagementGrowth = getGrowthIndicator(
           channel.engagement_growth > 0 ? "up" : channel.engagement_growth < 0 ? "down" : "stable",
@@ -132,7 +132,7 @@ export const ChannelPerformanceCards: React.FC<ChannelPerformanceCardsProps> = (
                   {/* Reach */}
                   <div className="p-3 bg-pink-50 dark:bg-pink-900/20 rounded-xl border border-pink-100 dark:border-pink-800/30">
                     <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
-                      <FaEye size={10} className="text-pink-500" /> Reach
+                      <FaEye size={10} className="text-pink-500" /> Views
                     </p>
                     <div className="flex items-end gap-2">
                       <motion.p
@@ -141,19 +141,19 @@ export const ChannelPerformanceCards: React.FC<ChannelPerformanceCardsProps> = (
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.3 + index * 0.1 }}
                       >
-                        {formatNumber(channel.total_reach)}
+                        {formatNumber(channel.total_views)}
                       </motion.p>
                       <span
                         className={`text-[10px] font-semibold mb-0.5 ${reachGrowth.color} flex items-center`}
                       >
                         {getGrowthIcon(
-                          channel.reach_growth > 0
+                          channel.views_growth > 0
                             ? "up"
-                            : channel.reach_growth < 0
+                            : channel.views_growth < 0
                               ? "down"
                               : "stable",
                         )}
-                        {Math.abs(channel.reach_growth).toFixed(1)}%
+                        {Math.abs(channel.views_growth).toFixed(1)}%
                       </span>
                     </div>
                   </div>

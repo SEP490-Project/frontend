@@ -360,7 +360,7 @@ export const ChannelDetailsDialog: React.FC<ChannelDetailsDialogProps> = ({
       {
         id: "posts",
         label: "Posts Published",
-        value: f.posts_count || 0,
+        value: details.published_contents_count || 0,
         icon: <FaFileAlt className="text-gray-600" />,
       },
     ];

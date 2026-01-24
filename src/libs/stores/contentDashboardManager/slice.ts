@@ -61,7 +61,7 @@ export interface ChannelMetrics {
   channel_name: string;
   channel_code: string;
   post_count: number;
-  total_reach: number;
+  total_views: number;
   total_engagement: number;
   ctr: number;
   followers_count: number;
@@ -69,7 +69,7 @@ export interface ChannelMetrics {
   fetched_metrics: Record<string, unknown> | null;
   mapped_metrics: Record<string, unknown>;
   top_post: ChannelTopPost | null;
-  reach_growth: number;
+  views_growth: number;
   engagement_growth: number;
 }
 
@@ -225,6 +225,7 @@ export interface AffiliateStats {
 export interface ChannelDetailsResponse {
   last_synced_at: string;
   channel: ChannelInfo;
+  published_contents_count: number;
   period: PeriodInfo;
   mapped_metrics: Record<string, number>;
   fetched_metrics?: Record<string, unknown>;

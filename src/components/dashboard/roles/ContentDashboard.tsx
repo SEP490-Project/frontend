@@ -13,8 +13,8 @@ import { manageSocialMediaSync } from "@/libs/services/manageAnalytic";
 import {
   DashboardHeader,
   KPICards,
-  PostingFrequencyCard,
-  PendingContentCard,
+  // PostingFrequencyCard,
+  // PendingContentCard,
   ContentChartsSection,
   ChannelPerformanceCards,
   ChannelDetailsDialog,
@@ -215,7 +215,7 @@ const ContentDashboard: React.FC = () => {
         </motion.section>
 
         {/* Quick Stats Row - Posting Frequency & Pending Content */}
-        <motion.section
+        {/* <motion.section
           className="grid grid-cols-1 lg:grid-cols-2 gap-6"
           variants={slideInLeftVariants}
           initial="hidden"
@@ -230,7 +230,7 @@ const ContentDashboard: React.FC = () => {
             compareLabel={period?.compare_label || ""}
             isLoading={isLoading}
           />
-        </motion.section>
+        </motion.section> */}
 
         {/* Charts Section - Full Width */}
         <motion.section variants={slideInLeftVariants} initial="hidden" animate="visible">

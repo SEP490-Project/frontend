@@ -1,28 +1,24 @@
-import React, { useEffect, useState } from "react";
-import {
-  KPIWidget,
-  BarChartWidget,
-  PieChartWidget,
-  TableWidget,
-} from "@/components/dashboard/chart";
-import {
-  FaBullhorn,
-  FaRegCircleCheck,
-  FaMoneyBillWave,
-  FaTriangleExclamation,
-} from "react-icons/fa6";
-import { Loader2 } from "lucide-react";
-import { useAppDispatch } from "@/libs/stores";
+import React, { useCallback, useEffect, useState } from "react";
+import { useMarketingAnalytic } from "@/libs/hooks/useMarketingAnalytic";
 import {
   marketingActiveBrand,
   marketingActiveCampaign,
   marketingDraftCampaign,
-  marketingMonthlyRevenue,
-  marketingRevenueType,
-  marketingTopBrand,
+  marketingContractStatusDistribution,
+  marketingTaskStatusDistribution,
+  marketingRefundViolationStats,
+  marketingGrossRevenue,
+  marketingNetRevenue,
+  marketingContractRevenueBreakdown,
   marketingUpcomingDeadline,
+  marketingTopBrand,
+  marketingRevenueType,
 } from "@/libs/stores/marketingAnalyticManager/thunk";
-import { useMarketingAnalytic } from "@/libs/hooks/useMarketingAnalytic";
+import {
+  setPeriod,
+  setCustomDateRange,
+  setTrendGranularity,
+} from "@/libs/stores/marketingAnalyticManager/slice";
 import {
   Select,
   SelectContent,
@@ -32,6 +28,23 @@ import {
 } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  FaBullhorn,
+  FaRegCircleCheck,
+  FaTriangleExclamation,
+  FaMoneyBillWave,
+  FaChartLine,
+} from "react-icons/fa6";
+import { Loader2, RefreshCw } from "lucide-react";
+import {
+  ComposedChartWidget,
+  PieChartWidget,
+  KPIWidget,
+  BarChartWidget,
+  TableWidget,
+} from "@/components/dashboard/chart";
+import { useAppDispatch } from "@/libs/stores";
 
 const isEmptyData = (data: any[]) => {
   return (
@@ -63,121 +76,82 @@ const MarketingDashboard: React.FC = () => {
     loadingRevenue,
     loadingTopBrands,
     loadingDeadlines,
+    loadingContractStatus,
+    loadingTaskStatus,
+    loadingRefundViolation,
+    loadingGrossRevenue,
+    loadingNetRevenue,
+    loadingContractRevenueBreakdown,
     activeBrands,
     activeCampaigns,
     draftCampaigns,
-    monthlyRevenue,
     revenueByType,
     topBrands,
     upcomingDeadlines,
+    contractStatusDistribution,
+    contractRevenueBreakdown,
+    taskStatusDistribution,
+    refundViolationStats,
+    grossRevenue,
+    netRevenue,
+    selectedPeriod,
+    customStartDate,
+    customEndDate,
+    trendGranularity,
   } = useMarketingAnalytic();
 
-  const [currentDate] = useState(() => {
-    const now = new Date();
-    return {
-      year: now.getFullYear(),
-      month: now.getMonth() + 1,
-      quarter: Math.ceil((now.getMonth() + 1) / 3),
-    };
-  });
+  // Local state for deadline filter days (specific to that widget, but can be global if needed)
+  const [deadlineDays, setDeadlineDays] = useState(30);
 
-  const [revenueFilter, setRevenueFilter] = useState({
-    filter_type: "MONTH" as "MONTH" | "QUARTER" | "YEAR",
-    year: currentDate.year,
-    month: currentDate.month,
-    quarter: currentDate.quarter,
-  });
+  // Handle period change
+  const handlePeriodChange = useCallback(
+    (value: string) => {
+      dispatch(setPeriod(value));
+      // Reset custom dates if not custom
+      if (value !== "CUSTOM") {
+        dispatch(setCustomDateRange({ startDate: null, endDate: null }));
+      }
+    },
+    [dispatch],
+  );
 
-  const [topBrandsFilter, setTopBrandsFilter] = useState({
-    filter_type: "MONTH" as "MONTH" | "QUARTER" | "YEAR",
-    year: currentDate.year,
-    month: currentDate.month,
-    quarter: currentDate.quarter,
-  });
-
-  const [deadlineFilter, setDeadlineFilter] = useState({
-    days: 30,
-  });
-
-  const [monthlyRevenueFilter, setMonthlyRevenueFilter] = useState({
-    year: currentDate.year,
-    month: currentDate.month,
-  });
-
-  const fetchData = () => {
+  const fetchData = useCallback(() => {
     dispatch(marketingActiveBrand());
-
     dispatch(marketingActiveCampaign());
-
     dispatch(marketingDraftCampaign());
-  };
+  }, [dispatch]);
 
-  const fetchMonthlyRevenue = () => {
-    dispatch(
-      marketingMonthlyRevenue({
-        year: monthlyRevenueFilter.year,
-        month: monthlyRevenueFilter.month,
-      }),
-    );
-  };
-
-  const fetchRevenueByType = () => {
-    const filter: any = {
-      filter_type: revenueFilter.filter_type,
-      year: revenueFilter.year,
+  const fetchAllAnalytics = useCallback(() => {
+    const filter = {
+      period: selectedPeriod,
+      from_date: customStartDate,
+      to_date: customEndDate,
+      trend_granularity: trendGranularity,
     };
 
-    if (revenueFilter.filter_type === "MONTH") {
-      filter.month = revenueFilter.month;
-    } else if (revenueFilter.filter_type === "QUARTER") {
-      filter.quarter = revenueFilter.quarter;
-    }
-
-    dispatch(marketingRevenueType(filter));
-  };
-
-  const fetchTopBrands = () => {
-    const filter: any = {
-      filter_type: topBrandsFilter.filter_type,
-      year: topBrandsFilter.year,
-    };
-
-    if (topBrandsFilter.filter_type === "MONTH") {
-      filter.month = topBrandsFilter.month;
-    } else if (topBrandsFilter.filter_type === "QUARTER") {
-      filter.quarter = topBrandsFilter.quarter;
-    }
-
+    // Dispatch all analytical actions with the same filter
+    dispatch(marketingContractStatusDistribution(filter));
+    dispatch(marketingTaskStatusDistribution(filter));
+    dispatch(marketingRefundViolationStats(filter));
+    dispatch(marketingGrossRevenue(filter));
+    dispatch(marketingNetRevenue(filter));
+    dispatch(marketingContractRevenueBreakdown(filter));
     dispatch(marketingTopBrand(filter));
-  };
+    dispatch(marketingRevenueType(filter));
+  }, [dispatch, selectedPeriod, customStartDate, customEndDate, trendGranularity]);
 
-  const fetchUpcomingDeadlines = () => {
-    dispatch(
-      marketingUpcomingDeadline({
-        days: deadlineFilter.days,
-      }),
-    );
-  };
+  // Fetch upcoming deadlines when days change
+  useEffect(() => {
+    dispatch(marketingUpcomingDeadline({ days: deadlineDays }));
+  }, [dispatch, deadlineDays]);
 
   useEffect(() => {
     fetchData();
-  }, [dispatch]);
+  }, [dispatch, fetchData]);
 
   useEffect(() => {
-    fetchRevenueByType();
-  }, [revenueFilter]);
-
-  useEffect(() => {
-    fetchTopBrands();
-  }, [topBrandsFilter]);
-
-  useEffect(() => {
-    fetchUpcomingDeadlines();
-  }, [deadlineFilter]);
-
-  useEffect(() => {
-    fetchMonthlyRevenue();
-  }, [monthlyRevenueFilter]);
+    fetchAllAnalytics();
+  }, [dispatch, fetchAllAnalytics]);
 
   const activeBrandsData = {
     value: activeBrands || 0,
@@ -191,11 +165,29 @@ const MarketingDashboard: React.FC = () => {
     value: draftCampaigns || 0,
     statusText: "Draft status",
   };
-  const monthlyRevenueData = {
-    value: monthlyRevenue || 0,
+
+  // Gross/Net Revenue KPI data
+  const grossRevenueData = {
+    value: grossRevenue || 0,
     status: "up" as const,
-    statusText: `${monthlyRevenueFilter.month}/${monthlyRevenueFilter.year}`,
+    statusText: selectedPeriod.replace("_", " ").toLowerCase(),
   };
+  const netRevenueData = {
+    value: netRevenue?.net_revenue || 0,
+    status: "up" as const,
+    statusText: `Refunds: ${(netRevenue?.total_refunds || 0).toLocaleString()} ₫`,
+  };
+
+  // Contract Revenue Breakdown chart data
+  const breakdownChartData =
+    contractRevenueBreakdown?.data?.map((point: any) => ({
+      name: point.date,
+      total: point.total_contract_revenue || 0,
+      baseCost: point.contract_base_cost || 0,
+      affiliate: point.affiliate_revenue || 0,
+      brandShare: point.limited_product_brand_share || 0,
+      systemShare: point.limited_product_system_share || 0,
+    })) || [];
 
   const brandRevenueData = Array.isArray(topBrands)
     ? topBrands.map((brand: any) => ({
@@ -261,21 +253,143 @@ const MarketingDashboard: React.FC = () => {
       }))
     : [];
 
+  // Contract Status Distribution for Pie Chart
+  const contractStatusData = contractStatusDistribution
+    ? [
+        { type: "Draft", value: contractStatusDistribution.draft || 0 },
+        { type: "Active", value: contractStatusDistribution.active || 0 },
+        { type: "Completed", value: contractStatusDistribution.completed || 0 },
+        { type: "Terminated", value: contractStatusDistribution.terminated || 0 },
+        { type: "Brand Violations", value: contractStatusDistribution.brand_violations || 0 },
+        { type: "KOL Violations", value: contractStatusDistribution.kol_violations || 0 },
+      ].filter((item) => item.value > 0)
+    : [];
+
+  // Task Status Distribution for Pie Chart
+  const taskStatusData = taskStatusDistribution
+    ? [
+        { type: "To Do", value: taskStatusDistribution.todo || 0 },
+        { type: "In Progress", value: taskStatusDistribution.in_progress || 0 },
+        { type: "Done", value: taskStatusDistribution.done || 0 },
+        { type: "Cancelled", value: taskStatusDistribution.cancelled || 0 },
+      ].filter((item) => item.value > 0)
+    : [];
+
+  // Refund/Violation Stats KPIs
+  const brandViolationsPending = refundViolationStats?.brand_violations_pending || 0;
+  const brandViolationsPaid = refundViolationStats?.brand_violations_paid || 0;
+  const kolViolationsPending = refundViolationStats?.kol_violations_pending || 0;
+  const kolViolationsApproved = refundViolationStats?.kol_violations_resolved || 0;
+
   const isAnyLoading =
-    loading || loadingKPI || loadingRevenue || loadingTopBrands || loadingDeadlines;
+    loading ||
+    loadingKPI ||
+    loadingRevenue ||
+    loadingTopBrands ||
+    loadingDeadlines ||
+    loadingContractStatus ||
+    loadingTaskStatus ||
+    loadingRefundViolation ||
+    loadingGrossRevenue ||
+    loadingNetRevenue ||
+    loadingContractRevenueBreakdown;
 
   return (
     <div className="p-2 sm:p-6 w-full flex flex-col gap-6 relative">
       {isAnyLoading && (
-        <div className="fixed inset-0 bg-white/70 flex items-center justify-center">
-          <div className="text-center">
+        <div className="fixed inset-0 bg-white/70 flex items-center justify-center z-50 rounded-lg">
+          <div className="text-center bg-white p-6 rounded-lg shadow-lg">
             <Loader2 className="mx-auto mb-4 h-12 w-12 text-primary animate-spin" />
-            <p className="text-gray-600">Loading...</p>
+            <p className="text-gray-600 font-medium">Updating analytics...</p>
           </div>
         </div>
       )}
 
-      <h1 className="text-xl sm:text-2xl font-semibold">Marketing Staff Dashboard</h1>
+      {/* Header and Global Filter Bar */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-800">Marketing Analytics</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Performance overview for {selectedPeriod.replace(/_/g, " ").toLowerCase()}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          {/* Period Selector */}
+          <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
+            <SelectTrigger className="w-[160px] bg-white">
+              <SelectValue placeholder="Select period" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="TODAY">Today</SelectItem>
+              <SelectItem value="YESTERDAY">Yesterday</SelectItem>
+              <SelectItem value="THIS_WEEK">This Week</SelectItem>
+              <SelectItem value="LAST_WEEK">Last Week</SelectItem>
+              <SelectItem value="THIS_MONTH">This Month</SelectItem>
+              <SelectItem value="LAST_MONTH">Last Month</SelectItem>
+              <SelectItem value="THIS_QUARTER">This Quarter</SelectItem>
+              <SelectItem value="LAST_QUARTER">Last Quarter</SelectItem>
+              <SelectItem value="THIS_YEAR">This Year</SelectItem>
+              <SelectItem value="LAST_YEAR">Last Year</SelectItem>
+              <SelectItem value="LAST_7_DAYS">Last 7 Days</SelectItem>
+              <SelectItem value="LAST_30_DAYS">Last 30 Days</SelectItem>
+              <SelectItem value="CUSTOM">Custom Range</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Custom Date Inputs */}
+          {selectedPeriod === "CUSTOM" && (
+            <div className="flex items-center gap-2">
+              <Input
+                type="date"
+                value={customStartDate || ""}
+                onChange={(e) =>
+                  dispatch(
+                    setCustomDateRange({ startDate: e.target.value, endDate: customEndDate }),
+                  )
+                }
+                className="w-[140px]"
+              />
+              <span className="text-gray-400">-</span>
+              <Input
+                type="date"
+                value={customEndDate || ""}
+                onChange={(e) =>
+                  dispatch(
+                    setCustomDateRange({ startDate: customStartDate, endDate: e.target.value }),
+                  )
+                }
+                className="w-[140px]"
+              />
+            </div>
+          )}
+
+          {/* Granularity Selector */}
+          <Select
+            value={trendGranularity}
+            onValueChange={(val) => dispatch(setTrendGranularity(val))}
+          >
+            <SelectTrigger className="w-[130px] bg-white">
+              <SelectValue placeholder="Granularity" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="DAY">Daily</SelectItem>
+              <SelectItem value="WEEK">Weekly</SelectItem>
+              <SelectItem value="MONTH">Monthly</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={fetchAllAnalytics}
+            title="Refresh Data"
+            className="shrink-0"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPIWidget
@@ -284,7 +398,7 @@ const MarketingDashboard: React.FC = () => {
           icon={<FaBullhorn size={20} />}
           iconColor="text-purple-600"
           iconBg="bg-purple-100"
-          tooltip="Number of brand partners currently active in campaigns and collaborations, indicating business partnership health"
+          tooltip="Number of brand partners currently active in campaigns and collaborations"
         />
         <KPIWidget
           title="Active Campaigns"
@@ -292,7 +406,7 @@ const MarketingDashboard: React.FC = () => {
           icon={<FaBullhorn size={20} />}
           iconColor="text-blue-600"
           iconBg="bg-blue-100"
-          tooltip="Number of marketing campaigns currently running and actively generating engagement and revenue"
+          tooltip="Number of marketing campaigns currently running"
         />
         <KPIWidget
           title="Draft Campaigns"
@@ -300,170 +414,161 @@ const MarketingDashboard: React.FC = () => {
           icon={<FaRegCircleCheck size={20} />}
           iconColor="text-orange-600"
           iconBg="bg-orange-100"
-          tooltip="Number of campaigns in draft status that need review and approval before going live"
+          tooltip="Number of campaigns in draft status awaiting approval"
+        />
+        <KPIWidget
+          title="Gross Contract Revenue"
+          data={grossRevenueData}
+          mode="currency"
+          icon={<FaMoneyBillWave size={20} />}
+          iconColor="text-indigo-600"
+          iconBg="bg-indigo-100"
+          tooltip="Total contract revenue before refunds"
+        />
+        <KPIWidget
+          title="Net Contract Revenue"
+          data={netRevenueData}
+          mode="currency"
+          icon={<FaChartLine size={20} />}
+          iconColor="text-green-600"
+          iconBg="bg-green-100"
+          tooltip="Net contract revenue after subtracting refunds"
+        />
+        {/* Placeholder or another KPI */}
+      </div>
+
+      {/* Violations & Refunds Overview */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <KPIWidget
+          title="Brand Violations (Pending)"
+          data={{
+            value: brandViolationsPending,
+            statusText: "Awaiting payment",
+          }}
+          // mode="currency"
+          icon={<FaTriangleExclamation size={20} />}
+          iconColor="text-amber-600"
+          iconBg="bg-amber-100"
+          tooltip="Pending penalty amounts from brand contract violations"
+        />
+        <KPIWidget
+          title="Brand Violations (Paid)"
+          data={{
+            value: brandViolationsPaid,
+            statusText: "Collected",
+          }}
+          // mode="currency"
+          icon={<FaRegCircleCheck size={20} />}
+          iconColor="text-green-600"
+          iconBg="bg-green-100"
+          tooltip="Penalty amounts collected from brand contract violations"
+        />
+        <KPIWidget
+          title="KOL Refunds (Pending)"
+          data={{
+            value: kolViolationsPending,
+            statusText: "To be refunded",
+          }}
+          // mode="currency"
+          icon={<FaTriangleExclamation size={20} />}
+          iconColor="text-orange-600"
+          iconBg="bg-orange-100"
+          tooltip="Pending refund amounts for KOL contract violations"
+        />
+        <KPIWidget
+          title="KOL Refunds (Approved)"
+          data={{
+            value: kolViolationsApproved,
+            statusText: "Approved",
+          }}
+          // mode="currency"
+          icon={<FaRegCircleCheck size={20} />}
+          iconColor="text-teal-600"
+          iconBg="bg-teal-100"
+          tooltip="Approved refund amounts for KOL contract violations"
         />
       </div>
 
-      <Card className="p-4">
+      {/* Contract & Task Status Distribution Section */}
+      <Card className="p-4 border-none shadow-sm bg-white">
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center flex-wrap gap-2">
-            <h2 className="text-lg font-semibold">Contract Monthly Revenue</h2>
-            <div className="flex gap-2 items-center flex-wrap">
-              <Select
-                value={monthlyRevenueFilter.year.toString()}
-                onValueChange={(value) =>
-                  setMonthlyRevenueFilter((prev) => ({ ...prev, year: Number(value) }))
-                }
-              >
-                <SelectTrigger className="w-[80px] h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 5 }, (_, i) => currentDate.year - i).map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={monthlyRevenueFilter.month.toString()}
-                onValueChange={(value) =>
-                  setMonthlyRevenueFilter((prev) => ({ ...prev, month: Number(value) }))
-                }
-              >
-                <SelectTrigger className="w-[90px] h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
-                    <SelectItem key={month} value={month.toString()}>
-                      {new Date(2000, month - 1).toLocaleString("default", {
-                        month: "short",
-                      })}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  setMonthlyRevenueFilter({ year: currentDate.year, month: currentDate.month })
-                }
-                className="h-8 text-xs"
-              >
-                Reset
-              </Button>
+            <h2 className="text-lg font-semibold text-gray-800">Status Overview</h2>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-sm font-medium mb-3 text-gray-600">
+                Contract Status Distribution
+              </h3>
+              {isEmptyData(contractStatusData) ? (
+                <NoDataMessage message="No contract data available" />
+              ) : (
+                <PieChartWidget
+                  title=""
+                  data={contractStatusData}
+                  tooltip="Distribution of contracts by status"
+                />
+              )}
+            </div>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-sm font-medium mb-3 text-gray-600">Task Status Distribution</h3>
+              {isEmptyData(taskStatusData) ? (
+                <NoDataMessage message="No task data available" />
+              ) : (
+                <PieChartWidget
+                  title=""
+                  data={taskStatusData}
+                  tooltip="Distribution of tasks by status"
+                />
+              )}
             </div>
           </div>
-          <KPIWidget
-            title=""
-            data={monthlyRevenueData}
-            icon={<FaMoneyBillWave size={20} />}
-            iconColor="text-indigo-600"
-            iconBg="bg-indigo-100"
-            tooltip="Revenue generated from contracts in the selected month, showing the financial performance of marketing activities"
-          />
         </div>
       </Card>
 
-      <Card className="p-4">
+      <Card className="p-4 border-none shadow-sm bg-white">
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center flex-wrap gap-2">
-            <h2 className="text-lg font-semibold">Top Brands by Contract Revenue</h2>
-            <div className="flex gap-2 items-center flex-wrap">
-              <Select
-                value={topBrandsFilter.filter_type}
-                onValueChange={(value: "MONTH" | "QUARTER" | "YEAR") =>
-                  setTopBrandsFilter((prev) => ({ ...prev, filter_type: value }))
-                }
-              >
-                <SelectTrigger className="w-[100px] h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="MONTH">Monthly</SelectItem>
-                  <SelectItem value="QUARTER">Quarterly</SelectItem>
-                  <SelectItem value="YEAR">Yearly</SelectItem>
-                </SelectContent>
-              </Select>
+            <h2 className="text-lg font-semibold text-gray-800">Revenue Analysis</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+          <div className="mt-4">
+            {breakdownChartData.length > 0 && (
+              <ComposedChartWidget
+                title="Contract Revenue Breakdown Over Time"
+                data={breakdownChartData}
+                barConfig={{
+                  dataKey: "total",
+                  label: "Total Revenue",
+                  color: "#63aaf1",
+                }}
+                lineConfigs={[
+                  { dataKey: "baseCost", label: "Base Contract", color: "#22c55e" },
+                  { dataKey: "affiliate", label: "Affiliate", color: "#f59e0b" },
+                  { dataKey: "brandShare", label: "Brand Share", color: "#3b82f6" },
+                  { dataKey: "systemShare", label: "System Share", color: "#ef4444" },
+                ]}
+                unit="₫"
+                tooltip="Breakdown of contract revenue components over time"
+                height={350}
+                formatXAxis={(value) => {
+                  if (!value) return "";
+                  const date = new Date(value);
+                  return isNaN(date.getTime())
+                    ? value
+                    : date.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
+                }}
+              />
+            )}
+          </div>
+        </div>
+      </Card>
 
-              <Select
-                value={topBrandsFilter.year.toString()}
-                onValueChange={(value) =>
-                  setTopBrandsFilter((prev) => ({ ...prev, year: Number(value) }))
-                }
-              >
-                <SelectTrigger className="w-[80px] h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 5 }, (_, i) => currentDate.year - i).map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {topBrandsFilter.filter_type === "MONTH" && (
-                <Select
-                  value={topBrandsFilter.month.toString()}
-                  onValueChange={(value) =>
-                    setTopBrandsFilter((prev) => ({ ...prev, month: Number(value) }))
-                  }
-                >
-                  <SelectTrigger className="w-[90px] h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
-                      <SelectItem key={month} value={month.toString()}>
-                        {new Date(2000, month - 1).toLocaleString("default", {
-                          month: "short",
-                        })}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-
-              {topBrandsFilter.filter_type === "QUARTER" && (
-                <Select
-                  value={topBrandsFilter.quarter.toString()}
-                  onValueChange={(value) =>
-                    setTopBrandsFilter((prev) => ({ ...prev, quarter: Number(value) }))
-                  }
-                >
-                  <SelectTrigger className="w-[100px] h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">Q1</SelectItem>
-                    <SelectItem value="2">Q2</SelectItem>
-                    <SelectItem value="3">Q3</SelectItem>
-                    <SelectItem value="4">Q4</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  setTopBrandsFilter({
-                    filter_type: "MONTH",
-                    year: currentDate.year,
-                    month: currentDate.month,
-                    quarter: currentDate.quarter,
-                  })
-                }
-                className="h-8 text-xs"
-              >
-                Reset
-              </Button>
-            </div>
+      <Card className="p-4 border-none shadow-sm bg-white">
+        <div className="flex flex-col gap-4">
+          {/* Top Brands Section - Uses Global Filter now */}
+          <div className="flex justify-between items-center flex-wrap gap-2">
+            <h2 className="text-lg font-semibold text-gray-800">Top Brands by Revenue</h2>
           </div>
           {isEmptyData(brandRevenueData) ? (
             <NoDataMessage message="No brand revenue data available for the selected period" />
@@ -472,110 +577,32 @@ const MarketingDashboard: React.FC = () => {
               title=""
               data={brandRevenueData}
               unit="VND"
-              tooltip="Ranking of brand partners by contract revenue generated, helping identify the most valuable business relationships"
+              tooltip="Ranking of brand partners by revenue generated"
             />
           )}
         </div>
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="p-4">
+        <Card className="p-4 border-none shadow-sm bg-white">
           <div className="flex flex-col gap-4">
-            <div className="flex justify-between items-center flex-wrap gap-2">
-              <h2 className="text-lg font-semibold">Contract Revenue by Type</h2>
-              <div className="flex gap-2 items-center flex-wrap">
-                <Select
-                  value={revenueFilter.filter_type}
-                  onValueChange={(value: "MONTH" | "QUARTER" | "YEAR") =>
-                    setRevenueFilter((prev) => ({ ...prev, filter_type: value }))
-                  }
-                >
-                  <SelectTrigger className="w-[100px] h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="MONTH">Monthly</SelectItem>
-                    <SelectItem value="QUARTER">Quarterly</SelectItem>
-                    <SelectItem value="YEAR">Yearly</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select
-                  value={revenueFilter.year.toString()}
-                  onValueChange={(value) =>
-                    setRevenueFilter((prev) => ({ ...prev, year: Number(value) }))
-                  }
-                >
-                  <SelectTrigger className="w-[80px] h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 5 }, (_, i) => currentDate.year - i).map((year) => (
-                      <SelectItem key={year} value={year.toString()}>
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {revenueFilter.filter_type === "MONTH" && (
-                  <Select
-                    value={revenueFilter.month.toString()}
-                    onValueChange={(value) =>
-                      setRevenueFilter((prev) => ({ ...prev, month: Number(value) }))
-                    }
-                  >
-                    <SelectTrigger className="w-[90px] h-8 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
-                        <SelectItem key={month} value={month.toString()}>
-                          {new Date(2000, month - 1).toLocaleString("default", {
-                            month: "short",
-                          })}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-
-                {revenueFilter.filter_type === "QUARTER" && (
-                  <Select
-                    value={revenueFilter.quarter.toString()}
-                    onValueChange={(value) =>
-                      setRevenueFilter((prev) => ({ ...prev, quarter: Number(value) }))
-                    }
-                  >
-                    <SelectTrigger className="w-[100px] h-8 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">Q1</SelectItem>
-                      <SelectItem value="2">Q2</SelectItem>
-                      <SelectItem value="3">Q3</SelectItem>
-                      <SelectItem value="4">Q4</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-            </div>
+            <h2 className="text-lg font-semibold text-gray-800">Revenue by Type</h2>
             {isEmptyData(revenueByTypeData) ? (
-              <NoDataMessage message="No revenue breakdown data available for the selected period" />
+              <NoDataMessage message="No revenue breakdown data available" />
             ) : (
               <BarChartWidget
                 title=""
                 data={revenueByTypeData}
                 unit="VND"
-                tooltip="Breakdown of revenue by contract type showing which services generate the most income for the business"
+                tooltip="Revenue generated by each contract type"
               />
             )}
           </div>
         </Card>
 
-        <Card className="p-4">
+        <Card className="p-4 border-none shadow-sm bg-white">
           <div className="flex flex-col gap-4">
-            <h2 className="text-lg font-semibold">Contract Revenue Distribution</h2>
+            <h2 className="text-lg font-semibold text-gray-800">Revenue Distribution</h2>
             {isEmptyData(revenueShareData) ? (
               <NoDataMessage message="No revenue distribution data available" />
             ) : (
@@ -583,25 +610,24 @@ const MarketingDashboard: React.FC = () => {
                 title=""
                 data={revenueShareData}
                 mode="percent"
-                tooltip="Percentage distribution of revenue across different contract types, showing the relative contribution of each service"
+                tooltip="Percentage distribution of revenue"
               />
             )}
           </div>
         </Card>
       </div>
 
-      {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-4"> */}
-      <Card className="p-4">
+      <Card className="p-4 border-none shadow-sm bg-white">
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center flex-wrap gap-2">
-            <h2 className="text-lg font-semibold">Upcoming Deadlines</h2>
-            <div className="flex gap-2 items-center flex-wrap">
-              <label className="text-sm font-medium">Days:</label>
+            <h2 className="text-lg font-semibold text-gray-800">Upcoming Deadlines</h2>
+            <div className="flex gap-2 items-center">
+              <span className="text-sm text-gray-500">Next</span>
               <Select
-                value={deadlineFilter.days.toString()}
-                onValueChange={(value) => setDeadlineFilter({ days: Number(value) })}
+                value={deadlineDays.toString()}
+                onValueChange={(value) => setDeadlineDays(Number(value))}
               >
-                <SelectTrigger className="w-[120px] h-8 text-xs">
+                <SelectTrigger className="w-[100px] h-8 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -612,14 +638,6 @@ const MarketingDashboard: React.FC = () => {
                   <SelectItem value="90">90 days</SelectItem>
                 </SelectContent>
               </Select>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setDeadlineFilter({ days: 30 })}
-                className="h-8 text-xs"
-              >
-                Reset
-              </Button>
             </div>
           </div>
           {isEmptyData(upcomingDeadlinesData) ? (
@@ -629,18 +647,6 @@ const MarketingDashboard: React.FC = () => {
           )}
         </div>
       </Card>
-
-      {/* <Card className="p-4">
-          <div className="flex flex-col gap-4">
-            <h2 className="text-lg font-semibold">Alerts & Notifications</h2>
-            {isEmptyData(alertsData) ? (
-              <NoDataMessage message="No alerts at this time" />
-            ) : (
-              <TableWidget title="" data={alertsData} />
-            )}
-          </div>
-        </Card>
-      </div> */}
     </div>
   );
 };

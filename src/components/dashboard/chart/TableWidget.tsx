@@ -32,6 +32,7 @@ export interface TableWidgetProps {
   data: Record<string, TableCellValue>[];
   hiddenColumns?: string[];
   tooltip?: string;
+  navigate?: (url: string) => void;
 }
 
 const BADGE_STYLES: Record<BadgeVariant, Record<string, string>> = {
@@ -56,7 +57,7 @@ const BADGE_STYLES: Record<BadgeVariant, Record<string, string>> = {
   },
 };
 
-const renderCell = (cell: TableCellValue) => {
+const renderCell = (cell: TableCellValue, navigate?: (url: string) => void) => {
   if (cell === null || cell === undefined) return "-";
 
   if (typeof cell === "string" || typeof cell === "number") {
@@ -77,10 +78,7 @@ const renderCell = (cell: TableCellValue) => {
   }
 
   if (cell.type === "action") {
-    return (
-      <a
-        href={cell.href}
-        className="
+    const commonClasses = `
         inline-flex items-center justify-center
         px-3 py-1.5
         text-xs font-medium
@@ -89,8 +87,26 @@ const renderCell = (cell: TableCellValue) => {
         text-primary
         hover:bg-primary hover:text-white
         transition
-      "
-      >
+        cursor-pointer
+      `;
+
+    if (navigate) {
+      return (
+        <a
+          href={cell.href}
+          onClick={(e) => {
+            e.preventDefault();
+            navigate(cell.href);
+          }}
+          className={commonClasses}
+        >
+          {cell.label}
+        </a>
+      );
+    }
+
+    return (
+      <a href={cell.href} className={commonClasses}>
         {cell.label}
       </a>
     );
@@ -99,7 +115,7 @@ const renderCell = (cell: TableCellValue) => {
   return "-";
 };
 
-function TableWidget({ title, data, hiddenColumns = [], tooltip }: TableWidgetProps) {
+function TableWidget({ title, data, hiddenColumns = [], tooltip, navigate }: TableWidgetProps) {
   if (!Array.isArray(data) || data.length === 0) {
     return <div className="py-6 text-center text-sm text-muted-foreground">No data available</div>;
   }
@@ -148,7 +164,7 @@ function TableWidget({ title, data, hiddenColumns = [], tooltip }: TableWidgetPr
           {data.map((row, rowIndex) => (
             <TableRow key={(row as any).id ?? rowIndex}>
               {columns.map((col) => (
-                <TableCell key={col}>{renderCell(row[col])}</TableCell>
+                <TableCell key={col}>{renderCell(row[col], navigate)}</TableCell>
               ))}
             </TableRow>
           ))}

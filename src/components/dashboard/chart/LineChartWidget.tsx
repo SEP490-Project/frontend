@@ -80,10 +80,11 @@ function LineChartWidget({ title, data, unit, lineConfig, tooltip }: Props) {
               domain={[
                 0,
                 (dataMax: number) => {
-                  if (dataMax <= 10) return 20;
-                  if (dataMax <= 50) return Math.ceil(dataMax / 10) * 10;
-                  if (dataMax <= 100) return Math.ceil(dataMax / 20) * 20;
-                  return Math.ceil(dataMax / 100) * 100;
+                  return Math.ceil(dataMax * 1.15);
+                  // if (dataMax <= 10) return 20;
+                  // if (dataMax <= 50) return Math.ceil(dataMax / 10) * 10;
+                  // if (dataMax <= 100) return Math.ceil(dataMax / 20) * 20;
+                  // return Math.ceil(dataMax / 100) * 100;
                 },
               ]}
               tickFormatter={(value) =>

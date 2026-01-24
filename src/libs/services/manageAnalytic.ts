@@ -3,7 +3,7 @@ import api from "../api";
 export const manageMarketingAnalytic = {
   getMarketingActiveBrand: () => api.get("/analytics/marketing/active-brands"),
   getMarketingActiveCampaign: () => api.get("/analytics/marketing/active-campaigns"),
-  getMarketingDashboard: () => api.get("/analytics/marketing/dashboard"),
+  getMarketingDashboard: (params?: any) => api.get("/analytics/marketing/dashboard", { params }),
   getMarketingDraftCampaign: () => api.get("/analytics/marketing/draft-campaigns"),
   getMarketingMonthlyRevenue: (params: any) =>
     api.get("/analytics/marketing/monthly-revenue", { params }),
@@ -12,6 +12,22 @@ export const manageMarketingAnalytic = {
   getMarketingTopBrand: (params: any) => api.get("/analytics/marketing/top-brands", { params }),
   getMarketingUpcomingDeadline: (params: any) =>
     api.get("/analytics/marketing/upcoming-deadlines", { params }),
+  // New dashboard refactor endpoints
+  getContractStatusDistribution: (params: any) =>
+    api.get("/analytics/marketing/contract-status-distribution", { params }),
+  getTaskStatusDistribution: (params: any) =>
+    api.get("/analytics/marketing/task-status-distribution", { params }),
+  getRevenueOverTime: (params: any) =>
+    api.get("/analytics/marketing/revenue-over-time", { params }),
+  getRefundViolationStats: (params: any) =>
+    api.get("/analytics/marketing/refund-violation-stats", { params }),
+  // Gross/Net Revenue endpoints (replacing monthly revenue)
+  getGrossContractRevenue: (params: any) =>
+    api.get("/analytics/marketing/gross-revenue", { params }),
+  getNetContractRevenue: (params: any) => api.get("/analytics/marketing/net-revenue", { params }),
+  // Contract Revenue Breakdown for ComposedChart
+  getContractRevenueBreakdown: (params: any) =>
+    api.get("/analytics/marketing/contract-revenue-breakdown", { params }),
 };
 
 export const manageAdminAnalytic = {
@@ -33,6 +49,17 @@ export const manageBrandAnalytic = {
     api.get("/analytics/brand-partner/revenue-trend", { params }),
   getBrandTopProduct: (params: any) => api.get("/analytics/brand-partner/top-products", { params }),
   getBrandDashboard: (params: any) => api.get("/analytics/brand-partner/dashboard", { params }),
+  // New dashboard refactor endpoints
+  getContractStatusDistribution: (params: any) =>
+    api.get("/analytics/brand-partner/contract-status-distribution", { params }),
+  getTaskStatusDistribution: (params: any) =>
+    api.get("/analytics/brand-partner/task-status-distribution", { params }),
+  getRevenueOverTime: (params: any) =>
+    api.get("/analytics/brand-partner/revenue-over-time", { params }),
+  getRefundViolationStats: (params: any) =>
+    api.get("/analytics/brand-partner/refund-violation-stats", { params }),
+  getGrossIncome: (params: any) => api.get("/analytics/brand-partner/gross-income", { params }),
+  getNetIncome: (params: any) => api.get("/analytics/brand-partner/net-income", { params }),
 };
 
 export const manageSalesAnalytic = {

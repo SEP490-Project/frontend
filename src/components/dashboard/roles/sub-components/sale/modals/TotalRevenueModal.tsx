@@ -124,7 +124,9 @@ export const TotalRevenueModal: React.FC<TotalRevenueModalProps> = ({
                       <th className="text-left p-2">Customer</th>
                       <th className="text-left p-2">Email</th>
                       <th className="text-right p-2">Total Amount</th>
-                      <th className="text-right p-2">Net Amount</th>
+                      {/* <th className="text-right p-2">Net Amount</th> */}
+                      <th className="text-right p-2">Type</th>
+                      <th className="text-right p-2">Order Type</th>
                       <th className="text-left p-2">Status</th>
                       <th className="text-left p-2">Date</th>
                     </tr>
@@ -144,8 +146,24 @@ export const TotalRevenueModal: React.FC<TotalRevenueModalProps> = ({
                         <td className="text-right p-2 font-semibold">
                           {convertNumberToCurrency(String(item.total_amount.toFixed(2)))}
                         </td>
-                        <td className="text-right p-2">
+                        {/* <td className="text-right p-2">
                           {convertNumberToCurrency(String(item.net_amount.toFixed(2)))}
+                        </td> */}
+                        <td className="text-right p-2">
+                          {" "}
+                          <span
+                            className={`px-2 py-1 text-xs font-semibold ${item.source.toLowerCase() === "order" ? "bg-blue-100 text-blue-800" : "bg-orange-100 text-orange-800"} rounded`}
+                          >
+                            {item.source}
+                          </span>
+                        </td>
+                        <td className="text-right p-2">
+                          {" "}
+                          <span
+                            className={`px-2 py-1 text-xs font-semibold ${item.order_type.toLowerCase() === "standard" ? "bg-blue-100 text-blue-800" : "bg-orange-100 text-orange-800"} rounded`}
+                          >
+                            {item.order_type}
+                          </span>
                         </td>
                         <td className="p-2">
                           <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded">
@@ -201,7 +219,12 @@ export const TotalRevenueModal: React.FC<TotalRevenueModalProps> = ({
           )}
         </div>
       </DialogContent>
-      <DetailModal isOpen={showDetail} onClose={() => setShowDetail(false)} data={selectedItem} />
+      <DetailModal
+        isOpen={showDetail}
+        onClose={() => setShowDetail(false)}
+        data={selectedItem}
+        type="total_revenue_modal"
+      />
     </Dialog>
   );
 };

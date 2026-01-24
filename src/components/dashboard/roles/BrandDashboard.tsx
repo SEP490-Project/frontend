@@ -3,7 +3,7 @@ import {
   KPIWidget,
   TableWidget,
   BarChartWidget,
-  LineChartWidget,
+  // LineChartWidget,
   PieChartWidget,
 } from "@/components/dashboard/chart";
 import {
@@ -13,7 +13,7 @@ import {
   FaTriangleExclamation,
   FaMoneyBillWave,
   FaStar,
-  FaReceipt,
+  // FaReceipt,
 } from "react-icons/fa6";
 import {
   brandAffiliates,
@@ -99,8 +99,8 @@ const BrandDashboard: React.FC = () => {
     topRatingProducts,
     contractStatusDistribution,
     taskStatusDistribution,
-    revenueOverTime,
-    refundViolationStats,
+    // revenueOverTime,
+    // refundViolationStats,
     grossIncome,
     netIncome,
     selectedPeriod,
@@ -162,26 +162,22 @@ const BrandDashboard: React.FC = () => {
 
   const grossIncomeData = {
     value: grossIncome?.gross_income || 0,
-    statusText: grossIncome?.period_change_percent
-      ? `${grossIncome.period_change_percent > 0 ? "+" : ""}${grossIncome.period_change_percent.toFixed(1)}% vs previous`
+    statusText: grossIncome?.percentage_change
+      ? `${grossIncome.percentage_change > 0 ? "+" : ""}${grossIncome.percentage_change.toFixed(1)}% vs previous`
       : "Total Revenue",
   };
 
   const netIncomeData = {
     value: netIncome?.net_income || 0,
-    statusText: `Deductions: ${formatCurrency(
-      (netIncome?.total_refunds || 0) +
-        (netIncome?.total_contract_payments || 0) +
-        (netIncome?.violation_refunds_received || 0),
-    )}`,
+    statusText: `Deductions: ${formatCurrency(netIncome?.total_contract_payments || 0)}`,
   };
 
-  const revenueOverTimeData = Array.isArray(revenueOverTime)
-    ? revenueOverTime.map((r: any) => ({
-        name: new Date(r.date).toLocaleDateString("default", { month: "short", day: "numeric" }),
-        Revenue: r.revenue,
-      }))
-    : [];
+  // const revenueOverTimeData = Array.isArray(revenueOverTime)
+  //   ? revenueOverTime.map((r: any) => ({
+  //       name: new Date(r.date).toLocaleDateString("default", { month: "short", day: "numeric" }),
+  //       Revenue: r.revenue,
+  //     }))
+  //   : [];
 
   const topProductsData = Array.isArray(topProducts)
     ? topProducts.map((p: any) => ({
@@ -211,15 +207,15 @@ const BrandDashboard: React.FC = () => {
     : [];
 
   // Refund/Violation Stats Data for display
-  const refundViolationData = refundViolationStats
-    ? {
-        totalRefunds: refundViolationStats.total_refunds || 0,
-        refundCount: refundViolationStats.refund_count || 0,
-        brandViolations: refundViolationStats.brand_violations || 0,
-        kolViolations: refundViolationStats.kol_violations || 0,
-        violationPenalties: refundViolationStats.violation_penalties || 0,
-      }
-    : null;
+  // const refundViolationData = refundViolationStats
+  //   ? {
+  //       totalRefunds: refundViolationStats.total_refunds || 0,
+  //       refundCount: refundViolationStats.refund_count || 0,
+  //       brandViolations: refundViolationStats.brand_violations || 0,
+  //       kolViolations: refundViolationStats.kol_violations || 0,
+  //       violationPenalties: refundViolationStats.violation_penalties || 0,
+  //     }
+  //   : null;
 
   // Contract Status Distribution for Pie Chart
   const contractStatusData = contractStatusDistribution
@@ -462,10 +458,16 @@ const BrandDashboard: React.FC = () => {
                   {formatCurrency(netIncome.preorder_revenue || 0)}
                 </p>
               </div>
-              <div className="bg-red-50 rounded-lg p-3">
-                <p className="text-xs text-gray-500">Refunds</p>
-                <p className="text-lg font-bold text-red-600">
-                  -{formatCurrency(netIncome.total_refunds || 0)}
+              <div className="bg-teal-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500">KOL Payment Refunds</p>
+                <p className="text-lg font-bold text-teal-600">
+                  +{formatCurrency(netIncome.payment_refunds || 0)}
+                </p>
+              </div>
+              <div className="bg-cyan-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500">KOL Violation Refunds</p>
+                <p className="text-lg font-bold text-cyan-600">
+                  +{formatCurrency(netIncome.violation_refunds || 0)}
                 </p>
               </div>
               <div className="bg-orange-50 rounded-lg p-3">
@@ -474,33 +476,27 @@ const BrandDashboard: React.FC = () => {
                   -{formatCurrency(netIncome.total_contract_payments || 0)}
                 </p>
               </div>
-              <div className="bg-teal-50 rounded-lg p-3">
-                <p className="text-xs text-gray-500">KOL Violation Refunds</p>
-                <p className="text-lg font-bold text-teal-600">
-                  +{formatCurrency(netIncome.violation_refunds_received || 0)}
-                </p>
-              </div>
             </div>
           </div>
         </Card>
       )}
 
       {/* Revenue Trend Chart */}
-      <Card className="p-4 border-none shadow-sm bg-white">
-        <div className="flex flex-col gap-4">
-          <h2 className="text-lg font-semibold text-gray-800">Revenue Trend</h2>
-          {isEmptyData(revenueOverTimeData) ? (
-            <NoDataMessage message="No revenue data available for selected period" />
-          ) : (
-            <LineChartWidget
-              title=""
-              data={revenueOverTimeData}
-              lineConfig={{ Revenue: { label: "Revenue", color: "#6366f1" } }}
-              tooltip="Revenue performance over time"
-            />
-          )}
-        </div>
-      </Card>
+      {/* <Card className="p-4 border-none shadow-sm bg-white"> */}
+      {/*   <div className="flex flex-col gap-4"> */}
+      {/*     <h2 className="text-lg font-semibold text-gray-800">Revenue Trend</h2> */}
+      {/*     {isEmptyData(revenueOverTimeData) ? ( */}
+      {/*       <NoDataMessage message="No revenue data available for selected period" /> */}
+      {/*     ) : ( */}
+      {/*       <LineChartWidget */}
+      {/*         title="" */}
+      {/*         data={revenueOverTimeData} */}
+      {/*         lineConfig={{ Revenue: { label: "Revenue", color: "#6366f1" } }} */}
+      {/*         tooltip="Revenue performance over time" */}
+      {/*       /> */}
+      {/*     )} */}
+      {/*   </div> */}
+      {/* </Card> */}
 
       {/* Status Distributions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -534,23 +530,6 @@ const BrandDashboard: React.FC = () => {
         </Card>
       </div>
 
-      {/* Top Products */}
-      <Card className="p-4 border-none shadow-sm bg-white">
-        <div className="flex flex-col gap-4">
-          <h2 className="text-lg font-semibold text-gray-800">Top Products by Revenue</h2>
-          {isEmptyData(topProductsData) ? (
-            <NoDataMessage message="No product revenue data" />
-          ) : (
-            <BarChartWidget
-              title=""
-              data={topProductsData}
-              unit="VND"
-              tooltip="Best selling or highest revenue generating products"
-            />
-          )}
-        </div>
-      </Card>
-
       {/* Top Rating Products & Refund/Violation Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="p-4 border-none shadow-sm bg-white">
@@ -566,51 +545,69 @@ const BrandDashboard: React.FC = () => {
             )}
           </div>
         </Card>
+
+        {/* Top Products */}
         <Card className="p-4 border-none shadow-sm bg-white">
           <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-2">
-              <FaReceipt className="h-5 w-5 text-orange-500" />
-              <h2 className="text-lg font-semibold text-gray-800">Refunds & Violations</h2>
-            </div>
-            {refundViolationData ? (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-red-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-600">Total Refunds</p>
-                  <p className="text-xl font-bold text-red-600">
-                    {formatCurrency(refundViolationData.totalRefunds)}
-                  </p>
-                  <p className="text-xs text-gray-500">{refundViolationData.refundCount} orders</p>
-                </div>
-                <div className="bg-orange-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-600">Violation Penalties</p>
-                  <p className="text-xl font-bold text-orange-600">
-                    {formatCurrency(refundViolationData.violationPenalties)}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {refundViolationData.brandViolations + refundViolationData.kolViolations}{" "}
-                    violations
-                  </p>
-                </div>
-                <div className="bg-yellow-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-600">Brand Violations</p>
-                  <p className="text-xl font-bold text-yellow-600">
-                    {refundViolationData.brandViolations}
-                  </p>
-                  <p className="text-xs text-gray-500">contracts breached by brand</p>
-                </div>
-                <div className="bg-purple-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-600">KOL Violations</p>
-                  <p className="text-xl font-bold text-purple-600">
-                    {refundViolationData.kolViolations}
-                  </p>
-                  <p className="text-xs text-gray-500">contracts breached by KOL</p>
-                </div>
-              </div>
+            <h2 className="text-lg font-semibold text-gray-800">Top Products by Revenue</h2>
+            {isEmptyData(topProductsData) ? (
+              <NoDataMessage message="No product revenue data" />
             ) : (
-              <NoDataMessage message="No refund/violation data" />
+              <BarChartWidget
+                title=""
+                data={topProductsData}
+                unit="VND"
+                tooltip="Best selling or highest revenue generating products"
+              />
             )}
           </div>
         </Card>
+
+        {/* <Card className="p-4 border-none shadow-sm bg-white"> */}
+        {/*   <div className="flex flex-col gap-4"> */}
+        {/*     <div className="flex items-center gap-2"> */}
+        {/*       <FaReceipt className="h-5 w-5 text-orange-500" /> */}
+        {/*       <h2 className="text-lg font-semibold text-gray-800">Refunds & Violations</h2> */}
+        {/*     </div> */}
+        {/*     {refundViolationData ? ( */}
+        {/*       <div className="grid grid-cols-2 gap-4"> */}
+        {/*         <div className="bg-red-50 rounded-lg p-4"> */}
+        {/*           <p className="text-sm text-gray-600">Total Refunds</p> */}
+        {/*           <p className="text-xl font-bold text-red-600"> */}
+        {/*             {formatCurrency(refundViolationData.totalRefunds)} */}
+        {/*           </p> */}
+        {/*           <p className="text-xs text-gray-500">{refundViolationData.refundCount} orders</p> */}
+        {/*         </div> */}
+        {/*         <div className="bg-orange-50 rounded-lg p-4"> */}
+        {/*           <p className="text-sm text-gray-600">Violation Penalties</p> */}
+        {/*           <p className="text-xl font-bold text-orange-600"> */}
+        {/*             {formatCurrency(refundViolationData.violationPenalties)} */}
+        {/*           </p> */}
+        {/*           <p className="text-xs text-gray-500"> */}
+        {/*             {refundViolationData.brandViolations + refundViolationData.kolViolations}{" "} */}
+        {/*             violations */}
+        {/*           </p> */}
+        {/*         </div> */}
+        {/*         <div className="bg-yellow-50 rounded-lg p-4"> */}
+        {/*           <p className="text-sm text-gray-600">Brand Violations</p> */}
+        {/*           <p className="text-xl font-bold text-yellow-600"> */}
+        {/*             {refundViolationData.brandViolations} */}
+        {/*           </p> */}
+        {/*           <p className="text-xs text-gray-500">contracts breached by brand</p> */}
+        {/*         </div> */}
+        {/*         <div className="bg-purple-50 rounded-lg p-4"> */}
+        {/*           <p className="text-sm text-gray-600">KOL Violations</p> */}
+        {/*           <p className="text-xl font-bold text-purple-600"> */}
+        {/*             {refundViolationData.kolViolations} */}
+        {/*           </p> */}
+        {/*           <p className="text-xs text-gray-500">contracts breached by KOL</p> */}
+        {/*         </div> */}
+        {/*       </div> */}
+        {/*     ) : ( */}
+        {/*       <NoDataMessage message="No refund/violation data" /> */}
+        {/*     )} */}
+        {/*   </div> */}
+        {/* </Card> */}
       </div>
 
       {/* Recent Campaigns and Contracts */}

@@ -42,12 +42,12 @@ const OrderTracking = () => {
       <div className="w-full flex flex-col items-center">
         <div className="w-full text-center space-y-4 p-6">
           <h1 className="text-6xl font-bold text-gray-800 w-full">Order Tracking</h1>
-          <p className="text-2xl">Enter your GHN Order ID in the field below.</p>
+          <p className="text-2xl">Enter your Giao Hang Nhanh (GHN) Order ID in the field below.</p>
         </div>
         <div className="w-full p-6 flex-col md:flex-row flex items-center justify-center">
           <Input
             type="text"
-            placeholder="Enter GHN Id"
+            placeholder="Enter Giao Hang Nhanh (GHN) Order ID"
             className="md:rounded-r-none h-16 md:w-[50%] md:text-xl mb-4 md:mb-0 placeholder:text-xl"
             onChange={(e) => setGhnId(e.target.value)}
             value={ghnId}

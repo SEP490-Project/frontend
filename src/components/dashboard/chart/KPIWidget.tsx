@@ -20,6 +20,7 @@ interface Props {
   iconBg?: string;
   id?: string;
   tooltip?: string;
+  valueColor?: string;
 }
 
 function KPIWidget({
@@ -31,6 +32,7 @@ function KPIWidget({
   iconBg = "bg-gray-100",
   id,
   tooltip,
+  valueColor = "text-gray-900",
 }: Props) {
   const formatValue = (val: string | number) => {
     if (typeof val === "number") {
@@ -78,7 +80,7 @@ function KPIWidget({
         )}
       </CardHeader>
       <CardContent>
-        <div className="text-3xl font-bold text-gray-900">
+        <div className={`text-3xl font-bold ${valueColor}`}>
           {
             // !hasAnimated.current ? (
             //   <CountUp

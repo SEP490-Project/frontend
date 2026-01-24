@@ -110,9 +110,7 @@ export default function ViolationList({ onSelectViolation }: ViolationListProps)
   };
 
   const calculateTotalDue = (violation: ViolationListItem) => {
-    return violation.type === "BRAND"
-      ? violation.penalty_amount
-      : violation.refund_amount + violation.penalty_amount;
+    return violation.type === "BRAND" ? violation.penalty_amount : violation.refund_amount;
   };
 
   const handleResetFilters = () => {

@@ -1,6 +1,5 @@
 import {
   FaFacebookF,
-  FaPlay,
   FaGlobe,
   FaFileAlt,
   FaVideo,
@@ -16,6 +15,7 @@ import {
   FaExclamationTriangle,
   FaInfoCircle,
   FaTimesCircle,
+  FaTiktok,
 } from "react-icons/fa";
 
 // Helper to get channel icon by channel code
@@ -24,7 +24,7 @@ export const getChannelIcon = (channelCode: string) => {
     case "FACEBOOK":
       return <FaFacebookF className="text-blue-600" size={16} />;
     case "TIKTOK":
-      return <FaPlay className="text-gray-800" size={16} />;
+      return <FaTiktok className="text-gray-800" size={16} />;
     case "WEBSITE":
       return <FaGlobe className="text-green-600" size={16} />;
     default:

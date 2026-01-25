@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { FaDollarSign } from "react-icons/fa6";
@@ -11,16 +11,16 @@ interface AdvertisingScopeProps {
 }
 
 const AdvertisingScope: React.FC<AdvertisingScopeProps> = ({ formData, onUpdate }) => {
-  const financialTerms = formData?.financialTerms || {};
-  const startDate = formData?.startDate;
-  const endDate = formData?.endDate;
+  const financial_terms = formData?.financial_terms || {};
+  const start_date = formData?.start_date;
+  const end_date = formData?.end_date;
 
-  React.useEffect(() => {
+  useEffect(() => {
     const updates: any = {};
-    if (financialTerms.payment_method !== "BANK_TRANSFER") {
+    if (financial_terms.payment_method !== "BANK_TRANSFER") {
       updates.payment_method = "BANK_TRANSFER";
     }
-    if (financialTerms.model !== "FIXED") {
+    if (financial_terms.model !== "FIXED") {
       updates.model = "FIXED";
     }
     if (Object.keys(updates).length > 0) {
@@ -29,7 +29,7 @@ const AdvertisingScope: React.FC<AdvertisingScopeProps> = ({ formData, onUpdate 
   }, []);
 
   return (
-    <Card className="shadow-sm">
+    <Card className="shadow-sm overflow-hidden">
       <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100">
         <CardTitle className="flex items-center gap-3">
           <FaDollarSign className="w-6 h-6 text-orange-600" />
@@ -43,17 +43,17 @@ const AdvertisingScope: React.FC<AdvertisingScopeProps> = ({ formData, onUpdate 
       </CardHeader>
 
       <CardContent className="pt-6 space-y-6">
-        {startDate && endDate && (
+        {start_date && end_date && (
           <Card className="p-4 bg-blue-50 border-blue-200">
             <h4 className="font-medium text-blue-900 mb-2">Contract Period</h4>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="font-medium">Start Date:</span>{" "}
-                {new Date(startDate).toLocaleDateString("vi-VN")}
+                {new Date(start_date).toLocaleDateString("vi-VN")}
               </div>
               <div>
                 <span className="font-medium">End Date:</span>{" "}
-                {new Date(endDate).toLocaleDateString("vi-VN")}
+                {new Date(end_date).toLocaleDateString("vi-VN")}
               </div>
             </div>
           </Card>
@@ -70,11 +70,14 @@ const AdvertisingScope: React.FC<AdvertisingScopeProps> = ({ formData, onUpdate 
         </div>
 
         <PaymentSchedule
-          schedules={financialTerms.schedule || []}
-          totalCost={financialTerms.total_cost || 0}
-          onUpdate={(schedule) => onUpdate({ schedule })}
-          startDate={startDate}
-          endDate={endDate}
+          schedules={financial_terms.schedule || []}
+          totalCost={financial_terms.total_cost || 0}
+          onUpdate={(schedule) => {
+            onUpdate({ schedule });
+          }}
+          startDate={start_date}
+          endDate={end_date}
+          depositPercent={formData.deposit_percent || 0}
         />
       </CardContent>
     </Card>

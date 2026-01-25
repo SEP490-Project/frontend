@@ -1,5 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { useContentManager } from "@/libs/hooks/useContent";
+import { useNavigate } from "react-router-dom";
+import { useContent } from "@/libs/hooks/useContent";
+import { useAppDispatch } from "@/libs/stores";
+import {
+  contents,
+  deleteContent,
+  publishContent,
+  submitContent,
+} from "@/libs/stores/contentManager/thunk";
+import { manageContent } from "@/libs/services/manageContent";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -23,61 +33,47 @@ import {
   Plus,
   Search,
   Calendar,
+  Clock,
   User,
-  ChevronLeft,
-  ChevronRight,
   FileText,
   Video,
   Settings,
   Globe,
-  Check,
-  XCircle,
+  Loader2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { Dialog } from "@/components/ui/dialog";
 import { DeleteContentModal } from "@/components/modal/content/DeleteContentModal";
 import { RequestApprovalModal } from "@/components/modal/content/RequestApprovalModal";
-import { RejectContentModal } from "@/components/modal/content/RejectContentModal";
-import ContentDetailModal from "./ContentDetailModal";
-import TaskSelectionDialog from "./TaskSelectionDialog";
-import type { LegacyContent } from "@/libs/utils/contentConverter";
+import { ScheduleContentModal } from "@/components/modal/content/ScheduleContentModal";
+import {
+  ContentCreationModal,
+  type ContentType as CreationContentType,
+} from "@/components/modal/content/ContentCreationModal";
+import type { Content } from "@/libs/types/content";
+import type { Task } from "@/libs/types/task";
 
 type ContentType = "blog" | "video";
 
-interface ContentTask {
-  id: number;
-  title: string;
-  type: "Blog" | "Video" | "Post";
-  campaign: string;
-  status: "to-do" | "in-progress" | "completed";
-  details: {
-    description: string;
-    assignee: string;
-    dueTime: string;
-    priority: "High" | "Medium" | "Low";
-  };
-  color: string;
-}
-
 interface ContentListProps {
-  onCreateNew?: (contentType: ContentType, task?: ContentTask) => void;
-  onEdit?: (content: LegacyContent) => void;
-  onView?: (content: LegacyContent) => void;
+  onCreateNew?: (contentType: ContentType, task?: Task) => void;
+  onEdit?: (content: Content) => void;
+  onView?: (content: Content) => void;
 }
 
 const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }) => {
-  const {
-    loading,
-    contentList,
-    pagination,
-    error,
-    fetchContents,
-    removeContent,
-    publishExistingContent,
-    submitExistingContent,
-    approveExistingContent,
-    rejectExistingContent,
-  } = useContentManager();
+  const navigate = useNavigate();
+  const { loading, contents: contentList, pagination, error } = useContent();
+
+  const dispatch = useAppDispatch();
 
   const [filters, setFilters] = useState({
     page: 1,
@@ -87,20 +83,25 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     actor: "",
   });
 
-  const [selectedContent, setSelectedContent] = useState<LegacyContent | null>(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [isTaskSelectionOpen, setIsTaskSelectionOpen] = useState(false);
-  const [selectedContentType, setSelectedContentType] = useState<ContentType>("blog");
+  const [isCreationModalOpen, setIsCreationModalOpen] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [contentToDelete, setContentToDelete] = useState<LegacyContent | null>(null);
+  const [contentToDelete, setContentToDelete] = useState<Content | null>(null);
+  const [isDeletingContent, setIsDeletingContent] = useState(false);
   const [showRequestApprovalModal, setShowRequestApprovalModal] = useState(false);
-  const [contentToSubmit, setContentToSubmit] = useState<LegacyContent | null>(null);
-  const [showRejectModal, setShowRejectModal] = useState(false);
-  const [contentToReject, setContentToReject] = useState<LegacyContent | null>(null);
+  const [contentToSubmit, setContentToSubmit] = useState<Content | null>(null);
+  const [isSubmittingApproval, setIsSubmittingApproval] = useState(false);
+  const [isLoadingEdit, setIsLoadingEdit] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [contentToSchedule, setContentToSchedule] = useState<Content | null>(null);
+
+  const handleSchedule = (content: Content) => {
+    setContentToSchedule(content);
+    setShowScheduleModal(true);
+  };
 
   useEffect(() => {
-    fetchContents(filters);
-  }, [filters, fetchContents]);
+    dispatch(contents(filters));
+  }, [filters, dispatch]);
 
   const handleSearch = (value: string) => {
     setFilters((prev) => ({ ...prev, keywords: value, page: 1 }));
@@ -115,21 +116,22 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     setFilters((prev) => ({ ...prev, page }));
   };
 
-  const handleDelete = (content: LegacyContent) => {
+  const handleDelete = (content: Content) => {
     setContentToDelete(content);
     setShowDeleteModal(true);
   };
 
   const handleConfirmDelete = async () => {
-    if (!contentToDelete) return;
+    if (!contentToDelete || isDeletingContent) return;
 
+    setIsDeletingContent(true);
     try {
-      const deleteResponse = await removeContent(contentToDelete.id);
+      const deleteResponse = await dispatch(deleteContent(contentToDelete.id));
 
       // Check if deletion was successful based on API response
       if (deleteResponse.meta.requestStatus === "fulfilled") {
         // Refresh content list only if successful
-        fetchContents(filters);
+        dispatch(contents(filters));
       }
 
       // Always close modal and clear state
@@ -140,6 +142,8 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
       // Close modal and clear state
       setShowDeleteModal(false);
       setContentToDelete(null);
+    } finally {
+      setIsDeletingContent(false);
     }
   };
 
@@ -148,57 +152,52 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     setContentToDelete(null);
   };
 
-  const handleToggleStatus = async (content: LegacyContent) => {
-    if (content.status === "draft") {
-      await publishExistingContent(content.id);
-      fetchContents(filters);
-    }
-    // For other statuses, we might need different actions like approve/reject
-    // This will be handled by specific buttons in the dropdown menu
-  };
-
-  const handleViewContent = (content: LegacyContent) => {
-    setSelectedContent(content);
-    setIsDetailModalOpen(true);
-    // Also call the parent onView if provided
+  const handleViewContent = (content: Content) => {
+    navigate(`/manage/content/all-contents/${content.id}`);
     onView?.(content);
   };
 
-  const handleCloseDetailModal = () => {
-    setIsDetailModalOpen(false);
-    setSelectedContent(null);
-  };
+  const handleEditContent = async (content: Content) => {
+    setIsLoadingEdit(true);
 
-  const handleRequestApproval = (contentId: string) => {
-    // Find the content by ID and show confirmation modal
-    const content = contentList.find((c) => c.id === contentId);
-    if (content) {
-      setContentToSubmit(content);
-      setShowRequestApprovalModal(true);
+    try {
+      const response = await manageContent.contentDetail(content.id);
+      const apiData = response.data.data;
+      if (apiData) {
+        onEdit?.(apiData);
+      } else {
+        onEdit?.(content);
+      }
+    } catch (error) {
+      console.error("Error fetching content detail for edit:", error);
+      onEdit?.(content);
+    } finally {
+      setIsLoadingEdit(false);
     }
   };
 
   const handleConfirmRequestApproval = async () => {
-    if (!contentToSubmit) return;
+    if (!contentToSubmit || isSubmittingApproval) return;
 
+    setIsSubmittingApproval(true);
     try {
-      const submitResponse = await submitExistingContent(contentToSubmit.id);
+      const submitResponse = await dispatch(submitContent(contentToSubmit.id));
 
       // Check if submission was successful
       if (submitResponse.meta.requestStatus === "fulfilled") {
-        fetchContents(filters);
+        dispatch(contents(filters));
       }
 
       // Always close modals and clear state
       setShowRequestApprovalModal(false);
       setContentToSubmit(null);
-      handleCloseDetailModal();
     } catch (error) {
       console.error("Error submitting content for approval:", error);
       // Close modals and clear state on error
       setShowRequestApprovalModal(false);
       setContentToSubmit(null);
-      handleCloseDetailModal();
+    } finally {
+      setIsSubmittingApproval(false);
     }
   };
 
@@ -207,93 +206,115 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
     setContentToSubmit(null);
   };
 
-  const handleReject = (content: LegacyContent) => {
-    setContentToReject(content);
-    setShowRejectModal(true);
-  };
-
-  const handleConfirmReject = async (reason: string) => {
-    if (!contentToReject) return;
-
+  const handlePublish = async (content: Content) => {
     try {
-      const rejectResponse = await rejectExistingContent(contentToReject.id, reason);
+      await dispatch(publishContent({ id: content.id })).unwrap();
+      /* if (content.task_id) {
+        try {
+          const maxAttempts = 10;
+          const pollInterval = 1500;
+          let isPosted = false;
 
-      // Check if rejection was successful
-      if (rejectResponse.meta.requestStatus === "fulfilled") {
-        fetchContents(filters);
-      }
+          for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            await new Promise((resolve) => setTimeout(resolve, pollInterval));
+            const response = await manageContent.contentDetail(content.id);
+            const latestContent = response.data.data;
 
-      // Always close modals and clear state
-      setShowRejectModal(false);
-      setContentToReject(null);
+            if (latestContent?.status === "POSTED") {
+              isPosted = true;
+              break;
+            }
+          }
+
+          if (isPosted) {
+            await dispatch(
+              updateTaskState({
+                taskId: content.task_id,
+                state: "DONE",
+              }),
+            ).unwrap();
+          } else {
+            console.warn("Content was not confirmed as posted after polling, skipping task update");
+          }
+        } catch (taskError) {
+          console.warn("Failed to update task state:", taskError);
+        }
+      } */
+
+      dispatch(contents(filters));
+      toast.success(`Content "${content.title}" has been published successfully.`);
     } catch (error) {
-      console.error("Error rejecting content:", error);
-      // Close modals and clear state on error
-      setShowRejectModal(false);
-      setContentToReject(null);
+      console.error("Error publishing content:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to publish content");
     }
   };
 
-  const handleCancelReject = () => {
-    setShowRejectModal(false);
-    setContentToReject(null);
+  const handleOpenCreationModal = () => {
+    setIsCreationModalOpen(true);
   };
 
-  const handleApprove = async (content: LegacyContent) => {
-    try {
-      const approveResponse = await approveExistingContent(content.id);
-
-      // Check if approval was successful
-      if (approveResponse.meta.requestStatus === "fulfilled") {
-        fetchContents(filters);
-      }
-    } catch (error) {
-      console.error("Error approving content:", error);
-    }
+  const handleCreationConfirm = (contentType: CreationContentType, task?: Task) => {
+    setIsCreationModalOpen(false);
+    onCreateNew?.(contentType, task);
   };
 
-  const handleCreateNewClick = (contentType: ContentType) => {
-    setSelectedContentType(contentType);
-    setIsTaskSelectionOpen(true);
-  };
-
-  const handleTaskSelect = (task: any) => {
-    // Accept either a LegacyTask (id as string) or ContentTask; normalize to ContentTask before forwarding.
-    setIsTaskSelectionOpen(false);
-    const normalizedTask: ContentTask = {
-      id: typeof task?.id === "string" ? Number(task.id) : ((task?.id as number) ?? 0),
-      title: task?.title ?? "",
-      type: (task?.type as ContentTask["type"]) ?? "Blog",
-      campaign: task?.campaign ?? "",
-      status: (task?.status as ContentTask["status"]) ?? "to-do",
-      details: {
-        description: task?.details?.description ?? task?.description ?? "",
-        assignee: task?.details?.assignee ?? task?.assignee ?? "",
-        dueTime: task?.details?.dueTime ?? task?.dueTime ?? "",
-        priority:
-          (task?.details?.priority as ContentTask["details"]["priority"]) ??
-          task?.priority ??
-          "Medium",
-      },
-      color: task?.color ?? "#000000",
-    };
-    onCreateNew?.(selectedContentType, normalizedTask);
-  };
-
-  const handleTaskSelectionClose = () => {
-    setIsTaskSelectionOpen(false);
+  const handleCreationModalClose = () => {
+    setIsCreationModalOpen(false);
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "posted":
-        return <Badge className="bg-green-100 text-green-800">Posted</Badge>;
-      case "draft":
-        return <Badge className="bg-gray-100 text-gray-800">Draft</Badge>;
-      case "pending":
-        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+    const normalizedStatus = status?.toUpperCase();
+    switch (normalizedStatus) {
+      case "APPROVED":
+        return (
+          <Badge className="bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-100">
+            Approved
+          </Badge>
+        );
+      case "DRAFT":
+        return (
+          <Badge className="bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-100">
+            Draft
+          </Badge>
+        );
+      case "AWAIT_STAFF":
+      case "PENDING":
+        return (
+          <Badge className="bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100">
+            Awaiting Review
+          </Badge>
+        );
+      case "AWAIT_BRAND":
+        return (
+          <Badge className="bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-100">
+            Awaiting Brand
+          </Badge>
+        );
+      case "REJECTED":
+        return (
+          <Badge className="bg-red-100 text-red-800 border-red-200 hover:bg-red-100">
+            Rejected
+          </Badge>
+        );
+      case "POSTED":
+      case "PUBLISHED":
+        return (
+          <Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-100">
+            Posted
+          </Badge>
+        );
+      case "SCHEDULED":
+        return (
+          <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200 hover:bg-indigo-100">
+            Scheduled
+          </Badge>
+        );
       default:
-        return <Badge className="bg-gray-100 text-gray-800">{status}</Badge>;
+        return (
+          <Badge variant="outline" className="text-gray-600">
+            {status}
+          </Badge>
+        );
     }
   };
 
@@ -357,6 +378,14 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-semibold">Recent contents</h2>
+
+        {/* Create New Button */}
+        <div className="flex justify-end">
+          <Button className="bg-[#FF9DB0] hover:bg-pink-600" onClick={handleOpenCreationModal}>
+            <Plus className="w-4 h-4 mr-2" />
+            Create New
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -380,44 +409,26 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="posted">Posted</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="DRAFT">Draft</SelectItem>
+                <SelectItem value="AWAIT_STAFF">Awaiting Review</SelectItem>
+                <SelectItem value="AWAIT_BRAND">Awaiting Brand</SelectItem>
+                <SelectItem value="APPROVED">Approved</SelectItem>
+                <SelectItem value="REJECTED">Rejected</SelectItem>
+                <SelectItem value="SCHEDULED">Scheduled</SelectItem>
+                <SelectItem value="POSTED">Posted</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </CardContent>
       </Card>
 
-      {/* Create New Button */}
-      <div className="flex justify-end">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button className="bg-[#FF9DB0] hover:bg-pink-600">
-              <Plus className="w-4 h-4 mr-2" />
-              Create New
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => handleCreateNewClick("blog")}>
-              <FileText className="w-4 h-4 mr-2" />
-              Create Blog
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleCreateNewClick("video")}>
-              <Video className="w-4 h-4 mr-2" />
-              Create Video
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
       {/* Content Table */}
       <Card>
         <CardContent className="p-0">
           {loading ? (
             <div className="p-8 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500 mx-auto"></div>
-              <p className="mt-2 text-gray-500">Loading contents...</p>
+              <Loader2 className="mx-auto mb-4 h-12 w-12 text-primary animate-spin" />
+              <p className="text-gray-500">Loading contents</p>
             </div>
           ) : error ? (
             <div className="p-8 text-center text-red-500">
@@ -430,7 +441,6 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                 <div className="col-span-3">Title</div>
                 <div className="col-span-2">Actor</div>
                 <div className="col-span-2">Time Created</div>
-                <div className="col-span-1">Views</div>
                 <div className="col-span-1">Type</div>
                 <div className="col-span-1">Channel</div>
                 <div className="col-span-1">Action</div>
@@ -454,29 +464,30 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
 
                     <div className="col-span-2 flex items-center">
                       <User className="w-4 h-4 mr-2 text-gray-400" />
-                      <span className="text-gray-600">{content.actor}</span>
+                      <span className="text-gray-600">
+                        {/* {content.blog?.author?.username || "System"} */}
+                        {content.type === "BLOG"
+                          ? content.blog?.author?.username || "System"
+                          : content.created_by?.username || "System"}
+                      </span>
                     </div>
 
                     <div className="col-span-2 flex items-center">
                       <Calendar className="w-4 h-4 mr-2 text-gray-400" />
                       <span className="text-gray-600 text-sm">
-                        {formatDateTime(content.date_time)}
+                        {formatDateTime(content.updated_at)}
                       </span>
                     </div>
 
                     <div className="col-span-1 flex items-center">
-                      <span className="text-gray-600">{content.views}</span>
-                    </div>
-
-                    <div className="col-span-1 flex items-center">
                       <div className="flex items-center">
-                        {content.content_type === "video" ? (
-                          <Video className="w-4 h-4 mr-1 text-purple-500" />
-                        ) : (
+                        {content.blog ? (
                           <FileText className="w-4 h-4 mr-1 text-blue-500" />
+                        ) : (
+                          <Video className="w-4 h-4 mr-1 text-purple-500" />
                         )}
                         <span className="text-gray-600 capitalize">
-                          {content.content_type || "blog"}
+                          {content.blog ? "Post" : "Video"}
                         </span>
                       </div>
                     </div>
@@ -485,14 +496,15 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                       <div className="flex items-center">
                         {(() => {
                           // For video content, ensure channel is either facebook or tiktok
-                          let channel = (content as any).channel || "website";
-                          if (content.content_type === "video") {
+                          const contentType = content.blog ? "blog" : "video";
+                          let channel = content.content_channels?.[0]?.channel_name || "website";
+                          if (contentType === "video") {
                             // If it's a video and channel is not facebook or tiktok, default to facebook
                             if (!["facebook", "tiktok"].includes(channel.toLowerCase())) {
                               channel = "facebook";
                             }
                           }
-                          const channelInfo = getChannelDisplay(channel, content.content_type);
+                          const channelInfo = getChannelDisplay(channel, contentType);
                           return (
                             <>
                               <span className="mr-1">{channelInfo.icon}</span>
@@ -521,107 +533,112 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
                             <Eye className="w-4 h-4 mr-2" />
                             View
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => onEdit?.(content)}>
-                            <Edit className="w-4 h-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          {content.status === "pending" && (
-                            <>
-                              <DropdownMenuItem
-                                onClick={() => handleApprove(content)}
-                                className="text-green-600 hover:text-green-700"
-                              >
-                                <Check className="w-4 h-4 mr-2" />
-                                Approve
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleReject(content)}
-                                className="text-pink-600 hover:text-pink-700"
-                              >
-                                <XCircle className="w-4 h-4 mr-2" />
-                                Reject
-                              </DropdownMenuItem>
-                            </>
+                          {/* Only show Edit for draft and rejected content */}
+                          {(content.status === "DRAFT" || content.status === "REJECTED") && (
+                            <DropdownMenuItem
+                              onClick={() => handleEditContent(content)}
+                              disabled={isLoadingEdit}
+                            >
+                              <Edit className="w-4 h-4 mr-2" />
+                              {isLoadingEdit ? "Loading..." : "Edit"}
+                            </DropdownMenuItem>
                           )}
-                          <DropdownMenuItem
-                            onClick={() => handleDelete(content)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
+
+                          {content.status === "APPROVED" && (
+                            <DropdownMenuItem
+                              onClick={() => handlePublish(content)}
+                              className="text-blue-600 hover:text-blue-700"
+                            >
+                              <Globe className="w-4 h-4 mr-2" />
+                              Post content
+                            </DropdownMenuItem>
+                          )}
+                          {content.status === "APPROVED" &&
+                            content.content_channels?.length > 0 && (
+                              <DropdownMenuItem
+                                onClick={() => handleSchedule(content)}
+                                className="text-purple-600 hover:text-purple-700"
+                              >
+                                <Clock className="w-4 h-4 mr-2" />
+                                Schedule publishing
+                              </DropdownMenuItem>
+                            )}
+                          {/* Only show Delete for draft and rejected content */}
+                          {(content.status === "DRAFT" || content.status === "REJECTED") && (
+                            <DropdownMenuItem
+                              onClick={() => handleDelete(content)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
 
                     <div className="col-span-1 flex items-center">
-                      <div className="cursor-pointer" onClick={() => handleToggleStatus(content)}>
-                        {getStatusBadge(content.status)}
-                      </div>
+                      <div>{getStatusBadge(content.status)}</div>
                     </div>
                   </div>
                 ))
               )}
             </>
           )}
+
+          {/* Pagination */}
+          {pagination && pagination.total_pages > 1 && (
+            <div className="flex justify-end p-4 border-t bg-gray-50">
+              <Pagination className="w-auto mx-0 justify-end">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() => handlePageChange(pagination.page - 1)}
+                      className={
+                        !pagination.has_prev ? "pointer-events-none opacity-50" : "cursor-pointer"
+                      }
+                    />
+                  </PaginationItem>
+                  {Array.from({ length: pagination.total_pages }, (_, i) => i + 1).map(
+                    (pageNum) => (
+                      <PaginationItem key={pageNum}>
+                        <PaginationLink
+                          onClick={() => handlePageChange(pageNum)}
+                          isActive={pagination.page === pageNum}
+                        >
+                          {pageNum}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ),
+                  )}
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() => handlePageChange(pagination.page + 1)}
+                      className={
+                        !pagination.has_next ? "pointer-events-none opacity-50" : "cursor-pointer"
+                      }
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Pagination */}
-      {pagination && pagination.total_pages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
-            {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}{" "}
-            results
-          </p>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(pagination.page - 1)}
-              disabled={!pagination.has_prev}
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Previous
-            </Button>
-            <span className="px-3 py-1 text-sm">
-              Page {pagination.page} of {pagination.total_pages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(pagination.page + 1)}
-              disabled={!pagination.has_next}
-            >
-              Next
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Content Detail Modal */}
-      <ContentDetailModal
-        content={selectedContent}
-        isOpen={isDetailModalOpen}
-        onClose={handleCloseDetailModal}
-        onRequestApproval={handleRequestApproval}
-      />
-
-      {/* Task Selection Dialog */}
-      <TaskSelectionDialog
-        isOpen={isTaskSelectionOpen}
-        onClose={handleTaskSelectionClose}
-        contentType={selectedContentType}
-        onTaskSelect={handleTaskSelect}
+      {/* Content Creation Modal */}
+      <ContentCreationModal
+        isOpen={isCreationModalOpen}
+        onClose={handleCreationModalClose}
+        onConfirm={handleCreationConfirm}
       />
 
       {/* Delete Confirmation Modal */}
       <Dialog
         open={showDeleteModal}
         onOpenChange={(open) => {
-          if (!open) {
+          // Prevent closing modal while deleting
+          if (!open && !isDeletingContent) {
             handleCancelDelete();
           }
         }}
@@ -629,6 +646,7 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
         <DeleteContentModal
           contentTitle={contentToDelete?.title || "content"}
           onConfirm={handleConfirmDelete}
+          isLoading={isDeletingContent}
         />
       </Dialog>
 
@@ -636,7 +654,8 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
       <Dialog
         open={showRequestApprovalModal}
         onOpenChange={(open) => {
-          if (!open) {
+          // Prevent closing modal while submitting
+          if (!open && !isSubmittingApproval) {
             handleCancelRequestApproval();
           }
         }}
@@ -644,22 +663,37 @@ const ContentList: React.FC<ContentListProps> = ({ onCreateNew, onEdit, onView }
         <RequestApprovalModal
           contentTitle={contentToSubmit?.title || "content"}
           onConfirm={handleConfirmRequestApproval}
+          isLoading={isSubmittingApproval}
         />
       </Dialog>
 
-      {/* Reject Content Modal */}
+      {/* Schedule Content Modal */}
       <Dialog
-        open={showRejectModal}
+        open={showScheduleModal}
         onOpenChange={(open) => {
           if (!open) {
-            handleCancelReject();
+            setShowScheduleModal(false);
+            setContentToSchedule(null);
           }
         }}
       >
-        <RejectContentModal
-          contentTitle={contentToReject?.title || "content"}
-          onConfirm={handleConfirmReject}
-        />
+        {contentToSchedule && (
+          <ScheduleContentModal
+            contentId={contentToSchedule.id}
+            contentTitle={contentToSchedule.title}
+            contentChannels={(contentToSchedule.content_channels || []).map((ch) => ({
+              id: ch.id,
+              channel_id: ch.channel_id,
+              channel_name: ch.channel_name,
+              auto_post_status: ch.auto_post_status,
+            }))}
+            onSuccess={() => {
+              setShowScheduleModal(false);
+              setContentToSchedule(null);
+              dispatch(contents(filters));
+            }}
+          />
+        )}
       </Dialog>
     </div>
   );

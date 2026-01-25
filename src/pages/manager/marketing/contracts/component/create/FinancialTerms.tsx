@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,8 @@ import {
   BrandAmbassadorScope,
   CoProducingScope,
 } from "./financialTermScope";
+import ContractUploader from "@/components/global/ContractUploader";
+import { useAuth } from "@/libs/hooks/useAuth";
 
 interface FinancialTermsProps {
   formData: any;
@@ -34,7 +36,8 @@ const CostBreakdown: React.FC<{
 }> = ({ breakdown = [], onChange, total }) => {
   const addItem = () => {
     const id = `item-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-    onChange([...breakdown, { id, label: "", value: 0 }]);
+    const newBreakdown = [...breakdown, { id, label: "", value: 0 }];
+    onChange(newBreakdown);
   };
 
   const updateItem = (id: string, key: "label" | "value", val: any) => {
@@ -47,14 +50,12 @@ const CostBreakdown: React.FC<{
   const format = (n = 0) => new Intl.NumberFormat("vi-VN").format(n);
   const subtotal = breakdown.reduce((s, i) => s + (Number(i.value) || 0), 0);
 
+  // Disable add if subtotal >= total (like add milestone logic)
+  const canAddItem = subtotal < total;
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <Label className="text-sm font-semibold text-gray-800">Cost Breakdown</Label>
-        <Button onClick={addItem} variant="outline" size="sm" className="border-dashed border-2">
-          <FaPlus className="mr-2 h-4 w-4" /> Add Item
-        </Button>
-      </div>
+      <Label className="text-sm font-semibold text-gray-800">Cost Breakdown</Label>
 
       <div className="space-y-3">
         {breakdown.map((item) => (
@@ -94,6 +95,19 @@ const CostBreakdown: React.FC<{
         ))}
       </div>
 
+      {/* Add Item button below the list, aligned with summary bar */}
+      <div className="mt-2">
+        <Button
+          onClick={addItem}
+          variant="outline"
+          size="lg"
+          className="w-full border-dashed border-2"
+          disabled={!canAddItem}
+        >
+          <FaPlus className="mr-2 h-4 w-4" /> Add Item
+        </Button>
+      </div>
+
       <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 flex justify-between text-sm mt-3">
         <span className="font-medium text-indigo-800">Subtotal:</span>
         <span className="font-bold text-indigo-900">{format(subtotal)} VND</span>
@@ -116,42 +130,56 @@ const CostBreakdown: React.FC<{
 
 const FinancialOverview: React.FC<{
   formData: any;
-  financialTerms: any;
+  financial_terms: any;
   onUpdate: (updates: any) => void;
   errors?: any;
-}> = ({ formData, financialTerms, onUpdate, errors = {} }) => {
-  const total = financialTerms.total_cost ?? 0;
+}> = ({ formData, financial_terms, onUpdate, errors = {} }) => {
+  const total = financial_terms.total_cost ?? 0;
   const percent = formData.deposit_percent ?? 0;
   const paid = formData.is_deposit_paid ?? false;
+  const { user } = useAuth();
 
-  // Tự tính tiền cọc
   const deposit = (total * percent) / 100;
   const remaining = total - deposit;
   const fmt = (n = 0) => new Intl.NumberFormat("vi-VN").format(n);
 
-  // Lấy cost breakdown - ưu tiên array format trước, sau đó mới convert từ object
   const getCostBreakdownArray = () => {
-    // Nếu có array format (từ UI), dùng luôn
-    if (financialTerms.cost_breakdown_array && Array.isArray(financialTerms.cost_breakdown_array)) {
-      return financialTerms.cost_breakdown_array;
+    if (
+      financial_terms.cost_breakdown_array &&
+      Array.isArray(financial_terms.cost_breakdown_array)
+    ) {
+      return financial_terms.cost_breakdown_array;
     }
 
-    // Nếu không có array format nhưng có object format, convert từ object sang array
     if (
-      financialTerms.cost_breakdown &&
-      typeof financialTerms.cost_breakdown === "object" &&
-      !Array.isArray(financialTerms.cost_breakdown)
+      financial_terms.cost_breakdown &&
+      typeof financial_terms.cost_breakdown === "object" &&
+      !Array.isArray(financial_terms.cost_breakdown)
     ) {
-      return Object.entries(financialTerms.cost_breakdown).map(([label, value], index) => ({
+      return Object.entries(financial_terms.cost_breakdown).map(([label, value], index) => ({
         id: `item-${index}-${Date.now()}`,
         label,
         value: Number(value) || 0,
       }));
     }
 
-    // Trả về array rỗng nếu không có data
     return [];
   };
+
+  const depositProofUrls = formData.deposit_proof_url || "";
+
+  // Auto-calculate deposit_amount when total_cost or percent changes
+  useEffect(() => {
+    const calculatedDepositAmount = Math.round((total * percent) / 100);
+    // Only update if the current deposit_amount is different from calculated
+    if (formData.deposit_amount !== calculatedDepositAmount) {
+      onUpdate({
+        _form_data_updates: {
+          deposit_amount: calculatedDepositAmount,
+        },
+      });
+    }
+  }, [total, percent, formData.deposit_amount, onUpdate]);
 
   return (
     <Card className="border border-gray-200 shadow-md overflow-hidden">
@@ -166,7 +194,6 @@ const FinancialOverview: React.FC<{
       </CardHeader>
 
       <CardContent className="space-y-6 pt-6">
-        {/* Total Contract */}
         <CurrencyInput
           label="Total Contract Cost (VND)"
           value={total}
@@ -183,7 +210,6 @@ const FinancialOverview: React.FC<{
 
         <Separator className="my-4" />
 
-        {/* Deposit Setup */}
         <div className="space-y-5">
           <div className="flex items-center gap-2">
             <FaMoneyBillWave className="w-5 h-5 text-amber-600" />
@@ -191,33 +217,51 @@ const FinancialOverview: React.FC<{
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label className="text-sm font-medium">Deposit Percentage (%)</Label>
+            {/* LEFT */}
+            <div className="space-y-1">
+              <Label className="text-sm font-medium">Deposit Percentage (% - Max 50%)</Label>
+
               <Input
                 type="number"
                 min={0}
-                step={0.1}
+                max={50}
+                step={1}
                 value={percent || ""}
                 enforceRange
                 placeholder="10"
                 onChange={(e) => {
-                  const newPercent = Number(e.target.value) || 0;
-                  onUpdate({ deposit_percent: newPercent });
+                  let newPercent = Number(e.target.value) || 0;
+                  if (newPercent > 50) newPercent = 50;
+
+                  const newDepositAmount = Math.round((total * newPercent) / 100);
+
+                  onUpdate({
+                    _form_data_updates: {
+                      deposit_percent: newPercent,
+                      deposit_amount: newDepositAmount,
+                    },
+                  });
                 }}
               />
+
               {errors.deposit_percent && (
-                <p className="text-xs text-red-500 mt-1">{errors.deposit_percent}</p>
+                <p className="text-xs text-red-500">{errors.deposit_percent}</p>
+              )}
+              {percent > 50 && (
+                <p className="text-xs text-orange-500">Maximum deposit is 50% of total cost</p>
               )}
             </div>
 
-            {/* Checkbox Paid */}
             <div className="flex items-center space-x-2 pt-6">
               <Checkbox
                 id="is-paid"
                 checked={paid}
                 onCheckedChange={(checked) => {
-                  console.log("Checkbox changed:", checked);
-                  onUpdate({ is_deposit_paid: checked });
+                  onUpdate({
+                    _form_data_updates: {
+                      is_deposit_paid: checked,
+                    },
+                  });
                 }}
               />
               <Label htmlFor="is-paid" className="cursor-pointer text-sm">
@@ -226,15 +270,67 @@ const FinancialOverview: React.FC<{
             </div>
           </div>
 
-          {/* Deposit Amount (read-only) */}
+          {paid && (
+            <div className="space-y-3">
+              <ContractUploader
+                userId={user?.id || "unknown"}
+                accept="image/*,video/*,.pdf,.doc,.docx,.ppt,.pptx"
+                multiple={false}
+                maxFiles={1}
+                maxSize={100}
+                allowedTypes={[
+                  "jpg",
+                  "jpeg",
+                  "png",
+                  "webp",
+                  "mp4",
+                  "mov",
+                  "avi",
+                  "doc",
+                  "docx",
+                  "pdf",
+                  "ppt",
+                  "pptx",
+                ]}
+                title="Upload deposit proof"
+                context="deposit-proof"
+                initialUrls={depositProofUrls ? [depositProofUrls] : []}
+                onUploadComplete={(urls) => {
+                  const newUrl = urls.length > 0 ? urls[0] : "";
+                  onUpdate({
+                    _form_data_updates: {
+                      deposit_proof_url: newUrl,
+                    },
+                  });
+                }}
+                onFilesRemove={(removedUrls) => {
+                  // If the current deposit_proof_url is among the removed files, clear it
+                  if (removedUrls.includes(depositProofUrls)) {
+                    onUpdate({
+                      _form_data_updates: {
+                        deposit_proof_url: "",
+                      },
+                    });
+                  }
+                }}
+              />
+
+              {paid && (!depositProofUrls || depositProofUrls.trim() === "") && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-700 font-medium">
+                    Deposit proof is required when deposit is marked as paid.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
           <div>
             <Label className="text-sm font-medium">Deposit Amount (VND)</Label>
             <CurrencyInput value={deposit} placeholder="0" disabled />
           </div>
 
-          {/* Summary Cards */}
           <div className="grid md:grid-cols-3 gap-4 pt-3">
-            {/* Deposit */}
             <Card
               className={`transition border ${
                 deposit > 0
@@ -261,7 +357,6 @@ const FinancialOverview: React.FC<{
               </CardContent>
             </Card>
 
-            {/* Remaining */}
             <Card className="bg-blue-50 border-blue-200">
               <CardContent className="p-4">
                 <div className="flex justify-between items-start">
@@ -274,7 +369,6 @@ const FinancialOverview: React.FC<{
               </CardContent>
             </Card>
 
-            {/* Total */}
             <Card className="bg-indigo-50 border-indigo-200">
               <CardContent className="p-4">
                 <div className="flex justify-between items-start">
@@ -300,29 +394,35 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({
   errors = {},
 }) => {
   const contractType = formData?.type;
-  const financialTerms = formData?.financialTerms || {};
+  const financial_terms = formData?.financial_terms || {};
 
   const handleUpdate = (updates: any) => {
-    console.log("handleUpdate called with:", updates);
-
-    // Nếu update có deposit_percent hoặc is_deposit_paid, cập nhật trực tiếp formData
     if (updates.deposit_percent !== undefined) {
       onInputChange("deposit_percent", updates.deposit_percent);
+    }
+
+    if (updates.deposit_amount !== undefined) {
+      onInputChange("deposit_amount", updates.deposit_amount);
     }
 
     if (updates.is_deposit_paid !== undefined) {
       onInputChange("is_deposit_paid", updates.is_deposit_paid);
     }
 
-    // Lọc ra các updates khác cho financialTerms
+    if (updates.deposit_proof_url !== undefined) {
+      onInputChange("deposit_proof_url", updates.deposit_proof_url);
+    }
+
     const financialUpdates = Object.keys(updates).reduce((acc: any, key) => {
-      if (key !== "deposit_percent" && key !== "is_deposit_paid") {
-        // Đối với cost_breakdown, lưu trữ cả array format (để UI dùng) và object format (để backend)
+      if (
+        key !== "deposit_percent" &&
+        key !== "deposit_amount" &&
+        key !== "is_deposit_paid" &&
+        key !== "deposit_proof_url"
+      ) {
         if (key === "cost_breakdown" && Array.isArray(updates[key])) {
-          // Lưu array format để UI có thể dùng
           acc[`${key}_array`] = updates[key];
 
-          // Convert sang object format cho backend
           const breakdownObject: Record<string, number> = {};
           updates[key].forEach((item: { label: string; value: number }) => {
             if (item.label && item.label.trim()) {
@@ -381,7 +481,7 @@ const FinancialTerms: React.FC<FinancialTermsProps> = ({
     <div className="space-y-8">
       <FinancialOverview
         formData={formData}
-        financialTerms={financialTerms}
+        financial_terms={financial_terms}
         onUpdate={handleUpdate}
         errors={errors}
       />

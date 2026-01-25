@@ -2,6 +2,7 @@ import { PaginationTable } from "@/components/global";
 import UserDetailModal from "@/components/manage/admin/UserDetailModal";
 import { StatusModal } from "@/components/modal/StatusModal";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
@@ -20,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAppDispatch } from "@/libs/stores";
 import {
   activateBrandThunk,
@@ -27,12 +29,35 @@ import {
   updateUserStatusThunk,
 } from "@/libs/stores/userManager/thunk";
 import type { UserParams } from "@/libs/types/user";
+import { useDebounce } from "@/libs/hooks/useDebounce";
+import { formatDate } from "@/libs/helper/helper";
 import { useEffect, useState } from "react";
 import { FaEye } from "react-icons/fa";
-
-import { FaFilter } from "react-icons/fa6";
+import { FaListCheck } from "react-icons/fa6";
+import { Loader2 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
+
+const PAGE_SIZE = 5;
+
+const ROLE_LABELS: Record<string, string> = {
+  CUSTOMER: "Customer",
+  BRAND_PARTNER: "Brand Partner",
+  SALES_STAFF: "Sales Staff",
+  MARKETING_STAFF: "Marketing Staff",
+  CONTENT_STAFF: "Content Staff",
+  ADMIN: "Admin",
+};
+
+const ROLE_COLORS: Record<string, string> = {
+  CUSTOMER: "bg-blue-100 text-blue-800 border-blue-200",
+  BRAND_PARTNER: "bg-purple-100 text-purple-800 border-purple-200",
+  SALES_STAFF: "bg-green-100 text-green-800 border-green-200",
+  MARKETING_STAFF: "bg-orange-100 text-orange-800 border-orange-200",
+  CONTENT_STAFF: "bg-yellow-100 text-yellow-800 border-yellow-200",
+  ADMIN: "bg-red-100 text-red-800 border-red-200",
+};
 
 const UserPage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -41,10 +66,12 @@ const UserPage: React.FC = () => {
   const loading = useSelector((state: any) => state?.manageUser?.loading);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [isUserDetailModalOpen, setIsUserDetailModalOpen] = useState<boolean>(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   const [params, setParams] = useState<UserParams>({
     page: 1,
-    limit: 7,
+    limit: PAGE_SIZE,
   });
 
   const onUpdateUserStatus = async (
@@ -72,150 +99,361 @@ const UserPage: React.FC = () => {
     }
   };
 
+  const handleResetFilters = () => {
+    setSearchTerm("");
+    setParams({ page: 1, limit: PAGE_SIZE });
+  };
+
   useEffect(() => {
-    dispatch(getAllUsersThunk(params));
-  }, [dispatch, params]);
+    const searchParams = {
+      ...params,
+      ...(debouncedSearchTerm && { search: debouncedSearchTerm }),
+    };
+    dispatch(getAllUsersThunk(searchParams));
+  }, [dispatch, params, debouncedSearchTerm]);
+
+  useEffect(() => {
+    setParams({ ...params, page: 1 });
+  }, [debouncedSearchTerm]);
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 },
+  };
+
+  const headerVariants = {
+    hidden: { opacity: 0, y: -20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+  };
+
+  const filterVariants = {
+    hidden: { opacity: 0, x: -20 },
+    visible: { opacity: 1, x: 0, transition: { duration: 0.4 } },
+  };
 
   return (
     <div className="min-h-fit p-4 sm:p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl sm:text-2xl font-semibold">Users</h1>
-      </div>
+      {/* Header */}
+      <motion.div
+        className="flex justify-between items-center mb-6"
+        variants={headerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <div>
+          <motion.h1 className="text-xl sm:text-2xl font-semibold" variants={itemVariants}>
+            Users Management
+          </motion.h1>
+          <motion.p className="text-gray-600 mt-1" variants={itemVariants}>
+            Manage and monitor user accounts and permissions
+          </motion.p>
+        </div>
+        {/* <motion.div className="flex items-center gap-2" variants={itemVariants}>
+          <FaUsers className="h-5 w-5 text-gray-500" />
+          <span className="text-sm text-gray-600">
+            {pagination ? `${pagination.total} users` : ''}
+          </span>
+        </motion.div> */}
+      </motion.div>
 
-      <div className="bg-white rounded-lg shadow mb-4 p-4">
-        <div className="flex items-center gap-4 flex-wrap">
-          <div className="flex items-center gap-2">
-            <FaFilter className="text-gray-500" />
-            <span className="text-sm font-medium">Filters:</span>
-          </div>
-
-          <div className="flex-1 min-w-[200px]">
+      {/* Filters */}
+      <motion.div
+        className="bg-white rounded-lg shadow mb-4 p-4"
+        variants={filterVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-1 sm:gap-2 items-end">
+          <motion.div className="sm:col-span-2" variants={itemVariants}>
             <Input
-              placeholder="Search by username or email"
-              // value={searchTerm}
-              // onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search by username or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full"
+              autoComplete="off"
             />
-          </div>
+          </motion.div>
 
-          <div className="min-w-[150px]">
+          <motion.div variants={itemVariants}>
             <Select
-              value={params.role || ""}
+              value={params.role || "ALL"}
               onValueChange={(value) => {
-                setParams({ ...params, role: value });
+                setParams({ ...params, role: value === "ALL" ? undefined : value, page: 1 });
               }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Role" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="ALL">All Roles</SelectItem>
                 <SelectItem value="CUSTOMER">Customer</SelectItem>
-                <SelectItem value="BRAND_PARTNER">Brand</SelectItem>
-                <SelectItem value="SALES_STAFF">Sale staff</SelectItem>
-                <SelectItem value="MARKETING_STAFF">Marketing staff</SelectItem>
-                <SelectItem value="CONTENT_STAFF">Content staff</SelectItem>
+                <SelectItem value="BRAND_PARTNER">Brand Partner</SelectItem>
+                <SelectItem value="SALES_STAFF">Sales Staff</SelectItem>
+                <SelectItem value="MARKETING_STAFF">Marketing Staff</SelectItem>
+                <SelectItem value="CONTENT_STAFF">Content Staff</SelectItem>
                 <SelectItem value="ADMIN">Admin</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+          </motion.div>
 
-          <div className="min-w-[150px]">
+          <motion.div className="flex gap-1" variants={itemVariants}>
             <Select
-              value={params.is_active == null ? undefined : String(params.is_active)}
+              value={params.is_active === undefined ? "ALL" : String(params.is_active)}
               onValueChange={(value) => {
-                setParams({ ...params, is_active: value === "true" });
+                setParams({
+                  ...params,
+                  is_active: value === "ALL" ? undefined : value === "true",
+                  page: 1,
+                });
               }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="ALL">All Status</SelectItem>
                 <SelectItem value="true">Active</SelectItem>
                 <SelectItem value="false">Inactive</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+            <Button
+              variant="secondary"
+              className="border-gray-300 px-3"
+              onClick={handleResetFilters}
+            >
+              Reset
+            </Button>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
 
       <div className="bg-white rounded-lg overflow-hidden shadow">
-        <div className="hidden md:block">
-          <Table>
-            <TableHeader className="px-4">
-              <TableRow className="border-b bg-gray-50">
-                <TableHead>User</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Created Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
-                    <div className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                      <span className="ml-2">Loading...</span>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                users &&
-                users.map((user: any) => (
-                  <TableRow key={user.id}>
-                    <TableCell>{user.username}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>{user.role.toLowerCase()}</TableCell>
-                    <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      <Dialog>
-                        <DialogTrigger>
-                          <Switch checked={user.is_active} disabled={user.role === "ADMIN"} />
-                        </DialogTrigger>
-                        <StatusModal
-                          name={user.username}
-                          status={user.is_active ? "Inactive" : "Active"}
-                          onConfirm={() => {
-                            onUpdateUserStatus(
-                              user.is_active,
-                              user.id,
-                              user.role,
-                              user.is_brand_account,
-                            );
-                          }}
-                        />
-                      </Dialog>
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className=" hover:bg-blue-100"
-                        title="View"
-                        onClick={() => {
-                          setIsUserDetailModalOpen(true);
-                          setSelectedUserId(user.id);
-                        }}
-                      >
-                        <FaEye className="text-blue-600" />
-                      </Button>
-                    </TableCell>
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-2">Loading users...</span>
+          </div>
+        ) : (
+          <>
+            {/* Desktop Table */}
+            <div className="hidden lg:block">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-b bg-gray-50">
+                    <TableHead className="font-semibold">User</TableHead>
+                    <TableHead className="font-semibold">Email</TableHead>
+                    <TableHead className="font-semibold">Role</TableHead>
+                    <TableHead className="font-semibold">Status</TableHead>
+                    <TableHead className="font-semibold">Created Date</TableHead>
+                    <TableHead className="font-semibold">Actions</TableHead>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-          {pagination && (
-            <PaginationTable
-              page={pagination.page}
-              totalItems={pagination.total}
-              pageSize={pagination.limit}
-              onPageChange={(page) => setParams({ ...params, page })}
-            />
-          )}
-        </div>
+                </TableHeader>
+                <TableBody>
+                  {users &&
+                    users.map((user: any, index: number) => (
+                      <motion.tr
+                        key={user.id}
+                        layout="position"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="border-b hover:bg-gray-50"
+                      >
+                        <TableCell className="py-4">
+                          <div>
+                            <div className="font-semibold text-gray-900">{user.username}</div>
+                            {user.full_name && (
+                              <div className="text-sm text-gray-500">{user.full_name}</div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-4">
+                          <div className="text-sm">{user.email}</div>
+                        </TableCell>
+                        <TableCell className="py-4">
+                          <Badge
+                            className={`border text-xs font-medium px-2 py-1 ${ROLE_COLORS[user.role] || ""}`}
+                          >
+                            {ROLE_LABELS[user.role] || user.role}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="py-4">
+                          <Dialog>
+                            <DialogTrigger>
+                              <div className="flex items-center gap-2">
+                                <Switch checked={user.is_active} disabled={user.role === "ADMIN"} />
+                                <span className="text-sm text-gray-600">
+                                  {user.is_active ? "Active" : "Inactive"}
+                                </span>
+                              </div>
+                            </DialogTrigger>
+                            <StatusModal
+                              name={user.username}
+                              status={user.is_active ? "Inactive" : "Active"}
+                              onConfirm={() => {
+                                onUpdateUserStatus(
+                                  user.is_active,
+                                  user.id,
+                                  user.role,
+                                  user.is_brand_account,
+                                );
+                              }}
+                            />
+                          </Dialog>
+                        </TableCell>
+                        <TableCell className="py-4 text-sm">
+                          {formatDate(user.created_at)}
+                        </TableCell>
+                        <TableCell className="py-4">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 hover:bg-blue-50"
+                                onClick={() => {
+                                  setIsUserDetailModalOpen(true);
+                                  setSelectedUserId(user.id);
+                                }}
+                              >
+                                <FaEye className="text-blue-600" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>View user details</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TableCell>
+                      </motion.tr>
+                    ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Mobile Card List */}
+            <div className="lg:hidden divide-y">
+              <motion.div
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  visible: {
+                    transition: { staggerChildren: 0.05 },
+                  },
+                }}
+              >
+                {users &&
+                  users.map((user: any) => (
+                    <motion.div
+                      key={user.id}
+                      className="p-4 flex flex-col gap-3 bg-white"
+                      variants={itemVariants}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="font-semibold text-gray-900">{user.username}</div>
+                          {user.full_name && (
+                            <div className="text-sm text-gray-500">{user.full_name}</div>
+                          )}
+                          <div className="flex gap-2 mt-2">
+                            <Badge
+                              className={`border text-xs font-medium px-2 py-1 ${ROLE_COLORS[user.role] || ""}`}
+                            >
+                              {ROLE_LABELS[user.role] || user.role}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm text-gray-500">Joined</div>
+                          <div className="text-sm font-medium">{formatDate(user.created_at)}</div>
+                        </div>
+                      </div>
+
+                      <div className="text-sm text-gray-600">{user.email}</div>
+
+                      <div className="flex items-center justify-between pt-2">
+                        <Dialog>
+                          <DialogTrigger>
+                            <div className="flex items-center gap-2">
+                              <Switch checked={user.is_active} disabled={user.role === "ADMIN"} />
+                              <span className="text-sm text-gray-600">
+                                {user.is_active ? "Active" : "Inactive"}
+                              </span>
+                            </div>
+                          </DialogTrigger>
+                          <StatusModal
+                            name={user.username}
+                            status={user.is_active ? "Inactive" : "Active"}
+                            onConfirm={() => {
+                              onUpdateUserStatus(
+                                user.is_active,
+                                user.id,
+                                user.role,
+                                user.is_brand_account,
+                              );
+                            }}
+                          />
+                        </Dialog>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 hover:bg-blue-50"
+                              onClick={() => {
+                                setIsUserDetailModalOpen(true);
+                                setSelectedUserId(user.id);
+                              }}
+                            >
+                              <FaEye className="text-blue-600" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>View user details</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </motion.div>
+                  ))}
+              </motion.div>
+            </div>
+
+            {/* No results message */}
+            {(!users || users.length === 0) && (
+              <motion.div
+                className="text-center py-16"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <FaListCheck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No users found</h3>
+                <p className="text-gray-500 mb-4">
+                  {searchTerm || params.role || params.is_active !== undefined
+                    ? "No users match your current filters."
+                    : "No users have been created yet."}
+                </p>
+              </motion.div>
+            )}
+
+            {/* Pagination */}
+            {pagination && pagination.total > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: users?.length * 0.05 + 0.2 }}
+              >
+                <PaginationTable
+                  page={pagination.page}
+                  totalItems={pagination.total}
+                  pageSize={PAGE_SIZE}
+                  onPageChange={(page) => setParams({ ...params, page })}
+                />
+              </motion.div>
+            )}
+          </>
+        )}
+
         <Dialog open={isUserDetailModalOpen} onOpenChange={setIsUserDetailModalOpen}>
           <UserDetailModal userId={selectedUserId} />
         </Dialog>

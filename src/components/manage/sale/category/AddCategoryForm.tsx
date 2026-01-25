@@ -12,9 +12,9 @@ import { createCategoryThunk } from "@/libs/stores/categoryManager/thunk";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
-import manageCategories from "@/libs/services/manageCategories";
 import { useAppDispatch } from "@/libs/stores";
 import type { CategoryResponse } from "@/libs/types/category";
+import manageCategories from "@/libs/services/manageCategories";
 import { AxiosError } from "axios";
 
 interface AddCategoryFormProps {
@@ -24,18 +24,20 @@ interface AddCategoryFormProps {
 
 export const AddCategoryForm = ({ onSuccess, loading }: AddCategoryFormProps) => {
   const dispatch = useAppDispatch();
-  const [allCategories, setAllCategories] = useState<CategoryResponse>({} as CategoryResponse);
 
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     parent_category_id: "",
   });
+  const [allCategories, setAllCategories] = useState<CategoryResponse>({} as CategoryResponse);
+
+  const filteredParentCategories = allCategories?.data?.filter((cat) => !cat.parent_category);
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const resultAction = await manageCategories.getAllCategories();
+        const resultAction = await manageCategories.getAllCategories({ page: 1, limit: 1000 });
         setAllCategories(resultAction.data);
       } catch (error) {
         if (error instanceof AxiosError) {
@@ -47,8 +49,6 @@ export const AddCategoryForm = ({ onSuccess, loading }: AddCategoryFormProps) =>
 
     fetchCategories();
   }, []);
-
-  const filteredParentCategories = allCategories?.data?.filter((cat) => !cat.parent_category);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +66,7 @@ export const AddCategoryForm = ({ onSuccess, loading }: AddCategoryFormProps) =>
       payload.description = formData.description;
     }
 
-    if (formData.parent_category_id) {
+    if (formData.parent_category_id && formData.parent_category_id !== " ") {
       payload.parent_category_id = formData.parent_category_id;
     }
 
@@ -112,7 +112,7 @@ export const AddCategoryForm = ({ onSuccess, loading }: AddCategoryFormProps) =>
             <SelectValue placeholder="Select parent category (optional)" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value=" ">None</SelectItem>
+            <SelectItem value={" "}>None</SelectItem>
             {filteredParentCategories?.map((category) => (
               <SelectItem key={category.id} value={category.id}>
                 {category.name}

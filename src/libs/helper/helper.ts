@@ -41,15 +41,11 @@ export const formatDate = (date: Date | string, type: "display" | "input" = "dis
   });
 };
 
-export const convertNumberToCurrency = (
-  amount: number,
-  locale = "vn-VN",
-  currency = "VND",
-): string => {
-  return new Intl.NumberFormat(locale, {
+export const convertNumberToCurrency = (amount: string) => {
+  return new Intl.NumberFormat("vi-VN", {
     style: "currency",
-    currency,
-  }).format(amount);
+    currency: "VND",
+  }).format(parseFloat(amount));
 };
 
 export const parseCurrencyToNumber = (currencyString: string): number => {
@@ -78,7 +74,7 @@ export const getInitialAuthState = () => {
     role: string;
     username: string;
     is_active: boolean;
-    avatar: string;
+    avatar_url: string;
   }>("user");
 
   return {
@@ -89,4 +85,15 @@ export const getInitialAuthState = () => {
     accessToken: accessToken ?? null,
     error: null as string | null,
   };
+};
+
+export const formatPhoneNumber = (phone: string): string => {
+  if (!phone) return "";
+  if (phone.startsWith("+84")) {
+    return "0" + phone.slice(3);
+  }
+  if (phone.startsWith("84")) {
+    return "0" + phone.slice(2);
+  }
+  return phone;
 };

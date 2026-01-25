@@ -1,0 +1,657 @@
+import React, { useEffect, useState, useCallback } from "react";
+import { useAppDispatch } from "@/libs/stores";
+import { useParams } from "react-router-dom";
+import {
+  getTaskList,
+  assignTask,
+  getTaskDetail,
+  updateTaskState,
+} from "@/libs/stores/taskManager/thunk";
+import { clearTaskDetail } from "@/libs/stores/taskManager/slice";
+import { getAllUsersThunk } from "@/libs/stores/userManager/thunk";
+import { useTaskMarketing } from "@/libs/hooks/useTaskMarketing";
+import { useCampaign } from "@/libs/hooks/useCampaign";
+import { useUserManager } from "@/libs/hooks/useUserManager";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import DataSelector from "@/components/global/DataSelector";
+import { Loader2 } from "lucide-react";
+import {
+  FaCalendarDays,
+  FaBox,
+  FaFileLines,
+  FaGlobe,
+  FaClock,
+  FaCalendarCheck,
+  FaEye,
+  FaUserPlus,
+} from "react-icons/fa6";
+import { motion, AnimatePresence } from "framer-motion";
+import TaskCalendar from "@/components/manage/marketing/task/Calendar";
+import TaskDetailSlider from "@/components/manage/marketing/task/TaskDetailSlider";
+import { formatDate } from "@/libs/helper/helper";
+import { format } from "date-fns";
+import type { TaskListMarketing } from "@/libs/types/task";
+import { useAuth } from "@/libs/hooks/useAuth";
+import { toast } from "sonner";
+
+interface ScheduleProps {
+  campaignId?: string;
+}
+
+const Schedule: React.FC<ScheduleProps> = ({ campaignId }) => {
+  const dispatch = useAppDispatch();
+  const { id } = useParams<{ id: string }>();
+  const currentCampaignId = campaignId || id;
+  const { user } = useAuth();
+
+  const { taskDetail, detailLoading } = useTaskMarketing();
+  const { campaignDetail } = useCampaign();
+  const { users, loading: usersLoading, pagination: usersPagination } = useUserManager();
+
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [activeFilter, setActiveFilter] = useState<string>("ALL");
+  const [showModal, setShowModal] = useState(false);
+  const [showDetailSlider, setShowDetailSlider] = useState(false);
+
+  // Task loading states
+  const [monthTasks, setMonthTasks] = useState<TaskListMarketing[]>([]);
+  const [taskLoading, setTaskLoading] = useState(false);
+
+  const [selectedTask, setSelectedTask] = useState<TaskListMarketing | null>(null);
+  const [showTaskDetail, setShowTaskDetail] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<string>("");
+
+  // User management state
+  const [userSearch, setUserSearch] = useState("");
+  const [userPage, setUserPage] = useState(1);
+  const [currentTaskType, setCurrentTaskType] = useState<string>("");
+
+  // Fetch tasks for current month with pagination
+  const fetchMonthTasks = useCallback(async () => {
+    if (!currentCampaignId) return;
+
+    // Clear previous month data
+    setMonthTasks([]);
+    setTaskLoading(true);
+
+    try {
+      // Calculate current month date range
+      const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+      const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+      const fromDate = format(startOfMonth, "yyyy-MM-dd");
+      const toDate = format(endOfMonth, "yyyy-MM-dd");
+
+      let page = 1;
+      let monthTasksData: TaskListMarketing[] = [];
+      let hasNext = true;
+
+      while (hasNext) {
+        const params: any = {
+          page,
+          limit: 20,
+          campaign_id: currentCampaignId,
+          deadline_from_date: fromDate,
+          deadline_to_date: toDate,
+        };
+
+        if (activeFilter !== "ALL") {
+          params.type = activeFilter;
+        }
+
+        const response = await dispatch(getTaskList(params)).unwrap();
+        monthTasksData = [...monthTasksData, ...response.data];
+        hasNext = response.pagination?.has_next || false;
+        page++;
+      }
+
+      setMonthTasks(monthTasksData);
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+      setMonthTasks([]);
+    } finally {
+      setTaskLoading(false);
+    }
+  }, [dispatch, currentCampaignId, activeFilter, currentDate]);
+
+  // Fetch tasks when filters change
+  useEffect(() => {
+    fetchMonthTasks();
+  }, [fetchMonthTasks]);
+
+  // Get roles for task type as comma-separated string
+  const getRolesForTaskType = useCallback((taskType: string): string => {
+    switch (taskType) {
+      case "CONTENT":
+        return "CONTENT_STAFF";
+      case "PRODUCT":
+        return "SALES_STAFF";
+      case "OTHER":
+      case "EVENT":
+        return "MARKETING_STAFF,CONTENT_STAFF,SALES_STAFF";
+      default:
+        return "MARKETING_STAFF,CONTENT_STAFF,SALES_STAFF";
+    }
+  }, []);
+
+  // Load users with role filter when task type changes
+  useEffect(() => {
+    if (currentTaskType) {
+      const roles = getRolesForTaskType(currentTaskType);
+      setUserPage(1); // Reset page
+      dispatch(
+        getAllUsersThunk({
+          page: 1,
+          limit: 10,
+          role: roles,
+          is_active: true,
+          ...(userSearch ? { search: userSearch } : {}),
+        }),
+      );
+    }
+  }, [dispatch, currentTaskType, userSearch, getRolesForTaskType]);
+
+  // Load more users for pagination
+  useEffect(() => {
+    if (currentTaskType && userPage > 1) {
+      const roles = getRolesForTaskType(currentTaskType);
+      dispatch(
+        getAllUsersThunk({
+          page: userPage,
+          limit: 10,
+          role: roles,
+          is_active: true,
+          ...(userSearch ? { search: userSearch } : {}),
+        }),
+      );
+    }
+  }, [dispatch, userPage, currentTaskType, userSearch, getRolesForTaskType]);
+
+  const loadMoreUsers = useCallback(() => {
+    if (usersPagination?.has_next && !usersLoading) {
+      setUserPage((p) => p + 1);
+    }
+  }, [usersPagination?.has_next, usersLoading]);
+
+  const handleDateClick = (date: Date) => {
+    const tasksForDate = getTasksForDate(date);
+    if (tasksForDate.length > 0) {
+      setSelectedDate(date);
+      setShowModal(true);
+    }
+  };
+
+  const handleOpenTaskDetail = async (task: TaskListMarketing) => {
+    setSelectedTask(task);
+    setShowDetailSlider(true);
+    try {
+      await dispatch(getTaskDetail(task.id));
+    } catch (error) {
+      console.error("Error fetching task detail:", error);
+    }
+  };
+
+  const handleCloseDetailSlider = () => {
+    setShowDetailSlider(false);
+    dispatch(clearTaskDetail());
+  };
+
+  const handleOpenAssignment = (task: TaskListMarketing) => {
+    setSelectedTask(task);
+    setCurrentTaskType(task.type);
+    setSelectedUser("");
+    setShowTaskDetail(true);
+    // Don't close the task list modal
+  };
+
+  const handleAssign = async () => {
+    if (selectedTask && selectedUser) {
+      try {
+        await dispatch(
+          assignTask({
+            task_id: selectedTask.id,
+            user_id: selectedUser,
+          }),
+        );
+
+        // Reload task list to get updated assignment (fetch lại tháng hiện tại)
+        await fetchMonthTasks();
+
+        // Refresh task detail if currently viewing
+        if (showDetailSlider && selectedTask) {
+          await dispatch(getTaskDetail(selectedTask.id));
+        }
+
+        setShowTaskDetail(false);
+        setSelectedUser("");
+        setCurrentTaskType("");
+
+        // Reload the task list modal to show updated assignment
+        if (selectedDate) {
+          setShowModal(true);
+        }
+
+        toast.success("Task assigned successfully!");
+      } catch (error) {
+        toast.error("Failed to assign task!");
+        console.error("Failed to assign task:", error);
+      }
+    }
+  };
+
+  const handleUpdateTaskState = async (task: TaskListMarketing, newState: string) => {
+    try {
+      await dispatch(
+        updateTaskState({
+          taskId: task.id,
+          state: newState,
+        }),
+      );
+
+      // Reload task list to get updated status
+      await fetchMonthTasks();
+
+      // Refresh task detail if currently viewing the same task
+      if (showDetailSlider && selectedTask?.id === task.id) {
+        await dispatch(getTaskDetail(task.id));
+      }
+
+      toast.success(`Task ${newState === "IN_PROGRESS" ? "started" : "completed"} successfully!`);
+    } catch (error) {
+      toast.error("Failed to update task status!");
+      console.error("Failed to update task status:", error);
+    }
+  };
+
+  const getTaskIcon = (type: string) => {
+    switch (type) {
+      case "EVENT":
+        return <FaCalendarCheck className="h-4 w-4 text-white" />;
+      case "PRODUCT":
+        return <FaBox className="h-4 w-4 text-white" />;
+      case "CONTENT":
+        return <FaFileLines className="h-4 w-4 text-white" />;
+      case "OTHER":
+        return <FaGlobe className="h-4 w-4 text-white" />;
+      default:
+        return <div className="w-2 h-2 bg-white rounded-full" />;
+    }
+  };
+
+  const getTaskColor = (type: string) => {
+    switch (type) {
+      case "EVENT":
+        return "#4ade80"; // xanh lá
+      case "PRODUCT":
+        return "#f7c06d";
+      case "CONTENT":
+        return "#ff88fa";
+      case "OTHER":
+        return "#9976ff";
+      default:
+        return "#e5e7eb";
+    }
+  };
+
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case "TODO":
+        return "bg-gray-100 text-gray-800 border-gray-200";
+      case "DOING":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      case "DONE":
+        return "bg-green-100 text-green-800 border-green-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
+    }
+  };
+
+  const getTasksForDate = (date: Date): TaskListMarketing[] => {
+    return monthTasks.filter((task) => {
+      const taskDate = new Date(task.deadline);
+      return (
+        taskDate.getFullYear() === date.getFullYear() &&
+        taskDate.getMonth() === date.getMonth() &&
+        taskDate.getDate() === date.getDate()
+      );
+    });
+  };
+
+  // Check if a date has tasks assigned to current user
+  const hasUserAssignedTasks = (date: Date): boolean => {
+    const tasksForDate = getTasksForDate(date);
+    return tasksForDate.some((task) => task.assigned_to_id === user?.id);
+  };
+
+  // Simplified task counts (not used for display anymore)
+  const getTaskCounts = () => {
+    return {
+      ALL: monthTasks.length,
+      PRODUCT: 0,
+      CONTENT: 0,
+      EVENT: 0,
+      OTHER: 0,
+    };
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 },
+  };
+
+  // Only show initial loading when no tasks exist
+  if (taskLoading && monthTasks.length === 0 && !currentCampaignId) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-gray-600">Loading schedule...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Calendar */}
+      <motion.div variants={itemVariants} initial="hidden" animate="visible">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FaCalendarDays className="h-5 w-5 text-purple-600" />
+              Campaign Timeline & Tasks
+            </CardTitle>
+            <p className="text-sm text-gray-600">
+              View and manage milestone tasks throughout the campaign
+            </p>
+          </CardHeader>
+          <CardContent>
+            {/* Calendar with Fade Animation */}
+            <motion.div
+              animate={{
+                opacity: taskLoading ? 0.4 : 1,
+              }}
+              transition={{
+                duration: 0.3,
+                ease: "easeInOut",
+              }}
+            >
+              <TaskCalendar
+                currentDate={currentDate}
+                setCurrentDate={setCurrentDate}
+                tasks={monthTasks}
+                onDateClick={handleDateClick}
+                activeFilter={activeFilter}
+                onFilterChange={setActiveFilter}
+                taskCounts={getTaskCounts()}
+                contracts={[]}
+                selectedContract={null}
+                onContractSelect={() => {}}
+                contractSearch=""
+                onContractSearch={() => {}}
+                contractLoading={false}
+                taskLoading={taskLoading}
+                hasUserAssignedTasks={hasUserAssignedTasks}
+              />
+            </motion.div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Tasks by Date Modal */}
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <h3 className="text-lg font-semibold mb-4">
+            Tasks for {selectedDate ? formatDate(selectedDate) : ""}
+          </h3>
+
+          {selectedDate && getTasksForDate(selectedDate).length > 0 ? (
+            <div className="space-y-3">
+              {getTasksForDate(selectedDate).map((task) => (
+                <Card
+                  key={task.id}
+                  onClick={() => handleOpenTaskDetail(task)}
+                  className="cursor-pointer border-l-4 hover:shadow-md transition"
+                  style={{ borderLeftColor: getTaskColor(task.type) }}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start space-x-3">
+                        <div
+                          className="w-8 h-8 rounded-lg flex items-center justify-center"
+                          style={{ backgroundColor: getTaskColor(task.type) }}
+                        >
+                          {getTaskIcon(task.type)}
+                        </div>
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-start justify-between gap-4">
+                            <h4 className="font-semibold text-gray-900">{task.name}</h4>
+                            <Badge className={getStatusBadgeColor(task.status)}>
+                              {task.status}
+                            </Badge>
+                          </div>
+
+                          <div className="text-xs text-gray-500 mb-1">
+                            Task Type: <span className="font-medium">{task.type}</span>
+                          </div>
+
+                          <div className="space-y-1 text-sm text-gray-600">
+                            <div className="flex items-center space-x-2">
+                              <FaClock className="h-4 w-4" />
+                              <span>Due: {formatDate(new Date(task.deadline))}</span>
+                            </div>
+                            {task.assigned_to_name && (
+                              <div className="flex items-center space-x-2">
+                                <span>Assigned to: {task.assigned_to_name}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Action buttons */}
+                          <div className="flex gap-2 mt-3">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-xs"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenTaskDetail(task);
+                                  }}
+                                >
+                                  <FaEye className="h-3 w-3 mr-1" />
+                                  View Details
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>View full task details</TooltipContent>
+                            </Tooltip>
+                            {campaignDetail?.status === "RUNNING" &&
+                              !task.assigned_to_id &&
+                              user?.role === "MARKETING_STAFF" && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      size="sm"
+                                      className="text-xs bg-primary hover:bg-primary/90"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleOpenAssignment(task);
+                                      }}
+                                    >
+                                      <FaUserPlus className="h-3 w-3 mr-1" />
+                                      Assign Task
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Assign this task to a team member</TooltipContent>
+                                </Tooltip>
+                              )}
+                            {/* Start/Done Task buttons for assigned user */}
+                            {task.assigned_to_id === user?.id && (
+                              <>
+                                {task.status === "TODO" && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        size="sm"
+                                        className="text-xs bg-blue-600 hover:bg-blue-700 text-white"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleUpdateTaskState(task, "IN_PROGRESS");
+                                        }}
+                                      >
+                                        <FaClock className="h-3 w-3 mr-1" />
+                                        Start Task
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Start working on this task</TooltipContent>
+                                  </Tooltip>
+                                )}
+                                {task.status === "IN_PROGRESS" && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        size="sm"
+                                        className="text-xs bg-green-600 hover:bg-green-700 text-white"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleUpdateTaskState(task, "DONE");
+                                        }}
+                                      >
+                                        <FaCalendarCheck className="h-3 w-3 mr-1" />
+                                        Done Task
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Mark this task as completed</TooltipContent>
+                                  </Tooltip>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">No tasks found for this date</div>
+          )}
+
+          <div className="flex justify-end pt-4">
+            <Button variant="outline" onClick={() => setShowModal(false)}>
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Task Detail Slider */}
+      <Dialog
+        open={showModal && showDetailSlider}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCloseDetailSlider();
+          }
+        }}
+      >
+        <DialogContent className="max-w-4xl h-[90vh] p-0 overflow-hidden">
+          <div className="relative h-full">
+            <AnimatePresence>
+              {showDetailSlider && (
+                <TaskDetailSlider
+                  task={taskDetail}
+                  onBack={handleCloseDetailSlider}
+                  isVisible={showDetailSlider}
+                  loading={detailLoading}
+                />
+              )}
+            </AnimatePresence>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Task Assignment Modal */}
+      <Dialog open={showTaskDetail} onOpenChange={setShowTaskDetail}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Assign Task</DialogTitle>
+          </DialogHeader>
+
+          {selectedTask && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-semibold text-lg">{selectedTask.name}</h3>
+                <p className="text-sm text-gray-600">{selectedTask.type}</p>
+              </div>
+
+              <div className="text-sm space-y-2 text-gray-700">
+                <div className="flex items-center gap-2">
+                  <FaClock className="h-4 w-4" />
+                  <span>Deadline: {formatDate(new Date(selectedTask.deadline))}</span>
+                </div>
+                <div>
+                  <span>Status: </span>
+                  <Badge className={getStatusBadgeColor(selectedTask.status)}>
+                    {selectedTask.status}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Assign to:</label>
+                <DataSelector
+                  data={users}
+                  selectedId={selectedUser}
+                  onSelect={(userId) => setSelectedUser(userId || "")}
+                  renderItem={(user) => (
+                    <div className="flex items-center gap-3 p-2">
+                      <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-medium">
+                          {user.full_name?.charAt(0)?.toUpperCase() || "U"}
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-medium text-sm">{user.full_name}</div>
+                        <div className="text-xs text-gray-500">{user.role}</div>
+                      </div>
+                    </div>
+                  )}
+                  getLabel={(user) => user.full_name || "Unknown User"}
+                  title="Staff Members"
+                  placeholder="Search and select staff member..."
+                  onSearch={setUserSearch}
+                  searchValue={userSearch}
+                  onScrollEnd={loadMoreUsers}
+                  loading={usersLoading}
+                />
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button variant="outline" onClick={() => setShowTaskDetail(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleAssign} disabled={!selectedUser || usersLoading}>
+                    {usersLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Assigning...
+                      </>
+                    ) : (
+                      "Assign Task"
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default Schedule;

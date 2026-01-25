@@ -19,7 +19,6 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
   onConfirmCreate,
 }) => {
   if (!contractData) return null;
-  console.log("Contract Data for Preview:", contractData);
 
   const formatContractDataForPreview = (formData: any) => {
     const formatDateForPreview = (dateString: string): string => {
@@ -30,140 +29,213 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
       return date.toISOString();
     };
 
+    const isExistingContract = formData.brand && typeof formData.brand === "object";
+
+    // Lấy compensation_percent động từ formData - check both locations for create/edit compatibility
+    const compensationPercent =
+      formData.legal_terms?.compensation_percent !== undefined
+        ? formData.legal_terms?.compensation_percent
+        : formData.compensation_percent !== undefined
+          ? formData.compensation_percent
+          : 0;
+
     return {
-      contract_number: formData.contractNumber,
+      contract_number: formData.contract_number,
       title: formData.title,
       type: formData.type,
-      status: "DRAFT",
-      signed_date: formatDateForPreview(formData.signedDate),
-      signed_location: formData.signedLocation,
-      start_date: formatDateForPreview(formData.startDate),
-      end_date: formatDateForPreview(formData.endDate),
-      currency: "VND",
+      status: formData.status || "DRAFT",
+      signed_date: formatDateForPreview(formData.signed_date),
+      signed_location: formData.signed_location,
+      start_date: formatDateForPreview(formData.start_date),
+      end_date: formatDateForPreview(formData.end_date),
+      currency: formData.currency || "VND",
 
-      brand: {
-        name: formData.brandName || "Brand Name",
-        representative_name: formData.brandRepresentativeName,
-        representative_role: formData.brandRepresentativeRole,
-        contact_name: formData.brandRepresentativeName,
-        address: formData.brandAddress || "Brand Address",
-        tax_number: formData.brandTaxNumber,
-        bank_name: formData.brandBankName,
-        bank_account_number: formData.brandBankAccountNumber,
-        bank_account_holder: formData.brandBankAccountHolder,
-      },
+      brand: isExistingContract
+        ? {
+            name: formData.brand?.name || "Brand Name",
+            representative_name: formData.brand?.representative_name,
+            representative_role: formData.brand?.representative_role,
+            contact_name: formData.brand?.representative_name || formData.brand?.contact_name,
+            contact_email: formData.brand?.contact_email,
+            contact_phone: formData.brand?.contact_phone,
+            address: formData.brand?.address || "Brand Address",
+            tax_number: formData.brand?.tax_number,
+            bank_name: formData.brand?.bank_name,
+            bank_account_number: formData.brand?.bank_account_number,
+            bank_account_holder: formData.brand?.bank_account_holder,
+          }
+        : {
+            name: formData.brand_name || "Brand Name",
+            representative_name: formData.brand_representative_name,
+            representative_role: formData.brand_representative_role,
+            contact_name: formData.brand_representative_name,
+            address: formData.brand_address || "Brand Address",
+            tax_number: formData.brand_tax_number,
+            bank_name: formData.brand_bank_name,
+            bank_account_number: formData.brand_bank_account_number,
+            bank_account_holder: formData.brand_bank_account_holder,
+          },
 
-      representative_name: formData.representativeName,
-      representative_role: formData.representativeRole,
-      representative_phone: formData.representativePhone,
-      representative_email: formData.representativeEmail,
-      representative_tax_number: formData.representativeTaxNumber,
-      representative_bank_name: formData.representativeBankName,
-      representative_bank_account_number: formData.representativeBankAccountNumber,
-      representative_bank_account_holder: formData.representativeBankAccountHolder,
+      representative_name: formData.representative_name,
+      representative_role: formData.representative_role,
+      representative_phone: formData.representative_phone,
+      representative_email: formData.representative_email,
+      representative_tax_number: formData.representative_tax_number,
+      representative_bank_name: formData.representative_bank_name,
+      representative_bank_account_number: formData.representative_bank_account_number,
+      representative_bank_account_holder: formData.representative_bank_account_holder,
 
       deposit_percent: formData.deposit_percent ?? undefined,
       deposit_amount:
-        formData.deposit_percent && formData.deposit_percent > 0
-          ? (formData.financialTerms?.total_cost || 0) * (formData.deposit_percent / 100)
-          : (formData.deposit_amount ?? undefined),
+        formData.deposit_amount ??
+        (formData.deposit_percent && formData.deposit_percent > 0
+          ? (formData.financial_terms?.total_cost || 0) * (formData.deposit_percent / 100)
+          : undefined),
+      is_deposit_paid: formData.is_deposit_paid,
 
-      scope_of_work: {
-        general_requirements: formData.scopeOfWork?.general_requirements || [],
-        deliverables: formData.scopeOfWork?.deliverables || {},
-      },
+      scope_of_work: formData.scope_of_work
+        ? {
+            general_requirements: formData.scope_of_work?.general_requirements || [],
+            deliverables: formData.scope_of_work?.deliverables || {},
+          }
+        : {
+            general_requirements: [],
+            deliverables: {},
+          },
 
-      financial_terms: {
-        model:
-          formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR"
-            ? "FIXED"
-            : formData.type === "AFFILIATE"
-              ? "LEVELS"
-              : formData.type === "CO_PRODUCING"
-                ? "SHARE"
-                : "FIXED",
-        payment_method: formData.financialTerms?.payment_method || "BANK_TRANSFER",
-
-        ...(formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR"
-          ? {
-              total_cost: formData.financialTerms?.total_cost || 0,
-              cost_breakdown: formData.financialTerms?.cost_breakdown || {},
-              schedule: formData.financialTerms?.schedule || [],
-            }
-          : {}),
-
-        ...(formData.type === "AFFILIATE"
-          ? {
-              base_per_click: formData.financialTerms?.base_per_click || 0,
-              levels: formData.financialTerms?.levels || [],
-              payment_cycle: formData.financialTerms?.payment_cycle,
-              payment_date: formData.financialTerms?.payment_date,
-              tax_withholding: formData.financialTerms?.tax_withholding || {},
-            }
-          : {}),
-
-        ...(formData.type === "CO_PRODUCING"
-          ? {
-              profit_split_company_percent:
-                formData.financialTerms?.profit_split_company_percent || 0,
-              profit_split_kol_percent: formData.financialTerms?.profit_split_kol_percent || 0,
-              profit_distribution_cycle: formData.financialTerms?.profit_distribution_cycle,
-              profit_distribution_date: formData.financialTerms?.profit_distribution_date,
-              capital_contribution: formData.financialTerms?.capital_contribution || {},
-            }
-          : {}),
-      },
+      financial_terms: formData.financial_terms
+        ? {
+            ...formData.financial_terms,
+            payment_method: formData.financial_terms?.payment_method || "BANK_TRANSFER",
+          }
+        : {
+            model:
+              formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR"
+                ? "FIXED"
+                : formData.type === "AFFILIATE"
+                  ? "LEVELS"
+                  : formData.type === "CO_PRODUCING"
+                    ? "SHARE"
+                    : "FIXED",
+            payment_method: "BANK_TRANSFER",
+          },
 
       legal_terms: {
+        ...(formData.legal_terms || {}),
         breach_of_contract: {
-          label: formData.legalTerms?.breach_of_contract?.label || "Breach of Contract",
-          items: [
-            {
-              title: "Party A (Brand) breaks the rules",
-              details: ["Contract terminates immediately", "Party A forfeits the deposit"],
-            },
-            {
-              title: "Party B (Service Provider) breaks the rules",
-              details: [
-                "Contract terminates immediately",
-                "Party B must refund the deposit",
-                `Party B pays additional ${formData.legalTerms?.compensationPercent || 10}% compensation`,
-              ],
-              compensation_percent: formData.legalTerms?.compensationPercent || 10,
-            },
-            {
-              title: "Mutual agreement to terminate",
-              details: [
-                "Contract stops with no penalties",
-                "No compensation required from either party",
-              ],
-            },
-          ],
+          label: "Breach of Contract",
+          items:
+            formData.legal_terms?.breach_of_contract?.items?.length > 0
+              ? formData.legal_terms.breach_of_contract.items.map((item: any) => {
+                  // Always update compensation_percent for Party B item
+                  if (item.title === "Party B (Service Provider) breaks the rules") {
+                    const percent = compensationPercent;
+                    return {
+                      ...item,
+                      compensation_percent: percent,
+                      details: [
+                        "Contract terminates immediately",
+                        "Party B must refund the deposit",
+                        `Party B pays additional ${percent}% compensation`,
+                      ],
+                    };
+                  }
+                  return item;
+                })
+              : [
+                  {
+                    title: "Party A (Brand) breaks the rules",
+                    details: [
+                      "Contract terminates immediately",
+                      "Party A forfeits the deposit and must pay for the current milestone",
+                    ],
+                  },
+                  {
+                    title: "Party B (Service Provider) breaks the rules",
+                    details: [
+                      "Contract terminates immediately",
+                      "Party B must refund the deposit",
+                      `Party B pays additional ${compensationPercent}% compensation`,
+                    ],
+                    compensation_percent: compensationPercent,
+                  },
+                ],
+        },
+        rules: {
+          label: "Rules and Violations",
+          items:
+            formData.legal_terms?.rules?.items?.length > 0
+              ? formData.legal_terms.rules.items
+              : [
+                  {
+                    title: "For Brand (Party A)",
+                    violations: [
+                      {
+                        name: "Payment Default",
+                        description: "Failure to settle payments by the agreed due date.",
+                      },
+                      {
+                        name: "Support Failure",
+                        description:
+                          "Failure to provide samples or guidelines on time, causing delays.",
+                      },
+                      {
+                        name: "Copyright Infringement",
+                        description: "Using KOL's content outside the agreed scope/platforms.",
+                      },
+                    ],
+                  },
+                  {
+                    title: "For KOL (Party B)",
+                    violations: [
+                      {
+                        name: "Late Submission",
+                        description:
+                          "Failure to submit drafts or post content on the scheduled date.",
+                      },
+                      {
+                        name: "Exclusivity Breach",
+                        description: "Promoting direct competitors during the contract term.",
+                      },
+                      {
+                        name: "Content Removal",
+                        description: "Deleting or hiding posts before the agreed expiry date.",
+                      },
+                      {
+                        name: "Reputation Damage",
+                        description: "Involved in scandals that negatively affect the Brand.",
+                      },
+                    ],
+                  },
+                ],
         },
         standard_terms: {
-          label: formData.legalTerms?.standard_terms?.label || "Standard Terms",
-          items: [
-            {
-              title: "Confidentiality",
-              description:
-                "Both parties must keep all contract information confidential and cannot disclose to third parties without written consent",
-            },
-            {
-              title: "Dispute Resolution",
-              description:
-                "Disputes will be resolved through negotiation first, then legal proceedings if necessary",
-            },
-            {
-              title: "Contract Effectiveness",
-              description:
-                "Contract is effective from signature date until all obligations are fulfilled",
-            },
-            {
-              title: "Force Majeure",
-              description:
-                "Neither party is liable for failure to perform due to circumstances beyond their control, including natural disasters or government actions",
-            },
-          ],
+          label: "Standard Terms",
+          items:
+            formData.legal_terms?.standard_terms?.items?.length > 0
+              ? formData.legal_terms.standard_terms.items
+              : [
+                  {
+                    title: "Confidentiality",
+                    description:
+                      "Both parties must keep all contract information confidential and cannot disclose to third parties without written consent",
+                  },
+                  {
+                    title: "Dispute Resolution",
+                    description:
+                      "Disputes will be resolved through negotiation first, then legal proceedings if necessary",
+                  },
+                  {
+                    title: "Contract Effectiveness",
+                    description:
+                      "Contract is effective from signature date until all obligations are fulfilled",
+                  },
+                  {
+                    title: "Force Majeure",
+                    description:
+                      "Neither party is liable for failure to perform due to circumstances beyond their control, including natural disasters or government actions",
+                  },
+                ],
         },
       },
     };
@@ -171,7 +243,6 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
 
   const previewData = formatContractDataForPreview(contractData);
 
-  // Helper functions for formatting (same as ContractPDF)
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return "N/A";
     const d = new Date(dateStr);
@@ -223,14 +294,42 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
       case "MONTHLY":
         return `Day ${date} of every month`;
 
-      case "QUARTERLY":
-        if (typeof date === "object" && date.day && date.month) {
-          const monthInQuarter = ((date.month - 1) % 3) + 1;
-          return `Day ${date.day} of the ${getOrdinal(monthInQuarter)} month of each quarter`;
+      case "QUARTERLY": {
+        let quarterlyData = null;
+
+        if (Array.isArray(date) && date.length > 0) {
+          const firstPayment = date[0];
+          if (firstPayment && firstPayment.day && firstPayment.month) {
+            const monthInQuarter = ((firstPayment.month - 1) % 3) + 1;
+            return `Day ${firstPayment.day} of the ${getOrdinal(monthInQuarter)} month of each quarter (${date.length} payments scheduled)`;
+          }
+        } else if (typeof date === "object" && date.day && date.month) {
+          quarterlyData = date;
+        } else if (typeof date === "string") {
+          try {
+            const parsed = JSON.parse(date);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              const firstPayment = parsed[0];
+              if (firstPayment && firstPayment.day && firstPayment.month) {
+                const monthInQuarter = ((firstPayment.month - 1) % 3) + 1;
+                return `Day ${firstPayment.day} of the ${getOrdinal(monthInQuarter)} month of each quarter (${parsed.length} payments scheduled)`;
+              }
+            } else if (parsed && parsed.day && parsed.month) {
+              quarterlyData = parsed;
+            }
+          } catch {
+            // intentionally ignored
+          }
+        }
+
+        if (quarterlyData && quarterlyData.day && quarterlyData.month) {
+          const monthInQuarter = ((quarterlyData.month - 1) % 3) + 1;
+          return `Day ${quarterlyData.day} of the ${getOrdinal(monthInQuarter)} month of each quarter`;
         }
         return "N/A";
+      }
 
-      case "ANNUALLY":
+      case "ANNUALLY": {
         if (typeof date === "string") {
           const d = new Date(date);
           if (!isNaN(d.getTime())) {
@@ -238,20 +337,35 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
           }
         }
         return "N/A";
+      }
 
       default:
         return date;
     }
   };
 
-  // Render scope of work based on contract type
   const renderScopeOfWork = () => {
     const deliverables = previewData.scope_of_work?.deliverables ?? {};
     const events = deliverables.events ?? [];
+    const rawProducts = deliverables.products ?? [];
     const concepts = deliverables.concepts ?? [];
-    const products = deliverables.products ?? [];
     const advertised_items = deliverables.advertised_items ?? [];
     const platforms = deliverables.platform ?? [];
+
+    // For CO_PRODUCING, merge concepts with products
+    const products = rawProducts.map((product: any) => {
+      if (previewData.type === "CO_PRODUCING") {
+        const productConcepts = concepts.filter(
+          (concept: any) => concept.product_id === product.id,
+        );
+        return {
+          ...product,
+          concepts: productConcepts,
+          material_url: product.material_url || product.material || [],
+        };
+      }
+      return product;
+    });
 
     switch (previewData.type) {
       case "BRAND_AMBASSADOR":
@@ -316,68 +430,100 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
         return (
           <div>
             <h4 className="text-sm font-bold text-gray-900 underline mb-2">
-              1. Product Concepts and Creation
-            </h4>
-            {concepts.map((concept: any, i: number) => (
-              <div key={i} className="mb-4 pl-4 border-l-2 border-blue-400">
-                <h5 className="text-sm font-bold text-blue-900 mb-1">
-                  Concept #{i + 1}: {concept.name || `Concept ${i + 1}`}
-                </h5>
-                <p className="text-xs mb-1">
-                  <span className="font-semibold">Description:</span> {concept.description || "N/A"}
-                </p>
-                <p className="text-xs mb-1">
-                  <span className="font-semibold">Platform:</span> {concept.platform || "N/A"} |{" "}
-                  <span className="font-semibold">Tagline:</span> {concept.tagline || "N/A"}
-                </p>
-                {(concept.hash_tag ?? []).length > 0 && (
-                  <p className="text-xs mb-1">
-                    <span className="font-semibold">Hashtags:</span>{" "}
-                    {(concept.hash_tag ?? []).join(", ")}
-                  </p>
-                )}
-                {concept.creative_notes && (
-                  <p className="text-xs mb-1">
-                    <span className="font-semibold">Creative Notes:</span> {concept.creative_notes}
-                  </p>
-                )}
-                {(concept.content_requirements ?? []).length > 0 && (
-                  <div className="mt-2">
-                    <p className="font-semibold text-xs text-gray-700 underline">
-                      Content Requirements:
-                    </p>
-                    {(concept.content_requirements ?? []).map((req: string, j: number) => (
-                      <p key={j} className="ml-5 text-xs text-gray-600">
-                        • {req}
-                      </p>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-
-            <h4 className="text-sm font-bold text-gray-900 underline mb-2 mt-4">
-              2. Products Under Agreement
+              Products & Concepts for Co-Production
             </h4>
             {products.map((product: any, i: number) => (
-              <div key={i} className="mb-2">
-                <p className="text-xs mb-1">
-                  <span className="font-semibold">Product #{i + 1}:</span> {product.name || "N/A"}
-                </p>
+              <div key={i} className="mb-6 pl-4 border-l-2 border-violet-400">
+                <h5 className="text-sm font-bold text-violet-900 mb-1">
+                  Product #{i + 1}: {product.name || `Product ${i + 1}`}
+                </h5>
                 <p className="text-xs mb-1">
                   <span className="font-semibold">Description:</span> {product.description || "N/A"}
                 </p>
+
                 {(product.kpis ?? []).length > 0 && (
-                  <div className="mt-1">
-                    <p className="font-semibold text-xs text-gray-700 underline">KPIs:</p>
+                  <div className="mt-1 mb-2">
+                    <p className="font-semibold text-xs text-gray-700 underline">Product KPIs:</p>
                     {(product.kpis ?? []).map((kpi: any, j: number) => (
                       <p key={j} className="ml-5 text-xs text-gray-600">
                         •{" "}
                         <span className="font-semibold">
-                          {(kpi.metric || "").replace(/_/g, " ")}
+                          {(kpi.metric || kpi.type || "").replace(/_/g, " ")}
                         </span>
-                        : {kpi.target || "N/A"}
+                        : {kpi.target || kpi.target_value || "N/A"}
+                        {kpi.description && ` - ${kpi.description}`}
                       </p>
+                    ))}
+                  </div>
+                )}
+
+                {(product.concepts ?? []).length > 0 && (
+                  <div className="mt-3 ml-3">
+                    <p className="font-semibold text-xs text-orange-700 underline mb-2">
+                      Concepts for this Product:
+                    </p>
+                    {(product.concepts ?? []).map((concept: any, j: number) => (
+                      <div key={j} className="mb-3 pl-3 border-l-2 border-orange-300">
+                        <h6 className="text-xs font-bold text-orange-800 mb-1">
+                          Concept #{j + 1}: {concept.name || `Concept ${j + 1}`}
+                        </h6>
+                        <p className="text-xs mb-1">
+                          <span className="font-semibold">Platform:</span>{" "}
+                          {concept.platform || "N/A"}
+                        </p>
+                        {concept.tagline && (
+                          <p className="text-xs mb-1">
+                            <span className="font-semibold">Tagline:</span> {concept.tagline}
+                          </p>
+                        )}
+                        {concept.description && (
+                          <p className="text-xs mb-1">
+                            <span className="font-semibold">Description:</span>{" "}
+                            {concept.description}
+                          </p>
+                        )}
+                        {(concept.hash_tag ?? []).length > 0 && (
+                          <p className="text-xs mb-1">
+                            <span className="font-semibold">Hashtags:</span>{" "}
+                            {(concept.hash_tag ?? []).join(", ")}
+                          </p>
+                        )}
+                        {concept.creative_notes && (
+                          <p className="text-xs mb-1">
+                            <span className="font-semibold">Creative Notes:</span>{" "}
+                            {concept.creative_notes}
+                          </p>
+                        )}
+                        {(concept.content_requirements ?? []).length > 0 && (
+                          <div className="mt-1">
+                            <p className="font-semibold text-xs text-gray-700">
+                              Content Requirements:
+                            </p>
+                            {(concept.content_requirements ?? []).map(
+                              (req: string, reqIdx: number) => (
+                                <p key={reqIdx} className="ml-5 text-xs text-gray-600">
+                                  • {req}
+                                </p>
+                              ),
+                            )}
+                          </div>
+                        )}
+                        {(concept.kpis ?? []).length > 0 && (
+                          <div className="mt-1">
+                            <p className="font-semibold text-xs text-gray-700">Concept KPIs:</p>
+                            {(concept.kpis ?? []).map((kpi: any, kpiIdx: number) => (
+                              <p key={kpiIdx} className="ml-5 text-xs text-gray-600">
+                                •{" "}
+                                <span className="font-semibold">
+                                  {(kpi.metric || kpi.type || "").replace(/_/g, " ")}
+                                </span>
+                                : {kpi.target || kpi.target_value || "N/A"}
+                                {kpi.description && ` - ${kpi.description}`}
+                              </p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     ))}
                   </div>
                 )}
@@ -396,7 +542,8 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
 
             {deliverables?.tracking_link && (
               <p className="text-xs mb-2">
-                <span className="font-semibold">Tracking Link:</span> {deliverables.tracking_link}
+                <span className="font-semibold">Tracking Link:</span>{" "}
+                {deliverables.tracking_link}{" "}
               </p>
             )}
 
@@ -509,7 +656,8 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
 
               {item.creative_notes && (
                 <p className="ml-5 text-xs text-gray-600 mb-1">
-                  • <span className="font-semibold">Creative Notes:</span> {item.creative_notes}
+                  • <span className="font-semibold">Creative Notes:</span>{" "}
+                  {item.creative_notes}{" "}
                 </p>
               )}
 
@@ -532,7 +680,6 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
     }
   };
 
-  // Render financial terms based on contract type
   const renderFinancialTerms = () => {
     const financial = previewData.financial_terms ?? {};
 
@@ -565,7 +712,9 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
               </p>
               <p className="text-xs">
                 <span className="font-semibold">Party B (KOL) Share:</span>{" "}
-                <span className="font-semibold">{financial.profit_split_kol_percent ?? 0}%</span>
+                <span className="font-semibold">
+                  {financial.profit_split_kol_percent ?? 0}%
+                </span>{" "}
               </p>
             </div>
           </div>
@@ -580,15 +729,15 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
             </p>
             <p className="text-xs mb-1">
               <span className="font-semibold">Payment Cycle:</span>{" "}
-              {financial.payment_cycle || "N/A"} (on{" "}
+              {financial.payment_cycle || "N/A"} (on
               <span className="font-semibold">
-                {formatPaymentDate(financial.payment_cycle, financial.payment_date)}
+                {formatPaymentDate(financial.payment_cycle, financial.payment_date)}{" "}
               </span>
               )
             </p>
             <p className="text-xs mb-1">
               <span className="font-semibold">Base Per Click Rate:</span>{" "}
-              <span className="font-semibold">{formatMoney(financial.base_per_click)}</span>
+              <span className="font-semibold">{formatMoney(financial.base_per_click)}</span>{" "}
             </p>
             {(financial.levels ?? []).length > 0 && (
               <div className="mt-2">
@@ -598,26 +747,10 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
                 {(financial.levels ?? []).map((level: any, i: number) => (
                   <p key={i} className="ml-5 text-xs text-gray-600">
                     • <span className="font-semibold">Level {level.level}</span>: Up to{" "}
-                    {level.max_clicks} clicks, Multiplier:{" "}
+                    {level.max_clicks} clicks, Multiplier:
                     <span className="font-semibold">{level.multiplier}x</span>
                   </p>
                 ))}
-              </div>
-            )}
-            {financial.tax_withholding && (
-              <div className="mt-2">
-                <p className="font-semibold text-xs text-gray-700 underline mb-1">
-                  Tax Withholding:
-                </p>
-                <p className="text-xs">
-                  A tax rate of{" "}
-                  <span className="font-semibold">{financial.tax_withholding.rate_percent}%</span>{" "}
-                  will be withheld for earnings exceeding{" "}
-                  <span className="font-semibold">
-                    {formatMoney(financial.tax_withholding.threshold)}
-                  </span>
-                  .
-                </p>
               </div>
             )}
           </div>
@@ -638,7 +771,7 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
             </p>
             <p className="text-xs mb-1">
               <span className="font-semibold">Total Contract Value:</span>{" "}
-              <span className="text-lg font-bold">{formatMoney(financial.total_cost)}</span>
+              <span className="text-lg font-bold">{formatMoney(financial.total_cost)}</span>{" "}
             </p>
             {financial.cost_breakdown && (
               <div className="mt-2">
@@ -661,12 +794,14 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
                   Payment Schedule Milestones:
                 </p>
                 {(financial.schedule ?? []).map((item: any, i: number) => (
-                  <p key={i} className="ml-5 text-xs text-gray-600">
-                    {i + 1}. <span className="font-semibold">{item.milestone}</span>:{" "}
-                    <span className="font-semibold">{formatMoney(item.amount)}</span> (
-                    {item.percent}%) due by{" "}
-                    <span className="font-semibold">{formatDate(item.due_date)}</span>
-                  </p>
+                  <div key={i} className="ml-5 text-xs text-gray-600 mb-2">
+                    <p>
+                      {i + 1}. <span className="font-semibold">{item.milestone}</span>:{" "}
+                      <span className="font-semibold">{formatMoney(item.amount)}</span> (
+                      {item.percent}%) due by{" "}
+                      <span className="font-semibold">{formatDate(item.due_date)}</span>{" "}
+                    </p>
+                  </div>
                 ))}
               </div>
             )}
@@ -675,7 +810,6 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
     }
   };
 
-  // ADD: Handler để call onConfirmCreate với event
   const handleConfirmCreate = async () => {
     if (onConfirmCreate) {
       const syntheticEvent = new Event("submit") as any;
@@ -696,7 +830,6 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto px-6 py-6">
-          {/* Contract Content Preview */}
           <div className="bg-white text-gray-900 max-w-4xl mx-auto p-8 shadow-2xl leading-relaxed border rounded-lg">
             <header className="text-center mb-8 border-b border-gray-400 pb-4">
               <div className="flex justify-center mb-4">
@@ -709,13 +842,18 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
                 <span className="font-semibold">
                   {(previewData.type || "").toString().replace(/_/g, " ")}
                 </span>{" "}
-                Service Contract | Contract No.{" "}
-                <span className="font-semibold">{previewData.contract_number}</span>
+                Service Contract
+                {previewData.contract_number && (
+                  <>
+                    {" "}
+                    | Contract No.{" "}
+                    <span className="font-semibold">{previewData.contract_number}</span>
+                  </>
+                )}
               </p>
               <p className="text-lg font-bold mt-3 text-gray-800 italic">{previewData.title}</p>
             </header>
 
-            {/* Article 1: Parties */}
             <section className="mb-6">
               <h2 className="text-base font-bold uppercase mb-3 text-gray-900">
                 ARTICLE 1: PARTIES INVOLVED
@@ -723,10 +861,10 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
               <p className="text-xs mb-3">
                 This Agreement is hereby executed on{" "}
                 <span className="font-semibold">{formatDate(previewData.signed_date)}</span> at{" "}
-                <span className="font-semibold">{previewData.signed_location || "N/A"}</span>,
+                <span className="font-semibold">{previewData.signed_location || "N/A"}</span>,{" "}
                 effective from the{" "}
-                <span className="font-semibold">{formatDate(previewData.start_date)}</span> until{" "}
-                <span className="font-semibold">{formatDate(previewData.end_date)}</span>, by and
+                <span className="font-semibold">{formatDate(previewData.start_date)}</span> until
+                <span className="font-semibold">{formatDate(previewData.end_date)}</span>, by and{" "}
                 between:
               </p>
 
@@ -740,7 +878,7 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
               <p className="text-xs mb-1">
                 <span className="font-semibold">Representative:</span>{" "}
                 {previewData.brand?.representative_name || previewData.brand?.contact_name || "N/A"}
-                , {previewData.brand?.representative_role || "N/A"}
+                ,{previewData.brand?.representative_role || "N/A"}
               </p>
               <p className="text-xs mb-1">
                 <span className="font-semibold">Address:</span>{" "}
@@ -753,7 +891,7 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
               <p className="text-xs mb-3">
                 <span className="font-semibold">Bank Account:</span>{" "}
                 {previewData.brand?.bank_account_number || "N/A"} (
-                {previewData.brand?.bank_account_holder || "N/A"} -{" "}
+                {previewData.brand?.bank_account_holder || "N/A"} -
                 {previewData.brand?.bank_name || "N/A"})
               </p>
 
@@ -775,12 +913,11 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
               <p className="text-xs mb-1">
                 <span className="font-semibold">Bank Account:</span>{" "}
                 {previewData.representative_bank_account_number || "N/A"} (
-                {previewData.representative_bank_account_holder || "N/A"} -{" "}
+                {previewData.representative_bank_account_holder || "N/A"} -
                 {previewData.representative_bank_name || "N/A"})
               </p>
             </section>
 
-            {/* Article 2: Scope of Work */}
             <section className="mb-6">
               <h2 className="text-base font-bold uppercase mb-3 text-gray-900">
                 ARTICLE 2: SCOPE OF WORK AND DELIVERABLES
@@ -802,7 +939,6 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
               )}
             </section>
 
-            {/* Article 3: Financial Terms */}
             <section className="mb-6">
               <h2 className="text-base font-bold uppercase mb-3 text-gray-900">
                 ARTICLE 3: FINANCIAL TERMS AND PAYMENT
@@ -819,7 +955,6 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
               {renderFinancialTerms()}
             </section>
 
-            {/* Article 4: Breach and Termination */}
             <section className="mb-6">
               <h2 className="text-base font-bold uppercase mb-3 text-gray-900">
                 ARTICLE 4: BREACH AND TERMINATION
@@ -841,10 +976,26 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
               )}
             </section>
 
-            {/* Article 5: Standard Legal Terms */}
             <section className="mb-6">
               <h2 className="text-base font-bold uppercase mb-3 text-gray-900">
-                ARTICLE 5: STANDARD LEGAL TERMS
+                ARTICLE 5: RULES AND VIOLATIONS
+              </h2>
+              {(previewData.legal_terms?.rules?.items ?? []).map((ruleGroup: any, i: number) => (
+                <div key={i} className="p-2 mb-3">
+                  <h3 className="text-sm font-bold text-gray-800 mb-2">{ruleGroup.title}</h3>
+                  {(ruleGroup.violations ?? []).map((violation: any, j: number) => (
+                    <div key={j} className="ml-4 mb-2">
+                      <p className="text-xs font-bold text-gray-700">{violation.name}</p>
+                      <p className="text-xs ml-2 text-gray-600">{violation.description}</p>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </section>
+
+            <section className="mb-6">
+              <h2 className="text-base font-bold uppercase mb-3 text-gray-900">
+                ARTICLE 6: STANDARD LEGAL TERMS
               </h2>
               {(previewData.legal_terms?.standard_terms?.items ?? []).map(
                 (term: any, i: number) => (
@@ -911,7 +1062,7 @@ export const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
               className="bg-green-600 hover:bg-green-700 text-white"
             >
               <FaCircleCheck className="h-4 w-4 mr-2" />
-              Create Draft Contract
+              Confirm Contract
             </Button>
           )}
         </div>

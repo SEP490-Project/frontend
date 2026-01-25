@@ -3,9 +3,16 @@ import type { RootState } from "@/libs/stores";
 import { manageCampaignActions } from "@/libs/stores/campaignManager/slice";
 
 export const useCampaign = () => {
-  const { loading, campaigns, pagination, detailLoading, campaignDetail, error } = useSelector(
-    (state: RootState) => state.manageCampaign,
-  );
+  const {
+    loading,
+    campaigns,
+    pagination,
+    detailLoading,
+    campaignDetail,
+    error,
+    suggestCampaign,
+    suggestLoading,
+  } = useSelector((state: RootState) => state.manageCampaign);
   return {
     loading,
     campaigns,
@@ -13,6 +20,8 @@ export const useCampaign = () => {
     detailLoading,
     campaignDetail,
     error,
+    suggestCampaign,
+    suggestLoading,
     actions: manageCampaignActions, // Export actions để có thể dùng clearError nếu cần
   };
 };

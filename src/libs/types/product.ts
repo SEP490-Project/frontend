@@ -1,29 +1,16 @@
 import type { FieldValues, UseFormReturn } from "react-hook-form";
 import type { NavigateFunction } from "react-router";
 import type { Pagination } from "./common";
+import type { ConceptData } from "./concept";
 
 export type ProductType = "STANDARD" | "LIMITED";
-export type CapacityUnit = "ML" | "L" | "G" | "KG" | "OZ";
-export type ContainerType =
-  | "BOTTLE"
-  | "TUBE"
-  | "JAR"
-  | "STICK"
-  | "PENCIL"
-  | "COMPACT"
-  | "PALLETE"
-  | "SACHET"
-  | "VIAL"
-  | "ROLLER_BOTTLE";
-export type DispenserType =
-  | "PUMP"
-  | "SPRAY"
-  | "DROPPER"
-  | "ROLL_ON"
-  | "TWIST_UP"
-  | "SQUEEZE"
-  | "NONE";
-export type AttributeUnit = "%" | "MG" | "G" | "ML" | "L" | "IU" | "PPM" | "NONE";
+
+// Product option types are now managed via database and fetched from API
+// These types remain as string for backward compatibility
+export type CapacityUnit = string;
+export type ContainerType = string;
+export type DispenserType = string;
+export type AttributeUnit = string;
 
 export interface ProductResponse<T> {
   success: boolean;
@@ -34,13 +21,24 @@ export interface ProductResponse<T> {
   pagination: Pagination;
 }
 
+export type ProductStatus =
+  | "DRAFT"
+  | "SUBMITTED"
+  | "APPROVED"
+  | "REJECTED"
+  | "REVISION"
+  | "ACTIVED"
+  | "INACTIVED";
+
 export interface ProductData {
   id: string;
   brand_id: string;
   brand_logo_url: string;
   brand_name: string;
+  brand_place_holder: string;
   thumbnail_url: string[] | null;
   is_active: boolean;
+  status?: ProductStatus | string | null; // added optional since not always needed
   category: {
     id: string;
     name: string;
@@ -48,30 +46,46 @@ export interface ProductData {
   };
   description: string;
   name: string;
-  price: number;
   type: ProductType;
   variants?: ProductVariant[];
   created_at: Date;
 }
 
+export interface LimitedProductData extends ProductData {
+  limited_product?: {
+    achievable_quantity?: number;
+    is_free_shipping: boolean;
+    premiere_date: string;
+    availability_start_date: string;
+    availability_end_date: string;
+  };
+  concept?: ConceptData;
+}
+
 export interface ProductVariant {
   id?: string;
   attributes: ProductAttribute[];
+  current_stock?: number | null;
   capacity: number | null;
   capacity_unit: CapacityUnit;
   container_type: ContainerType;
-  current_stock?: number | null;
+  input_stock: number | null;
   description?: string | null;
   dispenser_type: DispenserType;
   expiry_date: Date | null;
-  instructions: string;
+  instructions: string | null;
   is_default: boolean;
-  manufacture_date: Date | null;
+  manufacturing_date?: Date | null;
   name: string;
   price: number | null;
   story?: string | null;
   type: string;
   uses: string | null;
+  weight: number | null;
+  height: number | null;
+  length: number | null;
+  width: number | null;
+  pre_order_limit?: number | null;
 }
 
 export interface VariantWithImage extends ProductVariant {
@@ -88,32 +102,35 @@ export interface ProductVariantImage {
 }
 
 export interface ProductAttribute {
+  attribute_id?: string;
   description?: string | null;
-  ingredients: string;
+  ingredient?: string | null;
   unit: string;
   value: number;
 }
 export interface LimitedAttribute {
+  achievable_quantity?: number;
   availability_end_date: string;
   availability_start_date: string;
-  bought_limit: number;
-  concept_id?: string;
+  concept_id?: string | null;
   is_free_shipping: boolean;
-  max_stock: number;
   premiere_date: string;
 }
 
 export interface CreateProductPayload {
-  brand_id: string;
+  brand_id?: string | null;
   category_id: string;
   description?: string | null;
   name: string;
-  price: number | null;
 }
 
 export interface CreateLimitedProductPayload extends CreateProductPayload {
   task_id?: string;
   limited_attribute: LimitedAttribute;
+}
+
+export interface CreateStandardProductPayload extends CreateProductPayload {
+  brand_place_holder: string;
 }
 
 export type CreateVariantImagePayload = FormData;
@@ -124,15 +141,29 @@ export interface ProductParams {
   search?: string;
   type?: string;
   category_id?: string;
+  brand_id?: string;
+  status?: string;
+  user_id?: string;
+}
+
+export interface LimitedProductParams extends ProductParams {
+  filter_preorder?: boolean;
+  filter_order?: boolean;
+  premiere_date_from?: string;
+  premiere_date_to?: string;
+  availability_start_date_from?: string;
+  availability_start_date_to?: string;
+  availability_end_date_from?: string;
+  availability_end_date_to?: string;
 }
 
 export interface ProductFormProps<T extends FieldValues> {
   form: UseFormReturn<T>;
   setOnSubmitStep?: React.Dispatch<React.SetStateAction<null | (() => Promise<void>)>>;
-  navigate: NavigateFunction;
-  steps: { path: string; label: string }[];
-  currentStep: number;
-  state: any;
-  isDisabled: boolean;
-  setIsDisabled: React.Dispatch<React.SetStateAction<boolean>>;
+  navigate?: NavigateFunction;
+  steps?: { path: string; label: string }[];
+  currentStep?: number;
+  state?: any;
+  isDisabled?: boolean;
+  setIsDisabled?: React.Dispatch<React.SetStateAction<boolean>>;
 }

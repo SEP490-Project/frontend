@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FaAngleDown,
   FaRegBell,
@@ -6,6 +6,7 @@ import {
   FaPowerOff,
   FaIndent,
   FaOutdent,
+  FaCircle,
 } from "react-icons/fa6";
 import {
   DropdownMenu,
@@ -14,9 +15,15 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "@/libs/hooks/useAuth";
+import { logout } from "@/libs/stores/authentManager/thunk";
+import { notifications as getNotifications } from "@/libs/stores/notificationManager/thunk";
+import { useNotificationStore } from "@/libs/hooks/useNotification";
+import { useNotificationContext } from "@/libs/contexts/NotificationContext";
 import { defaultAvatarByName } from "@/libs/helper/default-avatar";
+import { useAppDispatch } from "@/libs/stores";
+
 interface HeaderProps {
   collapsed?: boolean;
   onToggleCollapse?: () => void;
@@ -28,13 +35,33 @@ const Header: React.FC<HeaderProps> = ({
   onToggleCollapse,
   onToggleMobileSidebar,
 }) => {
+  const navigate = useNavigate();
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const { user } = useAuth();
+  const dispatch = useAppDispatch();
 
-  const notifications = [
-    { id: 1, text: "You have a meeting at 10 AM today" },
-    { id: 2, text: "System will be under maintenance at 11 PM" },
-  ];
+  const { notifications } = useNotificationStore();
+
+  const { unreadCount, markAsRead } = useNotificationContext();
+
+  useEffect(() => {
+    if (user?.id) {
+      dispatch(getNotifications({ page: 1, limit: 10, user_id: user.id, type: "IN_APP" }));
+    }
+  }, [dispatch, user?.id]);
+
+  const displayedNotifications = notifications.slice(0, 5);
+
+  const handleLogout = async () => {
+    await dispatch(logout());
+    window.location.href = "/login";
+  };
+
+  const handleNotificationClick = (id: string, isRead: boolean) => {
+    if (!isRead) {
+      markAsRead(id);
+    }
+  };
 
   return (
     <header className="bg-white border-b border-gray-200 shadow-sm flex items-center justify-between px-4 md:px-6 py-3 sticky top-0 z-40">
@@ -80,9 +107,9 @@ const Header: React.FC<HeaderProps> = ({
             <TooltipTrigger asChild>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 px-2 md:px-3 py-1 rounded hover:bg-gray-100 transition">
-                  {user?.avatar ? (
+                  {user?.avatar_url ? (
                     <img
-                      src={user?.avatar}
+                      src={user?.avatar_url}
                       alt="avatar"
                       className="w-9 h-9 rounded-full border-2 border-primary shadow-sm"
                     />
@@ -124,7 +151,10 @@ const Header: React.FC<HeaderProps> = ({
             </DropdownMenuItem>
             <div className="border-t mx-4 my-2" />
             <DropdownMenuItem asChild>
-              <button className="flex items-center gap-2 w-full px-4 py-2 text-red-500 hover:bg-red-50">
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 w-full px-4 py-2 text-red-500 hover:bg-red-50"
+              >
                 <FaPowerOff size={18} />
                 <span>Logout</span>
               </button>
@@ -142,9 +172,11 @@ const Header: React.FC<HeaderProps> = ({
                   aria-label="Notifications"
                 >
                   <FaRegBell size={18} className="text-gray-500" />
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full px-1 border border-white shadow">
-                    {notifications.length}
-                  </span>
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full px-1 min-w-[1.25rem] border border-white shadow animate-pulse">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
                 </button>
               </DropdownMenuTrigger>
             </TooltipTrigger>
@@ -153,34 +185,73 @@ const Header: React.FC<HeaderProps> = ({
 
           <DropdownMenuContent
             align="end"
-            className="w-80 max-h-96 overflow-y-auto animate-in slide-in-from-top-5 fade-in-0 duration-200 rounded-xl shadow-lg border border-gray-100 bg-white"
+            // 1. Changed: Removed overflow-y-auto, added flex flex-col
+            className="w-80 h-[30rem] flex flex-col animate-in slide-in-from-top-5 fade-in-0 duration-200 rounded-xl shadow-lg border border-gray-100 bg-white p-0 overflow-x-hidden"
           >
-            <div className="px-5 py-3 text-base font-bold text-gray-800 border-b flex items-center gap-2">
-              <FaRegBell size={18} className="text-primary" />
-              Notifications
-            </div>
-            {notifications.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-gray-400">
-                <FaRegBell size={18} className="mb-2" />
-                <span className="text-base">No new notifications</span>
+            {/* HEADER: Naturally stays at the top */}
+            <div className="px-5 py-3 text-base font-bold text-gray-800 border-b flex items-center justify-between bg-white rounded-t-xl shrink-0">
+              <div className="flex items-center gap-2">
+                <FaRegBell size={18} className="text-primary" />
+                Notifications
               </div>
-            ) : (
-              notifications.map((n) => (
-                <DropdownMenuItem key={n.id} className="px-5 py-3 hover:bg-gray-50 cursor-pointer">
-                  <div className="font-medium text-gray-800 text-sm">{n.text}</div>
-                  <div className="text-xs text-gray-400 mt-1">Just now</div>
-                </DropdownMenuItem>
-              ))
-            )}
-            <div className="border-t mt-2" />
-            <DropdownMenuItem asChild>
-              <NavLink
-                to="/manage/notification"
-                className="block w-full text-center text-primary font-semibold py-3 hover:underline"
-              >
-                View all notifications
-              </NavLink>
-            </DropdownMenuItem>
+              {unreadCount > 0 && (
+                <span className="text-xs font-normal text-gray-500">{unreadCount} unread</span>
+              )}
+            </div>
+
+            {/* BODY: This wrapper handles the scrolling */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
+              {displayedNotifications.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+                  <FaRegBell size={18} className="mb-2" />
+                  <span className="text-base">No new notifications</span>
+                </div>
+              ) : (
+                displayedNotifications.map((n) => {
+                  const isRead = n.is_read;
+                  return (
+                    <DropdownMenuItem
+                      key={n.id}
+                      onClick={() => handleNotificationClick(n.id, n.is_read)}
+                      className={`px-5 py-3 hover:bg-gray-50 cursor-pointer border-b last:border-0 transition-colors focus:bg-gray-50
+                ${isRead ? "opacity-60 bg-white" : "bg-blue-50/30"}
+              `}
+                    >
+                      <div className="flex gap-3 w-full">
+                        <div className="mt-1 shrink-0">
+                          {!isRead && <FaCircle className="w-2 h-2 text-primary" />}
+                        </div>
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div
+                            className={`text-sm truncate ${isRead ? "font-medium text-gray-700" : "font-bold text-gray-900"}`}
+                          >
+                            {n.content_data.title}
+                          </div>
+                          <div className="text-xs text-gray-600 line-clamp-2 leading-relaxed break-words">
+                            {n.content_data.body}
+                          </div>
+                          <div className="text-[10px] text-gray-400 pt-1">
+                            {new Date(n.created_at).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                    </DropdownMenuItem>
+                  );
+                })
+              )}
+            </div>
+
+            {/* FOOTER: Naturally stays at the bottom */}
+            <div className="p-2 border-t bg-gray-50 rounded-b-xl shrink-0">
+              <DropdownMenuItem asChild>
+                <button
+                  onClick={() => navigate("/manage/notification")}
+                  className="w-full text-center text-primary text-sm font-semibold py-2 hover:bg-white rounded-md transition-colors focus:bg-white"
+                >
+                  View all notifications
+                </button>
+              </DropdownMenuItem>
+            </div>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

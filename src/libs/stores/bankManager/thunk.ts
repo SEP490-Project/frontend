@@ -8,6 +8,6 @@ export const bankList = createAsyncThunk("bankList", async (_, { rejectWithValue
     return response.data;
   } catch (error: unknown) {
     const err = error as AxiosError<{ message: string }>;
-    return rejectWithValue(err.response?.data?.message || "Thất bại");
+    return rejectWithValue(err.response?.data?.message || "Failed");
   }
 });

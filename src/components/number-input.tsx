@@ -51,7 +51,7 @@ export const NumberInput: React.FC<NumberInputProps> = ({
         value={formatNumber(value || "")}
         onChange={(e) => onChange(parseNumber(e.target.value))}
         placeholder={placeholder}
-        className={`h-11 ${error ? "border-red-500" : ""} ${
+        className={`${error ? "border-red-500" : ""} ${
           disabled ? "bg-gray-100 text-gray-700 cursor-not-allowed" : ""
         }`}
         disabled={disabled}

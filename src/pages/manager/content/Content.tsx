@@ -1,29 +1,36 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Content, CreateContentRequest } from "@/libs/types/content";
-import { useContentManager } from "@/libs/hooks/useContent";
+import { useAppDispatch } from "@/libs/stores";
+import { contents, createContent, updateContent } from "@/libs/stores/contentManager/thunk";
+import { getTasksByProfile } from "@/libs/stores/taskManager/thunk";
+import { clearGeneratedContent } from "@/libs/stores/contentManager/slice";
 import ContentList from "@/components/manage/content/ContentList";
 import BlogEditor from "@/components/manage/content/BlogEditor";
 import VideoEditor from "@/components/manage/content/VideoEditor";
 import { Dialog } from "@/components/ui/dialog";
 import { SaveConfirmModal } from "@/components/modal/content/SaveConfirmModal";
-import { TaskProvider } from "@/libs/contexts/TaskContext";
-import { type LegacyContent } from "@/libs/utils/contentConverter";
 
 type ViewMode = "list" | "editor";
 type ContentType = "blog" | "video";
 
 const ManageContent = () => {
+  const dispatch = useAppDispatch();
+
+  // Fetch profile tasks on mount
+  useEffect(() => {
+    dispatch(getTasksByProfile(undefined));
+  }, [dispatch]);
+
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [editingContent, setEditingContent] = useState<Content | null>(null);
   const [currentContentType, setCurrentContentType] = useState<ContentType>("blog");
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [pendingSaveData, setPendingSaveData] = useState<{
     content: CreateContentRequest | { html: string; json: object };
     contentType: "blog" | "video";
   } | null>(null);
-
-  const { createNewContent, updateExistingContent, fetchContents } = useContentManager();
 
   const handleSave = async (
     content: CreateContentRequest | { html: string; json: object },
@@ -35,8 +42,9 @@ const ManageContent = () => {
   };
 
   const handleConfirmSave = async () => {
-    if (!pendingSaveData) return;
+    if (!pendingSaveData || isSaving) return;
 
+    setIsSaving(true);
     const { content } = pendingSaveData;
 
     try {
@@ -54,7 +62,7 @@ const ManageContent = () => {
           title: (oldContent.json as any)?.title || "Untitled Video",
           body: oldContent.html,
           type: "POST",
-          channels: [(oldContent.json as any)?.platform || "facebook"], // Video content defaults to selected platform
+          channels: [(oldContent.json as any)?.channel || "facebook"], // Video content uses channel instead of platform
           task_id: selectedTask?.id?.toString() || null,
           affiliate_link: null,
           ai_generated_text: null,
@@ -70,7 +78,7 @@ const ManageContent = () => {
           id: editingContent.id,
           ...apiData,
         };
-        const updateResponse = await updateExistingContent(updateData);
+        const updateResponse = await dispatch(updateContent(updateData));
 
         // Check if update was successful or failed
         if (updateResponse.meta.requestStatus === "fulfilled") {
@@ -78,7 +86,7 @@ const ManageContent = () => {
         }
       } else {
         // Create new content
-        const createResponse = await createNewContent(apiData);
+        const createResponse = await dispatch(createContent(apiData));
 
         // Check if creation was successful or failed
         if (createResponse.meta.requestStatus === "fulfilled") {
@@ -88,7 +96,7 @@ const ManageContent = () => {
 
       // Refresh the content list and go back to list view (only if successful)
       if (isSuccess) {
-        await fetchContents({ page: 1, limit: 10 });
+        await dispatch(contents({ page: 1, limit: 5 }));
         handleBackToList();
       }
 
@@ -101,6 +109,8 @@ const ManageContent = () => {
       // Close modal and clear pending data even on error
       setShowConfirmModal(false);
       setPendingSaveData(null);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -108,43 +118,14 @@ const ManageContent = () => {
     setEditingContent(null);
     setCurrentContentType(contentType);
     setSelectedTask(task);
+    dispatch(clearGeneratedContent()); // Clear any previous AI generated content
     setViewMode("editor");
   };
 
-  const handleEdit = (legacyContent: LegacyContent) => {
-    // Convert legacy content to new Content format for editing
-    const contentItem: Content = {
-      id: legacyContent.id,
-      title: legacyContent.title,
-      body: legacyContent.html_content,
-      type: "POST",
-      status: legacyContent.status.toUpperCase() as any,
-      task_id: (legacyContent.json_content as any)?.task_id || "",
-      created_at: legacyContent.created_at,
-      updated_at: legacyContent.updated_at,
-      content_channels: [],
-      publish_date: undefined,
-      rejection_feedback: undefined,
-      affiliate_link: (legacyContent.json_content as any)?.affiliate_link || undefined,
-      ai_generated_text: (legacyContent.json_content as any)?.ai_generated_text || undefined,
-      ...(legacyContent.content_type === "blog" &&
-        (legacyContent.json_content as any)?.author && {
-          blog: {
-            author: (legacyContent.json_content as any).author,
-            author_id: (legacyContent.json_content as any).author?.id || "",
-            content_id: legacyContent.id,
-            excerpt: (legacyContent.json_content as any).excerpt || "",
-            read_time: (legacyContent.json_content as any).read_time || 0,
-            tags: (legacyContent.json_content as any).tags || [],
-            created_at: legacyContent.created_at,
-            updated_at: legacyContent.updated_at,
-          },
-        }),
-    };
-
-    setEditingContent(contentItem);
-    // Determine content type based on the json_content
-    const contentType = legacyContent.content_type === "video" ? "video" : "blog";
+  const handleEdit = (content: Content) => {
+    setEditingContent(content);
+    // Determine content type based on whether blog field exists
+    const contentType = content.blog ? "blog" : "video";
     setCurrentContentType(contentType);
     setViewMode("editor");
   };
@@ -153,56 +134,62 @@ const ManageContent = () => {
     setViewMode("list");
     setEditingContent(null);
     setSelectedTask(null);
+    dispatch(clearGeneratedContent()); // Clear AI generated content when leaving editor
   };
 
   return (
-    <TaskProvider>
-      <div className="min-h-screen p-5">
-        <div className="max-w-7xl mx-auto space-y-6">
-          {/* Main Content */}
-          {viewMode === "list" ? (
-            /* Content List View */
-            <ContentList onCreateNew={handleCreateNew} onEdit={handleEdit} />
-          ) : /* Editor View */
-          currentContentType === "blog" ? (
-            <BlogEditor
-              editingContent={editingContent}
-              selectedTask={selectedTask}
-              onSave={handleSave}
-              onBack={handleBackToList}
-            />
-          ) : (
-            <VideoEditor
-              editingContent={editingContent}
-              selectedTask={selectedTask}
-              onSave={handleSave}
-              onBack={handleBackToList}
-            />
-          )}
-        </div>
-
-        {/* Save Confirmation Modal */}
-        <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
-          {pendingSaveData && (
-            <SaveConfirmModal
-              contentTitle={(() => {
-                if ("title" in pendingSaveData.content && "body" in pendingSaveData.content) {
-                  return pendingSaveData.content.title;
-                } else {
-                  const oldContent = pendingSaveData.content as { html: string; json: object };
-                  return (
-                    (oldContent.json as any)?.title || `Untitled ${pendingSaveData.contentType}`
-                  );
-                }
-              })()}
-              contentType={pendingSaveData.contentType}
-              isUpdate={!!editingContent}
-              onConfirm={handleConfirmSave}
-            />
-          )}
-        </Dialog>
+    <div className="min-h-fit p-4 sm:p-6">
+      <div className="mx-auto space-y-6">
+        {/* Main Content */}
+        {viewMode === "list" ? (
+          /* Content List View */
+          <ContentList onCreateNew={handleCreateNew} onEdit={handleEdit} />
+        ) : /* Editor View */
+        currentContentType === "blog" ? (
+          <BlogEditor
+            editingContent={editingContent}
+            initialTask={selectedTask}
+            onSave={handleSave}
+            onBack={handleBackToList}
+          />
+        ) : (
+          <VideoEditor
+            editingContent={editingContent}
+            initialTask={selectedTask}
+            onSave={handleSave}
+            onBack={handleBackToList}
+          />
+        )}
       </div>
-    </TaskProvider>
+
+      {/* Save Confirmation Modal */}
+      <Dialog
+        open={showConfirmModal}
+        onOpenChange={(open) => {
+          // Prevent closing modal while saving
+          if (!isSaving) {
+            setShowConfirmModal(open);
+          }
+        }}
+      >
+        {pendingSaveData && (
+          <SaveConfirmModal
+            contentTitle={(() => {
+              if ("title" in pendingSaveData.content && "body" in pendingSaveData.content) {
+                return pendingSaveData.content.title;
+              } else {
+                const oldContent = pendingSaveData.content as { html: string; json: object };
+                return (oldContent.json as any)?.title || `Untitled ${pendingSaveData.contentType}`;
+              }
+            })()}
+            contentType={pendingSaveData.contentType}
+            isUpdate={!!editingContent}
+            onConfirm={handleConfirmSave}
+            isLoading={isSaving}
+          />
+        )}
+      </Dialog>
+    </div>
   );
 };
 

@@ -7,7 +7,10 @@ import type {
   UpdateContentRequest,
   PublishContentParams,
   RejectContentParams,
+  AIGenerateRequest,
+  AIStructuredContentRequest,
 } from "@/libs/types/content";
+import { toast } from "sonner";
 
 export const contents = createAsyncThunk(
   "/contents",
@@ -130,11 +133,71 @@ export const rejectContent = createAsyncThunk(
   "/contents/reject",
   async (params: RejectContentParams, { rejectWithValue }) => {
     try {
-      const response = await manageContent.rejectContent(params.id, params.reason);
+      const response = await manageContent.rejectContent(params.id, params.feedback);
       return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
       return rejectWithValue(err.response?.data?.message || "Failed to reject content");
+    }
+  },
+);
+
+export const getTikTokCreatorInfo = createAsyncThunk(
+  "/tiktok/creator-info",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await manageContent.getTikTokCreatorInfo();
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(
+        err.response?.data?.message || "Failed to fetch TikTok creator information",
+      );
+    }
+  },
+);
+
+export const generateAIContent = createAsyncThunk(
+  "/ai/generate",
+  async (req: AIGenerateRequest, { rejectWithValue }) => {
+    try {
+      const response = await manageContent.generateAIContent(req);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Failed to generate AI content");
+    }
+  },
+);
+
+export const generateStructuredContent = createAsyncThunk(
+  "/ai/generate-content",
+  async (req: AIStructuredContentRequest, { rejectWithValue }) => {
+    try {
+      const response = await manageContent.generateStructuredContent(req);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(
+        err.response?.data?.message || "Failed to generate structured content",
+      );
+    }
+  },
+);
+
+export const getSupportedAIModels = createAsyncThunk(
+  "/ai/models",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await manageContent.getSupportedAIModels();
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      toast.error("Failed to fetch AI models", {
+        description: err.response?.data?.message || "An error occurred while fetching AI models.",
+        duration: 4000,
+      });
+      return rejectWithValue(err.response?.data?.message || "Failed to fetch AI models");
     }
   },
 );

@@ -11,23 +11,24 @@ import { useAppDispatch } from "@/libs/stores";
 import { assignParentCategoryThunk } from "@/libs/stores/categoryManager/thunk";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import type { ProductCategory } from "@/libs/types/category";
+import type { CategoryResponse, ProductCategory } from "@/libs/types/category";
+import manageCategories from "@/libs/services/manageCategories";
+import { AxiosError } from "axios";
 
 interface AssignParentCategoryFormProps {
   onSuccess?: () => void;
-  categories?: ProductCategory[];
   loading?: boolean;
   currentCategory?: ProductCategory;
 }
 
 export const AssignParentCategoryForm = ({
   onSuccess,
-  categories,
   loading,
   currentCategory,
 }: AssignParentCategoryFormProps) => {
   const dispatch = useAppDispatch();
   const [selectedParentId, setSelectedParentId] = useState("");
+  const [allCategories, setAllCategories] = useState<CategoryResponse>({} as CategoryResponse);
 
   const hasParent = !!currentCategory?.parent_category;
 
@@ -37,7 +38,23 @@ export const AssignParentCategoryForm = ({
     }
   }, [currentCategory]);
 
-  const availableParentCategories = categories?.filter(
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const resultAction = await manageCategories.getAllCategories({ page: 1, limit: 1000 });
+        setAllCategories(resultAction.data);
+      } catch (error) {
+        if (error instanceof AxiosError) {
+          toast.error(error.response?.data?.message || "Failed to fetch categories");
+          return;
+        }
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  const availableParentCategories = allCategories?.data?.filter(
     (cat) => cat.id !== currentCategory?.id && !cat.parent_category,
   );
 

@@ -12,6 +12,30 @@ import { manageFileReducer } from "./fileManager/slice";
 import { manageConfigReducer } from "./configManager/slice";
 import { categoryManagerReducer } from "./categoryManager/slice";
 import { attributeManagerReducer } from "./attributeManager/slice";
+import { conceptManagerReducer } from "./conceptManager/slice";
+import { manageTagReducer } from "./tagManager/slice";
+import { manageChannelReducer } from "./channelManager/slice";
+import { manageTaskReducer } from "./taskManager/slice";
+import { manageContractPaymentReducer } from "./contractPaymentManager/slice";
+import { manageContentMarketingReducer } from "./contentMarketingManager/slice";
+import { managePaymentReducer } from "./paymentManager/slice";
+import { stateManagerReducer } from "./stateManager/slice";
+import { orderManagerReducer } from "./orderManager/slice";
+import { transactionManagerReducer } from "./transactionManager/slice";
+import { managePostedContentReducer } from "./contentPostedManager/slice";
+import { manageMarketingAnalyticReducer } from "./marketingAnalyticManager/slice";
+import { manageAdminAnalyticReducer } from "./adminAnalyticManager/slice";
+import { manageNotificationReducer } from "./notificationManager/slice";
+import { manageBrandAnalyticReducer } from "./brandAnalyticManager/slice";
+import { manageSalesAnalyticReducer } from "./salesAnalyticManager/slice";
+import { manageContentAnalyticReducer } from "./contentAnalyticManager/slice";
+import { reviewManagerReducers } from "./reviewManager/slice";
+import contentDashboardReducer from "./contentDashboardManager/slice";
+import { ghnManagerReducer } from "./ghnManager/slice";
+import { scheduleReducer } from "./scheduleManager/slice";
+import { productOptionManagerReducer } from "./productOptionManager/slice";
+import { manageLocationReducer } from "./locationManager/slice";
+import { analyticDetailManagerReducers } from "./analyticDetailManager/slice";
 
 export const rootReducer = combineReducers({
   manageAuthen: manageAuthenReducer,
@@ -28,4 +52,28 @@ export const rootReducer = combineReducers({
   manageConfig: manageConfigReducer,
   manageCategory: categoryManagerReducer,
   manageAttribute: attributeManagerReducer,
+  manageConcept: conceptManagerReducer,
+  manageTag: manageTagReducer,
+  manageChannel: manageChannelReducer,
+  manageTask: manageTaskReducer,
+  manageContractPayment: manageContractPaymentReducer,
+  manageContentMarketing: manageContentMarketingReducer,
+  managePayment: managePaymentReducer,
+  manageState: stateManagerReducer,
+  manageOrder: orderManagerReducer,
+  manageTransaction: transactionManagerReducer,
+  managePostedContent: managePostedContentReducer,
+  manageMarketingAnalytic: manageMarketingAnalyticReducer,
+  manageNotification: manageNotificationReducer,
+  manageAdminAnalytic: manageAdminAnalyticReducer,
+  manageBrandAnalytic: manageBrandAnalyticReducer,
+  manageSalesAnalytic: manageSalesAnalyticReducer,
+  manageContentAnalytic: manageContentAnalyticReducer,
+  manageReview: reviewManagerReducers,
+  contentDashboard: contentDashboardReducer,
+  manageGHN: ghnManagerReducer,
+  manageSchedule: scheduleReducer,
+  manageProductOption: productOptionManagerReducer,
+  manageLocation: manageLocationReducer,
+  manageAnalyticDetail: analyticDetailManagerReducers,
 });

@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useEffect, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -10,6 +8,8 @@ import Color from "@tiptap/extension-color";
 import Highlight from "@tiptap/extension-highlight";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
+import { VideoExtension } from "./tiptap-extensions/VideoExtension";
+import { YoutubeExtension } from "./tiptap-extensions/YoutubeExtension";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -20,8 +20,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import FileUploader from "@/components/global/FileUploader";
+import { toast } from "sonner";
 import {
   Bold,
   Italic,
@@ -43,60 +50,98 @@ import {
   Undo,
   Redo,
   Quote,
-  Minus,
+  Video,
+  UploadCloud,
+  Link as LinkIcon,
   Unlink,
+  Check,
+  Copy,
+  X,
+  Sparkles,
+  Minus,
 } from "lucide-react";
+import { isTiptapJson } from "@/libs/helper/tiptapHelper";
 import { useAuth } from "@/libs/hooks/useAuth";
 
 interface TiptapEditorProps {
-  initialContent?: string;
+  initialContent?: string | object;
   onChange?: (content: { html: string; json: object }) => void;
+  // Diff mode props
+  diffMode?: boolean;
+  diffContent?: string; // HTML content to compare against
+  onDiffAccept?: () => void;
+  onDiffReject?: () => void;
+  onDiffCopy?: () => void;
 }
 
 const TiptapEditor: React.FC<TiptapEditorProps> = ({
   initialContent = "<p>Start typing...</p>",
   onChange,
+  diffMode = false,
+  diffContent,
+  onDiffAccept,
+  onDiffReject,
+  onDiffCopy,
 }) => {
   const [showImageUploader, setShowImageUploader] = useState(false);
+  const [showVideoDialog, setShowVideoDialog] = useState(false);
+  const [videoUrl, setVideoUrl] = useState("");
+  const [videoTab, setVideoTab] = useState<"upload" | "url">("upload");
+  const [showLinkDialog, setShowLinkDialog] = useState(false);
+  const [linkUrl, setLinkUrl] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [imageTab, setImageTab] = useState<"upload" | "url">("upload");
+  const [copied, setCopied] = useState(false);
+
+  // Convert initial content to proper format
+  const getInitialContent = () => {
+    if (!initialContent) return "<p>Start typing...</p>";
+
+    // If it's a string, check if it's JSON
+    if (typeof initialContent === "string") {
+      if (isTiptapJson(initialContent)) {
+        // Parse and return JSON object
+        try {
+          return JSON.parse(initialContent);
+        } catch {
+          return initialContent;
+        }
+      }
+      return initialContent;
+    }
+
+    // If it's already an object, return it
+    return initialContent;
+  };
+
   const { user } = useAuth();
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        bulletList: {
-          keepMarks: true,
-          keepAttributes: false,
-        },
-        orderedList: {
-          keepMarks: true,
-          keepAttributes: false,
-        },
+        bulletList: { keepMarks: true, keepAttributes: false },
+        orderedList: { keepMarks: true, keepAttributes: false },
       }),
       Link.configure({
         openOnClick: false,
-        HTMLAttributes: {
-          rel: "noopener noreferrer",
-          target: "_blank",
-        },
+        HTMLAttributes: { rel: "noopener noreferrer", target: "_blank" },
       }),
       Image.configure({
-        HTMLAttributes: {
-          class: "max-w-full h-auto",
-        },
+        HTMLAttributes: { class: "max-w-full h-auto rounded-lg border" },
       }),
+      VideoExtension, // Register Custom Video Extension
+      YoutubeExtension, // Register YouTube Extension for AI-generated content
       TextStyle,
       Color,
       Highlight.configure({
         multicolor: true,
-        HTMLAttributes: {
-          class: "highlight",
-        },
+        HTMLAttributes: { class: "highlight" },
       }),
       Underline,
       TextAlign.configure({
-        types: ["heading", "paragraph"],
+        types: ["heading", "paragraph", "image", "video"],
       }),
     ],
-    content: initialContent,
+    content: getInitialContent(),
     editorProps: {
       attributes: {
         class:
@@ -129,47 +174,79 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
     return words.length;
   };
 
-  const getCharacterCount = () => {
-    return editor.getText().length;
-  };
+  const getCharacterCount = () => editor.getText().length;
 
-  const handleImageUpload = (files: File[]) => {
-    if (files.length > 0) {
-      const file = files[0];
-      // Create a temporary URL for the uploaded image
-      const imageUrl = URL.createObjectURL(file);
-      editor.chain().focus().setImage({ src: imageUrl }).run();
+  // --- Image Handlers ---
+  const handleImageUploadComplete = (urls: string[]) => {
+    if (urls.length > 0) {
+      editor?.chain().focus().setImage({ src: urls[0] }).run();
       setShowImageUploader(false);
-
-      // In a real application, you would upload the file to your server
-      // and then update the image src with the permanent URL
-      // For now, we'll use the temporary blob URL
     }
   };
 
-  const addImage = () => {
-    setShowImageUploader(true);
+  // --- Video Handlers ---
+  const handleVideoUploadComplete = (urls: string[]) => {
+    if (urls.length > 0) {
+      editor?.chain().focus().setVideo({ src: urls[0] }).run();
+      setShowVideoDialog(false);
+      setVideoTab("upload");
+    }
   };
 
-  const addLink = () => {
-    const previousUrl = editor.getAttributes("link").href;
-    const url = window.prompt("Enter link URL", previousUrl);
-
-    // If url is null, user cancelled
-    if (url === null) {
-      return;
+  const handleVideoUrlSubmit = () => {
+    if (videoUrl) {
+      editor?.chain().focus().setVideo({ src: videoUrl }).run();
+      setShowVideoDialog(false);
+      setVideoUrl("");
+      setVideoTab("upload");
     }
+  };
 
-    // If url is empty, remove link
-    if (url === "") {
+  // --- Diff Mode Copy Handler ---
+  const handleDiffCopy = async () => {
+    if (diffContent) {
+      try {
+        const plainText = diffContent.replace(/<[^>]*>/g, "");
+        await navigator.clipboard.writeText(plainText);
+        setCopied(true);
+        toast.success("Content copied to clipboard");
+        setTimeout(() => setCopied(false), 2000);
+        onDiffCopy?.();
+      } catch (err) {
+        console.error("Failed to copy:", err);
+        toast.error("Failed to copy content");
+      }
+    }
+  };
+
+  // --- Link Handlers ---
+  const openLinkDialog = () => {
+    const previousUrl = editor.getAttributes("link").href || "";
+    setLinkUrl(previousUrl);
+    setShowLinkDialog(true);
+  };
+
+  const handleLinkSubmit = () => {
+    if (linkUrl === "") {
       editor.chain().focus().extendMarkRange("link").unsetLink().run();
-      return;
+    } else {
+      editor.chain().focus().extendMarkRange("link").setLink({ href: linkUrl }).run();
     }
-
-    // Update link
-    editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+    setShowLinkDialog(false);
+    setLinkUrl("");
   };
 
+  // --- Image URL Handler ---
+  const handleImageUrlSubmit = () => {
+    if (imageUrl) {
+      editor?.chain().focus().setImage({ src: imageUrl }).run();
+      setShowImageUploader(false);
+      setImageUrl("");
+      setImageTab("upload");
+    }
+  };
+
+  // Color Palette
   const colors = [
     "#000000",
     "#434343",
@@ -328,10 +405,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
                       key={color}
                       className="w-6 h-6 rounded border border-gray-200 hover:scale-110 transition-transform"
                       style={{ backgroundColor: color }}
-                      onClick={() => {
-                        editor.chain().focus().setColor(color).run();
-                      }}
-                      title={`Set text color to ${color}`}
+                      onClick={() => editor.chain().focus().setColor(color).run()}
                     />
                   ))}
                 </div>
@@ -349,9 +423,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
                 <div className="grid grid-cols-10 gap-1 p-2">
                   <button
                     className="w-6 h-6 rounded border border-gray-200 hover:scale-110 transition-transform bg-transparent"
-                    onClick={() => {
-                      editor.chain().focus().unsetHighlight().run();
-                    }}
+                    onClick={() => editor.chain().focus().unsetHighlight().run()}
                   >
                     <Minus className="w-3 h-3 mx-auto" />
                   </button>
@@ -360,9 +432,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
                       key={color}
                       className="w-6 h-6 rounded border border-gray-200 hover:scale-110 transition-transform"
                       style={{ backgroundColor: color }}
-                      onClick={() => {
-                        editor.chain().focus().setHighlight({ color }).run();
-                      }}
+                      onClick={() => editor.chain().focus().setHighlight({ color }).run()}
                       title={`Set highlight color to ${color}`}
                     />
                   ))}
@@ -468,15 +538,16 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
 
             <Separator orientation="vertical" className="mx-1 h-5" />
 
-            {/* Links and Images */}
+            {/* Media Group */}
             <Button
               variant="ghost"
               size="icon"
-              onClick={addLink}
+              onClick={openLinkDialog}
               className={editor.isActive("link") ? "bg-muted" : ""}
             >
               <Link2 className="w-4 h-4" />
             </Button>
+            {/* Link Removal */}
             <Button
               variant="ghost"
               size="icon"
@@ -485,27 +556,199 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
             >
               <Unlink className="w-4 h-4" />
             </Button>
-            <Dialog open={showImageUploader} onOpenChange={setShowImageUploader}>
+
+            {/* Image Dialog with Tabs */}
+            <Dialog
+              open={showImageUploader}
+              onOpenChange={(open) => {
+                setShowImageUploader(open);
+                if (!open) {
+                  setImageUrl("");
+                  setImageTab("upload");
+                }
+              }}
+            >
               <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={addImage}>
+                <Button variant="ghost" size="icon" onClick={() => setShowImageUploader(true)}>
                   <ImageIcon className="w-4 h-4" />
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-md">
                 <DialogHeader>
-                  <DialogTitle>Upload Image</DialogTitle>
+                  <DialogTitle>Insert Image</DialogTitle>
                 </DialogHeader>
-                <FileUploader
-                  userId={user?.id || ""}
-                  accept="image/*"
-                  multiple={false}
-                  maxSize={5}
-                  maxFiles={1}
-                  allowedTypes={["jpg", "jpeg", "png", "gif", "webp", "mp4", "wav"]}
-                  onFilesChange={handleImageUpload}
-                  title="Select Image"
-                  showSummary={false}
-                />
+                <Tabs
+                  value={imageTab}
+                  onValueChange={(v) => setImageTab(v as "upload" | "url")}
+                  className="w-full"
+                >
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="upload" className="flex items-center gap-2">
+                      <UploadCloud className="w-4 h-4" />
+                      Upload
+                    </TabsTrigger>
+                    <TabsTrigger value="url" className="flex items-center gap-2">
+                      <LinkIcon className="w-4 h-4" />
+                      URL
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="upload" className="mt-4">
+                    <FileUploader
+                      userId={user?.id || ""}
+                      accept="image/*"
+                      multiple={false}
+                      maxSize={5}
+                      maxFiles={1}
+                      allowedTypes={["jpg", "jpeg", "png", "gif", "webp"]}
+                      onUploadComplete={handleImageUploadComplete}
+                      title="Select Image"
+                    />
+                  </TabsContent>
+                  <TabsContent value="url" className="mt-4 space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="image-url">Image URL</Label>
+                      <Input
+                        id="image-url"
+                        type="url"
+                        placeholder="https://example.com/image.jpg"
+                        value={imageUrl}
+                        onChange={(e) => setImageUrl(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleImageUrlSubmit();
+                          }
+                        }}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Enter a direct link to an image (jpg, png, gif, webp)
+                      </p>
+                    </div>
+                    <Button onClick={handleImageUrlSubmit} disabled={!imageUrl} className="w-full">
+                      Insert Image
+                    </Button>
+                  </TabsContent>
+                </Tabs>
+              </DialogContent>
+            </Dialog>
+
+            {/* Video Dialog with Tabs (No Popover) */}
+            <Dialog
+              open={showVideoDialog}
+              onOpenChange={(open) => {
+                setShowVideoDialog(open);
+                if (!open) {
+                  setVideoUrl("");
+                  setVideoTab("upload");
+                }
+              }}
+            >
+              <DialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={editor.isActive("video") ? "bg-muted" : ""}
+                  onClick={() => setShowVideoDialog(true)}
+                >
+                  <Video className="w-4 h-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Insert Video</DialogTitle>
+                </DialogHeader>
+                <Tabs value={videoTab} onValueChange={(v) => setVideoTab(v as "upload" | "url")}>
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="upload">
+                      <UploadCloud className="w-4 h-4 mr-2" />
+                      Upload
+                    </TabsTrigger>
+                    <TabsTrigger value="url">
+                      <LinkIcon className="w-4 h-4 mr-2" />
+                      URL
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="upload" className="mt-4">
+                    <FileUploader
+                      userId={user?.id || ""}
+                      accept="video/*"
+                      multiple={false}
+                      maxSize={50}
+                      maxFiles={1}
+                      allowedTypes={["mp4", "webm", "ogg"]}
+                      onUploadComplete={handleVideoUploadComplete}
+                      title="Select Video"
+                    />
+                  </TabsContent>
+                  <TabsContent value="url" className="mt-4 space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="video-url">Video URL</Label>
+                      <Input
+                        id="video-url"
+                        type="url"
+                        placeholder="https://example.com/video.mp4"
+                        value={videoUrl}
+                        onChange={(e) => setVideoUrl(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleVideoUrlSubmit();
+                          }
+                        }}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Enter a direct link to a video (mp4, webm, ogg) or YouTube URL
+                      </p>
+                    </div>
+                    <Button onClick={handleVideoUrlSubmit} disabled={!videoUrl} className="w-full">
+                      Insert Video
+                    </Button>
+                  </TabsContent>
+                </Tabs>
+              </DialogContent>
+            </Dialog>
+
+            {/* Link Dialog */}
+            <Dialog
+              open={showLinkDialog}
+              onOpenChange={(open) => {
+                setShowLinkDialog(open);
+                if (!open) setLinkUrl("");
+              }}
+            >
+              <DialogContent className="max-w-sm">
+                <DialogHeader>
+                  <DialogTitle>Insert Link</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="link-url">URL</Label>
+                    <Input
+                      id="link-url"
+                      type="url"
+                      placeholder="https://example.com"
+                      value={linkUrl}
+                      onChange={(e) => setLinkUrl(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleLinkSubmit();
+                        }
+                      }}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Enter a URL to link the selected text. Leave empty to remove link.
+                    </p>
+                  </div>
+                </div>
+                <DialogFooter className="gap-2">
+                  <Button variant="outline" onClick={() => setShowLinkDialog(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleLinkSubmit}>
+                    {linkUrl ? "Apply Link" : "Remove Link"}
+                  </Button>
+                </DialogFooter>
               </DialogContent>
             </Dialog>
           </div>
@@ -519,8 +762,103 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
         </div>
       </CardHeader>
 
-      <CardContent>
-        <EditorContent editor={editor} />
+      <CardContent className="p-0">
+        <ScrollArea className="min-h-[200px] max-h-[400px]">
+          <div className="p-4">
+            {diffMode && diffContent ? (
+              // Diff Mode: Side-by-side comparison like IDE
+              <div className="space-y-4">
+                {/* Diff Header */}
+                <div className="flex items-center justify-between bg-purple-50 border border-purple-200 rounded-lg px-4 py-2">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-purple-600" />
+                    <span className="text-sm font-medium text-purple-700">
+                      AI Generated Content Preview
+                    </span>
+                    <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-xs">
+                      Review Changes
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="ghost" onClick={handleDiffCopy} className="h-8 px-2">
+                      {copied ? (
+                        <Check className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={onDiffReject}
+                      className="h-8 px-2 text-red-500 hover:text-red-600 hover:bg-red-50"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Discard
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={onDiffAccept}
+                      className="h-8 bg-green-600 hover:bg-green-700"
+                    >
+                      <Check className="h-4 w-4 mr-1" />
+                      Accept
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Side-by-side Diff View */}
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Current Content - Left Panel */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between px-2">
+                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                        Current Content
+                      </span>
+                      <Badge variant="outline" className="text-xs">
+                        Original
+                      </Badge>
+                    </div>
+                    <div className="border rounded-lg bg-gray-50/50 overflow-hidden">
+                      <ScrollArea className="h-[400px]">
+                        <div className="p-4">
+                          <EditorContent editor={editor} />
+                        </div>
+                      </ScrollArea>
+                    </div>
+                  </div>
+
+                  {/* Generated Content - Right Panel */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between px-2">
+                      <span className="text-xs font-medium text-purple-600 uppercase tracking-wide">
+                        AI Generated
+                      </span>
+                      <Badge className="text-xs bg-purple-100 text-purple-700 border-0">New</Badge>
+                    </div>
+                    <div className="border border-purple-200 rounded-lg bg-purple-50/30 overflow-hidden">
+                      <ScrollArea className="h-[400px]">
+                        <div
+                          className="p-4 prose prose-sm max-w-none"
+                          dangerouslySetInnerHTML={{ __html: diffContent }}
+                        />
+                      </ScrollArea>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Diff Instructions */}
+                <p className="text-xs text-gray-500 text-center">
+                  Compare the current content with the AI-generated version. Click "Accept" to
+                  replace, or "Discard" to keep the original.
+                </p>
+              </div>
+            ) : (
+              // Normal Mode: Standard editor
+              <EditorContent editor={editor} />
+            )}
+          </div>
+        </ScrollArea>
       </CardContent>
     </Card>
   );

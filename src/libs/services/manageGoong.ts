@@ -9,11 +9,22 @@ export interface GoongAutocompleteParams {
 
 export const goongAutocompleteService = {
   getPredictions: (params: GoongAutocompleteParams) =>
-    goongApi.get<GoongAutocompleteResponse>("/v2/place/autocomplete", {
+    goongApi.get<GoongAutocompleteResponse>("/Place/AutoComplete", {
       params: {
         input: params.input,
         location: params.location ? `${params.location.lat},${params.location.lng}` : undefined,
         has_deprecated_administrative_unit: params.has_deprecated_administrative_unit ?? true,
+      },
+    }),
+};
+
+export const goongDirectionsService = {
+  getDirections: (origin: string, destination: string, vehicle: string) =>
+    goongApi.get("/Direction", {
+      params: {
+        origin,
+        destination,
+        vehicle,
       },
     }),
 };

@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Controller, useFieldArray } from "react-hook-form";
-import { useEffect } from "react";
+import { DatePicker } from "@/components/date-picker";
+import { useEffect, useCallback } from "react";
 import {
   Select,
   SelectContent,
@@ -23,31 +24,114 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useSelector } from "react-redux";
+import type { AppDispatch, RootState } from "@/libs/stores";
+import { getAllVariantAttributesThunk } from "@/libs/stores/attributeManager/thunk";
+import { fetchAllProductOptionTypesThunk } from "@/libs/stores/productOptionManager/thunk";
+import NumberInput from "@/components/number-input";
 
 interface VariationFormProps extends ProductFormProps<ProductVariant> {
   onSubmit?: (data: ProductVariant) => void;
+  dispatch?: AppDispatch;
 }
 
-export const VariationForm = ({ form, onSubmit, state }: VariationFormProps) => {
-  const capacityUnits = ["ML", "L", "G", "KG", "OZ"];
-  const containerTypes = [
-    "BOTTLE",
-    "TUBE",
-    "JAR",
-    "STICK",
-    "PENCIL",
-    "COMPACT",
-    "PALLETE",
-    "SACHET",
-    "VIAL",
-    "ROLLER_BOTTLE",
-  ];
-  const dispenserTypes = ["PUMP", "SPRAY", "DROPPER", "ROLL_ON", "TWIST_UP", "SQUEEZE", "NONE"];
-  const attributeUnits = ["%", "MG", "G", "ML", "L", "IU", "PPM", "NONE"];
+export const VariationForm = ({ form, onSubmit, state, dispatch }: VariationFormProps) => {
+  const variantAttributes = useSelector(
+    (state: RootState) => state?.manageAttribute?.attributes?.data,
+  );
+
+  // Get product options from Redux store
+  const productOptions = useSelector((state: RootState) => state?.manageProductOption);
+
+  // Map options to code arrays for backward compatibility
+  const capacityUnits =
+    productOptions?.capacityUnits?.length > 0
+      ? productOptions.capacityUnits.map((o) => {
+          return {
+            code: o.code,
+            name: `${o.code} (${o.name})`,
+          };
+        })
+      : [
+          { code: "ML", name: "Milliliter (ML)" },
+          { code: "L", name: "Liter (L)" },
+          { code: "G", name: "Gram (G)" },
+          { code: "KG", name: "Kilogram (KG)" },
+          { code: "OZ", name: "Ounce (OZ)" },
+        ];
+  const containerTypes =
+    productOptions?.containerTypes?.length > 0
+      ? productOptions.containerTypes.map((o) => {
+          return {
+            code: o.code,
+            name: o.name,
+          };
+        })
+      : [
+          { code: "BOTTLE", name: "Bottle" },
+          { code: "TUBE", name: "Tube" },
+          { code: "JAR", name: "Jar" },
+          { code: "STICK", name: "Stick" },
+          { code: "PENCIL", name: "Pencil" },
+          { code: "COMPACT", name: "Compact" },
+          { code: "PALLETE", name: "Palette" },
+          { code: "SACHET", name: "Sachet" },
+          { code: "VIAL", name: "Vial" },
+          { code: "ROLLER_BOTTLE", name: "Roller Bottle" },
+        ];
+  const dispenserTypes =
+    productOptions?.dispenserTypes?.length > 0
+      ? productOptions.dispenserTypes.map((o) => {
+          return {
+            code: o.code,
+            name: o.name,
+          };
+        })
+      : [
+          { code: "PUMP", name: "Pump" },
+          { code: "SPRAY", name: "Spray" },
+          { code: "DROPPER", name: "Dropper" },
+          { code: "ROLL_ON", name: "Roll On" },
+          { code: "TWIST_UP", name: "Twist Up" },
+          { code: "SQUEEZE", name: "Squeeze" },
+          { code: "NONE", name: "None" },
+        ];
+  const attributeUnits =
+    productOptions?.attributeUnits?.length > 0
+      ? productOptions.attributeUnits.map((o) => {
+          return {
+            code: o.code,
+            name: `${o.code} (${o.name})`,
+          };
+        })
+      : [
+          { code: "%", name: "Percentage (%)" },
+          { code: "MG", name: "Milligram (MG)" },
+          { code: "G", name: "Gram (G)" },
+          { code: "ML", name: "Milliliter (ML)" },
+          { code: "L", name: "Liter (L)" },
+          { code: "IU", name: "International Unit (IU)" },
+          { code: "PPM", name: "Parts Per Million (PPM)" },
+          { code: "NONE", name: "None" },
+        ];
 
   const { register, handleSubmit, control, watch, setError, clearErrors } = form;
 
-  const manufactureDate = watch("manufacture_date");
+  // Prevent negative number input
+  const preventNegativeInput = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "-" || e.key === "e") {
+      e.preventDefault();
+    }
+  }, []);
+
+  const preventNegativePaste = useCallback((e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pastedData = e.clipboardData.getData("text");
+    if (pastedData.includes("-") || parseFloat(pastedData) < 0) {
+      e.preventDefault();
+    }
+  }, []);
+
+  const manufactureDate = watch("manufacturing_date");
   const expiryDate = watch("expiry_date");
 
   const today = new Date(Date.now() + 86400000).toISOString().split("T")[0];
@@ -72,21 +156,33 @@ export const VariationForm = ({ form, onSubmit, state }: VariationFormProps) => 
       } else if (mfgDate >= expDate) {
         setError("expiry_date", {
           type: "manual",
-          message: "Expiry date must be after manufacture date",
+          message: "Expiry date must be after manufactured date",
         });
-        setError("manufacture_date", {
+        setError("manufacturing_date", {
           type: "manual",
           message: "Manufacture date must be before expiry date",
         });
       } else {
         clearErrors("expiry_date");
-        clearErrors("manufacture_date");
+        clearErrors("manufacturing_date");
       }
     } else {
       clearErrors("expiry_date");
-      clearErrors("manufacture_date");
+      clearErrors("manufacturing_date");
     }
   }, [manufactureDate, expiryDate, today, setError, clearErrors]);
+
+  useEffect(() => {
+    if (dispatch) {
+      dispatch(
+        getAllVariantAttributesThunk({
+          limit: 100,
+        }),
+      );
+      // Fetch product options from database
+      dispatch(fetchAllProductOptionTypesThunk());
+    }
+  }, [dispatch]);
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -95,22 +191,51 @@ export const VariationForm = ({ form, onSubmit, state }: VariationFormProps) => 
 
   const handleAddAttribute = () => {
     append({
-      ingredients: "",
+      attribute_id: "",
       unit: "",
       value: 0,
-      description: "",
     });
   };
 
   const onFormSubmit = (data: ProductVariant) => {
-    console.log("Form submitted:", data);
     if (onSubmit) {
       onSubmit(data);
     }
   };
 
   const onError = (errors: any) => {
-    toast.error(errors[Object.keys(errors)[0]].message);
+    console.log("Validation errors:", errors);
+
+    // Function to extract the first error message from nested error objects
+    const getFirstErrorMessage = (obj: any): string | null => {
+      if (!obj) return null;
+
+      // If it's a direct error with message
+      if (obj.message) {
+        return obj.message;
+      }
+
+      // If it's an array of errors (for field arrays like attributes)
+      if (Array.isArray(obj)) {
+        for (const item of obj) {
+          const msg = getFirstErrorMessage(item);
+          if (msg) return msg;
+        }
+      }
+
+      // If it's an object, recursively search for error messages
+      if (typeof obj === "object") {
+        for (const key in obj) {
+          const msg = getFirstErrorMessage(obj[key]);
+          if (msg) return msg;
+        }
+      }
+
+      return null;
+    };
+
+    const errorMessage = getFirstErrorMessage(errors);
+    toast.error(errorMessage || "Validation failed. Please check all required fields.");
   };
 
   return (
@@ -127,7 +252,7 @@ export const VariationForm = ({ form, onSubmit, state }: VariationFormProps) => 
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="price" className="text-sm font-medium">
+            {/* <Label htmlFor="price" className="text-sm font-medium">
               Price (VND) <span className="text-red-500">*</span>
             </Label>
             <Input
@@ -138,53 +263,25 @@ export const VariationForm = ({ form, onSubmit, state }: VariationFormProps) => 
               placeholder="Price must be at least 1000"
               className=" col-span-3"
               autoComplete="off"
-              {...register("price", {
-                valueAsNumber: true,
-                onChange: (e) => {
-                  const number = Number(e.target.value);
-                  if (number < 0) {
-                    e.target.value = "0";
-                  }
-                },
-              })}
-              onPaste={(e) => {
-                const pastedData = e.clipboardData.getData("text");
-                const number = Number(pastedData);
-                if (number < 0) {
-                  e.preventDefault();
-                }
-              }}
+              onKeyDown={preventNegativeInput}
+              onPaste={preventNegativePaste}
+              {...register("price")}
+            /> */}
+            <Controller
+              name="price"
+              control={control}
+              render={({ field }) => (
+                <NumberInput
+                  label="Price"
+                  required
+                  currency="VND"
+                  value={field.value || 0}
+                  onChange={field.onChange}
+                  placeholder="Price must be at least 1,000 VND"
+                />
+              )}
             />
           </div>
-
-          {state.productType === "LIMITED" && (
-            <div className="space-y-2">
-              <Label htmlFor="current_stock" className="text-sm font-medium">
-                Current Stock
-              </Label>
-              <Input
-                id="current_stock"
-                type="number"
-                {...register("current_stock", {
-                  valueAsNumber: true,
-                  onChange: (e) => {
-                    const number = Number(e.target.value);
-                    if (number < 0) {
-                      e.target.value = "0";
-                    }
-                  },
-                })}
-                onPaste={(e) => {
-                  const pastedData = e.clipboardData.getData("text");
-                  const number = Number(pastedData);
-                  if (number < 0) {
-                    e.preventDefault();
-                  }
-                }}
-                placeholder="0"
-              />
-            </div>
-          )}
         </div>
 
         <div className="flex items-center space-x-2">
@@ -201,6 +298,123 @@ export const VariationForm = ({ form, onSubmit, state }: VariationFormProps) => 
         </div>
       </div>
 
+      {state?.productType === "LIMITED" && (
+        <div className=" space-y-4">
+          <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Limited Information</h3>
+          <div className="grid md:grid-cols-2 grid-cols-1 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="input_stock" className="text-sm font-medium">
+                Stock
+              </Label>
+              <Input
+                id="input_stock"
+                type="number"
+                min={0}
+                onKeyDown={preventNegativeInput}
+                onPaste={preventNegativePaste}
+                {...register("input_stock")}
+                placeholder="1"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="pre_order_limit" className="text-sm font-medium">
+                Preorder Limit
+              </Label>
+              <Input
+                id="pre_order_limit"
+                type="number"
+                min={0}
+                onKeyDown={preventNegativeInput}
+                onPaste={preventNegativePaste}
+                {...register("pre_order_limit")}
+                placeholder="e.g., 10"
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="story" className="text-sm font-medium">
+              Story
+            </Label>
+            <Textarea
+              id="story"
+              {...register("story")}
+              placeholder="Tell the story behind this product..."
+              rows={3}
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Size & Dimensions</h3>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="weight" className="text-sm font-medium">
+              Weight (g) <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="weight"
+              type="number"
+              step="0.1"
+              min={0}
+              onKeyDown={preventNegativeInput}
+              onPaste={preventNegativePaste}
+              {...register("weight")}
+              placeholder="1"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="height" className="text-sm font-medium">
+              Height (cm) <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="height"
+              type="number"
+              step="0.1"
+              min={0}
+              onKeyDown={preventNegativeInput}
+              onPaste={preventNegativePaste}
+              {...register("height")}
+              placeholder="1"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="width" className="text-sm font-medium">
+              Width (cm) <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="width"
+              type="number"
+              step="0.1"
+              min={0}
+              onKeyDown={preventNegativeInput}
+              onPaste={preventNegativePaste}
+              {...register("width")}
+              placeholder="1"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="length" className="text-sm font-medium">
+              Length (cm) <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="length"
+              type="number"
+              step="0.1"
+              min={0}
+              onKeyDown={preventNegativeInput}
+              onPaste={preventNegativePaste}
+              {...register("length")}
+              placeholder="1"
+            />
+          </div>
+        </div>
+      </div>
+
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Capacity & Container</h3>
 
@@ -212,24 +426,12 @@ export const VariationForm = ({ form, onSubmit, state }: VariationFormProps) => 
             <Input
               id="capacity"
               type="number"
-              step="0.01"
-              {...register("capacity", {
-                valueAsNumber: true,
-                onChange: (e) => {
-                  const number = Number(e.target.value);
-                  if (number < 0) {
-                    e.target.value = "0";
-                  }
-                },
-              })}
-              onPaste={(e) => {
-                const pastedData = e.clipboardData.getData("text");
-                const number = Number(pastedData);
-                if (number < 0) {
-                  e.preventDefault();
-                }
-              }}
-              placeholder="0"
+              step="0.1"
+              min={0}
+              onKeyDown={preventNegativeInput}
+              onPaste={preventNegativePaste}
+              {...register("capacity")}
+              placeholder="1"
             />
           </div>
 
@@ -237,54 +439,72 @@ export const VariationForm = ({ form, onSubmit, state }: VariationFormProps) => 
             <Label htmlFor="capacity_unit" className="text-sm font-medium">
               Capacity Unit <span className="text-red-500">*</span>
             </Label>
-            <Select>
-              <SelectTrigger id="capacity_unit" {...register("capacity_unit")}>
-                <SelectValue placeholder="Select unit" />
-              </SelectTrigger>
-              <SelectContent>
-                {capacityUnits.map((unit) => (
-                  <SelectItem key={unit} value={unit}>
-                    {unit}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Controller
+              name="capacity_unit"
+              control={control}
+              render={({ field }) => (
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <SelectTrigger id="capacity_unit">
+                    <SelectValue placeholder="Select unit" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {capacityUnits.map((unit) => (
+                      <SelectItem key={unit.code} value={unit.code}>
+                        {unit.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="container_type" className="text-sm font-medium">
               Container Type <span className="text-red-500">*</span>
             </Label>
-            <Select>
-              <SelectTrigger id="container_type" {...register("container_type")}>
-                <SelectValue placeholder="Select container type" />
-              </SelectTrigger>
-              <SelectContent>
-                {containerTypes.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Controller
+              name="container_type"
+              control={control}
+              render={({ field }) => (
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <SelectTrigger id="container_type">
+                    <SelectValue placeholder="Select container type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {containerTypes.map((type) => (
+                      <SelectItem key={type.code} value={type.code}>
+                        {type.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="dispenser_type" className="text-sm font-medium">
               Dispenser Type <span className="text-red-500">*</span>
             </Label>
-            <Select>
-              <SelectTrigger id="dispenser_type" {...register("dispenser_type")}>
-                <SelectValue placeholder="Select dispenser type" />
-              </SelectTrigger>
-              <SelectContent>
-                {dispenserTypes.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Controller
+              name="dispenser_type"
+              control={control}
+              render={({ field }) => (
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <SelectTrigger id="dispenser_type">
+                    <SelectValue placeholder="Select dispenser type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {dispenserTypes.map((type) => (
+                      <SelectItem key={type.code} value={type.code}>
+                        {type.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </div>
         </div>
       </div>
@@ -296,14 +516,24 @@ export const VariationForm = ({ form, onSubmit, state }: VariationFormProps) => 
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="manufacture_date" className="text-sm font-medium">
-              Manufacture Date
+            <Label htmlFor="manufacturing_date" className="text-sm font-medium">
+              Manufactured Date
             </Label>
-            <Input
-              id="manufacture_date"
-              type="date"
-              max={expiryDateStr || undefined}
-              {...register("manufacture_date")}
+            <Controller
+              name="manufacturing_date"
+              control={control}
+              render={({ field }) => (
+                <DatePicker
+                  value={
+                    field.value instanceof Date
+                      ? field.value.toISOString().split("T")[0]
+                      : field.value || ""
+                  }
+                  onChange={field.onChange}
+                  maxDate={state?.productType === "LIMITED" ? expiryDateStr || undefined : today}
+                  placeholder="Select manufacturing date"
+                />
+              )}
             />
           </div>
 
@@ -311,11 +541,23 @@ export const VariationForm = ({ form, onSubmit, state }: VariationFormProps) => 
             <Label htmlFor="expiry_date" className="text-sm font-medium">
               Expiry Date
             </Label>
-            <Input
-              id="expiry_date"
-              type="date"
-              min={manufactureDateStr && manufactureDateStr >= today ? manufactureDateStr : today}
-              {...register("expiry_date")}
+            <Controller
+              name="expiry_date"
+              control={control}
+              render={({ field }) => (
+                <DatePicker
+                  value={
+                    field.value instanceof Date
+                      ? field.value.toISOString().split("T")[0]
+                      : field.value || ""
+                  }
+                  onChange={field.onChange}
+                  minDate={
+                    manufactureDateStr && manufactureDateStr >= today ? manufactureDateStr : today
+                  }
+                  placeholder="Select expiry date"
+                />
+              )}
             />
           </div>
         </div>
@@ -344,7 +586,6 @@ export const VariationForm = ({ form, onSubmit, state }: VariationFormProps) => 
                   <TableHead className="font-semibold">Ingredient</TableHead>
                   <TableHead className="font-semibold">Unit</TableHead>
                   <TableHead className="font-semibold">Value</TableHead>
-                  <TableHead className="font-semibold">Description</TableHead>
                   <TableHead className="w-20 text-center font-semibold">Action</TableHead>
                 </TableRow>
               </TableHeader>
@@ -352,43 +593,55 @@ export const VariationForm = ({ form, onSubmit, state }: VariationFormProps) => 
                 {fields.map((field, index) => (
                   <TableRow key={field.id}>
                     <TableCell>
-                      <Input
-                        {...register(`attributes.${index}.ingredients`)}
-                        placeholder="e.g., Vitamin C"
-                        className="min-w-[150px]"
+                      <Controller
+                        name={`attributes.${index}.attribute_id`}
+                        control={control}
+                        render={({ field }) => (
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select ingredient" />
+                            </SelectTrigger>
+                            <SelectContent className="h-[50vh] overflow-y-scroll">
+                              {variantAttributes?.map((ingredient) => (
+                                <SelectItem key={ingredient.id} value={ingredient.id}>
+                                  {ingredient.ingredient}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
                       />
                     </TableCell>
                     <TableCell>
-                      <Select>
-                        <SelectTrigger
-                          {...register(`attributes.${index}.unit`)}
-                          className="min-w-[100px]"
-                        >
-                          <SelectValue placeholder="Select unit" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {attributeUnits.map((unit) => (
-                            <SelectItem key={unit} value={unit}>
-                              {unit}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Controller
+                        name={`attributes.${index}.unit`}
+                        control={control}
+                        render={({ field }) => (
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <SelectTrigger className="min-w-[100px]">
+                              <SelectValue placeholder="Select unit" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {attributeUnits.map((unit) => (
+                                <SelectItem key={unit.code} value={unit.code}>
+                                  {unit.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
                     </TableCell>
                     <TableCell>
                       <Input
                         type="number"
                         step="0.01"
+                        min={0}
+                        onKeyDown={preventNegativeInput}
+                        onPaste={preventNegativePaste}
                         {...register(`attributes.${index}.value`, { valueAsNumber: true })}
                         placeholder="0"
                         className="min-w-[100px]"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        {...register(`attributes.${index}.description`)}
-                        placeholder="Optional description"
-                        className="min-w-[200px]"
                       />
                     </TableCell>
                     <TableCell className="text-center">
@@ -432,7 +685,7 @@ export const VariationForm = ({ form, onSubmit, state }: VariationFormProps) => 
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="instructions" className="text-sm font-medium">
-              Instructions <span className="text-red-500">*</span>
+              Instructions
             </Label>
             <Textarea
               id="instructions"
@@ -464,20 +717,6 @@ export const VariationForm = ({ form, onSubmit, state }: VariationFormProps) => 
               rows={3}
             />
           </div>
-
-          {state.productType === "LIMITED" && (
-            <div className="space-y-2">
-              <Label htmlFor="story" className="text-sm font-medium">
-                Story
-              </Label>
-              <Textarea
-                id="story"
-                {...register("story")}
-                placeholder="Tell the story behind this product..."
-                rows={3}
-              />
-            </div>
-          )}
         </div>
       </div>
 

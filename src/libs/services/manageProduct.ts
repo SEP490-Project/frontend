@@ -2,8 +2,8 @@ import api from "../api";
 import type {
   CreateProductPayload,
   CreateVariantImagePayload,
+  LimitedProductParams,
   ProductParams,
-  ProductVariant,
 } from "../types/product";
 
 const manageProduct = {
@@ -12,7 +12,9 @@ const manageProduct = {
   getProductByTaskId: (taskId: string) => api.get(`tasks/${taskId}/products`),
   createStandardProduct: (data: CreateProductPayload) => api.post("products/standard", data),
   createLimitedProduct: (data: CreateProductPayload) => api.post("products/limited", data),
-  createProductVariants: (data: ProductVariant, productId: string) =>
+  addConceptToLimitedProduct: (productId: string, conceptId: string) =>
+    api.post(`products/limited/${productId}/concept?concept-id=${conceptId}`),
+  createProductVariants: (data: any, productId: string) =>
     api.post(`products/${productId}/variants`, data),
   createVariantsImage: (variant_id: string, payload: CreateVariantImagePayload) =>
     api.post(`products/variants/${variant_id}/images`, payload, {
@@ -20,6 +22,30 @@ const manageProduct = {
         "Content-Type": "multipart/form-data",
       },
     }),
+  deleteVariantImage: (image_id: string) => api.delete(`products/variants/images/${image_id}`),
+  updateProductState: (productId: string, status: string) =>
+    api.patch(`products/${productId}/state`, { state: status }),
+  updateProductVisibility: (productId: string, isActive: boolean) =>
+    api.patch(`products/publish/${productId}/${isActive}`),
+
+  //Update product
+  updateProductBasicInfo: (productId: string, data: any) => api.put(`products/${productId}`, data),
+  updateLimitedProductBasicInfo: (productId: string, data: any) =>
+    api.put(`products/limited/${productId}`, data),
+  updateProductVariant: (variantId: string, data: any) =>
+    api.patch(`products/variants/${variantId}`, data),
+  updateLimitedProductVariant: (variantId: string, data: any) =>
+    api.patch(`products/variants/limited/${variantId}`, data),
+
+  //Preorder product management
+  openEarlyPreorderProductDelivery: (productId: string) =>
+    api.patch(`/preorders/staff/products/${productId}/open-early`),
+  openEarlyPreorderProductPremiereDate: (productId: string) =>
+    api.patch(`/products/limited/${productId}/premiere-today`),
+
+  //Get Product (New API)
+  getAllStandardProducts: (params: ProductParams) => api.get("products/standard", { params }),
+  getAllLimitedProducts: (params: LimitedProductParams) => api.get("products/limited", { params }),
 };
 
 export default manageProduct;

@@ -5,9 +5,6 @@ import {
   FaChartLine,
   FaUserGear,
   FaRegUser,
-  FaRegCircleQuestion,
-  FaRegFileLines,
-  FaFolderOpen,
   FaHashtag,
   FaCalendarDays,
   FaFilePen,
@@ -21,12 +18,20 @@ import {
   FaListCheck,
   FaXmark,
   FaPowerOff,
-  FaClipboardList,
+  FaFileSignature,
+  FaMoneyBillTransfer,
+  FaRightLeft,
+  FaBox,
+  FaUserTie,
+  FaFileShield,
+  FaServer,
+  FaTriangleExclamation,
 } from "react-icons/fa6";
 import { useAuth } from "@/libs/hooks/useAuth";
 import { useAppDispatch } from "@/libs/stores";
 import { logout } from "@/libs/stores/authentManager/thunk";
 import { Bolt } from "lucide-react";
+import { FaShippingFast } from "react-icons/fa";
 
 interface TabItem {
   href: string;
@@ -111,8 +116,9 @@ const NavSection: React.FC<NavSectionProps> = ({
                     const subUrl = new URL(sub.href, window.location.origin);
                     const subRole = subUrl.searchParams.get("role")?.toUpperCase();
                     const isSubActive =
-                      pathname.startsWith("/manage/admin/users") &&
-                      roleParam?.toUpperCase() === subRole;
+                      (pathname.startsWith("/manage/admin/users") &&
+                        roleParam?.toUpperCase() === subRole) ||
+                      pathname === sub.href;
 
                     return (
                       <NavLink
@@ -171,8 +177,32 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const roleBasedTabs: Record<string, TabItem[]> = {
     BRAND_PARTNER: [
-      { href: "/manage/brand/contracts", label: "Contracts", icon: <FaRegFileLines size={18} /> },
-      { href: "/manage/brand/campaigns", label: "Campaigns", icon: <FaFolderOpen size={18} /> },
+      { href: "/manage/brand/contracts", label: "Contracts", icon: <FaFileContract size={18} /> },
+      {
+        href: "/manage/brand/campaigns",
+        label: "Campaigns & Tasks",
+        icon: <FaListCheck size={18} />,
+      },
+      {
+        href: "/manage/brand/contract-payment",
+        label: "Contract Payment",
+        icon: <FaMoneyBillTransfer size={18} />,
+      },
+      {
+        href: "/manage/brand/payment-transaction",
+        label: "Payment Transaction",
+        icon: <FaRightLeft size={18} />,
+      },
+      {
+        href: "/manage/brand/product-approval",
+        label: "Products",
+        icon: <FaBox size={18} />,
+      },
+      {
+        href: "/manage/brand/content-approval",
+        label: "Contents",
+        icon: <FaFileSignature size={18} />,
+      },
     ],
     MARKETING_STAFF: [
       { href: "/manage/marketing/brands", label: "Brands", icon: <FaHandshake size={18} /> },
@@ -183,25 +213,77 @@ const Sidebar: React.FC<SidebarProps> = ({
       },
       {
         href: "/manage/marketing/campaigns",
-        label: "Campaigns",
+        label: "Campaigns & Tasks",
         icon: <FaListCheck size={18} />,
       },
       {
-        href: "/manage/marketing/content-approval",
-        label: "Contents",
-        icon: <FaClipboardList size={18} />,
+        href: "/manage/marketing/contract-payment",
+        label: "Contract Payment",
+        icon: <FaMoneyBillTransfer size={18} />,
+      },
+      {
+        href: "/manage/marketing/payment-transaction",
+        label: "Payment Transaction",
+        icon: <FaRightLeft size={18} />,
+      },
+      {
+        href: "/manage/marketing/violations",
+        label: "Violations",
+        icon: <FaTriangleExclamation size={18} />,
+      },
+      {
+        href: "/manage/marketing/contents-approval",
+        label: "Content Approval",
+        icon: <FaFileSignature size={18} />,
+      },
+      {
+        href: "/manage/marketing/task-schedule",
+        label: "Task Schedule",
+        icon: <FaCalendarDays size={18} />,
       },
     ],
     SALES_STAFF: [
       { href: "/manage/sale/task", label: "Tasks & Schedule", icon: <FaCalendarDays size={18} /> },
-      { href: "/manage/sale/product", label: "Product", icon: <FaBoxOpen size={18} /> },
+      {
+        href: "/manage/sale/product",
+        label: "Product",
+        icon: <FaBoxOpen size={18} />,
+        subTabs: [
+          { href: "/manage/sale/product", label: "Standard", icon: <FaBoxOpen size={14} /> },
+          { href: "/manage/sale/product/limited", label: "Limited", icon: <FaBoxOpen size={14} /> },
+        ],
+      },
       { href: "/manage/sale/category", label: "Category", icon: <FaFolderTree size={18} /> },
-      { href: "/manage/sale/order", label: "Order", icon: <FaCartShopping size={18} /> },
+      {
+        href: "/manage/sale/order",
+        label: "Order",
+        icon: <FaCartShopping size={18} />,
+        subTabs: [
+          { href: "/manage/sale/order", label: "Order", icon: <FaCartShopping size={14} /> },
+          {
+            href: "/manage/sale/order/pre-order",
+            label: "Pre-Order",
+            icon: <FaCartShopping size={14} />,
+          },
+        ],
+      },
       { href: "/manage/sale/review", label: "Review", icon: <FaStar size={18} /> },
       {
         href: "/manage/sale/transaction",
         label: "Transaction",
         icon: <FaMoneyCheckDollar size={18} />,
+        subTabs: [
+          {
+            href: "/manage/sale/transaction",
+            label: "Order",
+            icon: <FaMoneyCheckDollar size={14} />,
+          },
+          {
+            href: "/manage/sale/transaction/pre-order",
+            label: "Pre-Order",
+            icon: <FaMoneyCheckDollar size={14} />,
+          },
+        ],
       },
     ],
     CONTENT_STAFF: [
@@ -210,7 +292,12 @@ const Sidebar: React.FC<SidebarProps> = ({
         label: "Tasks & Schedule",
         icon: <FaCalendarDays size={18} />,
       },
-      { href: "/manage/content/blog", label: "Content", icon: <FaFilePen size={18} /> },
+      { href: "/manage/content/all-contents", label: "Content", icon: <FaFilePen size={18} /> },
+      {
+        href: "/manage/content/schedules",
+        label: "Scheduled Contents",
+        icon: <FaCalendarDays size={18} />,
+      },
       { href: "/manage/content/tag", label: "Tag", icon: <FaHashtag size={18} /> },
     ],
     ADMIN: [
@@ -224,14 +311,53 @@ const Sidebar: React.FC<SidebarProps> = ({
         label: "Attribute",
         icon: <FaHashtag size={18} />,
       },
-      { href: "/manage/admin/configurations", label: "Configurations", icon: <Bolt size={18} /> },
+      {
+        href: "/manage/admin/product-options",
+        label: "Product Options",
+        icon: <FaBoxOpen size={18} />,
+      },
+      {
+        href: "/manage/admin/channel",
+        label: "Channel",
+        icon: <FaFolderTree size={18} />,
+      },
+      {
+        href: "/manage/admin/configurations",
+        label: "Configurations",
+        icon: <Bolt size={18} />,
+        subTabs: [
+          {
+            href: "/manage/admin/configurations/representative",
+            label: "Representative",
+            icon: <FaUserTie size={14} />,
+          },
+          {
+            href: "/manage/admin/configurations/terms-of-service",
+            label: "Terms of Service",
+            icon: <FaFileContract size={14} />,
+          },
+          {
+            href: "/manage/admin/configurations/privacy-policy",
+            label: "Privacy Policy",
+            icon: <FaFileShield size={14} />,
+          },
+        ],
+      },
+      {
+        href: "/manage/admin/system-specs",
+        label: "System Specs",
+        icon: <FaServer size={18} />,
+      },
     ],
   };
 
-  const otherTabs: TabItem[] = [
-    { href: "/manage/account", label: "Account", icon: <FaRegUser size={18} /> },
-    { href: "/manage/help", label: "Help", icon: <FaRegCircleQuestion size={18} /> },
-  ];
+  const otherTabs: Record<string, TabItem[]> = {
+    DEFAULT: [{ href: "/manage/account", label: "Account", icon: <FaRegUser size={18} /> }],
+    ADMIN: [
+      { href: "/manage/account", label: "Account", icon: <FaRegUser size={18} /> },
+      { href: "/manage/ghn-mock", label: "GHN Mocking", icon: <FaShippingFast size={18} /> },
+    ],
+  };
 
   return (
     <>
@@ -269,7 +395,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           />
           <NavSection
             title="Others"
-            items={otherTabs}
+            items={otherTabs[role === "ADMIN" ? "ADMIN" : "DEFAULT"] || []}
             collapsed={collapsed}
             pathname={pathname}
             roleParam={roleParam}
@@ -342,7 +468,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 />
                 <NavSection
                   title="Others"
-                  items={otherTabs}
+                  items={otherTabs[role === "ADMIN" ? "ADMIN" : "DEFAULT"] || []}
                   collapsed={false}
                   pathname={pathname}
                   roleParam={roleParam}

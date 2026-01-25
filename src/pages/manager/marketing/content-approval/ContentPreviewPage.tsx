@@ -1,9 +1,7 @@
 import React, { useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { toast } from "sonner";
 import ContentPreview from "@/components/manage/marketing/content-approval/ContentPreview";
 import type { Content } from "@/libs/types/content";
-import { manageContent } from "@/libs/services/manageContent";
 
 const ContentPreviewPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -14,30 +12,10 @@ const ContentPreviewPage: React.FC = () => {
     navigate("/manage/marketing/content-approval");
   }, [navigate]);
 
-  // Handle approving content
-  const handleApproveContent = async (content: Content) => {
-    try {
-      await manageContent.approveContent(content.id);
-      toast.success(`Content "${content.title}" has been approved.`);
-      handleBack();
-    } catch (error) {
-      console.error("Error approving content:", error);
-      toast.error("Failed to approve content. Please try again.");
-    }
-  };
-
-  // Handle rejecting content
-  const handleRejectContent = async (content: Content) => {
-    try {
-      // For now, using a default rejection reason. This should be updated to show a modal for reason input
-      const defaultReason = "Content does not meet quality standards";
-      await manageContent.rejectContent(content.id, defaultReason);
-      toast.success(`Content "${content.title}" has been rejected.`);
-      handleBack();
-    } catch (error) {
-      console.error("Error rejecting content:", error);
-      toast.error("Failed to reject content. Please try again.");
-    }
+  // Handle content updated
+  const handleContentUpdated = (updatedContent: Content) => {
+    // Handle content update if needed
+    console.log("Content updated:", updatedContent);
   };
 
   if (!id) {
@@ -51,14 +29,14 @@ const ContentPreviewPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen p-6">
+    <>
       <ContentPreview
         contentId={id}
-        onBack={handleBack}
-        onApproveContent={handleApproveContent}
-        onRejectContent={handleRejectContent}
+        isOpen={true}
+        onClose={handleBack}
+        onContentUpdated={handleContentUpdated}
       />
-    </div>
+    </>
   );
 };
 

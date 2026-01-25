@@ -4,14 +4,14 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 
 interface ForgotPasswordRequest {
   email: string;
 }
 
 interface ForgotPasswordFormProps {
-  onSubmit: (data: ForgotPasswordRequest) => void;
+  onSubmit: (data: ForgotPasswordRequest) => void | Promise<void>;
 }
 
 const ForgotPasswordSchema = yup.object().shape({
@@ -20,12 +20,14 @@ const ForgotPasswordSchema = yup.object().shape({
 
 export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onSubmit }) => {
   const navigate = useNavigate();
+
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<ForgotPasswordRequest>({
     resolver: yupResolver(ForgotPasswordSchema),
+    mode: "onSubmit",
   });
 
   return (
@@ -44,8 +46,8 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onSubmit
           {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
         </div>
 
-        <Button type="submit" className="mt-4 text-white" size={"lg"}>
-          Send Reset Link
+        <Button type="submit" className="mt-4 text-white" size="lg" disabled={isSubmitting}>
+          {isSubmitting ? "Sending..." : "Send Reset Link"}
         </Button>
       </form>
 

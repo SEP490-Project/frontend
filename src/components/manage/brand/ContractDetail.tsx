@@ -1,5 +1,3 @@
-"use client";
-
 import {
   ArrowLeft,
   Check,
@@ -22,9 +20,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useContractDetail } from "@/libs/hooks/useContractDetail";
 import { toast } from "sonner";
+import {
+  isViolationStatus,
+  isBrandViolationStatus,
+  isKOLViolationStatus,
+} from "@/libs/types/violation";
+import type { ContractViolation } from "@/libs/types/violation";
+import { manageViolation } from "@/libs/services/manageViolation";
+import ContractViolationSection from "./ContractViolationSection";
+import ViolationPenaltyPayment from "./ViolationPenaltyPayment";
+import ViolationProofReview from "./ViolationProofReview";
+import ReportKOLViolation from "./ReportKOLViolation";
 
 interface ContractDetailProps {
   contractId: string;
@@ -44,6 +53,25 @@ export default function ContractDetail({ contractId, onBack }: ContractDetailPro
 
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [violation, setViolation] = useState<ContractViolation | null>(null);
+  const [violationLoading, setViolationLoading] = useState(false);
+  const [showPenaltyPayment, setShowPenaltyPayment] = useState(false);
+  const [showProofReview, setShowProofReview] = useState(false);
+
+  // Fetch violation data if contract is in violation status
+  const fetchViolationData = useCallback(async () => {
+    if (!contractDetail || !isViolationStatus(contractDetail.status)) return;
+
+    setViolationLoading(true);
+    try {
+      const response = await manageViolation.getByContractId(contractDetail.id);
+      setViolation(response.data.data);
+    } catch (error) {
+      console.error("Failed to fetch violation data:", error);
+    } finally {
+      setViolationLoading(false);
+    }
+  }, [contractDetail]);
 
   useEffect(() => {
     if (contractId) {
@@ -51,8 +79,20 @@ export default function ContractDetail({ contractId, onBack }: ContractDetailPro
     }
     return () => {
       clearContractDetail();
+      setViolation(null);
     };
   }, [contractId, fetchContractDetail, clearContractDetail]);
+
+  // Fetch violation when contract is loaded and in violation status
+  useEffect(() => {
+    if (contractDetail && isViolationStatus(contractDetail.status)) {
+      if (contractDetail.violation) {
+        setViolation(contractDetail.violation);
+      } else {
+        fetchViolationData();
+      }
+    }
+  }, [contractDetail, contractDetail?.status, contractDetail?.violation, fetchViolationData]);
 
   const handleApprove = () => {
     setShowApproveDialog(true);
@@ -88,6 +128,17 @@ export default function ContractDetail({ contractId, onBack }: ContractDetailPro
     }
   };
 
+  const handleReportKOLViolationSuccess = () => {
+    // Refresh contract details after reporting violation
+    fetchContractDetail(contractId);
+  };
+
+  const handleViolationAction = () => {
+    // Refresh contract and violation data
+    fetchContractDetail(contractId);
+    fetchViolationData();
+  };
+
   const getStatusStyles = (status: string) => {
     switch (status) {
       case "ACTIVE":
@@ -98,6 +149,24 @@ export default function ContractDetail({ contractId, onBack }: ContractDetailPro
         return "bg-blue-100 text-blue-800";
       case "TERMINATED":
         return "bg-red-100 text-red-800";
+      // Brand Violation Statuses
+      case "BRAND_VIOLATED":
+        return "bg-orange-100 text-orange-800";
+      case "BRAND_PENALTY_PENDING":
+        return "bg-orange-100 text-orange-800";
+      case "BRAND_PENALTY_PAID":
+        return "bg-orange-100 text-orange-800";
+      // KOL Violation Statuses
+      case "KOL_VIOLATED":
+        return "bg-purple-100 text-purple-800";
+      case "KOL_REFUND_PENDING":
+        return "bg-purple-100 text-purple-800";
+      case "KOL_PROOF_SUBMITTED":
+        return "bg-purple-100 text-purple-800";
+      case "KOL_PROOF_REJECTED":
+        return "bg-purple-100 text-purple-800";
+      case "KOL_REFUND_APPROVED":
+        return "bg-purple-100 text-purple-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -197,7 +266,83 @@ export default function ContractDetail({ contractId, onBack }: ContractDetailPro
               </Button>
             </div>
           )}
+
+          {/* Report KOL Violation button for ACTIVE contracts */}
+          {contractDetail.status === "ACTIVE" && (
+            <ReportKOLViolation
+              contractId={contractDetail.id}
+              contractNumber={contractDetail.contract_number}
+              onReportSuccess={handleReportKOLViolationSuccess}
+            />
+          )}
         </div>
+
+        {/* Violation Details Section */}
+        {isViolationStatus(contractDetail.status) && (
+          <div className="mb-6">
+            {violationLoading ? (
+              <div className="bg-gray-50 rounded-lg p-6 flex items-center justify-center border border-dashed border-gray-200">
+                <Loader2 className="h-6 w-6 animate-spin text-gray-400 mr-3" />
+                <span className="text-gray-600">Loading violation details...</span>
+              </div>
+            ) : violation ? (
+              <>
+                <ContractViolationSection
+                  violation={violation}
+                  contractStatus={contractDetail.status}
+                  userRole="brand"
+                  onPayPenalty={() => setShowPenaltyPayment(true)}
+                  onReviewProof={() => setShowProofReview(true)}
+                  onSubmitProof={() => {}}
+                />
+
+                {/* Penalty Payment Dialog */}
+                {showPenaltyPayment && isBrandViolationStatus(contractDetail.status) && (
+                  <Dialog open={showPenaltyPayment} onOpenChange={setShowPenaltyPayment}>
+                    <DialogContent className="max-w-lg">
+                      <ViolationPenaltyPayment
+                        violation={violation}
+                        contractId={contractDetail.id}
+                        onPaymentCreated={() => {
+                          handleViolationAction();
+                          setShowPenaltyPayment(false);
+                        }}
+                      />
+                    </DialogContent>
+                  </Dialog>
+                )}
+
+                {/* Proof Review Dialog */}
+                {showProofReview && isKOLViolationStatus(contractDetail.status) && (
+                  <Dialog open={showProofReview} onOpenChange={setShowProofReview}>
+                    <DialogContent className="max-w-2xl">
+                      <ViolationProofReview
+                        violation={violation}
+                        contractId={contractDetail.id}
+                        onReviewComplete={() => {
+                          handleViolationAction();
+                          setShowProofReview(false);
+                        }}
+                      />
+                    </DialogContent>
+                  </Dialog>
+                )}
+              </>
+            ) : (
+              <div className="bg-red-50 rounded-lg p-6 border border-red-200 text-center">
+                <AlertTriangle className="h-8 w-8 text-red-400 mx-auto mb-2" />
+                <p className="text-red-800 font-medium">Unable to load violation details</p>
+                <Button
+                  variant="link"
+                  onClick={handleViolationAction}
+                  className="text-red-600 mt-2"
+                >
+                  Try Again
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
@@ -541,7 +686,7 @@ export default function ContractDetail({ contractId, onBack }: ContractDetailPro
         </div>
 
         {/* Enhanced Contract Details */}
-        <div className="space-y-6">
+        <div className="space-y-6 mt-6">
           {/* Financial Information */}
           <div className="bg-green-50 rounded-lg border border-green-200 p-6">
             <div className="flex items-center gap-3 mb-4">

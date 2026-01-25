@@ -32,7 +32,17 @@ export const getCampaignById = createAsyncThunk(
 export const campaign = createAsyncThunk(
   "/campaigns",
   async (
-    req: { page: number; limit: number; keywords?: string; status?: string; type?: string },
+    req: {
+      page: number;
+      limit: number;
+      keyword?: string;
+      status?: string;
+      type?: string;
+      start_date: string;
+      end_date: string;
+      sort_by: string;
+      sort_order: string;
+    },
     { rejectWithValue },
   ) => {
     try {
@@ -40,7 +50,7 @@ export const campaign = createAsyncThunk(
       return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
-      return rejectWithValue(err.response?.data?.message || "Thất bại");
+      return rejectWithValue(err.response?.data?.message || "Failed");
     }
   },
 );
@@ -53,7 +63,75 @@ export const createCampaign = createAsyncThunk(
       return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
-      return rejectWithValue(err.response?.data?.message || "Thất bại");
+      return rejectWithValue(err.response?.data?.message || "Failed");
+    }
+  },
+);
+
+export const createInternalCampaign = createAsyncThunk(
+  "/campaigns/create/internal",
+  async (req: CampaignRequest, { rejectWithValue }) => {
+    try {
+      const response = await manageCampaign.createInternalCampaign(req);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Failed");
+    }
+  },
+);
+
+export const approveCampaign = createAsyncThunk(
+  "/campaigns/approve",
+  async (req: string, { rejectWithValue }) => {
+    try {
+      const response = await manageCampaign.approveCampaign(req);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Failed");
+    }
+  },
+);
+
+export const rejectCampaign = createAsyncThunk(
+  "/campaigns/reject",
+  async ({ id, reason }: { id: string; reason?: string }, { rejectWithValue }) => {
+    try {
+      const response = await manageCampaign.rejectCampaign(id, reason);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Failed");
+    }
+  },
+);
+
+export const suggestCampaign = createAsyncThunk(
+  "/campaigns/suggest",
+  async (req: string, { rejectWithValue }) => {
+    try {
+      const response = await manageCampaign.campaignSuggest(req);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Failed");
+    }
+  },
+);
+
+export const updateCampaign = createAsyncThunk(
+  "/campaigns/update",
+  async (
+    { campaignId, request }: { campaignId: string; request: CampaignRequest },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await manageCampaign.updateCampaign(campaignId, request);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || "Failed");
     }
   },
 );

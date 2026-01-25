@@ -16,27 +16,30 @@ import CreateAttributeDialog from "./CreateAttributeDialog";
 import { Trash } from "lucide-react";
 import { DeleteModal } from "@/components/modal/DeleteModal";
 import { useAppDispatch } from "@/libs/stores";
-import { getAllVariantAttributesForAdminThunk } from "@/libs/stores/attributeManager/thunk";
+import { getAllVariantAttributesThunk } from "@/libs/stores/attributeManager/thunk";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/libs/stores";
 
 const Attribute: React.FC = () => {
   const dispatch = useAppDispatch();
   const attributes = useSelector((state: RootState) => state?.manageAttribute?.attributes?.data);
+  const pagination = useSelector(
+    (state: RootState) => state?.manageAttribute?.attributes?.pagination,
+  );
   const loading = useSelector((state: RootState) => state?.manageAttribute?.loading);
   const error = useSelector((state: RootState) => state?.manageAttribute?.error);
 
   const [page, setPage] = useState(1);
-  const [limit] = useState(7);
+  const [limit] = useState(5);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    dispatch(getAllVariantAttributesForAdminThunk({ page, limit, search }));
+    dispatch(getAllVariantAttributesThunk({ page, limit, search }));
   }, [dispatch, page, limit, search]);
 
   const handleCreated = async () => {
     // Refresh list after create using Redux thunk
-    await dispatch(getAllVariantAttributesForAdminThunk({ page: 1, limit, search: "" }));
+    await dispatch(getAllVariantAttributesThunk({ page: 1, limit, search: "" }));
     setSearch("");
     setPage(1);
   };
@@ -129,9 +132,9 @@ const Attribute: React.FC = () => {
             </TableBody>
           </Table>
           <PaginationTable
-            page={page}
-            totalItems={attributes?.length || 0}
-            pageSize={limit}
+            page={pagination?.page || 1}
+            totalItems={pagination?.total || 0}
+            pageSize={pagination?.limit || 10}
             onPageChange={(p) => setPage(p)}
           />
         </div>

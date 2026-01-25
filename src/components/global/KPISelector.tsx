@@ -30,7 +30,7 @@ const KPI_METRICS_GENERAL = [
   { value: "likes", label: "Total Likes", type: "number" },
   { value: "comments", label: "Total Comments", type: "number" },
   { value: "reach", label: "Reach", type: "number" },
-  { value: "click_through", label: "Click-through Rate (%)", type: "percent" },
+  { value: "click_through", label: "Click-through Total", type: "number" },
   { value: "sales", label: "Sales (VND)", type: "number" },
   { value: "event_participation", label: "Event Participation Count", type: "number" },
 ];
@@ -43,7 +43,7 @@ const getMetricsForType = (type?: string) => {
         { value: "reach", label: "Reach", type: "number" },
         { value: "likes", label: "Total Likes", type: "number" },
         { value: "comments", label: "Total Comments", type: "number" },
-        { value: "click_through", label: "Click-through Rate (%)", type: "percent" },
+        { value: "click_through", label: "Click-through Total", type: "number" },
       ];
     case "CO_PRODUCE":
       return [

@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import {
   contents,
   createContent,
@@ -10,19 +10,43 @@ import {
   submitContent,
   approveContent,
   rejectContent,
+  getTikTokCreatorInfo,
+  generateAIContent,
+  generateStructuredContent,
+  getSupportedAIModels,
 } from "./thunk";
-import type { ContentResponse } from "@/libs/types/content";
-import {
-  convertApiContentArrayToLegacy,
-  convertApiContentToLegacy,
-  type LegacyContent,
-} from "@/libs/utils/contentConverter";
+import type {
+  ContentResponse,
+  Content,
+  TikTokCreatorInfo,
+  AIModel,
+  TipTapDocument,
+} from "@/libs/types/content";
 import { toast } from "sonner";
 
 interface stateType {
   loading: boolean;
-  contents: LegacyContent[]; // Use legacy format for backward compatibility
-  content: LegacyContent | null;
+  contents: Content[];
+  content: Content | null;
+  tikTokCreatorInfo: TikTokCreatorInfo | null;
+  aiModels: AIModel[];
+  generatedContent: string | null;
+  structuredContent: {
+    title: string;
+    content: string | TipTapDocument;
+    description?: string;
+    tags?: string[];
+    excerpt?: string;
+  } | null;
+  // Streaming state
+  isStreaming: boolean;
+  streamingContent: string;
+  streamingTipTapContent: TipTapDocument | null;
+  tokensUsed: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  } | null;
   pagination: {
     page: number;
     limit: number;
@@ -38,6 +62,15 @@ const initialState: stateType = {
   loading: false,
   contents: [],
   content: null,
+  tikTokCreatorInfo: null,
+  aiModels: [],
+  generatedContent: null,
+  structuredContent: null,
+  // Streaming initial state
+  isStreaming: false,
+  streamingContent: "",
+  streamingTipTapContent: null,
+  tokensUsed: null,
   pagination: null,
   error: null,
 };
@@ -52,6 +85,88 @@ export const manageContentSlice = createSlice({
     clearContent: (state) => {
       state.content = null;
     },
+    clearTikTokCreatorInfo: (state) => {
+      state.tikTokCreatorInfo = null;
+    },
+    clearGeneratedContent: (state) => {
+      state.generatedContent = null;
+    },
+    clearStructuredContent: (state) => {
+      state.structuredContent = null;
+    },
+    clearAIModels: (state) => {
+      state.aiModels = [];
+    },
+    // Streaming reducers
+    startStreaming: (state) => {
+      state.isStreaming = true;
+      state.streamingContent = "";
+      state.streamingTipTapContent = null;
+      state.tokensUsed = null;
+      state.error = null;
+    },
+    appendStreamingContent: (
+      state,
+      action: PayloadAction<{
+        content: string;
+        usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
+      }>,
+    ) => {
+      state.streamingContent += action.payload.content;
+      if (action.payload.usage) {
+        state.tokensUsed = action.payload.usage;
+      }
+    },
+    completeStreaming: (
+      state,
+      action: PayloadAction<{ content: string; isStructured?: boolean; title?: string }>,
+    ) => {
+      state.isStreaming = false;
+
+      // Try to parse as TipTap JSON
+      try {
+        const parsed = JSON.parse(action.payload.content);
+        if (parsed.type === "doc" && Array.isArray(parsed.content)) {
+          state.streamingTipTapContent = parsed;
+          if (action.payload.isStructured) {
+            state.structuredContent = {
+              title: action.payload.title || "",
+              content: parsed,
+            };
+          }
+        } else {
+          // Not a TipTap document, store as string
+          if (action.payload.isStructured) {
+            state.structuredContent = {
+              title: action.payload.title || "",
+              content: action.payload.content,
+            };
+          } else {
+            state.generatedContent = action.payload.content;
+          }
+        }
+      } catch {
+        // Not JSON, store as string
+        if (action.payload.isStructured) {
+          state.structuredContent = {
+            title: action.payload.title || "",
+            content: action.payload.content,
+          };
+        } else {
+          state.generatedContent = action.payload.content;
+        }
+      }
+    },
+    streamingError: (state, action: PayloadAction<string>) => {
+      state.isStreaming = false;
+      state.error = action.payload;
+    },
+    clearStreaming: (state) => {
+      state.isStreaming = false;
+      state.streamingContent = "";
+      state.streamingTipTapContent = null;
+      state.tokensUsed = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -62,9 +177,9 @@ export const manageContentSlice = createSlice({
       })
       .addCase(contents.fulfilled, (state, action) => {
         state.loading = false;
-        // Convert new API format to legacy format for backward compatibility
+        // Use API response directly
         const apiResponse = action.payload as ContentResponse;
-        state.contents = convertApiContentArrayToLegacy(apiResponse.data);
+        state.contents = apiResponse.data;
         state.pagination = apiResponse.pagination;
       })
       .addCase(contents.rejected, (state, action) => {
@@ -79,8 +194,7 @@ export const manageContentSlice = createSlice({
       })
       .addCase(createContent.fulfilled, (state, action) => {
         state.loading = false;
-        const legacyContent = convertApiContentToLegacy(action.payload.data);
-        state.contents.unshift(legacyContent);
+        state.contents.unshift(action.payload.data);
         toast.success("Content created successfully!", {
           description: "Your content has been saved and is ready for review.",
           duration: 4000,
@@ -102,11 +216,14 @@ export const manageContentSlice = createSlice({
       })
       .addCase(contentDetail.fulfilled, (state, action) => {
         state.loading = false;
-        // Content detail API returns an array with single item, extract the first one
-        const apiResponse = action.payload as ContentResponse;
-        const contentItem = apiResponse.data[0];
+        // Content detail API returns data object directly
+        const apiResponse = action.payload;
+        // Handle both array format (data[0]) and object format (data)
+        const contentItem = Array.isArray(apiResponse.data)
+          ? apiResponse.data[0]
+          : apiResponse.data;
         if (contentItem) {
-          state.content = convertApiContentToLegacy(contentItem);
+          state.content = contentItem;
         }
       })
       .addCase(contentDetail.rejected, (state, action) => {
@@ -121,13 +238,13 @@ export const manageContentSlice = createSlice({
       })
       .addCase(updateContent.fulfilled, (state, action) => {
         state.loading = false;
-        const legacyContent = convertApiContentToLegacy(action.payload.data);
-        const index = state.contents.findIndex((c) => c.id === legacyContent.id);
+        const updatedContent = action.payload.data;
+        const index = state.contents.findIndex((c) => c.id === updatedContent.id);
         if (index !== -1) {
-          state.contents[index] = legacyContent;
+          state.contents[index] = updatedContent;
         }
-        if (state.content && state.content.id === legacyContent.id) {
-          state.content = legacyContent;
+        if (state.content && state.content.id === updatedContent.id) {
+          state.content = updatedContent;
         }
         toast.success("Content updated successfully!", {
           description: "Your content has been updated and is ready for review.",
@@ -286,9 +403,112 @@ export const manageContentSlice = createSlice({
           description: "Please check your connection and try again.",
           duration: 4000,
         });
+      })
+
+      // Get TikTok Creator Info
+      .addCase(getTikTokCreatorInfo.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getTikTokCreatorInfo.fulfilled, (state, action) => {
+        state.loading = false;
+        state.tikTokCreatorInfo = action.payload.data.data;
+        toast.success("TikTok creator information loaded!", {
+          description: "Successfully retrieved creator profile data.",
+          duration: 4000,
+        });
+      })
+      .addCase(getTikTokCreatorInfo.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        toast.error("Failed to load TikTok creator information", {
+          description: "Please check your connection and try again.",
+          duration: 4000,
+        });
+      })
+
+      // Generate AI Content
+      .addCase(generateAIContent.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.generatedContent = null;
+      })
+      .addCase(generateAIContent.fulfilled, (state, action) => {
+        state.loading = false;
+        state.generatedContent = action.payload.data.content;
+        toast.success("AI content generated!", {
+          description: "Your content has been successfully generated.",
+          duration: 4000,
+        });
+      })
+      .addCase(generateAIContent.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        toast.error("Failed to generate AI content", {
+          description: "Please check your connection and try again.",
+          duration: 4000,
+        });
+      })
+
+      // Generate Structured Content
+      .addCase(generateStructuredContent.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.structuredContent = null;
+      })
+      .addCase(generateStructuredContent.fulfilled, (state, action) => {
+        state.loading = false;
+        state.structuredContent = action.payload.data;
+        toast.success("Structured content generated!", {
+          description: "Your structured content has been successfully generated.",
+          duration: 4000,
+        });
+      })
+      .addCase(generateStructuredContent.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        toast.error("Failed to generate structured content", {
+          description: "Please check your connection and try again.",
+          duration: 4000,
+        });
+      })
+
+      // Get Supported AI Models
+      .addCase(getSupportedAIModels.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getSupportedAIModels.fulfilled, (state, action) => {
+        state.loading = false;
+        state.aiModels = action.payload.data;
+        // toast.success("AI models loaded!", {
+        //   description: "Available AI models have been loaded.",
+        //   duration: 4000,
+        // });
+      })
+      .addCase(getSupportedAIModels.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        // toast.error("Failed to load AI models", {
+        //   description: "Please check your connection and try again.",
+        //   duration: 4000,
+        // });
       });
   },
 });
 
-export const { clearError, clearContent } = manageContentSlice.actions;
+export const {
+  clearError,
+  clearContent,
+  clearTikTokCreatorInfo,
+  clearGeneratedContent,
+  clearStructuredContent,
+  clearAIModels,
+  // Streaming actions
+  startStreaming,
+  appendStreamingContent,
+  completeStreaming,
+  streamingError,
+  clearStreaming,
+} = manageContentSlice.actions;
 export const { reducer: manageContentReducer, actions: manageContentActions } = manageContentSlice;

@@ -6,9 +6,32 @@ import { Input } from "@/components/ui/input";
 interface LegalTermsProps {
   formData: any;
   onInputChange: (field: string, value: any) => void;
+  onUpdateLegalTerms?: (updates: any) => void;
 }
 
-const LegalTerms: React.FC<LegalTermsProps> = ({ formData, onInputChange }) => {
+const LegalTerms: React.FC<LegalTermsProps> = ({ formData, onInputChange, onUpdateLegalTerms }) => {
+  const compensationPercent =
+    formData.compensation_percent !== undefined
+      ? formData.compensation_percent
+      : formData.legal_terms?.compensation_percent;
+
+  const handleCompensationPercentChange = (value: any) => {
+    const numericValue = value === "" ? "" : Number(value);
+
+    if (onUpdateLegalTerms) {
+      // Edit mode - use onUpdateLegalTerms
+      onUpdateLegalTerms({ compensation_percent: numericValue });
+    } else {
+      // Create mode or Edit mode without onUpdateLegalTerms
+      // Update both locations for compatibility
+      onInputChange("compensation_percent", numericValue);
+      onInputChange("legal_terms", {
+        ...formData.legal_terms,
+        compensation_percent: numericValue,
+      });
+    }
+  };
+
   return (
     <div className="space-y-8">
       <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
@@ -37,6 +60,11 @@ const LegalTerms: React.FC<LegalTermsProps> = ({ formData, onInputChange }) => {
                       Party A loses (forfeits) the money they paid (the deposit).
                     </span>
                   </li>
+                  <li>
+                    <span className="font-medium text-rose-400">
+                      Party A must pay the current milestone.
+                    </span>
+                  </li>
                 </ul>
               </li>
               <li>
@@ -59,17 +87,13 @@ const LegalTerms: React.FC<LegalTermsProps> = ({ formData, onInputChange }) => {
                         max={100}
                         enforceRange
                         value={
-                          formData.legalTerms?.compensationPercent === null ||
-                          formData.legalTerms?.compensationPercent === undefined
+                          compensationPercent === null || compensationPercent === undefined
                             ? ""
-                            : formData.legalTerms?.compensationPercent
+                            : compensationPercent
                         }
                         onChange={(e) => {
                           const val = e.target.value;
-                          onInputChange("legalTerms", {
-                            ...formData.legalTerms,
-                            compensationPercent: val === "" ? "" : Number(val),
-                          });
+                          handleCompensationPercentChange(val);
                         }}
                         className="w-20 h-8 pr-7"
                         placeholder="0"
@@ -80,19 +104,69 @@ const LegalTerms: React.FC<LegalTermsProps> = ({ formData, onInputChange }) => {
                   </li>
                 </ul>
               </li>
-              <li>
-                <span className="font-semibold text-gray-900">
-                  Both Parties agree to stop the deal:
-                </span>
-                <ul className="list-disc pl-5 mt-1">
-                  <li>
-                    <span className="font-medium text-rose-400">
-                      The deal stops. No one has to pay money or blame the other.
-                    </span>
-                  </li>
-                </ul>
-              </li>
             </ul>
+          </div>
+
+          {/* Rules and Violations */}
+          <div className="space-y-4">
+            <Label className="text-sm font-semibold text-primary">Rules and Violations</Label>
+            <div className="space-y-4">
+              {/* Brand Rules */}
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                <h4 className="font-semibold text-orange-800 mb-3">For Brand (Party A)</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="border-l-4 border-orange-300 pl-3">
+                    <span className="font-medium text-orange-700">Payment Default:</span>
+                    <p className="text-orange-600">
+                      Failure to settle payments by the agreed due date.
+                    </p>
+                  </div>
+                  <div className="border-l-4 border-orange-300 pl-3">
+                    <span className="font-medium text-orange-700">Support Failure:</span>
+                    <p className="text-orange-600">
+                      Failure to provide samples or guidelines on time, causing delays.
+                    </p>
+                  </div>
+                  <div className="border-l-4 border-orange-300 pl-3">
+                    <span className="font-medium text-orange-700">Copyright Infringement:</span>
+                    <p className="text-orange-600">
+                      Using KOL's content outside the agreed scope/platforms.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* KOL Rules */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 className="font-semibold text-blue-800 mb-3">For KOL (Party B)</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="border-l-4 border-blue-300 pl-3">
+                    <span className="font-medium text-blue-700">Late Submission:</span>
+                    <p className="text-blue-600">
+                      Failure to submit drafts or post content on the scheduled date.
+                    </p>
+                  </div>
+                  <div className="border-l-4 border-blue-300 pl-3">
+                    <span className="font-medium text-blue-700">Exclusivity Breach:</span>
+                    <p className="text-blue-600">
+                      Promoting direct competitors during the contract term.
+                    </p>
+                  </div>
+                  <div className="border-l-4 border-blue-300 pl-3">
+                    <span className="font-medium text-blue-700">Content Removal:</span>
+                    <p className="text-blue-600">
+                      Deleting or hiding posts before the agreed expiry date.
+                    </p>
+                  </div>
+                  <div className="border-l-4 border-blue-300 pl-3">
+                    <span className="font-medium text-blue-700">Reputation Damage:</span>
+                    <p className="text-blue-600">
+                      Involved in scandals that negatively affect the Brand.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Additional Standard Terms */}

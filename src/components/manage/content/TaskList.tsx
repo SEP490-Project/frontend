@@ -1,72 +1,61 @@
-import { Eye, FileText, Video, Image } from "lucide-react";
+import { useRef, useEffect } from "react";
+import { Eye, FileText, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { useState, useEffect, useRef } from "react";
-import React from "react";
 import { motion } from "framer-motion";
-import { TaskDetail } from "./TaskDetail";
-import { useTaskManager } from "@/libs/hooks/useTask";
-import { groupTasksByDate, type LegacyTasksByDate } from "@/libs/utils/taskConverter";
+import { useTask } from "@/libs/hooks/useTask";
+import type { Task } from "@/libs/types/task";
 
 interface TaskListProps {
   currentDate: Date;
+  onViewTask?: (taskId: string) => void;
+  statusFilter?: string;
 }
 
-// Utility functions
-const getTaskIcon = (type: string) => {
-  switch (type) {
-    case "Video":
-      return <Video className="h-4 w-4 text-white" />;
-    case "Blog":
-      return <FileText className="h-4 w-4 text-white" />;
-    case "Post":
-      return <Image className="h-4 w-4 text-white" />;
-    default:
-      return <div className="w-2 h-2 bg-white rounded-full" />;
-  }
-};
+export function TaskList({ currentDate, onViewTask, statusFilter = "ALL" }: TaskListProps) {
+  const { profileTasks: tasks } = useTask();
 
-export function TaskList({ currentDate }: TaskListProps) {
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-  const [showTaskDetail, setShowTaskDetail] = useState(false);
-  const previousDateRef = useRef<Date | null>(null);
+  // Filter tasks by status
+  const filteredTasks =
+    statusFilter === "ALL" ? tasks : tasks.filter((task) => task.status === statusFilter);
 
-  const { tasks } = useTaskManager();
-
-  // Close task detail when date changes
-  useEffect(() => {
-    // Only close if this is not the first render and date actually changed
-    if (previousDateRef.current && previousDateRef.current.getTime() !== currentDate.getTime()) {
-      if (showTaskDetail) {
-        setShowTaskDetail(false);
-        setSelectedTaskId(null);
-      }
+  // Utility functions
+  const getTaskIcon = (type: string) => {
+    switch (type) {
+      case "CONTENT":
+        return <FileText className="h-4 w-4 text-white" />;
+      case "PRODUCT":
+        return <Package className="h-4 w-4 text-white" />;
+      default:
+        return <div className="w-2 h-2 bg-white rounded-full" />;
     }
-    previousDateRef.current = currentDate;
-  }, [currentDate, showTaskDetail]);
+  };
 
-  // Convert API tasks to legacy format grouped by date
-  const tasksByDate: LegacyTasksByDate[] = React.useMemo(() => {
-    return groupTasksByDate(tasks);
-  }, [tasks]);
+  const getTaskColor = (type: string): string => {
+    switch (type) {
+      case "PRODUCT":
+        return "#f7c06d";
+      case "CONTENT":
+        return "#ff88fa";
+      case "EVENT":
+        return "#6ad1ff";
+      case "OTHER":
+        return "#9976ff";
+      default:
+        return "#e5e7eb";
+    }
+  };
 
   const handleViewTaskDetail = (taskId: string) => {
-    setSelectedTaskId(taskId);
-    setShowTaskDetail(true);
+    onViewTask?.(taskId);
   };
 
-  const handleCloseTaskDetail = () => {
-    setShowTaskDetail(false);
-    setSelectedTaskId(null);
-  };
-
-  // Get the week days
+  // Get the week days (starting from Sunday to match Calendar)
   const getWeekDays = () => {
     const startOfWeek = new Date(currentDate);
-    const dayOfWeek = startOfWeek.getDay();
-    const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-    startOfWeek.setDate(startOfWeek.getDate() - daysToMonday);
+    const dayOfWeek = startOfWeek.getDay(); // Sunday = 0
+    startOfWeek.setDate(startOfWeek.getDate() - dayOfWeek);
 
     const days = [];
     for (let i = 0; i < 7; i++) {
@@ -77,62 +66,94 @@ export function TaskList({ currentDate }: TaskListProps) {
     return days;
   };
 
-  // Get tasks for a specific date
-  const getTasksForDate = (date: Date) => {
-    const targetDate = new Date(date);
-    targetDate.setHours(0, 0, 0, 0);
+  // Get tasks for a specific date (by deadline)
+  const getTasksForDate = (date: Date): Task[] => {
+    // Format target date to YYYY-MM-DD
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const targetDateStr = `${year}-${month}-${day}`;
 
-    const dayTasks = tasksByDate.find((taskGroup) => {
-      const taskDate = new Date(taskGroup.date);
-      taskDate.setHours(0, 0, 0, 0);
-      return taskDate.getTime() === targetDate.getTime();
+    return filteredTasks.filter((task) => {
+      if (!task.deadline) {
+        return false;
+      }
+
+      // Handle deadline format: "2025-12-27 00:00:00 +0000 UTC"
+      let d;
+      if (task.deadline.includes("+0000 UTC")) {
+        // Parse the specific format "YYYY-MM-DD HH:mm:ss +0000 UTC"
+        const dateStr = task.deadline.replace(" +0000 UTC", "Z");
+        d = new Date(dateStr);
+      } else {
+        // Fallback for other formats
+        const isoString = task.deadline.replace(" ", "T");
+        d = new Date(isoString);
+      }
+
+      // If the date is invalid, don't crash
+      if (isNaN(d.getTime())) {
+        return false;
+      }
+
+      const tYear = d.getFullYear();
+      const tMonth = String(d.getMonth() + 1).padStart(2, "0");
+      const tDay = String(d.getDate()).padStart(2, "0");
+      const taskDateStr = `${tYear}-${tMonth}-${tDay}`;
+
+      return taskDateStr === targetDateStr;
     });
-
-    return dayTasks?.items || [];
   };
 
   const weekDays = getWeekDays();
-  const dayNames = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+  const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+  const dayRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  // If showing task detail, render the TaskDetail component
-  if (showTaskDetail && selectedTaskId) {
-    return (
-      <TaskDetail
-        taskId={selectedTaskId}
-        onClose={handleCloseTaskDetail}
-        isVisible={showTaskDetail}
-      />
+  // Scroll to selected day when currentDate changes
+  useEffect(() => {
+    const selectedIndex = weekDays.findIndex(
+      (day) => day.toDateString() === currentDate.toDateString(),
     );
-  }
+    if (selectedIndex !== -1 && dayRefs.current[selectedIndex]) {
+      dayRefs.current[selectedIndex]?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, [currentDate, weekDays]);
 
   return (
-    <div className="h-full">
+    <div className="h-[80vh]">
       {/* Calendar Grid */}
-      <div className="grid grid-cols-7 h-full bg-white rounded-lg shadow-sm border border-border/20 p-4">
+      <div className="flex flex-col h-full bg-white rounded-lg shadow-sm border border-border/20 p-4 space-y-4 overflow-y-auto">
         {weekDays.map((day, index) => {
           const dayTasks = getTasksForDate(day);
           const isToday = new Date().toDateString() === day.toDateString();
+          const isSelected = currentDate.toDateString() === day.toDateString();
 
           return (
             <motion.div
               key={day.toISOString()}
+              ref={(el) => {
+                dayRefs.current[index] = el;
+              }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}
-              className={`flex flex-col h-full ${
-                index < 6 ? "border-r border-border/30 pr-4" : ""
-              } ${index > 0 ? "pl-4" : ""}`}
+              className={`flex flex-row ${index < 6 ? "border-b border-border/30 pb-4 mb-4" : ""}`}
             >
               {/* Day Header */}
-              <div className="text-center mb-4 pb-3 border-b border-border/30">
+              <div className="flex flex-col items-center justify-center w-24 flex-shrink-0 mr-4">
                 <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
                   {dayNames[index]}
                 </div>
                 <div
-                  className={`text-2xl font-semibold ${
-                    isToday
-                      ? "text-primary bg-primary/10 w-10 h-10 rounded-full flex items-center justify-center mx-auto"
-                      : "text-foreground"
+                  className={`text-2xl font-semibold flex items-center justify-center w-10 h-10 rounded-full ${
+                    isSelected
+                      ? "text-primary-foreground bg-primary"
+                      : isToday
+                        ? "text-primary bg-primary/10"
+                        : "text-foreground"
                   }`}
                 >
                   {day.getDate()}
@@ -140,64 +161,90 @@ export function TaskList({ currentDate }: TaskListProps) {
               </div>
 
               {/* Tasks for this day */}
-              <div className="flex-1 space-y-3 overflow-y-auto">
+              <div className="flex-1">
                 {dayTasks.length === 0 ? (
-                  <div className="h-full flex items-center justify-center">
+                  <div className="flex items-center justify-center w-full min-h-[120px]">
                     <div className="text-center">
                       <div className="w-8 h-8 border-2 border-dashed border-muted-foreground/50 rounded mx-auto mb-2"></div>
                       <p className="text-xs text-muted-foreground/80 font-medium">No tasks</p>
                     </div>
                   </div>
                 ) : (
-                  dayTasks.map((task, taskIndex) => (
-                    <motion.div
-                      key={task.id}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.2, delay: taskIndex * 0.05 }}
-                    >
-                      <Card
-                        className="group cursor-pointer hover:shadow-md transition-all duration-200 border-l-4 overflow-hidden"
-                        style={{ borderLeftColor: task.color }}
-                        onClick={() => handleViewTaskDetail(task.id)}
+                  <div className="grid grid-cols-2 gap-4 auto-rows-min">
+                    {dayTasks.map((task: Task, taskIndex: number) => (
+                      <motion.div
+                        key={task.id}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.2, delay: taskIndex * 0.05 }}
+                        className="w-full"
                       >
-                        <CardContent className="p-3">
-                          <div className="flex items-start gap-2">
-                            <div
-                              className="w-6 h-6 rounded-sm flex items-center justify-center flex-shrink-0 shadow-sm"
-                              style={{ backgroundColor: task.color }}
-                            >
-                              {getTaskIcon(task.type)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="text-sm font-medium text-foreground leading-tight mb-1 group-hover:text-primary transition-colors">
-                                {task.title}
-                              </h4>
-                              <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
-                                {task.campaign}
-                              </p>
-                              <div className="flex items-center justify-between">
-                                <Badge variant="secondary" className="text-xs px-2 py-0.5 h-auto">
-                                  {task.type}
-                                </Badge>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleViewTaskDetail(task.id);
-                                  }}
-                                >
-                                  <Eye className="h-3 w-3" />
-                                </Button>
+                        <Card
+                          className="group cursor-pointer hover:shadow-md transition-all duration-200 border-l-4 overflow-hidden w-full h-full"
+                          style={{ borderLeftColor: getTaskColor(task.type) }}
+                          onClick={() => handleViewTaskDetail(task.id)}
+                        >
+                          <CardContent className="p-3">
+                            <div className="flex items-start gap-2">
+                              <div
+                                className="w-6 h-6 rounded-sm flex items-center justify-center flex-shrink-0 shadow-sm"
+                                style={{ backgroundColor: getTaskColor(task.type) }}
+                              >
+                                {getTaskIcon(task.type)}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="text-sm font-medium text-foreground leading-tight mb-1 group-hover:text-primary transition-colors">
+                                  {task.name}
+                                </h4>
+                                <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
+                                  {`Campaign ${task.campaign_id.slice(-6)}`}
+                                </p>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-1">
+                                    <Badge
+                                      variant="secondary"
+                                      className="text-xs px-2 py-0.5 h-auto"
+                                    >
+                                      {task.type}
+                                    </Badge>
+                                    <Badge
+                                      variant={
+                                        task.status === "DONE"
+                                          ? "default"
+                                          : task.status === "IN_PROGRESS"
+                                            ? "outline"
+                                            : "secondary"
+                                      }
+                                      className={`text-xs px-2 py-0.5 h-auto ${
+                                        task.status === "DONE"
+                                          ? "bg-green-100 text-green-800 hover:bg-green-100"
+                                          : task.status === "IN_PROGRESS"
+                                            ? "bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-100"
+                                            : "bg-gray-100 text-gray-800 hover:bg-gray-100"
+                                      }`}
+                                    >
+                                      {task.status.replace("_", " ")}
+                                    </Badge>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleViewTaskDetail(task.id);
+                                    }}
+                                  >
+                                    <Eye className="h-3 w-3" />
+                                  </Button>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  ))
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    ))}
+                  </div>
                 )}
               </div>
             </motion.div>

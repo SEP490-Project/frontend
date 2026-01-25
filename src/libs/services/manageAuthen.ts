@@ -6,4 +6,10 @@ export const manageAuthen = {
   register: (req: Register) => api.post("/auth/signup", req),
   logout: (req: { refresh_token: string }) => api.post("/auth/logout", req),
   refresh: (req: { refresh_token: string }) => api.post("/auth/refresh", req),
+  forgotPassword: (req: { email: string; frontend_url: string }) =>
+    api.post("/auth/forgot-password", req),
+  resetPassword: (req: { token: string; new_password: string; email: string }) =>
+    api.post("/auth/reset-password", req),
+  changePassword: (req: { current_password: string; new_password: string }) =>
+    api.post("/auth/change-password", req),
 };

@@ -18,17 +18,32 @@ interface CoProducingScopeProps {
 }
 
 const CoProducingScope: React.FC<CoProducingScopeProps> = ({ formData, onUpdate, errors = {} }) => {
-  const financialTerms = formData?.financialTerms || {};
-  const startDate = formData?.startDate;
-  const endDate = formData?.endDate;
+  const financial_terms = formData?.financial_terms || {};
+  const start_date = formData?.start_date;
+  const end_date = formData?.end_date;
+
+  const previousScheduleRef = React.useRef<string>("");
+
+  // Validate profit shares
+  const companyPercent = financial_terms.profit_split_company_percent || 0;
+  const kolPercent = financial_terms.profit_split_kol_percent || 0;
+  const totalPercent = companyPercent + kolPercent;
+  const isValidProfitSplit = totalPercent === 100;
+  const profitSplitWarning =
+    totalPercent !== 100 ? `Total profit share is ${totalPercent}%. It must equal 100%.` : null;
 
   const handleScheduleGenerated = useCallback(
     (newSchedule: any[]) => {
-      console.log("Schedule generated:", newSchedule); // Debug log
-      // Just store the schedule as-is, without calculating amounts
-      onUpdate({ schedule: newSchedule });
+      if (financial_terms.profit_distribution_cycle === "QUARTERLY") {
+        const scheduleString = JSON.stringify(newSchedule);
+
+        if (previousScheduleRef.current !== scheduleString) {
+          previousScheduleRef.current = scheduleString;
+          onUpdate({ profit_distribution_date: newSchedule });
+        }
+      }
     },
-    [onUpdate],
+    [onUpdate, financial_terms.profit_distribution_cycle],
   );
 
   return (
@@ -46,24 +61,22 @@ const CoProducingScope: React.FC<CoProducingScopeProps> = ({ formData, onUpdate,
       </CardHeader>
 
       <CardContent className="pt-6 space-y-6">
-        {/* Contract Period */}
-        {startDate && endDate && (
+        {start_date && end_date && (
           <Card className="p-4 bg-blue-50 border-blue-200">
             <h4 className="font-medium text-blue-900 mb-2">Contract Period</h4>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="font-medium">Start Date:</span>{" "}
-                {new Date(startDate).toLocaleDateString("vi-VN")}
+                {new Date(start_date).toLocaleDateString("vi-VN")}
               </div>
               <div>
                 <span className="font-medium">End Date:</span>{" "}
-                {new Date(endDate).toLocaleDateString("vi-VN")}
+                {new Date(end_date).toLocaleDateString("vi-VN")}
               </div>
             </div>
           </Card>
         )}
 
-        {/* Profit Split */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-1">
             <Label className="text-sm font-medium flex items-center gap-2">
@@ -72,14 +85,14 @@ const CoProducingScope: React.FC<CoProducingScopeProps> = ({ formData, onUpdate,
             </Label>
             <Input
               type="number"
-              value={financialTerms.profit_split_company_percent || ""}
+              value={financial_terms.profit_split_company_percent || ""}
               onChange={(e) =>
                 onUpdate({
                   profit_split_company_percent: parseFloat(e.target.value) || 0,
                 })
               }
               placeholder="60"
-              className="h-11"
+              className={`h-11 ${!isValidProfitSplit ? "border-red-500 focus:border-red-500" : ""}`}
               min="0"
               max="100"
             />
@@ -92,31 +105,34 @@ const CoProducingScope: React.FC<CoProducingScopeProps> = ({ formData, onUpdate,
             </Label>
             <Input
               type="number"
-              value={financialTerms.profit_split_kol_percent || ""}
+              value={financial_terms.profit_split_kol_percent || ""}
               onChange={(e) =>
                 onUpdate({
                   profit_split_kol_percent: parseFloat(e.target.value) || 0,
                 })
               }
               placeholder="40"
-              className="h-11"
+              className={`h-11 ${!isValidProfitSplit ? "border-red-500 focus:border-red-500" : ""}`}
               min="0"
               max="100"
             />
           </div>
         </div>
 
-        {/* Total contract cost is managed in FinancialTerms (shared) - removed from scope */}
+        {profitSplitWarning && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-700 font-medium">{profitSplitWarning}</p>
+          </div>
+        )}
 
-        {/* Profit Distribution Cycle */}
         <SelectField
           label="Profit Distribution Cycle"
-          value={financialTerms.profit_distribution_cycle || ""}
+          value={financial_terms.profit_distribution_cycle || ""}
           onChange={(value) =>
             onUpdate({
               profit_distribution_cycle: value,
-              profit_distribution_date: null,
-              schedule: [], // Clear existing schedule when cycle changes
+              profit_distribution_date: value === "QUARTERLY" ? [] : "",
+              profit_distribution_date_selector: null,
             })
           }
           options={PAYMENT_CYCLE_OPTIONS}
@@ -125,26 +141,34 @@ const CoProducingScope: React.FC<CoProducingScopeProps> = ({ formData, onUpdate,
           error={errors.profit_distribution_cycle}
         />
 
-        {/* Payment Date Selector - Only show when cycle is selected, same as AffiliateScope */}
-        {financialTerms.profit_distribution_cycle && (
+        {financial_terms.profit_distribution_cycle && (
           <PaymentDateSelector
-            cycle={financialTerms.profit_distribution_cycle}
-            value={financialTerms.profit_distribution_date}
-            onChange={(val) => onUpdate({ profit_distribution_date: val })}
+            cycle={financial_terms.profit_distribution_cycle}
+            value={
+              financial_terms.profit_distribution_cycle === "QUARTERLY"
+                ? financial_terms.profit_distribution_date_selector
+                : financial_terms.profit_distribution_date
+            }
+            onChange={(val) => {
+              if (financial_terms.profit_distribution_cycle === "QUARTERLY") {
+                onUpdate({ profit_distribution_date_selector: val });
+              } else {
+                onUpdate({ profit_distribution_date: val });
+              }
+            }}
             onScheduleGenerated={handleScheduleGenerated}
-            startDate={startDate}
-            endDate={endDate}
+            startDate={start_date}
+            endDate={end_date}
           />
         )}
 
-        {/* Generated Distribution Schedule Display - Same structure as AffiliateScope */}
-        {financialTerms.schedule && financialTerms.schedule.length > 0 && (
+        {financial_terms.schedule && financial_terms.schedule.length > 0 && (
           <Card className="p-4 bg-green-50 border-green-200">
             <h4 className="font-medium text-green-900 mb-3">
-              Generated Distribution Dates ({financialTerms.schedule.length} distributions)
+              Generated Distribution Dates ({financial_terms.schedule.length} distributions)
             </h4>
             <div className="space-y-2 max-h-48 overflow-y-auto">
-              {financialTerms.schedule.map((item: any, index: number) => (
+              {financial_terms.schedule.map((item: any, index: number) => (
                 <div
                   key={index}
                   className="flex justify-between items-center text-sm bg-white p-3 rounded"

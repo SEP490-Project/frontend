@@ -2,6 +2,7 @@ import React from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PhoneNumberInput } from "@/components/phone-number-input";
+import { motion } from "framer-motion";
 
 interface RepresentativeData {
   representative_name: string;
@@ -22,12 +23,39 @@ const RepresentativeInfoTab: React.FC<RepresentativeInfoTabProps> = ({
   errors,
   onRepresentativeChange,
 }) => {
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.2,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.3 },
+    },
+  };
+
   return (
-    <div className="space-y-6">
-      <h2 className="text-lg font-semibold">Brand Representative Information</h2>
+    <motion.div
+      className="space-y-6"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      <motion.div variants={itemVariants}>
+        <h2 className="text-lg font-semibold">Brand Representative Information</h2>
+      </motion.div>
 
       {/* Representative Name */}
-      <div className="space-y-2">
+      <motion.div className="space-y-2" variants={itemVariants}>
         <Label htmlFor="rep-name" className="text-sm font-medium">
           Representative Name *
         </Label>
@@ -41,10 +69,10 @@ const RepresentativeInfoTab: React.FC<RepresentativeInfoTabProps> = ({
         {errors.representative_name && (
           <p className="text-sm text-red-500">{errors.representative_name}</p>
         )}
-      </div>
+      </motion.div>
 
       {/* Representative Email */}
-      <div className="space-y-2">
+      <motion.div className="space-y-2" variants={itemVariants}>
         <Label htmlFor="rep-email" className="text-sm font-medium">
           Representative Email *
         </Label>
@@ -59,10 +87,10 @@ const RepresentativeInfoTab: React.FC<RepresentativeInfoTabProps> = ({
         {errors.representative_email && (
           <p className="text-sm text-red-500">{errors.representative_email}</p>
         )}
-      </div>
+      </motion.div>
 
       {/* Representative Phone */}
-      <div className="space-y-2">
+      <motion.div className="space-y-2" variants={itemVariants}>
         <Label htmlFor="rep-phone" className="text-sm font-medium">
           Representative Phone *
         </Label>
@@ -77,10 +105,10 @@ const RepresentativeInfoTab: React.FC<RepresentativeInfoTabProps> = ({
         {errors.representative_phone && (
           <p className="text-sm text-red-500">{errors.representative_phone}</p>
         )}
-      </div>
+      </motion.div>
 
       {/* Representative Role */}
-      <div className="space-y-2">
+      <motion.div className="space-y-2" variants={itemVariants}>
         <Label htmlFor="rep-role" className="text-sm font-medium">
           Representative Role *
         </Label>
@@ -94,10 +122,10 @@ const RepresentativeInfoTab: React.FC<RepresentativeInfoTabProps> = ({
         {errors.representative_role && (
           <p className="text-sm text-red-500">{errors.representative_role}</p>
         )}
-      </div>
+      </motion.div>
 
       {/* Representative Citizen ID */}
-      <div className="space-y-2">
+      <motion.div className="space-y-2" variants={itemVariants}>
         <Label htmlFor="rep-citizen-id" className="text-sm font-medium">
           Representative Citizen ID *
         </Label>
@@ -112,8 +140,8 @@ const RepresentativeInfoTab: React.FC<RepresentativeInfoTabProps> = ({
           <p className="text-sm text-red-500">{errors.representative_citizen_id}</p>
         )}
         <p className="text-xs text-gray-500">Enter 9–12 digits (Citizen Identification Number)</p>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 

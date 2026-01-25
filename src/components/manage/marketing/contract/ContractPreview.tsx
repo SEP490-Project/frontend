@@ -9,7 +9,6 @@ import {
   Image,
 } from "@react-pdf/renderer";
 
-// PDF Styles
 const styles = StyleSheet.create({
   page: {
     fontFamily: "Montserrat",
@@ -150,9 +149,7 @@ const styles = StyleSheet.create({
   },
 });
 
-// PDF Document Component
 export const ContractPDF = ({ data }: { data: any }) => {
-  // Helper functions
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return "N/A";
     const d = new Date(dateStr);
@@ -190,14 +187,92 @@ export const ContractPDF = ({ data }: { data: any }) => {
     }
   };
 
-  // Render scope of work based on contract type
+  const formatPaymentDate = (cycle: string, date: any) => {
+    if (!date) return "N/A";
+
+    const getOrdinal = (n: number) => {
+      if (n === 1) return "1st";
+      if (n === 2) return "2nd";
+      if (n === 3) return "3rd";
+      return `${n}th`;
+    };
+
+    switch (cycle) {
+      case "MONTHLY":
+        return `Day ${date} of every month`;
+
+      case "QUARTERLY": {
+        let quarterlyData = null;
+
+        if (Array.isArray(date) && date.length > 0) {
+          const firstPayment = date[0];
+          if (firstPayment && firstPayment.day && firstPayment.month) {
+            const monthInQuarter = ((firstPayment.month - 1) % 3) + 1;
+            return `Day ${firstPayment.day} of the ${getOrdinal(monthInQuarter)} month of each quarter (${date.length} payments scheduled)`;
+          }
+        } else if (typeof date === "object" && date.day && date.month) {
+          quarterlyData = date;
+        } else if (typeof date === "string") {
+          try {
+            const parsed = JSON.parse(date);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              const firstPayment = parsed[0];
+              if (firstPayment && firstPayment.day && firstPayment.month) {
+                const monthInQuarter = ((firstPayment.month - 1) % 3) + 1;
+                return `Day ${firstPayment.day} of the ${getOrdinal(monthInQuarter)} month of each quarter (${parsed.length} payments scheduled)`;
+              }
+            } else if (parsed && parsed.day && parsed.month) {
+              quarterlyData = parsed;
+            }
+          } catch {
+            // intentionally ignored
+          }
+        }
+
+        if (quarterlyData && quarterlyData.day && quarterlyData.month) {
+          const monthInQuarter = ((quarterlyData.month - 1) % 3) + 1;
+          return `Day ${quarterlyData.day} of the ${getOrdinal(monthInQuarter)} month of each quarter`;
+        }
+        return "N/A";
+      }
+
+      case "ANNUALLY": {
+        if (typeof date === "string") {
+          const d = new Date(date);
+          if (!isNaN(d.getTime())) {
+            return `Day ${d.getDate()} of ${d.toLocaleString("en-US", { month: "long" })} every year`;
+          }
+        }
+        return "N/A";
+      }
+
+      default:
+        return date;
+    }
+  };
+
   const renderScopeOfWork = () => {
     const deliverables = data.scope_of_work?.deliverables ?? {};
     const events = deliverables.events ?? [];
+    const rawProducts = deliverables.products ?? [];
     const concepts = deliverables.concepts ?? [];
-    const products = deliverables.products ?? [];
     const advertised_items = deliverables.advertised_items ?? [];
     const platforms = deliverables.platform ?? [];
+
+    // For CO_PRODUCING, merge concepts with products
+    const products = rawProducts.map((product: any) => {
+      if (data.type === "CO_PRODUCING") {
+        const productConcepts = concepts.filter(
+          (concept: any) => concept.product_id === product.id,
+        );
+        return {
+          ...product,
+          concepts: productConcepts,
+          material_url: product.material_url || product.material || [],
+        };
+      }
+      return product;
+    });
 
     switch (data.type) {
       case "BRAND_AMBASSADOR":
@@ -257,59 +332,109 @@ export const ContractPDF = ({ data }: { data: any }) => {
       case "CO_PRODUCING":
         return (
           <View>
-            <Text style={styles.sectionTitle}>1. Product Concepts and Creation</Text>
-            {concepts.map((concept: any, i: number) => (
+            <Text style={styles.sectionTitle}>Products & Concepts for Co-Production</Text>
+            {products.map((product: any, i: number) => (
               <View key={i} style={styles.deliverableSection}>
                 <Text style={styles.deliverableTitle}>
-                  Concept #{i + 1}: {concept.name || `Concept ${i + 1}`}
+                  Product #{i + 1}: {product.name || `Product ${i + 1}`}
                 </Text>
-                <Text style={styles.textBlock}>
-                  <Text style={styles.bold}>Description:</Text> {concept.description || "N/A"}
-                </Text>
-                <Text style={styles.textBlock}>
-                  <Text style={styles.bold}>Platform:</Text> {concept.platform || "N/A"} |{" "}
-                  <Text style={styles.bold}>Tagline:</Text> {concept.tagline || "N/A"}
-                </Text>
-                {(concept.hash_tag ?? []).length > 0 && (
+                {product.description && (
                   <Text style={styles.textBlock}>
-                    <Text style={styles.bold}>Hashtags:</Text> {(concept.hash_tag ?? []).join(", ")}
+                    <Text style={styles.bold}>Description:</Text> {product.description}
                   </Text>
                 )}
-                {concept.creative_notes && (
-                  <Text style={styles.textBlock}>
-                    <Text style={styles.bold}>Creative Notes:</Text> {concept.creative_notes}
-                  </Text>
-                )}
-                {(concept.content_requirements ?? []).length > 0 && (
+
+                {(product.kpis ?? []).length > 0 && (
                   <View>
-                    <Text style={styles.subHeading}>Content Requirements:</Text>
-                    {(concept.content_requirements ?? []).map((req: string, j: number) => (
-                      <Text key={j} style={styles.listItem}>
-                        • {req}
+                    <Text style={styles.subHeading}>Product KPIs:</Text>
+                    {(product.kpis ?? []).map((kpi: any, kpiIdx: number) => (
+                      <Text key={kpiIdx} style={styles.listItem}>
+                        •{" "}
+                        <Text style={styles.bold}>
+                          {(kpi.type || kpi.metric || "").replace(/_/g, " ")}
+                        </Text>
+                        : {kpi.target_value || kpi.target || "N/A"}
+                        {kpi.description && ` - ${kpi.description}`}
                       </Text>
                     ))}
                   </View>
                 )}
-              </View>
-            ))}
 
-            <Text style={styles.sectionTitle}>2. Products Under Agreement</Text>
-            {products.map((product: any, i: number) => (
-              <View key={i}>
-                <Text style={styles.textBlock}>
-                  <Text style={styles.bold}>Product #{i + 1}:</Text> {product.name || "N/A"}
-                </Text>
-                <Text style={styles.textBlock}>
-                  <Text style={styles.bold}>Description:</Text> {product.description || "N/A"}
-                </Text>
-                {(product.kpis ?? []).length > 0 && (
-                  <View>
-                    <Text style={styles.subHeading}>KPIs:</Text>
-                    {(product.kpis ?? []).map((kpi: any, j: number) => (
-                      <Text key={j} style={styles.listItem}>
-                        • <Text style={styles.bold}>{(kpi.metric || "").replace(/_/g, " ")}</Text>:{" "}
-                        {kpi.target || "N/A"}
-                      </Text>
+                {(product.concepts ?? []).length > 0 && (
+                  <View style={{ marginLeft: 10, marginTop: 8 }}>
+                    <Text style={styles.subHeading}>Concepts for this Product:</Text>
+                    {(product.concepts ?? []).map((concept: any, j: number) => (
+                      <View
+                        key={j}
+                        style={{
+                          marginBottom: 8,
+                          paddingLeft: 10,
+                          borderLeft: 1,
+                          borderLeftColor: "#f97316",
+                        }}
+                      >
+                        <Text style={[styles.textBlock, { fontWeight: "bold", color: "#ea580c" }]}>
+                          Concept #{j + 1}: {concept.name || `Concept ${j + 1}`}
+                        </Text>
+                        {concept.platform && (
+                          <Text style={styles.textBlock}>
+                            <Text style={styles.bold}>Platform:</Text> {concept.platform}
+                          </Text>
+                        )}
+                        {concept.tagline && (
+                          <Text style={styles.textBlock}>
+                            <Text style={styles.bold}>Tagline:</Text> {concept.tagline}
+                          </Text>
+                        )}
+                        {concept.description && (
+                          <Text style={styles.textBlock}>
+                            <Text style={styles.bold}>Description:</Text> {concept.description}
+                          </Text>
+                        )}
+                        {(concept.hash_tag ?? []).length > 0 && (
+                          <Text style={styles.textBlock}>
+                            <Text style={styles.bold}>Hashtags:</Text>{" "}
+                            {(concept.hash_tag ?? []).join(", ")}
+                          </Text>
+                        )}
+                        {concept.creative_notes && (
+                          <Text style={styles.textBlock}>
+                            <Text style={styles.bold}>Creative Notes:</Text>{" "}
+                            {concept.creative_notes}
+                          </Text>
+                        )}
+                        {(concept.content_requirements ?? []).length > 0 && (
+                          <View>
+                            <Text style={styles.textBlock}>
+                              <Text style={styles.bold}>Content Requirements:</Text>
+                            </Text>
+                            {(concept.content_requirements ?? []).map(
+                              (req: string, reqIdx: number) => (
+                                <Text key={reqIdx} style={styles.listItem}>
+                                  • {req}
+                                </Text>
+                              ),
+                            )}
+                          </View>
+                        )}
+                        {(concept.kpis ?? []).length > 0 && (
+                          <View>
+                            <Text style={styles.textBlock}>
+                              <Text style={styles.bold}>Concept KPIs:</Text>
+                            </Text>
+                            {(concept.kpis ?? []).map((kpi: any, kpiIdx: number) => (
+                              <Text key={kpiIdx} style={styles.listItem}>
+                                •{" "}
+                                <Text style={styles.bold}>
+                                  {(kpi.type || kpi.metric || "").replace(/_/g, " ")}
+                                </Text>
+                                : {kpi.target_value || kpi.target || "N/A"}
+                                {kpi.description && ` - ${kpi.description}`}
+                              </Text>
+                            ))}
+                          </View>
+                        )}
+                      </View>
                     ))}
                   </View>
                 )}
@@ -484,7 +609,6 @@ export const ContractPDF = ({ data }: { data: any }) => {
     }
   };
 
-  // Render financial terms based on contract type
   const renderFinancialTerms = () => {
     const financial = data.financial_terms ?? {};
 
@@ -499,8 +623,13 @@ export const ContractPDF = ({ data }: { data: any }) => {
             <Text style={styles.textBlock}>
               <Text style={styles.bold}>Distribution Cycle:</Text>{" "}
               {financial.profit_distribution_cycle || "N/A"} (
-              <Text style={styles.bold}>{financial.profit_distribution_date || "N/A"}th</Text> of
-              each cycle)
+              <Text style={styles.bold}>
+                {formatPaymentDate(
+                  financial.profit_distribution_cycle,
+                  financial.profit_distribution_date,
+                )}
+              </Text>
+              )
             </Text>
             <View style={styles.splitSection}>
               <Text style={[styles.textBlock, styles.bold, { fontSize: 12 }]}>
@@ -526,9 +655,11 @@ export const ContractPDF = ({ data }: { data: any }) => {
               <Text style={styles.bold}>{financial.model || "N/A"}</Text>
             </Text>
             <Text style={styles.textBlock}>
-              <Text style={styles.bold}>Payment Cycle:</Text> {financial.payment_cycle || "N/A"} (on
-              the <Text style={styles.bold}>{financial.payment_date || "N/A"}th</Text> of each
-              cycle)
+              <Text style={styles.bold}>Payment Cycle:</Text> {financial.payment_cycle || "N/A"} (
+              <Text style={styles.bold}>
+                {formatPaymentDate(financial.payment_cycle, financial.payment_date)}
+              </Text>
+              )
             </Text>
             <Text style={styles.textBlock}>
               <Text style={styles.bold}>Base Per Click Rate:</Text>{" "}
@@ -543,20 +674,6 @@ export const ContractPDF = ({ data }: { data: any }) => {
                     clicks, Multiplier: <Text style={styles.bold}>{level.multiplier}x</Text>
                   </Text>
                 ))}
-              </View>
-            )}
-            {financial.tax_withholding && (
-              <View>
-                <Text style={styles.subHeading}>Tax Withholding:</Text>
-                <Text style={styles.textBlock}>
-                  A tax rate of{" "}
-                  <Text style={styles.bold}>{financial.tax_withholding.rate_percent}%</Text> will be
-                  withheld for earnings exceeding{" "}
-                  <Text style={styles.bold}>
-                    {formatMoney(financial.tax_withholding.threshold)}
-                  </Text>
-                  .
-                </Text>
               </View>
             )}
           </View>
@@ -596,11 +713,13 @@ export const ContractPDF = ({ data }: { data: any }) => {
               <View>
                 <Text style={styles.subHeading}>Payment Schedule Milestones:</Text>
                 {(financial.schedule ?? []).map((item: any, i: number) => (
-                  <Text key={i} style={styles.listItem}>
-                    {i + 1}. <Text style={styles.bold}>{item.milestone}</Text>:{" "}
-                    <Text style={styles.bold}>{formatMoney(item.amount)}</Text> ({item.percent}%)
-                    due by <Text style={styles.bold}>{formatDate(item.due_date)}</Text>
-                  </Text>
+                  <View key={i} style={{ marginBottom: 4 }}>
+                    <Text style={styles.listItem}>
+                      {i + 1}. <Text style={styles.bold}>{item.milestone}</Text>:{" "}
+                      <Text style={styles.bold}>{formatMoney(item.amount)}</Text> ({item.percent}%)
+                      due by <Text style={styles.bold}>{formatDate(item.due_date)}</Text>
+                    </Text>
+                  </View>
                 ))}
               </View>
             )}
@@ -612,7 +731,6 @@ export const ContractPDF = ({ data }: { data: any }) => {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Header */}
         <View style={styles.header}>
           <Image style={styles.logo} src="/pink.png" />
           <Text style={styles.title}>Contract Agreement</Text>
@@ -623,7 +741,6 @@ export const ContractPDF = ({ data }: { data: any }) => {
           <Text style={styles.contractTitle}>{data.title}</Text>
         </View>
 
-        {/* Article 1: Parties */}
         <View>
           <Text style={styles.sectionHeader}>ARTICLE 1: PARTIES INVOLVED</Text>
           <Text style={styles.textBlock}>
@@ -673,7 +790,6 @@ export const ContractPDF = ({ data }: { data: any }) => {
           </Text>
         </View>
 
-        {/* Article 2: Scope of Work */}
         <View>
           <Text style={styles.sectionHeader}>ARTICLE 2: SCOPE OF WORK AND DELIVERABLES</Text>
           {renderScopeOfWork()}
@@ -689,7 +805,6 @@ export const ContractPDF = ({ data }: { data: any }) => {
           )}
         </View>
 
-        {/* Article 3: Financial Terms */}
         <View>
           <Text style={styles.sectionHeader}>ARTICLE 3: FINANCIAL TERMS AND PAYMENT</Text>
           {data.deposit_amount && (
@@ -703,7 +818,6 @@ export const ContractPDF = ({ data }: { data: any }) => {
           {renderFinancialTerms()}
         </View>
 
-        {/* Article 4: Breach and Termination */}
         <View>
           <Text style={styles.sectionHeader}>ARTICLE 4: BREACH AND TERMINATION</Text>
           <Text style={styles.sectionTitle}>Penalties for Breach of Contract:</Text>
@@ -719,9 +833,27 @@ export const ContractPDF = ({ data }: { data: any }) => {
           ))}
         </View>
 
-        {/* Article 5: Standard Legal Terms */}
         <View>
-          <Text style={styles.sectionHeader}>ARTICLE 5: STANDARD LEGAL TERMS</Text>
+          <Text style={styles.sectionHeader}>ARTICLE 5: RULES AND VIOLATIONS</Text>
+          {(data.legal_terms?.rules?.items ?? []).map((ruleGroup: any, i: number) => (
+            <View key={i} style={styles.penaltySection}>
+              <Text style={styles.penaltyTitle}>{ruleGroup.title}</Text>
+              {(ruleGroup.violations ?? []).map((violation: any, j: number) => (
+                <View key={j} style={{ marginLeft: 10, marginBottom: 4 }}>
+                  <Text style={[styles.textBlock, { fontWeight: "bold", fontSize: 10 }]}>
+                    {violation.name}
+                  </Text>
+                  <Text style={[styles.textBlock, { fontSize: 9, marginLeft: 10 }]}>
+                    {violation.description}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          ))}
+        </View>
+
+        <View>
+          <Text style={styles.sectionHeader}>ARTICLE 6: STANDARD LEGAL TERMS</Text>
           {(data.legal_terms?.standard_terms?.items ?? []).map((term: any, i: number) => (
             <View key={i} style={{ marginBottom: 6 }}>
               <Text style={[styles.textBlock, styles.bold, { textDecoration: "underline" }]}>
@@ -732,7 +864,6 @@ export const ContractPDF = ({ data }: { data: any }) => {
           ))}
         </View>
 
-        {/* Signatures */}
         <View style={styles.signatureSection}>
           <Text
             style={[
@@ -766,15 +897,36 @@ export const ContractPDF = ({ data }: { data: any }) => {
   );
 };
 
-// Main Component
 export const ContractPreview = ({ contractData }: { contractData: any }) => {
   if (!contractData) return null;
   const data = contractData.data ?? contractData;
   if (!data) return null;
 
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return "N/A";
+    const d = new Date(dateStr);
+    if (Number.isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const formatMoney = (amount?: number | null) => {
+    const currency = data.currency || "VND";
+    if (amount === undefined || amount === null) return `0 ${currency}`;
+    try {
+      return `${Number(amount).toLocaleString("vi-VN", {
+        minimumFractionDigits: 0,
+      })} ${currency}`;
+    } catch {
+      return `${amount} ${currency}`;
+    }
+  };
+
   return (
     <div className="bg-gray-100 py-10 px-4 min-h-screen">
-      {/* Download Button */}
       <div className="flex justify-center mb-4 sticky top-4 z-10">
         <PDFDownloadLink
           document={<ContractPDF data={data} />}
@@ -785,9 +937,7 @@ export const ContractPreview = ({ contractData }: { contractData: any }) => {
         </PDFDownloadLink>
       </div>
 
-      {/* Preview Section - keeping the existing HTML for browser preview */}
       <div className="bg-white text-gray-900 max-w-4xl mx-auto p-12 shadow-2xl leading-relaxed min-h-[1100px]">
-        {/* Contract Header & Title */}
         <header className="text-center mb-10 border-b border-gray-400 pb-4">
           <div className="flex justify-center mb-4">
             <img src="/pink.png" alt="Platform Logo" className="h-36 w-auto object-contain" />
@@ -803,10 +953,146 @@ export const ContractPreview = ({ contractData }: { contractData: any }) => {
           <p className="text-xl font-bold mt-4 text-gray-800 italic">{data.title}</p>
         </header>
 
+        <section className="mb-8">
+          <h2 className="text-2xl font-bold mb-6 text-gray-900 uppercase tracking-wide border-b-2 border-gray-300 pb-2">
+            ARTICLE 1: CONTRACT DETAILS
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h3 className="font-bold text-blue-900 mb-2">Contract Information</h3>
+              {data.contract_number && (
+                <p>
+                  <strong>Contract Number:</strong> {data.contract_number}
+                </p>
+              )}
+              <p>
+                <strong>Type:</strong> {(data.type || "").replace(/_/g, " ")}
+              </p>
+              <p>
+                <strong>Status:</strong> {data.status || "Draft"}
+              </p>
+            </div>
+
+            <div className="bg-green-50 p-4 rounded-lg">
+              <h3 className="font-bold text-green-900 mb-2">Timeline</h3>
+              <p>
+                <strong>Signed Date:</strong> {formatDate(data.signed_date)}
+              </p>
+              <p>
+                <strong>Start Date:</strong> {formatDate(data.start_date)}
+              </p>
+              <p>
+                <strong>End Date:</strong> {formatDate(data.end_date)}
+              </p>
+              <p>
+                <strong>Location:</strong> {data.signed_location || "N/A"}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="mb-8">
+          <h2 className="text-2xl font-bold mb-6 text-gray-900 uppercase tracking-wide border-b-2 border-gray-300 pb-2">
+            ARTICLE 2: PARTIES INVOLVED
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-orange-50 p-6 rounded-lg border border-orange-200">
+              <h3 className="font-bold text-orange-900 mb-4 text-lg">Party A (The Brand)</h3>
+              <div className="space-y-2 text-sm">
+                <p>
+                  <strong>Company:</strong> {data.brand?.name || "N/A"}
+                </p>
+                <p>
+                  <strong>Representative:</strong> {data.brand?.representative_name || "N/A"}
+                </p>
+                <p>
+                  <strong>Role:</strong> {data.brand?.representative_role || "N/A"}
+                </p>
+                <p>
+                  <strong>Email:</strong> {data.brand?.contact_email || "N/A"}
+                </p>
+                <p>
+                  <strong>Phone:</strong> {data.brand?.contact_phone || "N/A"}
+                </p>
+                <p>
+                  <strong>Address:</strong> {data.brand?.address || "N/A"}
+                </p>
+                <p>
+                  <strong>Tax ID:</strong> {data.brand?.tax_number || "N/A"}
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-purple-50 p-6 rounded-lg border border-purple-200">
+              <h3 className="font-bold text-purple-900 mb-4 text-lg">Party B (Service Provider)</h3>
+              <div className="space-y-2 text-sm">
+                <p>
+                  <strong>Name:</strong> {data.representative_name || "N/A"}
+                </p>
+                <p>
+                  <strong>Role:</strong> {data.representative_role || "N/A"}
+                </p>
+                <p>
+                  <strong>Email:</strong> {data.representative_email || "N/A"}
+                </p>
+                <p>
+                  <strong>Phone:</strong> {data.representative_phone || "N/A"}
+                </p>
+                <p>
+                  <strong>Tax ID:</strong> {data.representative_tax_number || "N/A"}
+                </p>
+                <p>
+                  <strong>Bank:</strong> {data.representative_bank_name || "N/A"}
+                </p>
+                <p>
+                  <strong>Account:</strong> {data.representative_bank_account_number || "N/A"}
+                </p>
+                <p>
+                  <strong>Account Holder:</strong>{" "}
+                  {data.representative_bank_account_holder || "N/A"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mb-8">
+          <h2 className="text-2xl font-bold mb-6 text-gray-900 uppercase tracking-wide border-b-2 border-gray-300 pb-2">
+            ARTICLE 3: FINANCIAL OVERVIEW
+          </h2>
+
+          <div className="bg-green-50 p-6 rounded-lg border border-green-200 mb-6">
+            <h3 className="font-bold text-green-900 mb-4 text-lg">Contract Value</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-green-700">
+                  {formatMoney(data.financial_terms?.total_cost)}
+                </p>
+                <p className="text-sm text-gray-600">Total Value</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-orange-700">{data.deposit_percent || 0}%</p>
+                <p className="text-sm text-gray-600">Deposit Rate</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-blue-700">
+                  {formatMoney(
+                    ((data.financial_terms?.total_cost || 0) * (data.deposit_percent || 0)) / 100,
+                  )}
+                </p>
+                <p className="text-sm text-gray-600">Deposit Amount</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <div className="text-center text-gray-600 mt-8">
           <p className="text-lg font-semibold">📄 Contract Preview</p>
           <p className="text-sm">
-            Click "Download Contract PDF" above to generate the full PDF document
+            Click "Download Contract PDF" above to generate the complete contract document with all
+            details, scope of work, and legal terms.
           </p>
         </div>
       </div>

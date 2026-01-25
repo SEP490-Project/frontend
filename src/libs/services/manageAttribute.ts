@@ -7,8 +7,6 @@ import type {
 export const manageAttribute = {
   getAllVariantAttributes: (params: GetVariantAttributesParams) =>
     api.get("/variant-attributes", { params }),
-  getAllVariantAttributesForAdmin: (params: GetVariantAttributesParams) =>
-    api.get("/variant-attributes/admin", { params }),
   createVariantAttributes: (data: CreateVariantAttributePayload) =>
     api.post("/variant-attributes", data),
 };

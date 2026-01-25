@@ -16,7 +16,7 @@ export const login = createAsyncThunk("auth/login", async (req: Login, { rejectW
     return data;
   } catch (error: unknown) {
     const err = error as AxiosError<{ message?: string }>;
-    return rejectWithValue(err.response?.data?.message || "Đăng nhập thất bại");
+    return rejectWithValue(err.response?.data?.message || "Failed");
   }
 });
 
@@ -28,7 +28,7 @@ export const register = createAsyncThunk(
       return response.data;
     } catch (error: unknown) {
       const err = error as AxiosError<{ message?: string }>;
-      return rejectWithValue(err.response?.data?.message || "Đăng ký thất bại");
+      return rejectWithValue(err.response?.data?.message || "Failed");
     }
   },
 );
@@ -45,7 +45,7 @@ export const refresh = createAsyncThunk("auth/refresh", async (_, { rejectWithVa
     return data;
   } catch (error: unknown) {
     const err = error as AxiosError<{ message?: string }>;
-    return rejectWithValue(err.response?.data?.message || "Làm mới token thất bại");
+    return rejectWithValue(err.response?.data?.message || "Failed");
   }
 });
 
@@ -64,3 +64,42 @@ export const logout = createAsyncThunk("auth/logout", async () => {
     removeItem("user");
   }
 });
+
+export const forgotPassword = createAsyncThunk(
+  "auth/forgotPassword",
+  async (req: { email: string; frontend_url: string }, { rejectWithValue }) => {
+    try {
+      const response = await manageAuthen.forgotPassword(req);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message?: string }>;
+      return rejectWithValue(err.response?.data?.message || "Failed");
+    }
+  },
+);
+
+export const resetPassword = createAsyncThunk(
+  "auth/resetPassword",
+  async (req: { token: string; new_password: string; email: string }, { rejectWithValue }) => {
+    try {
+      const response = await manageAuthen.resetPassword(req);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message?: string }>;
+      return rejectWithValue(err.response?.data?.message || "Failed");
+    }
+  },
+);
+
+export const changePasswordThunk = createAsyncThunk(
+  "auth/changePassword",
+  async (req: { current_password: string; new_password: string }, { rejectWithValue }) => {
+    try {
+      const response = await manageAuthen.changePassword(req);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message?: string }>;
+      return rejectWithValue(err.response?.data?.message || "Failed");
+    }
+  },
+);

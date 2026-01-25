@@ -13,7 +13,7 @@ const getProfileThunk = createAsyncThunk("userManager/getProfile", async (_, thu
 
 const updateProfileThunk = createAsyncThunk(
   "userManager/updateProfile",
-  async (updateData: UserData, thunkAPI) => {
+  async (updateData: any, thunkAPI) => {
     try {
       const response = await manageUser.updateProfile(updateData);
       return response.data as UserResponse<UserData>;

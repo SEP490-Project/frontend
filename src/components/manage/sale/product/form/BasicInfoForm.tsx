@@ -8,15 +8,16 @@ import {
 } from "@/components/ui/select";
 import { useBrand } from "@/libs/hooks/useBrand";
 import { useAppDispatch } from "@/libs/stores";
-import { brand } from "@/libs/stores/brandManager/thunk";
+import { brand as GetAllBrands } from "@/libs/stores/brandManager/thunk";
 import { useCallback, useEffect, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Controller } from "react-hook-form";
 import type {
-  CreateProductPayload,
   CreateLimitedProductPayload,
   ProductFormProps,
   ProductData,
+  ProductResponse,
+  CreateStandardProductPayload,
 } from "@/libs/types/product";
 import {
   createLimitedProductThunk,
@@ -27,6 +28,7 @@ import { getAllCategoriesThunk } from "@/libs/stores/categoryManager/thunk";
 import { useSelector } from "react-redux";
 import type { ProductCategory } from "@/libs/types/category";
 import { getItem, setItem } from "@/libs/local-storage";
+import type { SingleTaskResponse } from "@/libs/types/task";
 
 export const BasicInfoForm = ({
   form,
@@ -36,7 +38,15 @@ export const BasicInfoForm = ({
   navigate,
   state,
   setIsDisabled,
-}: ProductFormProps<CreateProductPayload | CreateLimitedProductPayload>) => {
+  setIsCreating,
+  // taskDetailById,
+  // detailLoading,
+}: ProductFormProps<CreateStandardProductPayload | CreateLimitedProductPayload> & {
+  isCreating?: boolean;
+  setIsCreating?: (value: boolean) => void;
+  taskDetailById?: SingleTaskResponse | null;
+  detailLoading?: boolean;
+}) => {
   const dispatch = useAppDispatch();
   const categories = useSelector((state: any) => state?.manageCategory?.categories?.data);
   const { brands } = useBrand();
@@ -48,41 +58,51 @@ export const BasicInfoForm = ({
     formState: { errors },
     watch,
   } = form;
-  const productBasicInfos = getItem<ProductData>("currentProduct");
+  const productBasicInfos = getItem<ProductResponse<ProductData>>("currentProduct")?.data;
   const isLimitedProduct = state?.productType === "LIMITED";
 
-  const [name, category_id, brand_id, price] = watch(["name", "category_id", "brand_id", "price"]);
+  const [name, category_id, brand_place_holder, brand_id] = watch([
+    "name",
+    "category_id",
+    "brand_place_holder",
+    "brand_id",
+  ]);
 
-  // Watch limited attributes if it's a limited product
-  const limitedAttributeWatch = isLimitedProduct
-    ? watch([
-        "limited_attribute.premiere_date",
-        "limited_attribute.availability_start_date",
-        "limited_attribute.availability_end_date",
-        "limited_attribute.bought_limit",
-        "limited_attribute.max_stock",
-      ] as any)
-    : [];
+  const premiere_date = watch("limited_attribute.premiere_date" as any);
+  const availability_start_date = watch("limited_attribute.availability_start_date" as any);
+  const availability_end_date = watch("limited_attribute.availability_end_date" as any);
+  const achievable_quantity = watch("limited_attribute.achievable_quantity" as any);
 
   const onSubmit = useCallback(
-    async (payload: CreateProductPayload | CreateLimitedProductPayload) => {
+    async (payload: CreateStandardProductPayload | CreateLimitedProductPayload) => {
       try {
+        if (productBasicInfos?.id) {
+          if (navigate && steps && currentStep !== undefined) {
+            navigate(steps[currentStep]?.path, { state });
+          }
+          return;
+        }
+        setIsCreating?.(true);
         const result = await dispatch(
           state.productType === "STANDARD"
-            ? createStandardProductThunk(payload as CreateProductPayload)
+            ? createStandardProductThunk(payload as CreateStandardProductPayload)
             : createLimitedProductThunk(payload as CreateLimitedProductPayload),
         ).unwrap();
         console.log("Created product:", result);
         if (result) {
           setItem("currentProduct", result);
           toast.success("Product created successfully");
-          navigate(steps[currentStep]?.path, { state });
+          if (navigate && steps && currentStep !== undefined) {
+            navigate(steps[currentStep]?.path, { state });
+          }
         }
       } catch (error) {
         toast.error((error as string) || "Failed to create product");
+      } finally {
+        setIsCreating?.(false);
       }
     },
-    [dispatch, state, navigate, steps, currentStep],
+    [dispatch, state, navigate, steps, currentStep, setIsCreating, productBasicInfos?.id],
   );
 
   const onError = useCallback((errors: any) => {
@@ -90,37 +110,19 @@ export const BasicInfoForm = ({
   }, []);
 
   useEffect(() => {
+    const isBasicFormValid = Boolean(
+      name &&
+        name.trim() !== "" &&
+        category_id &&
+        !errors.name &&
+        !errors.category_id &&
+        (brand_id || brand_place_holder),
+    );
+
     if (setIsDisabled) {
-      // Base validation for both types
-      const isBasicFormValid = Boolean(
-        name &&
-          name.trim() !== "" &&
-          category_id &&
-          brand_id &&
-          price &&
-          price >= 1000 &&
-          !errors.name &&
-          !errors.category_id &&
-          !errors.brand_id &&
-          !errors.price,
-      );
-
-      // Additional validation for LIMITED products
       if (isLimitedProduct) {
-        const [
-          premiere_date,
-          availability_start_date,
-          availability_end_date,
-          bought_limit,
-          max_stock,
-        ] = limitedAttributeWatch as any[];
-
         const isLimitedFormValid = Boolean(
-          premiere_date &&
-            availability_start_date &&
-            availability_end_date &&
-            bought_limit >= 1 &&
-            max_stock >= 1,
+          premiere_date && availability_start_date && availability_end_date && achievable_quantity,
         );
 
         setIsDisabled(!(isBasicFormValid && isLimitedFormValid));
@@ -131,39 +133,51 @@ export const BasicInfoForm = ({
   }, [
     name,
     category_id,
+    brand_place_holder,
     brand_id,
-    price,
     errors,
     setIsDisabled,
     isLimitedProduct,
-    limitedAttributeWatch,
+    premiere_date,
+    availability_start_date,
+    availability_end_date,
+    achievable_quantity,
   ]);
 
+  // Load existing product data once on mount
   useEffect(() => {
-    if (productBasicInfos && productBasicInfos.id) {
+    const existingProduct = getItem<ProductData>("currentProduct");
+    if (existingProduct && existingProduct.id) {
       form.reset({
-        name: productBasicInfos.name,
-        category_id: productBasicInfos.category?.id?.toString() || "",
-        brand_id: productBasicInfos.brand_id?.toString() || "",
-        price: productBasicInfos.price,
-        description: productBasicInfos.description || null,
+        name: existingProduct.name,
+        category_id: existingProduct.category?.id?.toString() || "",
+        brand_id: existingProduct.brand_id?.toString() || "",
+        brand_place_holder: existingProduct.brand_place_holder || "",
+        description: existingProduct.description || null,
       } as any);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (setOnSubmitStep) {
-      if (productBasicInfos && productBasicInfos.id) {
+      const existingProduct = getItem<ProductResponse<ProductData>>("currentProduct")?.data;
+
+      if (existingProduct && existingProduct.id) {
         setOnSubmitStep(() => async () => {
-          navigate(steps[currentStep]?.path, { state });
+          if (navigate && steps && currentStep !== undefined) {
+            navigate(steps[currentStep]?.path, { state });
+          }
         });
         return;
       }
+
       const submitHandler = async () => {
         await handleSubmit(onSubmit, onError)();
       };
       setOnSubmitStep(() => submitHandler);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setOnSubmitStep, productBasicInfos?.id]);
 
   useEffect(() => {
@@ -182,7 +196,7 @@ export const BasicInfoForm = ({
   useEffect(() => {
     const fetchBrands = async () => {
       try {
-        await dispatch(brand(params)).unwrap();
+        await dispatch(GetAllBrands(params)).unwrap();
       } catch (error) {
         console.error("Failed to fetch brands:", error);
         toast.error("Failed to load brands");
@@ -229,7 +243,7 @@ export const BasicInfoForm = ({
               <SelectTrigger className="col-span-3">
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-70">
                 {categories?.map((category: ProductCategory) => (
                   <SelectItem key={category.id} value={category.id.toString()}>
                     {category.name}
@@ -249,58 +263,44 @@ export const BasicInfoForm = ({
           <span className="text-red-600">*</span>
           Brand
         </label>
-        <Controller
-          name="brand_id"
-          control={control}
-          render={({ field }) => (
-            <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select a brand" />
-              </SelectTrigger>
-              <SelectContent>
-                {brands?.map((brand) => (
-                  <SelectItem key={brand.id} value={brand.id.toString()}>
-                    {brand.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">
-        <label
-          htmlFor="productPrice"
-          className="text-sm font-medium text-gray-700 text-right items-center flex justify-start md:justify-end"
-        >
-          <span className="text-red-600">*</span>
-          Price (VND)
-        </label>
-        <Input
-          id="productPrice"
-          type="number"
-          min={0}
-          placeholder="Price must be at least 1000"
-          className=" col-span-3"
-          autoComplete="off"
-          {...register("price", {
-            valueAsNumber: true,
-            onChange: (e) => {
-              const number = Number(e.target.value);
-              if (number < 0) {
-                e.target.value = "0";
-              }
-            },
-          })}
-          onPaste={(e) => {
-            const pastedData = e.clipboardData.getData("text");
-            const number = Number(pastedData);
-            if (number < 0) {
-              e.preventDefault();
-            }
-          }}
-        />
+        {state.productType === "STANDARD" ? (
+          <Controller
+            name="brand_place_holder"
+            control={control}
+            render={({ field }) => (
+              <Input
+                id="productBrand"
+                placeholder="Input"
+                className="col-span-3"
+                autoComplete="off"
+                {...field}
+              />
+            )}
+          />
+        ) : (
+          <Controller
+            name="brand_id"
+            control={control}
+            render={({ field }) => (
+              <Select
+                disabled={isLimitedProduct ? true : false}
+                value={field.value || ""}
+                onValueChange={field.onChange}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select a brand" />
+                </SelectTrigger>
+                <SelectContent className="max-h-70">
+                  {brands?.map((brand) => (
+                    <SelectItem key={brand.id} value={brand?.id || ""}>
+                      {brand.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-7">

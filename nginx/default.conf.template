@@ -9,6 +9,17 @@ server {
     # Serve static files and handle client-side routing
     location / {
         try_files $uri /index.html;
+
+        # --- RE-ADD SECURITY HEADERS (Because of Nginx inheritance rules) ---
+        add_header X-Frame-Options "SAMEORIGIN";
+        add_header X-Content-Type-Options "nosniff";
+        add_header X-XSS-Protection "1; mode=block";
+        add_header Permissions-Policy "geolocation=(self), microphone=()";
+    }
+
+    # Handle requests for assets in the /public/ path
+    location /public/ {
+        alias /usr/share/nginx/html/;
     }
 
     # Health check endpoint
@@ -18,19 +29,32 @@ server {
     }
 
     # Reverse proxy for API requests
-    location /api/ {
-        proxy_pass http://$API_HOST:$API_PORT/;
+    location /core-backend/ {
+        proxy_pass $API_URL/;
         proxy_http_version 1.1;
+
+        # --- SSL Fixes ---
+        proxy_ssl_server_name on;
+        proxy_ssl_name $proxy_host;
+        proxy_ssl_protocols TLSv1.2 TLSv1.3;
+
+        # --- Standard proxy headers ---
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
+        proxy_set_header Host $proxy_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
     }
 
     # Cache control for static assets
-    location ~* \.(?:ico|css|js|gif|jpe?g|png|woff2?|eot|ttf|svg|otf)$ {
+    location ~* \.(?:ico|css|js|gif|jpe?g|png|woff2?|eot|ttf|svg|otf|wasm)$ {
         expires 1y;
         add_header Cache-Control "public";
+        
+        # Allow these assets to be loaded by the isolated document
+        add_header Cross-Origin-Resource-Policy "cross-origin";
     }
 
     location ~* \.(?:jpg|jpeg|gif|png|ico|cur|gz|svg|svgz|mp4|ogg|ogv|webm|htc)$ {
@@ -38,9 +62,4 @@ server {
         access_log off;
         add_header Cache-Control "public";
     }
-
-    add_header X-Frame-Options "SAMEORIGIN";
-    add_header X-Content-Type-Options "nosniff";
-    add_header X-XSS-Protection "1; mode=block";
-    add_header Permissions-Policy "geolocation=(self), microphone=()";
 }

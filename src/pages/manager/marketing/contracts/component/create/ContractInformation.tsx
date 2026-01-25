@@ -37,6 +37,7 @@ import {
   FaImage,
 } from "react-icons/fa6";
 import { Badge } from "@/components/ui/badge";
+import { Loader2 } from "lucide-react";
 
 interface ContractInformationProps {
   formData: any;
@@ -44,6 +45,8 @@ interface ContractInformationProps {
   onInputChange: (field: string, value: any) => void;
   errors?: any;
   onFieldValidation?: (field: string, error: string | null) => void;
+  isBrandLockedMode?: boolean;
+  onBrandChange?: () => void;
 }
 
 const CONTRACT_TYPE_OPTIONS = [
@@ -64,21 +67,34 @@ const CONTRACT_TYPE_COLORS = {
   CO_PRODUCING: { bg: "bg-violet-100", text: "text-violet-800", border: "border-violet-200" },
 };
 
-// map config keys (snake_case) to form fields (camelCase)
 const REP_CONFIG_TO_FORM_MAP: Record<string, string> = {
-  representative_name: "representativeName",
-  representative_role: "representativeRole",
-  representative_phone: "representativePhone",
-  representative_email: "representativeEmail",
-  representative_tax_number: "representativeTaxNumber",
-  representative_bank_name: "representativeBankName",
-  representative_bank_account_number: "representativeBankAccountNumber",
-  representative_bank_account_holder: "representativeBankAccountHolder",
+  representative_name: "representative_name",
+  representative_role: "representative_role",
+  representative_phone: "representative_phone",
+  representative_email: "representative_email",
+  representative_tax_number: "representative_tax_number",
+  representative_bank_name: "representative_bank_name",
+  representative_bank_account_number: "representative_bank_account_number",
+  representative_bank_account_holder: "representative_bank_account_holder",
 };
 
-// Small presentational components
 const FieldError = ({ message }: { message?: string | null }) =>
   message ? <p className="text-xs text-red-500 mt-1">{message}</p> : null;
+
+// Helper function to get local date string without timezone conversion
+const getLocalDateString = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+// Helper function to normalize date for comparison (set to local midnight)
+const normalizeDate = (dateInput: string | Date): Date => {
+  const date =
+    typeof dateInput === "string" ? new Date(dateInput + "T00:00:00") : new Date(dateInput);
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+};
 
 const MemoBrandCard = React.memo(({ brand, isSelection }: { brand: any; isSelection: boolean }) => {
   if (!brand) return null;
@@ -89,7 +105,7 @@ const MemoBrandCard = React.memo(({ brand, isSelection }: { brand: any; isSelect
       } gap-4 sm:gap-6 rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md w-full`}
     >
       <div
-        className={`flex-shrink-0 ${
+        className={`shrink-0 ${
           isSelection ? "h-12 w-12" : "h-20 w-20"
         } rounded-xl border border-slate-100 bg-white shadow-sm flex items-center justify-center`}
       >
@@ -127,19 +143,19 @@ const MemoBrandCard = React.memo(({ brand, isSelection }: { brand: any; isSelect
           <div className="mt-5 space-y-3 text-sm">
             {brand.contact_email && (
               <div className="flex items-center gap-2 text-slate-700">
-                <FaEnvelope className="h-4 w-4 text-slate-500 flex-shrink-0" />
+                <FaEnvelope className="h-4 w-4 text-slate-500 shrink-0" />
                 <span className="truncate">{brand.contact_email}</span>
               </div>
             )}
             {brand.contact_phone && (
               <div className="flex items-center gap-2 text-slate-700">
-                <FaPhone className="h-4 w-4 text-slate-500 flex-shrink-0" />
+                <FaPhone className="h-4 w-4 text-slate-500 shrink-0" />
                 <span>{brand.contact_phone}</span>
               </div>
             )}
             {brand.website && (
               <div className="flex items-center gap-2 text-slate-700">
-                <FaGlobe className="h-4 w-4 text-slate-500 flex-shrink-0" />
+                <FaGlobe className="h-4 w-4 text-slate-500 shrink-0" />
                 <a
                   href={brand.website}
                   target="_blank"
@@ -187,6 +203,8 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
   onInputChange,
   errors = {},
   onFieldValidation,
+  isBrandLockedMode = false,
+  onBrandChange,
 }) => {
   const dispatch = useAppDispatch();
   const { brands, loading: brandLoading, pagination, brand } = useBrand();
@@ -201,6 +219,8 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
 
   const [bankSearch, setBankSearch] = useState("");
   const debouncedBankSearch = useDebounce(bankSearch, 400);
+
+  // Start date will be selected by user with validation
 
   const filteredBanks = useMemo(() => {
     const search = debouncedBankSearch.toLowerCase();
@@ -248,7 +268,29 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
   }, [pagination?.has_next, brandLoading]);
 
   const handleBrandSelect = (brandId: string | null) => {
-    onInputChange("brandId", brandId || "");
+    if (isBrandLockedMode) {
+      onBrandChange?.();
+      return;
+    }
+    // Reset brand-related fields when selecting a new brand
+    if (brandId && brandId !== formData.brand_id) {
+      const resetFields = {
+        brand_representative_name: "",
+        brand_representative_role: "",
+        brand_representative_phone: "",
+        brand_representative_email: "",
+        brand_tax_number: "",
+        brand_name: "",
+        brand_address: "",
+        brand_bank_name: "",
+        brand_bank_account_number: "",
+        brand_bank_account_holder: "",
+      };
+      Object.entries(resetFields).forEach(([key, value]) => {
+        onInputChange(key, value);
+      });
+    }
+    onInputChange("brand_id", brandId || "");
     if (!brandId) {
       setBrandDetailsOpen(false);
     }
@@ -256,93 +298,136 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
 
   const handleBankSelect = (bankId: string | null) => {
     const selectedBank = banks.find((bank) => String(bank.id) === String(bankId));
-    onInputChange("brandBankName", selectedBank ? selectedBank.name : "");
+    onInputChange("brand_bank_name", selectedBank ? selectedBank.name : "");
   };
 
   useEffect(() => {
-    if (formData.brandId && formData.brandId !== brand?.id) {
-      dispatch(fetchBrandDetail(formData.brandId));
+    if (formData.brand_id) {
+      if (!brand || formData.brand_id !== brand.id) {
+        dispatch(fetchBrandDetail(formData.brand_id));
+      }
       setBrandDetailsOpen(true);
-    } else if (!formData.brandId) {
+    } else {
       setBrandDetailsOpen(false);
     }
-  }, [formData.brandId, brand?.id, dispatch]);
+  }, [formData.brand_id, brand?.id, dispatch]);
 
   useEffect(() => {
-    if (brand && formData.brandId) {
+    if (brand && formData.brand_id && brand.id === formData.brand_id) {
       const brandRepData = {
-        brandRepresentativeName: brand.representative_name || "",
-        brandRepresentativeRole: brand.representative_role || "",
-        brandRepresentativePhone: brand.contact_phone || "",
-        brandRepresentativeEmail: brand.contact_email || "",
-        brandTaxNumber: brand.tax_number || "",
-        brandName: brand.name || "",
-        brandAddress: brand.address || "",
+        brand_representative_name: brand.representative_name || "",
+        brand_representative_role: brand.representative_role || "",
+        brand_representative_phone: brand.contact_phone || "",
+        brand_representative_email: brand.contact_email || "",
+        brand_tax_number: brand.tax_number || "",
+        brand_name: brand.name || "",
+        brand_address: brand.address || "",
       };
 
-      let hasChanges = false;
-      const updates: Record<string, string> = {};
-
+      // Only update fields that have changed to prevent infinite loops
       Object.entries(brandRepData).forEach(([key, value]) => {
-        if (value && !formData[key]) {
-          updates[key] = value;
-          hasChanges = true;
+        if (value && formData[key] !== value) {
+          onInputChange(key, value);
         }
       });
-
-      if (hasChanges) {
-        Object.entries(updates).forEach(([key, value]) => {
-          onInputChange(key, value);
-        });
-      }
     }
-  }, [brand, formData, onInputChange]);
+  }, [brand, formData.brand_id]);
 
   useEffect(() => {
     if (representativeConfig) {
       Object.entries(REP_CONFIG_TO_FORM_MAP).forEach(([cfgKey, formKey]) => {
-        // @ts-expect-error representativeConfig keys are dynamic (snake_case from backend)
+        // @ts-expect-error representativeConfig keys are dynamic
         const value = representativeConfig[cfgKey];
         if (value && !formData[formKey]) {
           onInputChange(formKey, value);
         }
       });
     }
-  }, [representativeConfig, onInputChange]);
+  }, [representativeConfig]);
 
   const handleFieldChange = async (field: string, value: any) => {
     const updatedForm = { ...formData, [field]: value };
     onInputChange(field, value);
 
-    if (field === "signedDate") {
-      onInputChange("startDate", value);
-      updatedForm.startDate = value;
-    }
-
     if (onFieldValidation) {
       const validation = await validateField(field, value, updatedForm);
       onFieldValidation(field, validation.isValid ? null : validation.error);
 
-      if (field === "signedDate") {
-        const createdAt = new Date(); // thời điểm hiện tại
-        const signedDate = new Date(value);
-        if (signedDate < createdAt) {
-          onFieldValidation("signedDate", "Signed Date cannot be earlier than today.");
+      if (field === "signed_date") {
+        const today = normalizeDate(new Date());
+        const signedDate = normalizeDate(value);
+        if (signedDate >= today) {
+          onFieldValidation("signed_date", "Signed Date must be earlier than today.");
         } else {
-          onFieldValidation("signedDate", null);
+          onFieldValidation("signed_date", null);
+        }
+
+        // Re-validate start_date when signed_date changes
+        if (updatedForm.start_date) {
+          const startDate = normalizeDate(updatedForm.start_date);
+          const today = normalizeDate(new Date());
+          if (startDate < today || startDate <= signedDate) {
+            onFieldValidation(
+              "start_date",
+              "Start date must be today or later, and after signed date.",
+            );
+          } else {
+            onFieldValidation("start_date", null);
+          }
+        }
+      }
+
+      if (field === "start_date") {
+        const startDate = normalizeDate(value);
+        const today = normalizeDate(new Date());
+        const signedDate = updatedForm.signed_date ? normalizeDate(updatedForm.signed_date) : null;
+
+        if (startDate < today) {
+          onFieldValidation("start_date", "Start date must be today or later.");
+        } else if (signedDate && startDate <= signedDate) {
+          onFieldValidation("start_date", "Start date must be after signed date.");
+        } else {
+          onFieldValidation("start_date", null);
+        }
+
+        // Re-validate end_date when start_date changes
+        if (updatedForm.end_date) {
+          const endDate = normalizeDate(updatedForm.end_date);
+          const minEndDate = new Date(startDate);
+          minEndDate.setMonth(minEndDate.getMonth() + 1);
+
+          if (endDate < normalizeDate(minEndDate)) {
+            onFieldValidation("end_date", "End date must be at least 1 month after start date.");
+          } else {
+            onFieldValidation("end_date", null);
+          }
         }
       }
 
       if (
-        (field === "signedDate" && updatedForm.endDate) ||
-        (field === "endDate" && updatedForm.signedDate)
+        (field === "signed_date" && updatedForm.end_date) ||
+        (field === "end_date" && updatedForm.signed_date) ||
+        (field === "end_date" && updatedForm.start_date)
       ) {
-        const signedDate = new Date(updatedForm.signedDate);
-        const endDate = new Date(updatedForm.endDate);
-        if (endDate < signedDate) {
-          onFieldValidation("endDate", "End Date must be later than or equal to Signed Date.");
-        } else {
-          onFieldValidation("endDate", null);
+        const endDate = normalizeDate(updatedForm.end_date);
+
+        if (updatedForm.start_date) {
+          const startDate = normalizeDate(updatedForm.start_date);
+          const minEndDate = new Date(startDate);
+          minEndDate.setMonth(minEndDate.getMonth() + 1);
+
+          if (endDate < normalizeDate(minEndDate)) {
+            onFieldValidation("end_date", "End date must be at least 1 month after start date.");
+          } else {
+            onFieldValidation("end_date", null);
+          }
+        } else if (updatedForm.signed_date) {
+          const signedDate = normalizeDate(updatedForm.signed_date);
+          if (endDate <= signedDate) {
+            onFieldValidation("end_date", "End date must be later than signed date.");
+          } else {
+            onFieldValidation("end_date", null);
+          }
         }
       }
     }
@@ -355,85 +440,85 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^A-Z\s]/g, "");
-    handleFieldChange("brandBankAccountHolder", normalized);
+    handleFieldChange("brand_bank_account_holder", normalized);
     e.target.value = normalized;
   };
 
   const brandRepresentativeFields = [
-    { label: "Company Name", field: "brandName", placeholder: "Company name", disabled: true },
+    { label: "Company Name", field: "brand_name", placeholder: "Company name", disabled: true },
     {
       label: "Company Address",
-      field: "brandAddress",
+      field: "brand_address",
       placeholder: "Company address",
       disabled: true,
     },
     {
       label: "Representative Name",
-      field: "brandRepresentativeName",
+      field: "brand_representative_name",
       placeholder: "Representative full name",
       required: true,
       disabled: true,
     },
     {
       label: "Representative Role",
-      field: "brandRepresentativeRole",
+      field: "brand_representative_role",
       placeholder: "Job title/role",
       disabled: true,
     },
     {
       label: "Phone Number",
-      field: "brandRepresentativePhone",
+      field: "brand_representative_phone",
       placeholder: "0xxx xxx xxx",
       disabled: true,
     },
     {
       label: "Email Address",
-      field: "brandRepresentativeEmail",
+      field: "brand_representative_email",
       placeholder: "example@company.com",
       type: "email",
       required: true,
       disabled: true,
     },
-    { label: "Tax Number", field: "brandTaxNumber", placeholder: "Tax code", disabled: true },
+    { label: "Tax Number", field: "brand_tax_number", placeholder: "Tax code", disabled: true },
   ];
 
   const webRepresentativeFields = [
     {
       label: "Full Name",
-      field: "representativeName",
+      field: "representative_name",
       placeholder: "KOL/Blogger full name",
       required: true,
     },
     {
       label: "Role",
-      field: "representativeRole",
+      field: "representative_role",
       placeholder: "e.g., Content Creator, KOL, Blogger",
     },
-    { label: "Phone Number", field: "representativePhone", placeholder: "xxx xxx xxx" },
+    { label: "Phone Number", field: "representative_phone", placeholder: "xxx xxx xxx" },
     {
       label: "Email Address",
-      field: "representativeEmail",
+      field: "representative_email",
       placeholder: "email@example.com",
       type: "email",
       required: true,
     },
     {
       label: "Tax Number",
-      field: "representativeTaxNumber",
+      field: "representative_tax_number",
       placeholder: "Personal tax identification number",
     },
   ];
 
   const webBankingFields = [
-    { label: "Bank Name", field: "representativeBankName", placeholder: "Select bank" },
+    { label: "Bank Name", field: "representative_bank_name", placeholder: "Select bank" },
     {
       label: "Account Number",
-      field: "representativeBankAccountNumber",
+      field: "representative_bank_account_number",
       placeholder: "Account number",
     },
     {
       label: "Account Holder",
-      field: "representativeBankAccountHolder",
+      field: "representative_bank_account_holder",
       placeholder: "Account holder full name",
     },
   ];
@@ -450,7 +535,6 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
 
   return (
     <div className="space-y-8">
-      {/* Contract Type */}
       <motion.div
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
@@ -504,7 +588,6 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
         </Card>
       </motion.div>
 
-      {/* Brand Selection */}
       <AnimatePresence>
         {formData.type && (
           <motion.div
@@ -516,25 +599,37 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
             <Card className="rounded-2xl shadow-md border border-slate-200">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">Brand Selection</CardTitle>
-                <p className="text-sm text-slate-500">Search and pick the partner brand.</p>
+                <p className="text-sm text-slate-500">
+                  {isBrandLockedMode
+                    ? "Brand is locked and cannot be changed in edit mode"
+                    : formData.brand_id
+                      ? "Selected brand (you can change if needed)"
+                      : "Search and pick the partner brand."}
+                </p>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <DataSelector
                     data={allBrands}
-                    selectedId={formData.brandId}
+                    selectedId={formData.brand_id}
                     onSelect={handleBrandSelect}
                     renderItem={(b) => <MemoBrandCard brand={b} isSelection={true} />}
                     getLabel={(b) => b.name}
                     title="Brands"
-                    placeholder="Search brands name..."
+                    placeholder={
+                      isBrandLockedMode
+                        ? "Brand cannot be changed in edit mode"
+                        : "Search brands name..."
+                    }
                     onSearch={setSearch}
                     searchValue={search}
                     onScrollEnd={loadMoreBrands}
                     loading={brandLoading}
+                    disabled={isBrandLockedMode}
                   />
+
                   <AnimatePresence>
-                    {brandDetailsOpen && brand && formData.brandId && (
+                    {brandDetailsOpen && formData.brand_id && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
@@ -547,7 +642,23 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                             Brand Information
                           </h2>
                         </div>
-                        <MemoBrandCard brand={brand} isSelection={false} />
+
+                        {brandLoading && !brand ? (
+                          <div className="flex items-center justify-center p-8 bg-gray-50 rounded-lg">
+                            <Loader2 className="mx-auto mb-4 h-12 w-12 text-primary animate-spin" />
+                            <span className="ml-2 text-sm text-gray-600">
+                              Loading brand information...
+                            </span>
+                          </div>
+                        ) : brand ? (
+                          <MemoBrandCard brand={brand} isSelection={false} />
+                        ) : (
+                          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <p className="text-sm text-yellow-800">
+                              Brand information not found. Please select another brand.
+                            </p>
+                          </div>
+                        )}
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -558,7 +669,6 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Contract Information */}
       <AnimatePresence>
         {formData.type && (
           <motion.div
@@ -591,59 +701,80 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                     <FieldError message={errors.title} />
                   </div>
                   <AddressSelector
-                    value={formData.signedLocation || ""}
-                    onChange={(address) => handleFieldChange("signedLocation", address)}
+                    value={formData.signed_location || ""}
+                    onChange={(address) => handleFieldChange("signed_location", address)}
                     label="Signed Location"
                     placeholder="Search for contract signing location..."
                     required
-                    error={errors.signedLocation}
+                    error={errors.signed_location}
                   />
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Contract Number *</Label>
-                    <Input
-                      value={formData.contractNumber || ""}
-                      onChange={(e) => handleFieldChange("contractNumber", e.target.value)}
-                      placeholder="Contract number e.g. CT-2025-001"
-                      className={`h-11 ${errors.contractNumber ? "border-red-500" : ""}`}
-                    />
-                    <FieldError message={errors.contractNumber} />
-                  </div>
                   <DatePicker
                     label="Signed Date"
-                    value={formData.signedDate || ""}
+                    value={formData.signed_date || ""}
                     onChange={(value: string) => {
-                      handleFieldChange("signedDate", value);
-                      handleFieldChange("startDate", value);
+                      handleFieldChange("signed_date", value);
                     }}
                     placeholder="Select signed date"
-                    error={errors.signedDate}
+                    error={errors.signed_date}
                     required
-                    minDate={new Date().toISOString().split("T")[0]}
+                    explainLine="signed_date"
+                    maxDate={(() => {
+                      const yesterday = new Date();
+                      yesterday.setDate(yesterday.getDate() - 1);
+                      return getLocalDateString(yesterday);
+                    })()}
                   />
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Contract Duration</Label>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <Label className="text-xs">Start Date</Label>
+                        <Label className="text-xs">Start Date *</Label>
                         <DatePicker
-                          value={formData.startDate || ""}
-                          onChange={(value: string) => handleFieldChange("startDate", value)}
-                          placeholder="Auto-filled from Signed Date"
-                          disabled
+                          value={formData.start_date || ""}
+                          onChange={(value: string) => handleFieldChange("start_date", value)}
+                          placeholder="Select start date"
+                          error={errors.start_date}
+                          required
+                          explainLine={`contract_start:${formData.signed_date || ""}`}
+                          minDate={(() => {
+                            const yesterday = new Date();
+                            yesterday.setDate(yesterday.getDate() - 1);
+                            return getLocalDateString(yesterday);
+                          })()}
                         />
-                        <p className="text-xs text-slate-500 mt-1">Auto-filled from Signed Date</p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Must be today or later, and after signed date
+                        </p>
+                        <FieldError message={errors.start_date} />
                       </div>
                       <div>
                         <Label className="text-xs">End Date *</Label>
                         <DatePicker
-                          value={formData.endDate || ""}
-                          onChange={(value: string) => handleFieldChange("endDate", value)}
+                          value={formData.end_date || ""}
+                          onChange={(value: string) => handleFieldChange("end_date", value)}
                           placeholder="Select end date"
-                          error={errors.endDate}
+                          error={errors.end_date}
                           required
-                          minDate={formData.startDate || formData.signedDate || undefined}
+                          explainLine={`end_date:${formData.start_date || formData.signed_date || ""}`}
+                          minDate={(() => {
+                            if (formData.start_date) {
+                              const startDate = new Date(formData.start_date);
+                              const minEndDate = new Date(startDate);
+                              minEndDate.setMonth(minEndDate.getMonth() + 1);
+                              return getLocalDateString(minEndDate);
+                            }
+                            if (formData.signed_date) {
+                              const signedDate = new Date(formData.signed_date);
+                              signedDate.setDate(signedDate.getDate() + 1); // Next day after signed
+                              return getLocalDateString(signedDate);
+                            }
+                            return getLocalDateString(new Date());
+                          })()}
                         />
-                        <FieldError message={errors.endDate} />
+                        <p className="text-xs text-slate-500 mt-1">
+                          Must be at least 1 month after start date
+                        </p>
+                        <FieldError message={errors.end_date} />
                       </div>
                     </div>
                   </div>
@@ -654,7 +785,6 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Representatives */}
       <AnimatePresence>
         {formData.type && (
           <motion.div
@@ -674,7 +804,6 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                 </p>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Brand Representative */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                     <div className="flex items-center gap-2">
@@ -682,21 +811,21 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                       <h4 className="text-sm font-semibold">Brand Representative (Party A)</h4>
                     </div>
                     <Badge variant="secondary" className="text-xs">
-                      {formData.brandId ? "From Brand Data" : "Auto-filled"}
+                      {formData.brand_id ? "From Brand Data" : "Auto-filled"}
                     </Badge>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {brandRepresentativeFields.map((f) => (
                       <div
                         key={f.field}
-                        className={f.field === "brandAddress" ? "md:col-span-2" : ""}
+                        className={f.field === "brand_address" ? "md:col-span-2" : ""}
                       >
                         <div className="space-y-1">
                           <Label className="text-sm">
                             {f.label}
                             {f.required ? " *" : ""}
                           </Label>
-                          {f.field === "brandRepresentativePhone" ? (
+                          {f.field === "brand_representative_phone" ? (
                             <PhoneNumberInput
                               value={formData[f.field] || ""}
                               onChange={(val) => handleFieldChange(f.field, val)}
@@ -720,7 +849,6 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                   </div>
                 </div>
 
-                {/* Brand Banking */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                     <div className="flex items-center gap-2">
@@ -738,7 +866,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                         data={filteredBanks}
                         selectedId={
                           banks
-                            .find((bank: any) => bank.name === formData.brandBankName)
+                            .find((bank: any) => bank.name === formData.brand_bank_name)
                             ?.id?.toString() || ""
                         }
                         onSelect={handleBankSelect}
@@ -750,7 +878,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                         searchValue={bankSearch}
                         loading={bankLoading}
                       />
-                      <FieldError message={errors.brandBankName} />
+                      <FieldError message={errors.brand_bank_name} />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {[
@@ -769,17 +897,19 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                           <Label className="text-sm">{field.label}</Label>
                           {field.field === "brandBankAccountHolder" ? (
                             <Input
-                              value={formData.brandBankAccountHolder || ""}
+                              value={formData.brand_bank_account_holder || ""}
                               onChange={handleAccountHolderChange}
                               placeholder={field.placeholder}
-                              className={`h-11 ${errors.brandBankAccountHolder ? "border-red-500" : ""}`}
+                              className={`h-11 ${errors.brand_bank_account_holder ? "border-red-500" : ""}`}
                             />
                           ) : (
                             <BankAccountInput
-                              value={formData.brandBankAccountNumber || ""}
-                              onChange={(val) => handleFieldChange("brandBankAccountNumber", val)}
+                              value={formData.brand_bank_account_number || ""}
+                              onChange={(val) =>
+                                handleFieldChange("brand_bank_account_number", val)
+                              }
                               placeholder={field.placeholder}
-                              error={errors.brandBankAccountNumber}
+                              error={errors.brand_bank_account_number}
                             />
                           )}
                           <FieldError message={errors[field.field]} />
@@ -789,7 +919,6 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                   </div>
                 </div>
 
-                {/* Web Representative */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                     <div className="flex items-center gap-2">
@@ -807,7 +936,7 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                           {f.label}
                           {f.required ? " *" : ""}
                         </Label>
-                        {f.field === "representativePhone" ? (
+                        {f.field === "representative_phone" ? (
                           <PhoneNumberInput
                             value={formData[f.field] || ""}
                             onChange={(val) => handleFieldChange(f.field, val)}
@@ -840,14 +969,14 @@ const ContractInformation: React.FC<ContractInformationProps> = ({
                         <Label className="text-sm font-medium">Bank Name</Label>
                         <Input
                           disabled
-                          value={formData.representativeBankName || ""}
+                          value={formData.representative_bank_name || ""}
                           onChange={(e) =>
-                            handleFieldChange("representativeBankName", e.target.value)
+                            handleFieldChange("representative_bank_name", e.target.value)
                           }
                           placeholder="Bank name"
                           className="h-11 bg-slate-50"
                         />
-                        <FieldError message={errors.representativeBankName} />
+                        <FieldError message={errors.representative_bank_name} />
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {webBankingFields.slice(1).map((field) => (

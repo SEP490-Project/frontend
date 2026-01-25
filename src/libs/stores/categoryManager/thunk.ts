@@ -71,10 +71,23 @@ const assignParentCategoryThunk = createAsyncThunk(
   },
 );
 
+const updateCategoryThunk = createAsyncThunk(
+  "categories/update",
+  async ({ categoryId, data }: { categoryId: string; data: any }, { rejectWithValue }) => {
+    try {
+      const response = await manageCategories.updateCategory(categoryId, data);
+      return response.data as CategoryResponse;
+    } catch (error) {
+      return rejectWithValue((error as any).response?.data?.message || "Failed to update category");
+    }
+  },
+);
+
 export {
   getAllCategoriesThunk,
   createCategoryThunk,
   deleteCategoryThunk,
   assignParentCategoryThunk,
   getAllCategoriesNoParamsThunk,
+  updateCategoryThunk,
 };

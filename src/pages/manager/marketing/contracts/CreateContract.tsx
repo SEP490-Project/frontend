@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   ContractFiles,
   ContractInformation,
@@ -17,7 +18,6 @@ import { useAppDispatch } from "@/libs/stores";
 import { useContract } from "@/libs/hooks/useContract";
 import { createContract } from "@/libs/stores/contractManager/thunk";
 import { toast } from "sonner";
-import { useNavigate } from "react-router";
 import { Loader2 } from "lucide-react";
 
 const CONTRACT_TYPE_OPTIONS = [
@@ -47,48 +47,39 @@ const INITIAL_TABS = [
 ];
 
 const INITIAL_FORM_DATA = {
-  brandId: "",
-  parentContractId: "",
-  contractNumber: "",
+  brand_id: "",
+  parent_contract_id: "",
   title: "",
   type: "",
-  signedDate: "",
-  signedLocation: "",
-  startDate: "",
-  endDate: "",
-  // Brand representative (from brand data -readonly)
-  brandRepresentativeName: "",
-  brandRepresentativeRole: "",
-  brandRepresentativePhone: "",
-  brandRepresentativeEmail: "",
-  brandTaxNumber: "",
-  // Brand banking (editable)
-  brandBankName: "",
-  brandBankAccountNumber: "",
-  brandBankAccountHolder: "",
-  // Web representative (editable) - field names khớp với payload
-  representativeName: "",
-  representativeRole: "",
-  representativePhone: "",
-  representativeEmail: "",
-  representativeTaxNumber: "",
-  representativeBankName: "",
-  representativeBankAccountNumber: "",
-  representativeBankAccountHolder: "",
+  signed_date: "",
+  signed_location: "",
+  start_date: "",
+  end_date: "",
+  brand_representative_name: "",
+  brand_representative_role: "",
+  brand_representative_phone: "",
+  brand_representative_email: "",
+  brand_tax_number: "",
+  brand_bank_name: "",
+  brand_bank_account_number: "",
+  brand_bank_account_holder: "",
+  representative_name: "",
+  representative_role: "",
+  representative_phone: "",
+  representative_email: "",
+  representative_tax_number: "",
+  representative_bank_name: "",
+  representative_bank_account_number: "",
+  representative_bank_account_holder: "",
   deposit_amount: 0,
   deposit_percent: 0,
-  // Add missing scopeOfWork property
-  scopeOfWork: {},
-  // Add missing financialTerms property if needed by other code
-  financialTerms: {},
-  // Add missing legalTerms property if needed by other code
-  legalTerms: {},
-  // Add missing contract_file_url and proposal_file_url if needed by other code
+  scope_of_work: {},
+  financial_terms: {},
+  legal_terms: {},
   contract_file_url: "",
   proposal_file_url: "",
 };
 
-// Helper functions
 const getContractTypeColor = (type: string) =>
   CONTRACT_TYPE_COLORS[type as keyof typeof CONTRACT_TYPE_COLORS] || {
     bg: "bg-gray-100",
@@ -128,6 +119,7 @@ const getDefaultFinancialTerms = (type: string) => {
         levels: [],
         payment_cycle: "",
         payment_date: "",
+        payment_date_selector: null,
         tax_withholding: { threshold: 0, rate_percent: 0 },
       };
 
@@ -158,29 +150,28 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
     case "contract-info":
       return !!(
         formData.type &&
-        formData.brandId &&
-        formData.contractNumber &&
+        formData.brand_id &&
         formData.title &&
-        formData.signedDate &&
-        formData.startDate &&
-        formData.endDate &&
-        formData.signedLocation &&
-        formData.brandBankName &&
-        formData.brandBankAccountNumber &&
-        formData.brandBankAccountHolder
+        formData.signed_date &&
+        formData.start_date &&
+        formData.end_date &&
+        formData.signed_location &&
+        formData.brand_bank_name &&
+        formData.brand_bank_account_number &&
+        formData.brand_bank_account_holder
       );
     case "scope-of-work": {
       if (!formData.type) return false;
 
-      const scopeOfWork = formData.scopeOfWork || {};
-      const deliverables = scopeOfWork.deliverables || {};
+      const scope_of_work = formData.scope_of_work || {};
+      const deliverables = scope_of_work.deliverables || {};
 
       if (formData.type === "ADVERTISING") {
-        const advertisingItems = deliverables.advertised_items || [];
+        const advertised_items = deliverables.advertised_items || [];
 
         const hasValidItems =
-          advertisingItems.length > 0 &&
-          advertisingItems.every((item: any) => {
+          advertised_items.length > 0 &&
+          advertised_items.every((item: any) => {
             const hasBasicInfo =
               item.name?.trim() &&
               item.description?.trim() &&
@@ -199,12 +190,12 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
               item.kpis.length > 0 &&
               item.kpis.every((k: any) => k.metric?.trim() && k.target?.trim());
 
-            return hasBasicInfo && hasHashtags && hasMaterial && hasKPIs;
+            return hasBasicInfo && hasHashtags && hasKPIs && hasMaterial;
           });
 
-        const generalReqs = scopeOfWork.general_requirements || [];
+        const general_reqs = scope_of_work.general_requirements || [];
         const hasValidGeneralReqs =
-          generalReqs.length > 0 && generalReqs.every((req: any) => req.trim());
+          general_reqs.length > 0 && general_reqs.every((req: any) => req.trim());
 
         return hasValidItems && hasValidGeneralReqs;
       }
@@ -255,11 +246,23 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
             );
           });
 
-        const generalReqs = scopeOfWork.general_requirements || [];
-        const hasValidGeneralReqs =
-          generalReqs.length > 0 && generalReqs.every((req: any) => req.trim());
+        const allPlatformsCovered = targetPlatforms.every((platform: string) =>
+          affiliateItems.some(
+            (item: any) => item.platform?.toUpperCase() === platform.toUpperCase(),
+          ),
+        );
 
-        return hasTrackingLink && hasTargetPlatforms && hasValidItems && hasValidGeneralReqs;
+        const general_reqs = scope_of_work.general_requirements || [];
+        const hasValidGeneralReqs =
+          general_reqs.length > 0 && general_reqs.every((req: any) => req.trim());
+
+        return (
+          hasTrackingLink &&
+          hasTargetPlatforms &&
+          hasValidItems &&
+          hasValidGeneralReqs &&
+          allPlatformsCovered
+        );
       }
 
       if (formData.type === "BRAND_AMBASSADOR") {
@@ -287,67 +290,83 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
             return hasBasicInfo && hasValidActivities && hasValidRules && hasKPIs;
           });
 
-        const generalReqs = scopeOfWork.general_requirements || [];
+        const general_reqs = scope_of_work.general_requirements || [];
         const hasValidGeneralReqs =
-          generalReqs.length > 0 && generalReqs.every((req: any) => req.trim());
+          general_reqs.length > 0 && general_reqs.every((req: any) => req.trim());
 
         return hasValidItems && hasValidGeneralReqs;
       }
 
       if (formData.type === "CO_PRODUCING") {
         const products = deliverables.products || [];
+        const concepts = deliverables.concepts || [];
 
         const hasValidProducts =
           products.length > 0 &&
           products.every((product: any) => {
             const hasProductBasicInfo = product.name?.trim() && product.description?.trim();
-            const hasProductKPIs =
-              Array.isArray(product.kpis) &&
-              product.kpis.length > 0 &&
-              product.kpis.some((k: any) => k.metric?.trim() && k.target?.trim());
-            const hasProductMaterial =
-              Array.isArray(product.material_url) && product.material_url.length > 0;
-            const concepts = product.concepts || [];
-            const hasValidConcepts =
-              concepts.length > 0 &&
-              concepts.every((concept: any) => {
-                const hasConceptBasicInfo =
-                  concept.name?.trim() &&
-                  concept.platform?.trim() &&
-                  concept.tagline?.trim() &&
-                  concept.description?.trim();
-                const hasCreativeNotes = !!concept.creative_notes?.trim();
-                const hasHashtags =
-                  Array.isArray(concept.hash_tag) &&
-                  concept.hash_tag.length > 0 &&
-                  concept.hash_tag.every((t: any) => t.trim() && t.trim() !== "#");
-                const hasValidContentReqs =
-                  Array.isArray(concept.content_requirements) &&
-                  concept.content_requirements.length > 0 &&
-                  concept.content_requirements.every((r: any) => r.trim());
-                const hasConceptKPIs =
-                  Array.isArray(concept.kpis) &&
-                  concept.kpis.length > 0 &&
-                  concept.kpis.some((k: any) => k.metric?.trim() && k.target?.trim());
-                const hasConceptMaterial =
-                  Array.isArray(concept.material_url) && concept.material_url.length > 0;
-                return (
-                  hasConceptBasicInfo &&
-                  hasCreativeNotes &&
-                  hasHashtags &&
-                  hasValidContentReqs &&
-                  hasConceptKPIs &&
-                  hasProductMaterial &&
-                  hasConceptMaterial
-                );
-              });
-            return hasProductBasicInfo && hasProductKPIs && hasValidConcepts;
-          });
-        const generalReqs = scopeOfWork.general_requirements || [];
-        const hasValidGeneralReqs =
-          generalReqs.length === 0 || generalReqs.every((req: any) => req.trim());
 
-        return hasValidProducts && hasValidGeneralReqs;
+            const productKPIs = product.kpis || [];
+            const hasValidProductKPIs =
+              productKPIs.length === 0 ||
+              productKPIs.some((k: any) => k.metric?.trim() && k.target?.trim());
+
+            const materialUrls = product.material || product.material_url || [];
+            const hasProductMaterial =
+              !Array.isArray(materialUrls) ||
+              materialUrls.length === 0 ||
+              materialUrls.some((url: string) => url?.trim());
+
+            return hasProductBasicInfo && hasValidProductKPIs && hasProductMaterial;
+          });
+
+        const hasValidConcepts = products.every((product: any) => {
+          const productConcepts = concepts.filter(
+            (concept: any) => concept.product_id === product.id,
+          );
+
+          return (
+            productConcepts.length > 0 &&
+            productConcepts.every((concept: any) => {
+              const hasConceptBasicInfo =
+                concept.name?.trim() && concept.platform?.trim() && concept.description?.trim();
+
+              const hasHashtags =
+                Array.isArray(concept.hash_tag) &&
+                concept.hash_tag.length > 0 &&
+                concept.hash_tag.every((t: any) => t.trim() && t.trim() !== "#");
+
+              const hasValidContentReqs =
+                Array.isArray(concept.content_requirements) &&
+                concept.content_requirements.length > 0 &&
+                concept.content_requirements.every((r: any) => r.trim());
+
+              const conceptKPIs = concept.kpis || [];
+              const hasValidConceptKPIs =
+                conceptKPIs.length === 0 ||
+                conceptKPIs.some((k: any) => k.metric?.trim() && k.target?.trim());
+
+              const hasConceptMaterial =
+                !Array.isArray(concept.material_url) ||
+                concept.material_url.length === 0 ||
+                concept.material_url.some((url: string) => url?.trim());
+
+              return (
+                hasConceptBasicInfo &&
+                hasHashtags &&
+                hasValidContentReqs &&
+                hasValidConceptKPIs &&
+                hasConceptMaterial
+              );
+            })
+          );
+        });
+
+        const general_reqs = scope_of_work.general_requirements || [];
+        const hasValidGeneralReqs =
+          general_reqs.length === 0 || general_reqs.every((req: any) => req.trim());
+
+        return hasValidProducts && hasValidConcepts && hasValidGeneralReqs;
       }
 
       return false;
@@ -355,14 +374,20 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
     case "financial-terms": {
       if (!formData.type) return false;
 
-      const financialTerms = formData.financialTerms || {};
+      const financial_terms = formData.financial_terms || {};
 
-      const hasPaymentMethod = financialTerms.payment_method?.trim();
+      const hasPaymentMethod = financial_terms.payment_method?.trim();
+
+      // Check deposit proof validation if deposit is marked as paid
+      const isDepositPaid = formData.is_deposit_paid;
+      const hasDepositProof = isDepositPaid
+        ? formData.deposit_proof_url && formData.deposit_proof_url.trim() !== ""
+        : true; // If not paid, no proof required
 
       if (formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR") {
-        const hasBasicInfo = !!(hasPaymentMethod && financialTerms.total_cost > 0);
+        const hasBasicInfo = !!(hasPaymentMethod && financial_terms.total_cost > 0);
 
-        const schedule = financialTerms.schedule || [];
+        const schedule = financial_terms.schedule || [];
         const allItemsValid = schedule.every(
           (item: any) => item.milestone?.trim() && item.amount > 0 && item.due_date,
         );
@@ -370,92 +395,118 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
           (sum: number, item: any) => sum + (item.amount || 0),
           0,
         );
-        const isScheduleBalanced =
-          Math.abs((financialTerms.total_cost || 0) - scheduleTotal) < 0.01;
 
-        const breakdownArray = financialTerms.cost_breakdown_array || [];
-        const breakdownTotal = breakdownArray.reduce(
+        const depositPercent = formData.deposit_percent || 0;
+        const expectedScheduleAmount = financial_terms.total_cost
+          ? Math.round((financial_terms.total_cost * (100 - depositPercent)) / 100)
+          : 0;
+
+        const isScheduleBalanced = Math.abs(expectedScheduleAmount - scheduleTotal) < 0.01;
+
+        const breakdown_array = financial_terms.cost_breakdown_array || [];
+        const breakdownTotal = breakdown_array.reduce(
           (sum: number, item: any) => sum + (item.value || 0),
           0,
         );
         const isBreakdownBalanced =
-          Math.abs((financialTerms.total_cost || 0) - breakdownTotal) < 0.01;
+          Math.abs((financial_terms.total_cost || 0) - breakdownTotal) < 0.01;
 
-        return hasBasicInfo && allItemsValid && isScheduleBalanced && isBreakdownBalanced;
+        // Check event linking for BRAND_AMBASSADOR
+        let allEventsLinked = true;
+        if (formData.type === "BRAND_AMBASSADOR") {
+          const scope_of_work = formData.scope_of_work || {};
+          const deliverables = scope_of_work.deliverables || {};
+          const events = Array.isArray(deliverables.events) ? deliverables.events : [];
+
+          if (events.length > 0) {
+            // Get all linked event IDs from schedule
+            const linkedEventIds = new Set<number>();
+            schedule.forEach((milestone: any) => {
+              (milestone.linked_event_ids || []).forEach((id: number) => linkedEventIds.add(id));
+            });
+
+            // Check if all events are linked
+            allEventsLinked = events.every((event: any) => linkedEventIds.has(event.id));
+          }
+        }
+
+        return (
+          hasBasicInfo &&
+          allItemsValid &&
+          isScheduleBalanced &&
+          isBreakdownBalanced &&
+          allEventsLinked &&
+          hasDepositProof
+        );
       }
 
       if (formData.type === "AFFILIATE") {
-        // Kiểm tra các field bắt buộc cho AFFILIATE - KHÔNG cần schedule
         const hasBasicInfo = !!(
           hasPaymentMethod &&
-          financialTerms.base_per_click > 0 &&
-          financialTerms.payment_cycle
+          financial_terms.base_per_click > 0 &&
+          financial_terms.payment_cycle
         );
 
-        // Kiểm tra levels - SỬA LẠI LOGIC VALIDATION
         const hasValidLevels =
-          financialTerms.levels?.length > 0 &&
-          financialTerms.levels.every((level: any) => {
-            // Kiểm tra các field thực tế có trong data
+          financial_terms.levels?.length > 0 &&
+          financial_terms.levels.every((level: any, index: number) => {
             const hasLevel = level.level > 0;
             const hasMaxClicks = level.max_clicks > 0;
             const hasMultiplier = level.multiplier > 0;
 
-            return hasLevel && hasMaxClicks && hasMultiplier;
+            const isMaxClicksValid =
+              index === 0 || level.max_clicks > financial_terms.levels[index - 1].max_clicks;
+
+            return hasLevel && hasMaxClicks && hasMultiplier && isMaxClicksValid;
           });
 
-        // Kiểm tra payment_date - có thể là string, number, hoặc array
-        const hasPaymentDate = !!(
-          financialTerms.payment_date !== undefined &&
-          financialTerms.payment_date !== null &&
-          financialTerms.payment_date !== ""
-        );
+        const hasPaymentDate = !!(financial_terms.payment_cycle === "QUARTERLY"
+          ? Array.isArray(financial_terms.payment_date) && financial_terms.payment_date.length > 0
+          : financial_terms.payment_date !== undefined &&
+            financial_terms.payment_date !== null &&
+            financial_terms.payment_date !== "");
 
-        return hasBasicInfo && hasValidLevels && hasPaymentDate;
+        return hasBasicInfo && hasValidLevels && hasPaymentDate && hasDepositProof;
       }
 
       if (formData.type === "CO_PRODUCING") {
-        // Kiểm tra các field bắt buộc cho CO_PRODUCING - KHÔNG cần schedule
-        // const hasBasicInfo = !!(
-        //   hasPaymentMethod &&
-        //   financialTerms.profit_distribution_cycle &&
-        //   financialTerms.profit_distribution_date?.length > 0
-        // );
+        const hasBasicInfo = !!(
+          hasPaymentMethod &&
+          financial_terms.profit_distribution_cycle &&
+          financial_terms.profit_distribution_date?.length > 0
+        );
 
-        // Kiểm tra profit split (phải tổng = 100%)
         const validProfitSplit = !!(
-          financialTerms.profit_split_company_percent > 0 &&
-          financialTerms.profit_split_kol_percent > 0 &&
+          financial_terms.profit_split_company_percent > 0 &&
+          financial_terms.profit_split_kol_percent > 0 &&
           Math.abs(
-            (financialTerms.profit_split_company_percent || 0) +
-              (financialTerms.profit_split_kol_percent || 0) -
+            (financial_terms.profit_split_company_percent || 0) +
+              (financial_terms.profit_split_kol_percent || 0) -
               100,
           ) < 0.01
         );
 
-        return validProfitSplit;
+        return validProfitSplit && hasBasicInfo && hasDepositProof;
       }
 
       return false;
     }
     case "legal-terms": {
-      const compensationPercent = formData.legalTerms?.compensationPercent;
+      const compensation_percent = formData.legal_terms?.compensation_percent;
       const isValid = !!(
-        compensationPercent !== undefined &&
-        compensationPercent !== null &&
-        compensationPercent !== "" &&
-        !isNaN(Number(compensationPercent)) &&
-        Number(compensationPercent) >= 0 &&
-        Number(compensationPercent) <= 100
+        compensation_percent !== undefined &&
+        compensation_percent !== null &&
+        compensation_percent !== "" &&
+        !isNaN(Number(compensation_percent)) &&
+        Number(compensation_percent) >= 0 &&
+        Number(compensation_percent) <= 100
       );
 
       return isValid;
     }
     case "contract-actions": {
-      // Kiểm tra cả files và URLs
-      const hasContractFile = formData.contractFiles?.length > 0 || formData.contract_file_url;
-      const hasProposalFile = formData.proposalFiles?.length > 0 || formData.proposal_file_url;
-
+      const hasContractFile = formData.contract_files?.length > 0 || formData.contract_file_url;
+      const hasProposalFile = formData.proposal_files?.length > 0 || formData.proposal_file_url;
       return hasContractFile && hasProposalFile;
     }
     default:
@@ -464,26 +515,60 @@ const checkTabCompletionLogic = (tabId: string, formData: any): boolean => {
 };
 
 const AddContractPage: React.FC = () => {
-  const [formData, setFormData] = useState<any>(INITIAL_FORM_DATA);
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const [errors, setErrors] = useState<any>({});
   const [activeTab, setActiveTab] = useState(INITIAL_TABS[0].id);
   const [currentStep, setCurrentStep] = useState(1);
   const [tabs, setTabs] = useState(INITIAL_TABS.map((tab) => ({ ...tab, isCompleted: false })));
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // ADD PREVIEW MODAL STATE
   const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   const dispatch = useAppDispatch();
   const { loading } = useContract();
-  const navigate = useNavigate();
 
-  // Modal states
   const [showTypeChangeModal, setShowTypeChangeModal] = useState(false);
   const [pendingNewType, setPendingNewType] = useState("");
   const [showResetModal, setShowResetModal] = useState(false);
 
-  // Check completion status for each tab
+  const preselectedBrandId = location.state?.preselectedBrandId;
+  const preselectedBrandData = location.state?.brandData;
+
+  const [formData, setFormData] = useState<any>(() => ({
+    ...INITIAL_FORM_DATA,
+    ...(preselectedBrandId ? { brand_id: preselectedBrandId } : {}),
+  }));
+
+  useEffect(() => {
+    if (preselectedBrandId && !formData.brand_id) {
+      setFormData((prev: typeof INITIAL_FORM_DATA) => ({
+        ...prev,
+        brand_id: preselectedBrandId,
+      }));
+
+      if (preselectedBrandData) {
+        const brandRepData = {
+          brand_representative_name: preselectedBrandData.representative_name || "",
+          brand_representative_role: preselectedBrandData.representative_role || "",
+          brand_representative_phone: preselectedBrandData.contact_phone || "",
+          brand_representative_email: preselectedBrandData.contact_email || "",
+          brand_tax_number: preselectedBrandData.tax_number || "",
+          brand_name: preselectedBrandData.name || "",
+          brand_address: preselectedBrandData.address || "",
+        };
+
+        setFormData((prev: typeof INITIAL_FORM_DATA) => ({
+          ...prev,
+          ...brandRepData,
+        }));
+      }
+
+      window.history.replaceState({}, document.title);
+    }
+  }, [preselectedBrandId, preselectedBrandData, formData.brand_id]);
+
   useEffect(() => {
     setTabs((currentTabs) =>
       currentTabs.map((tab) => ({
@@ -493,26 +578,23 @@ const AddContractPage: React.FC = () => {
     );
   }, [formData]);
 
-  // Calculate progress
   const requiredTabs = tabs.filter((tab) => tab.isRequired);
   const completedRequiredTabs = requiredTabs.filter((tab) => tab.isCompleted);
   const progressPercentage = (completedRequiredTabs.length / requiredTabs.length) * 100;
   const canSubmit = progressPercentage === 100;
 
-  // Check if contract type should be locked (after step 1 and when there's data in subsequent steps)
   const hasDataBeyondStep1 = () => {
     return (
-      Object.keys(formData.scopeOfWork || {}).length > 0 ||
-      Object.keys(formData.financialTerms || {}).length > 0 ||
-      Object.keys(formData.legalTerms || {}).length > 0 ||
-      formData.contractFiles?.length > 0 ||
-      formData.proposalFiles?.length > 0
+      Object.keys(formData.scope_of_work || {}).length > 0 ||
+      Object.keys(formData.financial_terms || {}).length > 0 ||
+      Object.keys(formData.legal_terms || {}).length > 0 ||
+      formData.contract_files?.length > 0 ||
+      formData.proposal_files?.length > 0
     );
   };
 
   const isTypeLockedMode = formData.type && hasDataBeyondStep1();
 
-  // Navigation functions
   const getCurrentTab = () => tabs.find((tab) => tab.step === currentStep);
   const canGoNext = () => {
     const currentTab = getCurrentTab();
@@ -546,7 +628,6 @@ const AddContractPage: React.FC = () => {
     const selectedTab = tabs.find((tab) => tab.id === tabId);
     if (!selectedTab) return;
 
-    // Allow access to all completed steps + next step
     const completedSteps = tabs.filter((tab) => tab.isCompleted).length;
     const maxAllowedStep = Math.min(completedSteps + 1, INITIAL_TABS.length);
 
@@ -572,7 +653,6 @@ const AddContractPage: React.FC = () => {
     setShowResetModal(false);
   };
 
-  // Contract type change handlers
   const handleTypeChangeRequest = (newType: string) => {
     if (isTypeLockedMode) {
       setPendingNewType(newType);
@@ -583,45 +663,40 @@ const AddContractPage: React.FC = () => {
   };
 
   const confirmTypeChange = () => {
-    // Clear all data from step 2 onwards
     const clearedFormData = {
       ...INITIAL_FORM_DATA,
-      brandId: formData.brandId,
-      parentContractId: formData.parentContractId,
-      contractNumber: formData.contractNumber,
+      brand_id: formData.brand_id,
+      parent_contract_id: formData.parent_contract_id,
       title: formData.title,
-      signedDate: formData.signedDate,
-      signedLocation: formData.signedLocation,
-      startDate: formData.startDate,
-      endDate: formData.endDate,
-      brandRepresentativeName: formData.brandRepresentativeName,
-      brandRepresentativeRole: formData.brandRepresentativeRole,
-      brandRepresentativePhone: formData.brandRepresentativePhone,
-      brandRepresentativeEmail: formData.brandRepresentativeEmail,
-      brandTaxNumber: formData.brandTaxNumber,
-      brandBankName: formData.brandBankName,
-      brandBankAccountNumber: formData.brandBankAccountNumber,
-      brandBankAccountHolder: formData.brandBankAccountHolder,
-      // GIỮ LẠI WEB REPRESENTATIVE DATA - BẢN ĐÃ SỬA FIELD NAMES
-      representativeName: formData.representativeName,
-      representativeRole: formData.representativeRole,
-      representativePhone: formData.representativePhone,
-      representativeEmail: formData.representativeEmail,
-      representativeTaxNumber: formData.representativeTaxNumber,
-      representativeBankName: formData.representativeBankName,
-      representativeBankAccountNumber: formData.representativeBankAccountNumber,
-      representativeBankAccountHolder: formData.representativeBankAccountHolder,
+      signed_date: formData.signed_date,
+      signed_location: formData.signed_location,
+      start_date: formData.start_date,
+      end_date: formData.end_date,
+      brand_representative_name: formData.brand_representative_name,
+      brand_representative_role: formData.brand_representative_role,
+      brand_representative_phone: formData.brand_representative_phone,
+      brand_representative_email: formData.brand_representative_email,
+      brand_tax_number: formData.brand_tax_number,
+      brand_bank_name: formData.brand_bank_name,
+      brand_bank_account_number: formData.brand_bank_account_number,
+      brand_bank_account_holder: formData.brand_bank_account_holder,
+      representative_name: formData.representative_name,
+      representative_role: formData.representative_role,
+      representative_phone: formData.representative_phone,
+      representative_email: formData.representative_email,
+      representative_tax_number: formData.representative_tax_number,
+      representative_bank_name: formData.representative_bank_name,
+      representative_bank_account_number: formData.representative_bank_account_number,
+      representative_bank_account_holder: formData.representative_bank_account_holder,
       currency: formData.currency,
-      // Set new type and its defaults
       type: pendingNewType,
-      financialTerms: getDefaultFinancialTerms(pendingNewType),
-      scopeOfWork: {},
+      financial_terms: getDefaultFinancialTerms(pendingNewType),
+      scope_of_work: {},
     };
 
     setFormData(clearedFormData);
     setErrors({});
 
-    // Close modal
     setShowTypeChangeModal(false);
     setPendingNewType("");
   };
@@ -631,7 +706,6 @@ const AddContractPage: React.FC = () => {
     setPendingNewType("");
   };
 
-  // Handlers
   const handleFieldValidation = (fieldPath: string, error: string | null) => {
     setErrors((prev: any) => {
       const newErrors = { ...prev };
@@ -659,41 +733,49 @@ const AddContractPage: React.FC = () => {
     setFormData((prev: any) => ({ ...prev, [field]: value }));
   };
 
-  // Modify updateFinancialTerms để xử lý cả formData updates
-  const updateFinancialTerms = async (updates: any) => {
-    // Tách formData updates và financialTerms updates
-    const { _formDataUpdates, ...financialUpdates } = updates;
+  const update_financial_terms = async (updates: any) => {
+    const { _form_data_updates, ...financial_updates } = updates;
 
-    // Cập nhật formData nếu có _formDataUpdates
-    if (_formDataUpdates) {
+    if (_form_data_updates) {
       setFormData((prev: any) => ({
         ...prev,
-        ..._formDataUpdates,
+        ..._form_data_updates,
       }));
     }
 
-    // Cập nhật financialTerms
-    const newFinancialTerms = { ...formData.financialTerms, ...financialUpdates };
-    setFormData((prev: typeof INITIAL_FORM_DATA) => ({
-      ...prev,
-      financialTerms: newFinancialTerms,
-    }));
+    const new_financial_terms = { ...formData.financial_terms, ...financial_updates };
 
-    // Validation
-    for (const [key, value] of Object.entries(financialUpdates)) {
-      const validation = await validateField(`financialTerms.${key}`, value, {
+    setFormData((prev: typeof INITIAL_FORM_DATA) => {
+      const updated = {
+        ...prev,
+        financial_terms: new_financial_terms,
+      };
+      return updated;
+    });
+
+    for (const [key, value] of Object.entries(financial_updates)) {
+      const validation = await validateField(`financial_terms.${key}`, value, {
         ...formData,
-        financialTerms: newFinancialTerms,
+        financial_terms: new_financial_terms,
       });
-      handleFieldValidation(`financialTerms.${key}`, validation.isValid ? null : validation.error);
+      handleFieldValidation(`financial_terms.${key}`, validation.isValid ? null : validation.error);
     }
   };
 
-  const updateScopeOfWork = (updates: any) => {
-    setFormData((prev: typeof INITIAL_FORM_DATA) => ({
-      ...prev,
-      scopeOfWork: { ...prev.scopeOfWork, ...updates },
-    }));
+  const update_scope_of_work = (updates: any) => {
+    setFormData((prev: typeof INITIAL_FORM_DATA) => {
+      const prevDeliverables = (prev.scope_of_work as any)?.deliverables;
+      const updatedScope = {
+        ...prev.scope_of_work,
+        ...updates,
+        deliverables: updates.deliverables !== undefined ? updates.deliverables : prevDeliverables,
+      };
+
+      return {
+        ...prev,
+        scope_of_work: updatedScope,
+      };
+    });
   };
 
   const handleContractTypeChange = async (type: string) => {
@@ -705,34 +787,29 @@ const AddContractPage: React.FC = () => {
     setFormData((prev: typeof INITIAL_FORM_DATA) => ({
       ...prev,
       type,
-      financialTerms: defaultFinancialTerms,
-      scopeOfWork: defaultScopeOfWork,
+      financial_terms: defaultFinancialTerms,
+      scope_of_work: defaultScopeOfWork,
     }));
   };
 
-  // Handlers cho file URLs
   const handleContractUrlsChange = (urls: string[]) => {
-    // Chỉ lấy URL đầu tiên vì chỉ cho phép 1 file
     const url = urls.length > 0 ? urls[0] : "";
     handleInputChange("contract_file_url", url);
   };
 
   const handleProposalUrlsChange = (urls: string[]) => {
-    // Chỉ lấy URL đầu tiên vì chỉ cho phép 1 file
     const url = urls.length > 0 ? urls[0] : "";
     handleInputChange("proposal_file_url", url);
   };
 
-  // File handlers (simplified)
-  const handleContractFilesChange = (files: File[]) => {
-    handleInputChange("contractFiles", files);
+  const handle_contract_files_change = (files: File[]) => {
+    handleInputChange("contract_files", files);
   };
 
-  const handleProposalFilesChange = (files: File[]) => {
-    handleInputChange("proposalFiles", files);
+  const handle_proposal_files_change = (files: File[]) => {
+    handleInputChange("proposal_files", files);
   };
 
-  // MODIFY: Chỉ cần 1 handler để mở modal
   const handleCreateContract = () => {
     if (!canSubmit) {
       toast.error("Please complete all required sections before creating the contract.");
@@ -741,7 +818,6 @@ const AddContractPage: React.FC = () => {
     setShowPreviewModal(true);
   };
 
-  // KEEP handleSubmit nhưng chỉ được gọi từ modal
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -750,7 +826,6 @@ const AddContractPage: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      // Helper function để convert date string sang ISO format với timezone
       const formatDateForBackend = (dateString: string): string => {
         if (!dateString) return "";
         if (dateString.includes("T")) return dateString;
@@ -759,52 +834,50 @@ const AddContractPage: React.FC = () => {
         return date.toISOString();
       };
 
-      // Tạo JSON payload hoàn chỉnh để gửi backend
       const contractPayload = {
-        // Contract Basic Information
         parent_contract_id: null,
-        contract_number: formData.contractNumber,
         title: formData.title,
         type: formData.type,
         status: "DRAFT",
 
-        // Brand Information
-        brand_id: formData.brandId,
-        brand_bank_name: formData.brandBankName,
-        brand_bank_account_number: formData.brandBankAccountNumber,
-        brand_bank_account_holder: formData.brandBankAccountHolder,
+        brand_id: formData.brand_id,
+        brand_bank_name: formData.brand_bank_name,
+        brand_bank_account_number: formData.brand_bank_account_number,
+        brand_bank_account_holder: formData.brand_bank_account_holder,
 
-        // Web Representative - field names chính xác
-        representative_name: formData.representativeName,
-        representative_role: formData.representativeRole,
-        representative_phone: formData.representativePhone,
-        representative_email: formData.representativeEmail,
-        representative_tax_number: formData.representativeTaxNumber,
-        representative_bank_name: formData.representativeBankName,
-        representative_bank_account_number: formData.representativeBankAccountNumber,
-        representative_bank_account_holder: formData.representativeBankAccountHolder,
+        representative_name: formData.representative_name,
+        representative_role: formData.representative_role,
+        representative_phone: formData.representative_phone,
+        representative_email: formData.representative_email,
+        representative_tax_number: formData.representative_tax_number,
+        representative_bank_name: formData.representative_bank_name,
+        representative_bank_account_number: formData.representative_bank_account_number,
+        representative_bank_account_holder: formData.representative_bank_account_holder,
 
-        // Contract dates and location - FORMAT DATES PROPERLY
-        signed_date: formatDateForBackend(formData.signedDate),
-        signed_location: formData.signedLocation,
-        start_date: formatDateForBackend(formData.startDate),
-        end_date: formatDateForBackend(formData.endDate),
+        signed_date: formatDateForBackend(formData.signed_date),
+        signed_location: formData.signed_location,
+        start_date: formatDateForBackend(formData.start_date),
+        end_date: formatDateForBackend(formData.end_date),
         currency: "VND",
 
         ...(formData.deposit_percent && formData.deposit_percent > 0
-          ? { deposit_percent: formData.deposit_percent }
-          : formData.deposit_amount && formData.deposit_amount > 0
-            ? { deposit_amount: formData.deposit_amount }
-            : {}),
+          ? {
+              deposit_percent: formData.deposit_percent,
+              deposit_amount: formData.deposit_amount || 0,
+            }
+          : {}),
         is_deposit_paid: formData.is_deposit_paid,
+        ...(formData.is_deposit_paid && formData.deposit_proof_url?.trim()
+          ? {
+              deposit_proof_url: formData.deposit_proof_url,
+            }
+          : {}),
 
-        // Scope of Work
         scope_of_work: {
-          general_requirements: formData.scopeOfWork?.general_requirements || [],
-          deliverables: formData.scopeOfWork?.deliverables || {},
+          general_requirements: formData.scope_of_work?.general_requirements || [],
+          deliverables: formData.scope_of_work?.deliverables || {},
         },
 
-        // Financial Terms
         financial_terms: {
           model:
             formData.type === "ADVERTISING"
@@ -814,68 +887,107 @@ const AddContractPage: React.FC = () => {
                 : formData.type === "CO_PRODUCING"
                   ? "SHARE"
                   : "FIXED",
-          payment_method: formData.financialTerms?.payment_method || "BANK_TRANSFER",
-          total_cost: formData.financialTerms?.total_cost || 0,
+          payment_method: formData.financial_terms?.payment_method || "BANK_TRANSFER",
+          total_cost: formData.financial_terms?.total_cost || 0,
+          cost_breakdown: (() => {
+            return formData.financial_terms?.cost_breakdown || {};
+          })(),
 
-          // Contract type specific terms
           ...(formData.type === "ADVERTISING" || formData.type === "BRAND_AMBASSADOR"
             ? {
-                // cost_breakdown is already in correct format from handleUpdate conversion
-                cost_breakdown: formData.financialTerms?.cost_breakdown || {},
-                schedule: formData.financialTerms?.schedule || {},
+                schedule: formData.financial_terms?.schedule || {},
               }
             : {}),
 
           ...(formData.type === "AFFILIATE"
             ? {
-                base_per_click: formData.financialTerms?.base_per_click || 0,
-                levels: formData.financialTerms?.levels || [],
-                payment_cycle: formData.financialTerms?.payment_cycle,
-                payment_date: formData.financialTerms?.payment_date,
-                tax_withholding: formData.financialTerms?.tax_withholding || {},
+                base_per_click: formData.financial_terms?.base_per_click || 0,
+                levels: formData.financial_terms?.levels || [],
+                payment_cycle: formData.financial_terms?.payment_cycle,
+                payment_date: formData.financial_terms?.payment_date,
+                tax_withholding: formData.financial_terms?.tax_withholding || {},
               }
             : {}),
 
           ...(formData.type === "CO_PRODUCING"
             ? {
                 profit_split_company_percent:
-                  formData.financialTerms?.profit_split_company_percent || 0,
-                profit_split_kol_percent: formData.financialTerms?.profit_split_kol_percent || 0,
-                profit_distribution_cycle: formData.financialTerms?.profit_distribution_cycle,
-                profit_distribution_date: formData.financialTerms?.profit_distribution_date,
+                  formData.financial_terms?.profit_split_company_percent || 0,
+                profit_split_kol_percent: formData.financial_terms?.profit_split_kol_percent || 0,
+                profit_distribution_cycle: formData.financial_terms?.profit_distribution_cycle,
+                profit_distribution_date: formData.financial_terms?.profit_distribution_date,
               }
             : {}),
         },
 
-        // Legal Terms
         legal_terms: {
           breach_of_contract: {
-            label: formData.legalTerms?.breach_of_contract?.label || "Breach of Contract",
+            label: formData.legal_terms?.breach_of_contract?.label || "Breach of Contract",
             items: [
               {
                 title: "Party A (Brand) breaks the rules",
-                details: ["Contract terminates immediately", "Party A forfeits the deposit"],
+                details: [
+                  "Contract terminates immediately",
+                  "Party A forfeits the deposit and must pay for the current milestone",
+                ],
               },
               {
                 title: "Party B (Service Provider) breaks the rules",
                 details: [
                   "Contract terminates immediately",
                   "Party B must refund the deposit",
-                  `Party B pays additional ${formData.legalTerms?.compensationPercent}% compensation`,
+                  `Party B pays additional ${formData.legal_terms?.compensation_percent}% compensation`,
                 ],
-                compensation_percent: formData.legalTerms?.compensationPercent,
+                compensation_percent: formData.legal_terms?.compensation_percent,
+              },
+            ],
+          },
+          rules: {
+            label: "Rules and Violations",
+            items: [
+              {
+                title: "For Brand (Party A)",
+                violations: [
+                  {
+                    name: "Payment Default",
+                    description: "Failure to settle payments by the agreed due date.",
+                  },
+                  {
+                    name: "Support Failure",
+                    description:
+                      "Failure to provide samples or guidelines on time, causing delays.",
+                  },
+                  {
+                    name: "Copyright Infringement",
+                    description: "Using KOL's content outside the agreed scope/platforms.",
+                  },
+                ],
               },
               {
-                title: "Mutual agreement to terminate",
-                details: [
-                  "Contract stops with no penalties",
-                  "No compensation required from either party",
+                title: "For KOL (Party B)",
+                violations: [
+                  {
+                    name: "Late Submission",
+                    description: "Failure to submit drafts or post content on the scheduled date.",
+                  },
+                  {
+                    name: "Exclusivity Breach",
+                    description: "Promoting direct competitors during the contract term.",
+                  },
+                  {
+                    name: "Content Removal",
+                    description: "Deleting or hiding posts before the agreed expiry date.",
+                  },
+                  {
+                    name: "Reputation Damage",
+                    description: "Involved in scandals that negatively affect the Brand.",
+                  },
                 ],
               },
             ],
           },
           standard_terms: {
-            label: formData.legalTerms?.standard_terms?.label || "Standard Terms",
+            label: formData.legal_terms?.standard_terms?.label || "Standard Terms",
             items: [
               {
                 title: "Confidentiality",
@@ -912,7 +1024,7 @@ const AddContractPage: React.FC = () => {
         setErrors({});
         setCurrentStep(1);
         setActiveTab(INITIAL_TABS[0].id);
-        setShowPreviewModal(false); // Đóng modal sau khi thành công
+        setShowPreviewModal(false);
         navigate("/manage/marketing/contracts");
       } else {
         throw new Error((result.payload as string) || "Failed to create contract");
@@ -925,19 +1037,18 @@ const AddContractPage: React.FC = () => {
     }
   };
 
-  // Render tab content dynamically
   const renderTabContent = (tabId: string) => {
     const componentProps = {
       formData,
-      onInputChange: handleInputChange, // THÊM PROP NÀY
+      onInputChange: handleInputChange,
       errors,
       onContractTypeChange: handleTypeChangeRequest,
-      onUpdateScopeOfWork: updateScopeOfWork,
+      onUpdateScopeOfWork: update_scope_of_work,
       onFieldValidation: handleFieldValidation,
       contractTypeOptions: CONTRACT_TYPE_OPTIONS,
-      onUpdateFinancialTerms: updateFinancialTerms,
-      onContractFilesChange: handleContractFilesChange,
-      onProposalFilesChange: handleProposalFilesChange,
+      onUpdateFinancialTerms: update_financial_terms,
+      onContractFilesChange: handle_contract_files_change,
+      onProposalFilesChange: handle_proposal_files_change,
       onContractUrlsChange: handleContractUrlsChange,
       onProposalUrlsChange: handleProposalUrlsChange,
       onSubmit: handleSubmit,
@@ -952,37 +1063,48 @@ const AddContractPage: React.FC = () => {
   return (
     <div className="min-h-fit p-4 sm:p-6">
       <div className="max-w-7xl mx-auto pb-10">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/manage/marketing/contracts")}
+            className="flex items-center shrink-0"
+          >
+            <FaArrowLeft className="w-4 h-4 mr-2" />
+            Return
+          </Button>
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:gap-6 flex-1 text-center sm:text-left">
             <div>
               <h1 className="text-xl sm:text-2xl font-semibold">Create New Contract</h1>
-              <p className="text-gray-600 mt-1">
-                Create a new contract with defined terms and details.
+              <p className="text-gray-600 mt-1 text-sm sm:text-base">
+                {preselectedBrandId
+                  ? `Create a new contract for ${preselectedBrandData?.name || "selected brand"}.`
+                  : "Create a new contract with defined terms and details."}
               </p>
+
+              {formData.type && (
+                <span
+                  className={`inline-flex items-center px-3 py-1 mt-2 rounded-full text-sm font-medium border ${contractTypeColor.bg} ${contractTypeColor.text} ${contractTypeColor.border}`}
+                >
+                  {CONTRACT_TYPE_OPTIONS.find((option) => option.value === formData.type)?.label ||
+                    "Not Selected"}
+                </span>
+              )}
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleReset}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-              disabled={isSubmitting}
-            >
-              <FaRotateLeft className="h-4 w-4 mr-2" />
-              Reset
-            </Button>
           </div>
-          {formData.type && (
-            <span
-              className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${contractTypeColor.bg} ${contractTypeColor.text} ${contractTypeColor.border}`}
-            >
-              {CONTRACT_TYPE_OPTIONS.find((option) => option.value === formData.type)?.label ||
-                "Not Selected"}
-            </span>
-          )}
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleReset}
+            className="text-red-600 hover:text-red-700 hover:bg-red-50 shrink-0"
+            disabled={isSubmitting}
+          >
+            <FaRotateLeft className="h-4 w-4 mr-2" />
+            Reset
+          </Button>
         </div>
 
-        {/* Step Indicator */}
         <div className="mb-6">
           <div className="flex justify-between text-sm text-gray-600 mb-2">
             <span>
@@ -993,7 +1115,6 @@ const AddContractPage: React.FC = () => {
           <Progress value={progressPercentage} className="h-2" />
         </div>
 
-        {/* Tabs Navigation */}
         <div className="border-b border-gray-200 mb-8">
           <Tabs value={activeTab} onValueChange={handleTabChange}>
             <TabsList className="flex w-full">
@@ -1035,7 +1156,6 @@ const AddContractPage: React.FC = () => {
         )}
       </div>
 
-      {/* Fixed Action Bar */}
       <div className="sticky bottom-0 -mx-2 bg-white/90 border-t rounded-xl border-gray-200 shadow-lg z-40">
         <div className="flex justify-between items-center px-4 py-3">
           <div className="flex gap-2">

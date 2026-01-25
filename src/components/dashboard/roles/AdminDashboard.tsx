@@ -98,7 +98,7 @@ const AdminDashboard: React.FC = () => {
     campaigns,
     contracts,
     health,
-    revenue,
+    // revenue,
     userOverview,
     systemOverview,
   } = useAdminAnalytic();
@@ -161,14 +161,14 @@ const AdminDashboard: React.FC = () => {
     [userOverview],
   );
 
-  const totalRevenueData = useMemo(
-    () => ({
-      value: revenue?.total_revenue || 0,
-      status: "up" as const,
-      statusText: "Total",
-    }),
-    [revenue],
-  );
+  // const totalRevenueData = useMemo(
+  //   () => ({
+  //     value: revenue?.total_revenue || 0,
+  //     status: "up" as const,
+  //     statusText: "Total",
+  //   }),
+  //   [revenue],
+  // );
 
   // const revenueBreakdownData = useMemo(() => {
   //   if (!revenue?.revenue_breakdown) return [];
@@ -420,7 +420,7 @@ const AdminDashboard: React.FC = () => {
 
       <h1 className="text-xl sm:text-2xl font-semibold">Admin Dashboard</h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <KPIWidget
           title="Total Campaigns"
           data={campaignsKPIData}
@@ -445,14 +445,14 @@ const AdminDashboard: React.FC = () => {
           iconBg="bg-green-100"
           tooltip="Total number of registered users across all roles including admin, staff, brand partners, and customers"
         />
-        <KPIWidget
+        {/* <KPIWidget
           title="Total Revenue"
           data={totalRevenueData}
           icon={<FaMoneyBillWave size={20} />}
           iconColor="text-indigo-600"
           iconBg="bg-indigo-100"
           tooltip="Total revenue generated from all sources including contracts, product sales, advertising, and affiliate commissions"
-        />
+        /> */}
       </div>
 
       {/* <Card className="p-4">

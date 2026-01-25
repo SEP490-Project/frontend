@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FaMoneyBillWave,
@@ -21,7 +21,7 @@ import { Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/libs/hooks/useAuth";
 import type { AffiliateBreakdown, CoProducingBreakdown } from "@/libs/types/contract-payments";
-import EarlyPaymentWarningModal from "./EarlyPaymentWarningModal";
+// import EarlyPaymentWarningModal from "./EarlyPaymentWarningModal";
 
 interface PaymentDetailModalProps {
   isOpen: boolean;
@@ -62,24 +62,24 @@ function PaymentDetailModal({
   isOpen,
   onClose,
   paymentId,
-  showPayNowButton = false,
-  onPayNow,
-  isPaymentLoading = false,
+  // showPayNowButton = false,
+  // onPayNow,
+  // isPaymentLoading = false,
 }: PaymentDetailModalProps) {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { role } = useAuth();
   const { contractPaymentDetail, detailLoading } = useContractPayment();
 
-  // Early payment warning state
-  const [isEarlyPaymentWarningOpen, setIsEarlyPaymentWarningOpen] = useState(false);
-  const [pendingPaymentData, setPendingPaymentData] = useState<{
-    contractPaymentId: string;
-    amount: number;
-    contractNumber: string;
-    dueDate: string;
-    installmentPercentage?: number;
-  } | null>(null);
+  // Early payment warning state - COMMENTED OUT
+  // const [isEarlyPaymentWarningOpen, setIsEarlyPaymentWarningOpen] = useState(false);
+  // const [pendingPaymentData, setPendingPaymentData] = useState<{
+  //   contractPaymentId: string;
+  //   amount: number;
+  //   contractNumber: string;
+  //   dueDate: string;
+  //   installmentPercentage?: number;
+  // } | null>(null);
 
   useEffect(() => {
     if (isOpen && paymentId) {
@@ -94,63 +94,65 @@ function PaymentDetailModal({
     }).format(amount);
 
   // Utility function to check if payment is early (more than 10 days before due date)
-  const isEarlyPayment = (dueDate: string) => {
-    if (!dueDate) return false;
+  // const isEarlyPayment = (dueDate: string) => {
+  //   if (!dueDate) return false;
 
-    const now = new Date();
-    const due = new Date(dueDate);
+  //   const now = new Date();
+  //   const due = new Date(dueDate);
 
-    if (isNaN(due.getTime())) return false;
+  //   if (isNaN(due.getTime())) return false;
 
-    const diffMs = due.getTime() - now.getTime();
-    const tenDaysMs = 10 * 24 * 60 * 60 * 1000;
+  //   const diffMs = due.getTime() - now.getTime();
+  //   const tenDaysMs = 10 * 24 * 60 * 60 * 1000;
 
-    return diffMs > tenDaysMs;
-  };
+  //   return diffMs > tenDaysMs;
+  // };
 
-  // Handle Pay Now with early payment check
-  const handlePayNow = () => {
-    if (!contractPaymentDetail || !onPayNow) return;
+  // Handle Pay Now with early payment check - COMMENTED OUT
+  // const handlePayNow = () => {
+  //   if (!contractPaymentDetail || !onPayNow) return;
 
-    // Check if this is an early payment
-    if (contractPaymentDetail.due_date && isEarlyPayment(contractPaymentDetail.due_date)) {
-      setPendingPaymentData({
-        contractPaymentId: contractPaymentDetail.id,
-        amount: contractPaymentDetail.amount || 0,
-        contractNumber: contractPaymentDetail.contract_number || "",
-        dueDate: contractPaymentDetail.due_date,
-        installmentPercentage: contractPaymentDetail.installment_percentage,
-      });
-      setIsEarlyPaymentWarningOpen(true);
-      return;
-    }
+  //   // Check if this is an early payment
+  //   if (contractPaymentDetail.due_date && isEarlyPayment(contractPaymentDetail.due_date)) {
+  //     setPendingPaymentData({
+  //       contractPaymentId: contractPaymentDetail.id,
+  //       amount: contractPaymentDetail.amount || 0,
+  //       contractNumber: contractPaymentDetail.contract_number || "",
+  //       dueDate: contractPaymentDetail.due_date,
+  //       installmentPercentage: contractPaymentDetail.installment_percentage,
+  //     });
+  //     setIsEarlyPaymentWarningOpen(true);
+  //     return;
+  //   }
 
-    // Proceed with normal payment
-    onPayNow(contractPaymentDetail.id);
-  };
+  //   // Proceed with normal payment
+  //   onPayNow(contractPaymentDetail.id);
+  // };
 
-  // Handle early payment confirmation
-  const handleEarlyPaymentConfirm = () => {
-    if (!pendingPaymentData || !onPayNow) return;
+  // // Handle early payment confirmation
+  // const handleEarlyPaymentConfirm = () => {
+  //   if (!pendingPaymentData || !onPayNow) return;
 
-    setIsEarlyPaymentWarningOpen(false);
-    onPayNow(pendingPaymentData.contractPaymentId);
-    setPendingPaymentData(null);
-  };
+  //   setIsEarlyPaymentWarningOpen(false);
+  //   onPayNow(pendingPaymentData.contractPaymentId);
+  //   setPendingPaymentData(null);
+  // };
 
-  // Handle early payment cancellation
-  const handleEarlyPaymentCancel = () => {
-    setIsEarlyPaymentWarningOpen(false);
-    setPendingPaymentData(null);
-  };
+  // // Handle early payment cancellation
+  // const handleEarlyPaymentCancel = () => {
+  //   setIsEarlyPaymentWarningOpen(false);
+  //   setPendingPaymentData(null);
+  // };
 
-  // Check if payment can be made - matches ContractPaymentBrand logic
-  const canShowPayNowButton = () => {
-    if (!contractPaymentDetail) return false;
+  // // Check if payment can be made - matches ContractPaymentBrand logic
+  // const canShowPayNowButton = () => {
+  //   if (!contractPaymentDetail) return false;
 
-    // Same logic as ContractPaymentBrand: pay_now === true && status === "PENDING"
-    return contractPaymentDetail.pay_now === true && contractPaymentDetail.status === "PENDING";
-  };
+  //   // Explicitly exclude NOT_STARTED status and only allow PENDING status with pay_now enabled
+  //   return contractPaymentDetail.pay_now === true &&
+  //          contractPaymentDetail.status === "PENDING" &&
+  //          contractPaymentDetail.status !== "NOT_STARTED";
+  // };
 
   const isAffiliateBreakdown = (breakdown: any): breakdown is AffiliateBreakdown => {
     return breakdown && "total_clicks" in breakdown && "breakdown" in breakdown;
@@ -556,7 +558,7 @@ function PaymentDetailModal({
                             <div>
                               <p className="text-gray-600">Clicks</p>
                               <p className="font-semibold">
-                                {tier.clicks_in_tier.toLocaleString()}
+                                {tier.clicks_in_tier?.toLocaleString() || "0"}
                                 {/* {tier.clicks_in_tier.toLocaleString()} /{" "} */}
                                 {/* {tier.max_clicks?.toLocaleString() || "∞"} */}
                               </p>
@@ -564,18 +566,20 @@ function PaymentDetailModal({
                             <div>
                               <p className="text-gray-600">Max Clicks</p>
                               <p className="font-semibold">
-                                {tier.current_clicks.toLocaleString()} /{" "}
+                                {tier.current_clicks?.toLocaleString() || "0"} /{" "}
                                 {tier.max_clicks?.toLocaleString() || "∞"}
                               </p>
                             </div>
                             <div>
                               <p className="text-gray-600">Rate/Click</p>
-                              <p className="font-semibold">{formatCurrency(tier.rate_per_click)}</p>
+                              <p className="font-semibold">
+                                {formatCurrency(tier.rate_per_click || 0)}
+                              </p>
                             </div>
                             <div>
                               <p className="text-gray-600">Tier Total</p>
                               <p className="font-semibold text-pink-600">
-                                {formatCurrency(tier.tier_payment)}
+                                {formatCurrency(tier.tier_payment || 0)}
                               </p>
                             </div>
                           </div>
@@ -775,7 +779,8 @@ function PaymentDetailModal({
         )}
 
         <div className="flex justify-end gap-3 pt-4 border-t">
-          {showPayNowButton && canShowPayNowButton() && onPayNow && contractPaymentDetail && (
+          {/* Pay Now button - COMMENTED OUT */}
+          {/* {showPayNowButton && canShowPayNowButton() && onPayNow && contractPaymentDetail && (
             <Button onClick={handlePayNow} disabled={isPaymentLoading}>
               {isPaymentLoading ? (
                 <>
@@ -786,7 +791,7 @@ function PaymentDetailModal({
                 "Pay now"
               )}
             </Button>
-          )}
+          )} */}
 
           <Button variant="outline" onClick={onClose}>
             Close
@@ -794,14 +799,14 @@ function PaymentDetailModal({
         </div>
       </DialogContent>
 
-      {/* Early Payment Warning Modal */}
-      <EarlyPaymentWarningModal
+      {/* Early Payment Warning Modal - COMMENTED OUT */}
+      {/* <EarlyPaymentWarningModal
         isOpen={isEarlyPaymentWarningOpen}
         onClose={handleEarlyPaymentCancel}
         onConfirm={handleEarlyPaymentConfirm}
         paymentData={pendingPaymentData}
         isLoading={isPaymentLoading}
-      />
+      /> */}
     </Dialog>
   );
 }

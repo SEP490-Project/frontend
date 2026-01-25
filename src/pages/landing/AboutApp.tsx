@@ -62,15 +62,15 @@ const AboutApp = () => {
       alt: "Home Screen",
     },
     {
-      src: "/app-screenshots/home-screen.png",
+      src: "/app-screenshots/blog-screen.jpg",
       alt: "Blog Reading",
     },
     {
-      src: "/app-screenshots/home-screen.png",
+      src: "/app-screenshots/product-screen.jpg",
       alt: "Product Browsing",
     },
     {
-      src: "/app-screenshots/home-screen.png",
+      src: "/app-screenshots/account-screen.jpg",
       alt: "User Profile",
     },
   ];

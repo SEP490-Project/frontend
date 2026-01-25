@@ -440,7 +440,7 @@ const BrandDashboard: React.FC = () => {
       </div>
 
       {/* Income Breakdown Card */}
-      {netIncome && (
+      {/* {netIncome && (
         <Card className="p-4 border-none shadow-sm bg-white">
           <div className="flex flex-col gap-4">
             <h2 className="text-lg font-semibold text-gray-800">Income Breakdown</h2>
@@ -484,7 +484,7 @@ const BrandDashboard: React.FC = () => {
             </div>
           </div>
         </Card>
-      )}
+      )} */}
 
       {/* Revenue Trend Chart */}
       {/* <Card className="p-4 border-none shadow-sm bg-white"> */}

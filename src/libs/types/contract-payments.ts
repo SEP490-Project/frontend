@@ -35,6 +35,8 @@ export interface PaymentLink {
 // Breakdown types for AFFILIATE contracts
 export interface LevelPaymentBreakdown {
   level: number;
+  current_clicks: number;
+  max_clicks?: number;
   clicks_in_tier: number;
   multiplier: number;
   rate_per_click: number;
